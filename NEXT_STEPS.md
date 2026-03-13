@@ -9,9 +9,11 @@
 - [ ] Подтвердить MVP baseline, зафиксированный в `DEVELOPMENT_PLAN.md`, как рабочий scope первой версии.
 - [ ] Утвердить core entities и связи из `DOMAIN_RULES.md`: `Customer`, `Vehicle`, `RepairOrder`, `RepairWork`, `RepairPart`, `Supplier`, `CompletionAct`, `RepairPhoto`.
 - [ ] Подтвердить основной lifecycle ремонта и минимальные статусы первой версии.
+- [ ] Подтвердить `TECH_STACK.md` как baseline: `Django + DRF + React + Vite + PostgreSQL`.
+- [ ] Утвердить access model: `Django Admin` для служебного управления, `Staff App` для сотрудников, `Client Portal` для клиентов.
 - [ ] Принять решения по открытым вопросам: `PDF`, `email клиента`, `multiple problems per repair`, `payments`, `employees`, `inventory`, `notifications`.
-- [ ] Выбрать и зафиксировать технический stack и структуру каталогов для backend/frontend.
-- [ ] Подготовить минимальный skeleton проекта, который реально сможет проходить CI.
+- [ ] Подготовить список reusable technical blocks, которые переносим из `f-cmr-template`, без переноса invoice domain logic.
+- [ ] Провалидировать bootstrap foundation в ветке `feature/bootstrap-foundation` и решить, что идет в первый merge.
 
 ## NEXT
 - [ ] Реализовать базовые модели и CRUD для клиентов и автомобилей.
