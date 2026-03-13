@@ -62,18 +62,26 @@ describe("bootstrap application", () => {
   });
 
   it("allows staff login from the login page", async () => {
-    mockApi.get.mockImplementationOnce((url: string) => {
+    mockApi.get.mockImplementation((url: string) => {
       if (url === "/auth/csrf") {
         return Promise.resolve({ data: { detail: "CSRF cookie set" } });
       }
-      return Promise.reject(new Error("unauthorized"));
+      if (url === "/auth/me") {
+        return Promise.reject(new Error("unauthorized"));
+      }
+      return Promise.resolve({ data: {} });
     });
 
     const user = userEvent.setup();
     renderApp("/login");
 
-    await user.type(screen.getByLabelText("Email"), "manager@test.local");
-    await user.type(screen.getByLabelText("Password"), "manager12345");
+    const emailInput = screen.getByLabelText("Email");
+    const passwordInput = screen.getByLabelText("Password");
+
+    await user.clear(emailInput);
+    await user.type(emailInput, "manager@test.local");
+    await user.clear(passwordInput);
+    await user.type(passwordInput, "manager12345");
     await user.click(screen.getByRole("button", { name: "Sign In" }));
 
     await waitFor(() => {
