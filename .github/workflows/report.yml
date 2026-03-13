@@ -24,7 +24,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Download artifacts from PR Pipeline
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896f86cf4a929fe8 # v4
+        uses: actions/download-artifact@v4
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
