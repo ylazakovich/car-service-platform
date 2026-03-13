@@ -8,4 +8,6 @@ urlpatterns = [
     path("api/health", HealthView.as_view(), name="health"),
     path("api/version", VersionView.as_view(), name="version"),
     path("api/auth/", include("users.urls")),
+    path("api/customers/", include("customers.urls")),
+    path("api/vehicles/", include("vehicles.urls")),
 ]
