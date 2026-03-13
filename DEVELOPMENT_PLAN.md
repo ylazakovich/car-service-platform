@@ -24,6 +24,7 @@
 - Базовый CI-каркас добавлен.
 - Локальный agent workflow добавлен.
 - Есть исходное product vision из `plan_autoservice_product.docx`.
+- Зафиксирован рекомендуемый technical baseline в `TECH_STACK.md`.
 - Backend/frontend implementation еще не начата.
 - Active planning docs переведены из template-состояния в стартовый проектный foundation.
 
@@ -78,8 +79,8 @@ Milestone включает:
 1. Зафиксировать структуру MVP, ключевые страницы и основной пользовательский сценарий.
 2. Утвердить core entities и доменные связи.
 3. Зафиксировать lifecycle ремонта и минимальный набор статусов.
-4. Утвердить stack, структуру репозитория и контракты между backend/frontend.
-5. Подготовить минимальный skeleton проекта, совместимый с CI.
+4. Утвердить stack, разделение `admin / staff app / client portal` и контракты между backend/frontend.
+5. Подготовить минимальный skeleton проекта, совместимый с CI, с учетом выбранного stack и access model.
 6. Разбить дальнейшую разработку на milestones `M1-M3`.
 
 ## 5) Delivery Roadmap
@@ -87,6 +88,7 @@ Milestone включает:
 ### M0: Product Foundation + Delivery Skeleton
 - product scope и active docs согласованы
 - есть source-of-truth по ключевым сущностям и lifecycle
+- есть source-of-truth по техническому стеку и access model
 - CI, planning workflow и skeleton готовы
 
 ### M1: Core Records
@@ -117,8 +119,9 @@ Milestone `M0` считается завершенным, если:
 3. Описан основной пользовательский поток: `клиент -> автомобиль -> ремонт -> работы/запчасти -> акт`.
 4. Есть зафиксированный active backlog с задачами `NOW/NEXT/LATER`.
 5. `DOMAIN_RULES.md` покрывает базовые инварианты и lifecycle первой версии.
-6. В репозитории есть минимально запускаемая структура, на которую реально опирается CI.
-7. Команда может использовать `AGENTS.md` и `.agents/` как стандартный workflow.
+6. `TECH_STACK.md` фиксирует stack, access model и reusable foundation из `f-cmr-template`.
+7. В репозитории есть минимально запускаемая структура, на которую реально опирается CI.
+8. Команда может использовать `AGENTS.md` и `.agents/` как стандартный workflow.
 
 ## 7) Constraints
 - Не раздувать active-файлы историей.
@@ -150,4 +153,5 @@ Milestone `M0` считается завершенным, если:
 - Strategy (active): `DEVELOPMENT_PLAN.md`
 - Execution backlog (active): `NEXT_STEPS.md`
 - Domain rules: `DOMAIN_RULES.md`
+- Technical baseline: `TECH_STACK.md`
 - History: `docs/planning/archive/`
