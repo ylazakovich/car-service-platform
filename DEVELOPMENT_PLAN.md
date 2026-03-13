@@ -25,8 +25,8 @@
 - Локальный agent workflow добавлен.
 - Есть исходное product vision из `plan_autoservice_product.docx`.
 - Зафиксирован рекомендуемый technical baseline в `TECH_STACK.md`.
-- Backend/frontend implementation еще не начата.
-- Active planning docs переведены из template-состояния в стартовый проектный foundation.
+- Поднят минимальный runnable skeleton: `backend`, `frontend`, `docker-compose`, `.env.example`, `start/stop` scripts.
+- Active planning docs переведены из template-состояния в стартовый project foundation.
 
 ## 3) Product Scope (MVP Baseline)
 MVP первой версии должен включать:
@@ -89,7 +89,7 @@ Milestone включает:
 - product scope и active docs согласованы
 - есть source-of-truth по ключевым сущностям и lifecycle
 - есть source-of-truth по техническому стеку и access model
-- CI, planning workflow и skeleton готовы
+- CI, planning workflow и initial skeleton готовы
 
 ### M1: Core Records
 - клиенты

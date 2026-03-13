@@ -13,11 +13,9 @@
 - [ ] Утвердить access model: `Django Admin` для служебного управления, `Staff App` для сотрудников, `Client Portal` для клиентов.
 - [ ] Принять решения по открытым вопросам: `PDF`, `email клиента`, `multiple problems per repair`, `payments`, `employees`, `inventory`, `notifications`.
 - [ ] Подготовить список reusable technical blocks, которые переносим из `f-cmr-template`, без переноса invoice domain logic.
-- [ ] Подготовить минимальный skeleton проекта, который реально сможет проходить CI.
+- [ ] Провалидировать bootstrap foundation в ветке `feature/bootstrap-foundation` и решить, что идет в первый merge.
 
 ## NEXT
-- [ ] Перетащить и адаптировать backend/frontend bootstrap из `f-cmr-template`.
-- [ ] Перетащить и адаптировать docker/env/scripts foundation из `f-cmr-template`.
 - [ ] Реализовать базовые модели и CRUD для клиентов и автомобилей.
 - [ ] Реализовать создание ремонта с описанием проблемы, датой обращения и комментариями.
 - [ ] Реализовать добавление работ, запчастей, поставщиков и фотографий в ремонт.

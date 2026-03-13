@@ -16,7 +16,7 @@
 - `Gunicorn`
 
 ### Frontend
-- `React 19`
+- `React 18` bootstrap baseline with planned upgrade path to `React 19`
 - `TypeScript 5`
 - `Vite 6`
 - `React Router 7`
@@ -107,6 +107,7 @@
 - `Django` закрывает admin, ORM, auth, permissions и быстрый старт команды.
 - `DRF` дает предсказуемый API для React UI.
 - `React + Vite` уже знакомы по `f-cmr-template`, значит ниже стартовая стоимость.
+- Для bootstrap-этапа используется совместимый с шаблоном `React 18` foundation; upgrade до `React 19` можно сделать отдельным безопасным шагом после стабилизации skeleton.
 - `PostgreSQL` достаточно надежен и прост для этой нагрузки.
 - Для команды около 10 внутренних пользователей не нужна микросервисная архитектура.
 

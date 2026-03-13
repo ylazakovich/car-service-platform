@@ -1,0 +1,177 @@
+:root {
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: #10212d;
+  background:
+    radial-gradient(circle at top left, rgba(255, 180, 92, 0.28), transparent 30%),
+    linear-gradient(135deg, #f3efe5 0%, #d9e5ea 100%);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  color: #8a4d1d;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.button {
+  border: 0;
+  border-radius: 999px;
+  background: #10212d;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.9rem 1.4rem;
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.button-secondary {
+  background: rgba(16, 33, 45, 0.08);
+  color: #10212d;
+}
+
+.login-shell,
+.portal-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 2rem;
+}
+
+.login-card,
+.portal-card {
+  width: min(100%, 520px);
+  border: 1px solid rgba(16, 33, 45, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 30px 70px rgba(16, 33, 45, 0.12);
+  backdrop-filter: blur(12px);
+  padding: 2rem;
+}
+
+.login-copy,
+.portal-copy {
+  margin-top: 0.5rem;
+  color: #4d5f6a;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.login-form input {
+  border: 1px solid rgba(16, 33, 45, 0.16);
+  border-radius: 14px;
+  background: #fff;
+  padding: 0.9rem 1rem;
+}
+
+.form-error {
+  margin: 0;
+  color: #b42318;
+}
+
+.portal-code {
+  margin-top: 1.5rem;
+  border-radius: 18px;
+  background: #10212d;
+  color: #fff;
+  padding: 1rem 1.2rem;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 100vh;
+}
+
+.shell-sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  background: #10212d;
+  color: #f7f3eb;
+  padding: 2rem;
+}
+
+.shell-copy {
+  color: rgba(247, 243, 235, 0.78);
+}
+
+.shell-user {
+  display: grid;
+  gap: 1rem;
+}
+
+.shell-main {
+  padding: 2rem;
+}
+
+.staff-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel {
+  border: 1px solid rgba(16, 33, 45, 0.12);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1.5rem;
+}
+
+.panel-highlight {
+  background: linear-gradient(135deg, #d96d1f, #f0b44b);
+  color: #fff;
+}
+
+.panel ul {
+  margin: 1rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.screen-message {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-grid {
+    grid-template-columns: 1fr;
+  }
+}
