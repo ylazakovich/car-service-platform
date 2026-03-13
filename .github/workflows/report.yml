@@ -1,0 +1,47 @@
+name: Test Report
+
+on:
+  workflow_run:
+    workflows: ["PR Pipeline"]
+    types: [completed]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  test-report:
+    name: Test Report
+    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download artifacts from PR Pipeline
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896f86cf4a929fe8 # v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts
+
+      - name: Frontend Test Report
+        if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
+        uses: dorny/test-reporter@b082adf0eced0765477756c2a610396589b8c637 # v2
+        with:
+          name: Frontend Tests
+          path: artifacts/frontend-test-results/junit.xml
+          reporter: java-junit
+
+      - name: Backend Test Report
+        if: ${{ hashFiles('artifacts/backend-test-results/*.xml') != '' }}
+        uses: dorny/test-reporter@b082adf0eced0765477756c2a610396589b8c637 # v2
+        with:
+          name: Backend Tests
+          path: artifacts/backend-test-results/*.xml
+          reporter: java-junit

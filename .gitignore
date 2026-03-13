@@ -1,0 +1,9 @@
+.env
+.env.local
+.DS_Store
+backups/
+tmp/
+
+# Local agent run artifacts
+.agents/runs/*
+!.agents/runs/README.md

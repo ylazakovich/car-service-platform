@@ -1,0 +1,85 @@
+name: Main Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+
+concurrency:
+  group: main-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-build:
+    name: "Frontend: Build"
+    if: ${{ hashFiles('frontend/package.json') != '' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: ./.github/actions/setup-node
+
+      - name: Build
+        run: npm run build
+
+  backend-build:
+    name: "Backend: Build"
+    if: ${{ hashFiles('backend/manage.py') != '' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: ./.github/actions/setup-python
+
+      - name: System check
+        env:
+          DJANGO_SECRET_KEY: ci-build-secret-key
+        run: python manage.py check --settings=config.settings_test
+
+      - name: Check for missing migrations
+        env:
+          DJANGO_SECRET_KEY: ci-build-secret-key
+        run: python manage.py makemigrations --check --dry-run --settings=config.settings_test
+
+  docker:
+    name: "Docker: Build & Health"
+    if: >-
+      ${{
+        hashFiles('docker-compose.yml') != '' &&
+        (needs.frontend-build.result == 'success' || needs.frontend-build.result == 'skipped') &&
+        (needs.backend-build.result == 'success' || needs.backend-build.result == 'skipped')
+      }}
+    runs-on: ubuntu-latest
+    needs: [frontend-build, backend-build]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Create .env if template exists
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env
+            sed -i 's/LOG_FORMAT=text/LOG_FORMAT=json/' .env || true
+            sed -i 's/LOG_LEVEL=DEBUG/LOG_LEVEL=INFO/' .env || true
+          fi
+
+      - name: Build and start containers
+        run: docker compose up -d --build
+
+      - name: Show container status
+        run: docker compose ps
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
