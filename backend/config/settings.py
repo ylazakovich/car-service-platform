@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from django.templatetags.static import static
 from django.urls import reverse_lazy
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -106,15 +107,36 @@ _frontend_base = (CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else "http://l
 FRONTEND_URL = os.environ.get("FRONTEND_URL", f"{_frontend_base}/app")
 
 UNFOLD = {
-    "SITE_TITLE": "Car Service Platform Admin",
+    "SITE_TITLE": "Administration Panel",
+    "SITE_HEADER": "Administration Panel",
     "SITE_URL": FRONTEND_URL,
+    "COLORS": {
+        "primary": {
+            "50": "oklch(97% .02 250)",
+            "100": "oklch(93% .05 250)",
+            "200": "oklch(88% .08 250)",
+            "300": "oklch(78% .12 250)",
+            "400": "oklch(68% .16 250)",
+            "500": "oklch(58% .18 250)",
+            "600": "oklch(50% .16 250)",
+            "700": "oklch(42% .14 250)",
+            "800": "oklch(35% .12 250)",
+            "900": "oklch(28% .10 250)",
+            "950": "oklch(20% .06 250)",
+        },
+    },
+    "DASHBOARD_CALLBACK": "config.admin_callbacks.dashboard_callback",
+    "STYLES": [
+        lambda request: static("unfold/sidebar.css"),
+    ],
     "SIDEBAR": {
         "navigation": [
             {
-                "title": "Authentication and Authorization",
+                "title": "Authorization",
                 "collapsible": True,
                 "items": [
                     {"title": "Groups", "link": reverse_lazy("admin:auth_group_changelist")},
+                    {"title": "Users", "link": reverse_lazy("admin:users_user_changelist")},
                 ],
             },
             {
@@ -123,13 +145,6 @@ UNFOLD = {
                 "items": [
                     {"title": "Customers", "link": reverse_lazy("admin:customers_customer_changelist")},
                     {"title": "Vehicles", "link": reverse_lazy("admin:vehicles_vehicle_changelist")},
-                ],
-            },
-            {
-                "title": "Access",
-                "collapsible": True,
-                "items": [
-                    {"title": "Users", "link": reverse_lazy("admin:users_user_changelist")},
                 ],
             },
         ],
