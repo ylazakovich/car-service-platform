@@ -6,14 +6,31 @@ import { ClientPortalPage } from "./pages/ClientPortalPage";
 import { LoginPage } from "./pages/LoginPage";
 import { StaffHomePage } from "./pages/StaffHomePage";
 
-export type StaffSection = "dashboard" | "customers" | "vehicles" | "repairs";
+export type StaffSection =
+  | "dashboard"
+  | "customers"
+  | "vehicles"
+  | "repairs"
+  | "purchases"
+  | "users";
 
 const sectionLabels: Record<StaffSection, string> = {
   dashboard: "Dashboard",
   customers: "Customers",
   vehicles: "Vehicles",
   repairs: "Repairs",
+  purchases: "Purchases",
+  users: "Users",
 };
+
+const sectionOrder: StaffSection[] = [
+  "dashboard",
+  "customers",
+  "vehicles",
+  "repairs",
+  "purchases",
+  "users",
+];
 
 function StaffShell() {
   const { user, logout } = useAuth();
@@ -32,7 +49,7 @@ function StaffShell() {
           </div>
 
           <nav className="shell-nav" aria-label="Staff sections">
-            {(Object.keys(sectionLabels) as StaffSection[]).map((section) => (
+            {sectionOrder.map((section) => (
               <button
                 key={section}
                 type="button"
@@ -40,7 +57,6 @@ function StaffShell() {
                 onClick={() => setActiveSection(section)}
               >
                 <span>{sectionLabels[section]}</span>
-                <small>{section === "dashboard" ? "Today" : section === "repairs" ? "Next" : "Registry"}</small>
               </button>
             ))}
           </nav>
@@ -53,15 +69,15 @@ function StaffShell() {
               the primary direction.
             </p>
             <div className="sidebar-actions">
-              <button type="button" className="button" onClick={() => setActiveSection("customers")}>
-                New Customer
-              </button>
               <button
                 type="button"
-                className="button button-ghost"
+                className="button"
                 onClick={() => setActiveSection("vehicles")}
               >
                 Add Vehicle
+              </button>
+              <button type="button" className="button button-ghost" onClick={() => setActiveSection("customers")}>
+                New Customer
               </button>
             </div>
           </section>

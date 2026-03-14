@@ -77,14 +77,29 @@ describe("bootstrap application", () => {
   });
 
   it("renders the staff workspace for an authenticated user", async () => {
+    const user = userEvent.setup();
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
     expect(screen.getByText("Car Service Platform")).toBeInTheDocument();
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
-    expect(screen.getAllByText(/Customers and vehicles/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Customers" }));
     expect(await screen.findByRole("heading", { name: "Alex Johnson", level: 4 })).toBeInTheDocument();
+    await user.click(screen.getByRole("heading", { name: "Alex Johnson", level: 4 }));
+    expect(await screen.findByRole("heading", { name: "Alex Johnson", level: 3 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Vehicles" }));
     expect(await screen.findByRole("heading", { name: "WB 1234K", level: 4 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    expect(await screen.findByRole("heading", { name: "Repair List", level: 3 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 3 })).toBeInTheDocument();
+
+    expect(screen.getByRole("button", { name: "Users" })).toBeInTheDocument();
   });
 
   it("renders a public client portal route", async () => {

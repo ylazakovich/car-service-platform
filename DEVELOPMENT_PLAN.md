@@ -6,7 +6,7 @@
 - Active plan owner: `planner` + `architect`
 - Last updated: `2026-03-14`
 - Archive: `docs/planning/archive/`
-- Status: `m1 core records in progress`
+- Status: `m2 repair operations prototype in progress`
 
 ## 1) Product Goal
 Собрать с нуля устойчивую `car-service-platform` для учета работ автосервиса, работы с клиентами и автомобилями, ведения истории ремонтов и формирования итоговых документов.
@@ -30,6 +30,10 @@
 - Поднят минимальный runnable skeleton: `backend`, `frontend`, `docker-compose`, `.env.example`, `start/stop` scripts.
 - Active planning docs переведены из template-состояния в стартовый project foundation.
 - Реализован первый доменный slice: `Customer + Vehicle` с backend CRUD, Django Admin и staff UI registries.
+- Staff frontend получил рабочие экраны `Customers`, `Vehicles`, `Repairs`, `Purchases`, `Users` с локальными demo flows для валидации продукта.
+- Во frontend реализован repair prototype: intake form, tracking code формата `TOR-*`, выбор мастера, фото `before/during/after`, статусы и modal repair card.
+- Во frontend реализован purchases prototype: optional vehicle / tracking / sale price, сценарий закупки в склад без привязки к ремонту.
+- `Dashboard` пока оставлен намеренно пустым до фиксации итоговой операционной структуры.
 
 ## 3) Product Scope (MVP Baseline)
 MVP первой версии должен включать:
@@ -82,16 +86,16 @@ MVP первой версии должен включать:
 - отдельные блоки для работ, запчастей и итогов
 
 ## 4) Active Milestone
-`M1: Core Records`
+`M2: Repair Operations Prototype`
 
-Цель milestone: перевести проект от bootstrap skeleton к первому рабочему staff flow для клиентов и автомобилей.
+Цель milestone: перевести проект от базовых реестров к первому рабочему staff flow для ремонтов, закупок и назначения мастеров.
 
 Milestone включает:
-1. Реализовать базовые модели `Customer` и `Vehicle`.
-2. Поднять staff CRUD для клиентов и автомобилей в `/app`.
-3. Зафиксировать управляемый справочник автомобилей как baseline для выбора марки, модели и года.
-4. Зафиксировать source-of-truth по владению автомобилем и базовым ограничениям удаления.
-5. Подготовить переход к `RepairOrder` и tracking flow как следующему vertical slice.
+1. Довести `RepairOrder` от frontend prototype до backend-backed flow.
+2. Зафиксировать source-of-truth по статусам ремонта, tracking code `TOR-*`, фото и note history.
+3. Реализовать назначение мастера на ремонт как часть операционного потока.
+4. Довести `Purchases` до реального учета деталей с привязкой или без привязки к ремонту.
+5. Подготовить переход к полным карточкам автомобиля и клиента с реальной историей ремонтов.
 
 ## 5) Delivery Roadmap
 
@@ -108,17 +112,21 @@ Milestone включает:
 - связи клиент -> автомобили
 - базовые CRUD-операции
 - глобальный поиск по номеру машины и клиенту
-- current status: `in progress`, customer and vehicle registries already implemented
+- current status: `completed in current baseline`, backend CRUD и staff registry UI уже реализованы
 
 ### M2: Repair Operations
 - создание ремонта
 - tracking code и публичная проверка статуса по коду
+- baseline статусы `new`, `in_progress`, `waiting_parts`, `completed`
 - фото процесса
 - mobile-friendly photo capture/upload/delete flow
+- note history по ремонту с авторством
+- назначение мастера на ремонт
 - работы
 - запчасти
 - поставщики
 - история ремонта и карточка автомобиля
+- current status: `frontend prototype in progress`, persistence и backend API еще впереди
 
 ### M3: Reporting And Documents
 - месячная история работ
@@ -127,15 +135,14 @@ Milestone включает:
 - подготовка PDF-генерации, если она подтверждена как обязательная
 
 ## 6) Acceptance Criteria
-Milestone `M0` считается завершенным, если:
-1. Зафиксирован продуктовый baseline для MVP без критичных пробелов.
-2. Понятны ключевые сущности: клиент, автомобиль, ремонт, работа, запчасть, поставщик, акт.
-3. Описан основной пользовательский поток: `клиент -> автомобиль -> ремонт -> tracking/status -> работы/запчасти -> акт`.
-4. Есть зафиксированный active backlog с задачами `NOW/NEXT/LATER`.
-5. `DOMAIN_RULES.md` покрывает базовые инварианты и lifecycle первой версии.
-6. `TECH_STACK.md` фиксирует stack, access model и reusable foundation из `f-cmr-template`.
-7. В репозитории есть минимально запускаемая структура, на которую реально опирается CI.
-8. Команда может использовать `AGENTS.md` и `.agents/` как стандартный workflow.
+Milestone `M2` считается завершенным, если:
+1. Можно создать ремонт для автомобиля и клиента через backend-backed flow.
+2. Для ремонта есть tracking code формата `TOR-*`, статус, мастер и issue notes.
+3. Для ремонта можно хранить фото `before`, `during`, `after`.
+4. Repair notes ведутся как append-only история с автором и временем создания.
+5. Закупки деталей можно вести как с привязкой к ремонту, так и в запас без привязки.
+6. Карточка клиента и автомобиля показывает реальные ремонты, а не только demo placeholders.
+7. Frontend и backend покрыты smoke-check сценарием `customer -> vehicle -> repair -> update status -> purchase`.
 
 ## 7) Constraints
 - Не раздувать active-файлы историей.
@@ -162,6 +169,7 @@ Milestone `M0` считается завершенным, если:
 - может ли один ремонт содержать несколько отдельных проблем
 - нужен ли VIN API enrichment после MVP
 - нужен ли учет сотрудников, выполняющих работы
+- нужно ли разделять note types на `client complaint`, `master note`, `admin note`
 - нужен ли учет оплат клиента
 - нужен ли склад запчастей
 - нужны ли уведомления о ТО и ремонтах
