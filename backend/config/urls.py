@@ -1,7 +1,13 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
 from foundation.views import HealthView, VersionView
+
+admin.site.site_header = "Car Service Platform Admin"
+admin.site.site_title = "Car Service Platform"
+admin.site.index_title = "Operational control center"
+admin.site.site_url = settings.FRONTEND_URL
 
 urlpatterns = [
     path("admin/", admin.site.urls),

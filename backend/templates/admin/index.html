@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+{% load i18n log %}
+
+{% block bodyclass %}{{ block.super }} admin-dashboard{% endblock %}
+
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block content %}
+  {% get_admin_log 6 as admin_log for_user user %}
+
+  <div class="admin-dashboard-layout">
+    <section class="admin-app-list">
+      {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+    </section>
+
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-card">
+        <h3>{% trans 'Recent actions' %}</h3>
+        {% if admin_log %}
+          <ul class="admin-log-list">
+            {% for entry in admin_log %}
+              <li class="admin-log-item">
+                <span class="admin-log-type">{{ entry.content_type|default:"System" }}</span>
+                {% if entry.is_deletion or not entry.get_admin_url %}
+                  <strong>{{ entry.object_repr }}</strong>
+                {% else %}
+                  <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                {% endif %}
+                <span class="admin-log-time">{{ entry.action_time|date:"Y-m-d H:i" }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="admin-sidebar-empty">{% trans 'No recent actions yet.' %}</p>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+{% endblock %}

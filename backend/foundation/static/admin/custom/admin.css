@@ -1,0 +1,376 @@
+/* Admin: same look as main app (localhost:4173/app), simple structure */
+
+:root {
+  --admin-bg:
+    radial-gradient(circle at top left, rgba(242, 126, 37, 0.2), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(106, 140, 158, 0.22), transparent 35%),
+    linear-gradient(135deg, #0c1217 0%, #17232c 54%, #24343f 100%);
+  --admin-surface: rgba(12, 18, 23, 0.7);
+  --admin-border: rgba(255, 255, 255, 0.09);
+  --admin-text: #e7ebee;
+  --admin-muted: #aebac2;
+  --admin-accent: #f4ad41;
+  --admin-accent-strong: #e86f25;
+  --admin-link: #93d2ff;
+  --body-bg: #0c1217;
+  --body-fg: #e7ebee;
+  --body-quiet-color: #aebac2;
+  --body-medium-color: #c9d4da;
+  --hairline-color: rgba(255, 255, 255, 0.09);
+  --header-color: #e7ebee;
+  --header-branding-color: #e7ebee;
+  --header-bg: rgba(12, 18, 23, 0.82);
+  --header-link-color: #e7ebee;
+  --breadcrumbs-fg: #aebac2;
+  --breadcrumbs-link-fg: #e7ebee;
+  --breadcrumbs-bg: transparent;
+  --link-fg: #93d2ff;
+  --link-hover-color: #ffd48f;
+  --link-selected-fg: #ffd48f;
+  --button-fg: #10181f;
+  --button-bg: #f4ad41;
+  --button-hover-bg: #ffbf5b;
+  --default-button-bg: #f4ad41;
+  --default-button-hover-bg: #ffbf5b;
+  --close-button-bg: transparent;
+  --close-button-hover-bg: rgba(255, 255, 255, 0.08);
+  --close-button-fg: #e7ebee;
+  --message-success-bg: rgba(80, 177, 124, 0.18);
+  --message-warning-bg: rgba(244, 173, 65, 0.2);
+  --message-error-bg: rgba(203, 56, 43, 0.24);
+  --darkened-bg: rgba(255, 255, 255, 0.03);
+}
+
+body,
+body.login {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+a:link,
+a:visited {
+  color: var(--admin-link);
+}
+
+a:hover,
+a:focus {
+  color: var(--link-hover-color);
+}
+
+#container {
+  background: transparent;
+}
+
+#header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--admin-border);
+  backdrop-filter: blur(18px);
+}
+
+#header a:link,
+#header a:visited {
+  color: var(--admin-text);
+}
+
+#site-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+#site-name a {
+  color: var(--admin-text);
+}
+
+#user-tools {
+  font-size: 0.875rem;
+  color: var(--admin-muted);
+}
+
+div.breadcrumbs {
+  background: transparent;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-muted);
+}
+
+#content {
+  padding: 1.5rem;
+}
+
+#content-main,
+#content-related,
+.module,
+.inline-group,
+.submit-row,
+#changelist-filter,
+#changelist .actions,
+.paginator,
+.results {
+  border-radius: 8px;
+}
+
+#content-related,
+.module,
+.inline-group,
+#changelist-filter,
+#changelist .actions,
+.submit-row,
+.results,
+.admin-sidebar-card,
+.login #container {
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  backdrop-filter: blur(12px);
+}
+
+/* Dashboard: centered layout, main column uses width properly */
+.admin-dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  gap: 1.5rem;
+  align-items: start;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.admin-app-list {
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-app-list .module {
+  width: 100%;
+  overflow: hidden;
+}
+
+.admin-app-list .module table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.admin-app-list .module caption {
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.admin-app-list .module th {
+  width: auto;
+  text-align: left;
+  padding-right: 1rem;
+  vertical-align: middle;
+}
+
+.admin-app-list .module td {
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+  padding-left: 1rem;
+  vertical-align: middle;
+}
+
+.admin-app-list .module td a {
+  display: inline-block;
+  margin-left: 0.75rem;
+  text-decoration: none;
+}
+
+.admin-app-list .module td a:first-child {
+  margin-left: 0;
+}
+
+.admin-sidebar-card {
+  padding: 1rem 1.25rem;
+}
+
+.admin-sidebar-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+.admin-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-log-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 0.875rem;
+}
+
+.admin-log-item:last-child {
+  border-bottom: 0;
+}
+
+.admin-log-type {
+  display: block;
+  color: var(--admin-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-log-item a,
+.admin-log-item strong {
+  color: var(--admin-text);
+}
+
+.admin-log-time {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.admin-sidebar-empty {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 0.875rem;
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--admin-text);
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--admin-border);
+}
+
+tr:last-child td,
+tr:last-child th {
+  border-bottom: 0;
+}
+
+thead th,
+tfoot td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+tbody tr:hover td,
+tbody tr:hover th {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+input,
+textarea,
+select,
+.vTextField,
+.vLargeTextField {
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--admin-text);
+  padding: 0.5rem 0.65rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.vTextField:focus,
+.vLargeTextField:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 2px rgba(244, 173, 65, 0.2);
+}
+
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--admin-accent-strong), var(--admin-accent));
+  color: #10181f;
+  font-weight: 700;
+  padding: 0.6rem 1rem;
+}
+
+.button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+a.button:hover {
+  background: linear-gradient(135deg, #eb7a2d, #ffbf5b);
+}
+
+.button.cancel-link,
+a.deletelink,
+.submit-row a.deletelink {
+  border: 1px solid var(--admin-border);
+  background: transparent;
+  color: var(--admin-text);
+}
+
+.submit-row {
+  padding: 0.75rem 1rem;
+}
+
+ul.messagelist li {
+  border-radius: 6px;
+}
+
+#nav-sidebar {
+  background: rgba(9, 14, 18, 0.8);
+  border-right: 1px solid var(--admin-border);
+}
+
+#nav-sidebar .current-app .section,
+#nav-sidebar .current-model {
+  background: rgba(244, 173, 65, 0.1);
+}
+
+/* Login */
+body.login #container {
+  width: min(100%, 420px);
+  margin-top: 5vh;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+body.login #content {
+  padding: 1.5rem;
+}
+
+body.login .form-row {
+  padding: 0;
+  border: 0;
+  margin-bottom: 1rem;
+}
+
+body.login .submit-row {
+  padding: 0;
+  margin-top: 1rem;
+  border: 0;
+  background: transparent;
+}
+
+body.login .submit-row input {
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .admin-dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  #content {
+    padding: 1rem;
+  }
+}
