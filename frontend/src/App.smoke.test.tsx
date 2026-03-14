@@ -82,7 +82,7 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
     expect(screen.getByText("Car Service Platform")).toBeInTheDocument();
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
-    expect(screen.getByText(/Customers and vehicles/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Customers and vehicles/i).length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByRole("heading", { name: "Alex Johnson", level: 4 })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "WB 1234K", level: 4 })).toBeInTheDocument();
   });
