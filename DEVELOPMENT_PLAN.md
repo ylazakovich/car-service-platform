@@ -6,7 +6,7 @@
 - Active plan owner: `planner` + `architect`
 - Last updated: `2026-03-13`
 - Archive: `docs/planning/archive/`
-- Status: `project bootstrap`
+- Status: `m1 core records in progress`
 
 ## 1) Product Goal
 Собрать с нуля устойчивую `car-service-platform` для учета работ автосервиса, работы с клиентами и автомобилями, ведения истории ремонтов и формирования итоговых документов.
@@ -27,6 +27,7 @@
 - Зафиксирован рекомендуемый technical baseline в `TECH_STACK.md`.
 - Поднят минимальный runnable skeleton: `backend`, `frontend`, `docker-compose`, `.env.example`, `start/stop` scripts.
 - Active planning docs переведены из template-состояния в стартовый project foundation.
+- Реализован первый доменный slice: `Customer + Vehicle` с backend CRUD, Django Admin и staff UI registries.
 
 ## 3) Product Scope (MVP Baseline)
 MVP первой версии должен включать:
@@ -71,17 +72,15 @@ MVP первой версии должен включать:
 - отдельные блоки для работ, запчастей и итогов
 
 ## 4) Active Milestone
-`M0: Product Foundation + Delivery Skeleton`
+`M1: Core Records`
 
-Цель milestone: подготовить проект так, чтобы можно было начать разработку с нулевой точки без повторного переосмысления продукта и базовой архитектуры.
+Цель milestone: перевести проект от bootstrap skeleton к первому рабочему staff flow для клиентов и автомобилей.
 
 Milestone включает:
-1. Зафиксировать структуру MVP, ключевые страницы и основной пользовательский сценарий.
-2. Утвердить core entities и доменные связи.
-3. Зафиксировать lifecycle ремонта и минимальный набор статусов.
-4. Утвердить stack, разделение `admin / staff app / client portal` и контракты между backend/frontend.
-5. Подготовить минимальный skeleton проекта, совместимый с CI, с учетом выбранного stack и access model.
-6. Разбить дальнейшую разработку на milestones `M1-M3`.
+1. Реализовать базовые модели `Customer` и `Vehicle`.
+2. Поднять staff CRUD для клиентов и автомобилей в `/app`.
+3. Зафиксировать source-of-truth по владению автомобилем и базовым ограничениям удаления.
+4. Подготовить переход к `RepairOrder` как следующему vertical slice.
 
 ## 5) Delivery Roadmap
 
@@ -97,6 +96,7 @@ Milestone включает:
 - связи клиент -> автомобили
 - базовые CRUD-операции
 - глобальный поиск по номеру машины и клиенту
+- current status: `in progress`, customer and vehicle registries already implemented
 
 ### M2: Repair Operations
 - создание ремонта

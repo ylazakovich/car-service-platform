@@ -1,0 +1,58 @@
+/**
+ * Sidebar: separate section titles from items so they don’t blend.
+ * Better contrast and clear hierarchy.
+ */
+
+/* Section titles – stand out from items */
+#nav-sidebar h2,
+#nav-sidebar [data-unfold-title],
+#nav-sidebar .sidebar-section-title,
+#nav-sidebar > div > div > button {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Item links – clearly “inside” the section, not the title */
+#nav-sidebar ul li a,
+#nav-sidebar a[href*="changelist"],
+#nav-sidebar .sidebar-item a {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  margin: 0.125rem 0.25rem;
+  border-radius: 0.375rem;
+  border-left: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+#nav-sidebar ul li a:hover,
+#nav-sidebar a[href*="changelist"]:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-left-color: oklch(58% 0.18 250);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Current/active item */
+#nav-sidebar ul li a[href*="changelist"].current,
+#nav-sidebar .current-model a {
+  background: rgba(255, 255, 255, 0.06);
+  border-left-color: oklch(58% 0.18 250);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Unfold / Tailwind sidebar if different structure */
+aside a[href*="changelist"],
+[data-sidebar] a[href*="changelist"] {
+  padding: 0.5rem 0.75rem;
+  margin: 0.125rem 0.25rem;
+  border-radius: 0.375rem;
+  border-left: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.88);
+}
+aside a[href*="changelist"]:hover,
+[data-sidebar] a[href*="changelist"]:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-left-color: oklch(58% 0.18 250);
+}

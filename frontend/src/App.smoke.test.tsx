@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
@@ -8,6 +8,8 @@ import { AuthProvider } from "./context/AuthContext";
 const mockApi = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
   interceptors: {
     response: { use: vi.fn() },
     request: { use: vi.fn() },
@@ -15,6 +17,10 @@ const mockApi = vi.hoisted(() => ({
 }));
 
 vi.mock("./api/client", () => ({ default: mockApi }));
+
+afterEach(() => {
+  cleanup();
+});
 
 function renderApp(route = "/app") {
   window.history.pushState({}, "Test page", route);
@@ -39,11 +45,35 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "manager", is_staff: false },
         });
       }
-      return Promise.resolve({ data: {} });
+      if (url === "/customers/") {
+        return Promise.resolve({
+          data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
+        });
+      }
+      if (url === "/vehicles/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              customer: { id: 1, full_name: "Alex Johnson" },
+              license_plate: "WB 1234K",
+              make: "Toyota",
+              model: "Corolla",
+              year: 2018,
+              vin: "",
+              color: "White",
+              notes: "",
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ data: [] });
     });
     mockApi.post.mockResolvedValue({
       data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "manager", is_staff: false },
     });
+    mockApi.patch.mockResolvedValue({ data: {} });
+    mockApi.delete.mockResolvedValue({ data: {} });
   });
 
   it("renders the staff workspace for an authenticated user", async () => {
@@ -52,6 +82,9 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
     expect(screen.getByText("Car Service Platform")).toBeInTheDocument();
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
+    expect(screen.getAllByText(/Customers and vehicles/i).length).toBeGreaterThanOrEqual(1);
+    expect(await screen.findByRole("heading", { name: "Alex Johnson", level: 4 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "WB 1234K", level: 4 })).toBeInTheDocument();
   });
 
   it("renders a public client portal route", async () => {
@@ -69,7 +102,10 @@ describe("bootstrap application", () => {
       if (url === "/auth/me") {
         return Promise.reject(new Error("unauthorized"));
       }
-      return Promise.resolve({ data: {} });
+      if (url === "/customers/" || url === "/vehicles/") {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: [] });
     });
 
     const user = userEvent.setup();
