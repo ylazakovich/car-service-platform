@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from django.urls import reverse_lazy
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
@@ -11,6 +13,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
 
 INSTALLED_APPS = [
+    "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -101,6 +104,37 @@ CSRF_TRUSTED_ORIGINS = [
 # URL of the main frontend app (used e.g. for admin "View site" link)
 _frontend_base = (CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else "http://localhost:4173").rstrip("/")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", f"{_frontend_base}/app")
+
+UNFOLD = {
+    "SITE_TITLE": "Car Service Platform Admin",
+    "SITE_URL": FRONTEND_URL,
+    "SIDEBAR": {
+        "navigation": [
+            {
+                "title": "Authentication and Authorization",
+                "collapsible": True,
+                "items": [
+                    {"title": "Groups", "link": reverse_lazy("admin:auth_group_changelist")},
+                ],
+            },
+            {
+                "title": "Platform",
+                "collapsible": True,
+                "items": [
+                    {"title": "Customers", "link": reverse_lazy("admin:customers_customer_changelist")},
+                    {"title": "Vehicles", "link": reverse_lazy("admin:vehicles_vehicle_changelist")},
+                ],
+            },
+            {
+                "title": "Access",
+                "collapsible": True,
+                "items": [
+                    {"title": "Users", "link": reverse_lazy("admin:users_user_changelist")},
+                ],
+            },
+        ],
+    },
+}
 
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
