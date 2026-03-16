@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
@@ -32,9 +32,50 @@ const sectionOrder: StaffSection[] = [
   "users",
 ];
 
+const staffSectionStorageKey = "staff-active-section";
+
+function readStoredStaffSection(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const storage = window.localStorage as { getItem?: (key: string) => string | null } | undefined;
+  if (typeof storage?.getItem !== "function") {
+    return null;
+  }
+
+  return storage.getItem(staffSectionStorageKey);
+}
+
+function writeStoredStaffSection(section: StaffSection) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const storage = window.localStorage as { setItem?: (key: string, value: string) => void } | undefined;
+  if (typeof storage?.setItem !== "function") {
+    return;
+  }
+
+  storage.setItem(staffSectionStorageKey, section);
+}
+
+function getInitialStaffSection(): StaffSection {
+  const storedSection = readStoredStaffSection();
+  if (storedSection && sectionOrder.includes(storedSection as StaffSection)) {
+    return storedSection as StaffSection;
+  }
+
+  return "dashboard";
+}
+
 function StaffShell() {
   const { user, logout } = useAuth();
-  const [activeSection, setActiveSection] = useState<StaffSection>("dashboard");
+  const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
+
+  useEffect(() => {
+    writeStoredStaffSection(activeSection);
+  }, [activeSection]);
 
   return (
     <div className="shell">
