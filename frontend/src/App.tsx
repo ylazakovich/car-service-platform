@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
@@ -6,18 +6,76 @@ import { ClientPortalPage } from "./pages/ClientPortalPage";
 import { LoginPage } from "./pages/LoginPage";
 import { StaffHomePage } from "./pages/StaffHomePage";
 
-export type StaffSection = "dashboard" | "customers" | "vehicles" | "repairs";
+export type StaffSection =
+  | "dashboard"
+  | "customers"
+  | "vehicles"
+  | "repairs"
+  | "purchases"
+  | "users";
 
 const sectionLabels: Record<StaffSection, string> = {
   dashboard: "Dashboard",
   customers: "Customers",
   vehicles: "Vehicles",
   repairs: "Repairs",
+  purchases: "Purchases",
+  users: "Users",
 };
+
+const sectionOrder: StaffSection[] = [
+  "dashboard",
+  "customers",
+  "vehicles",
+  "repairs",
+  "purchases",
+  "users",
+];
+
+const staffSectionStorageKey = "staff-active-section";
+
+function readStoredStaffSection(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const storage = window.localStorage as { getItem?: (key: string) => string | null } | undefined;
+  if (typeof storage?.getItem !== "function") {
+    return null;
+  }
+
+  return storage.getItem(staffSectionStorageKey);
+}
+
+function writeStoredStaffSection(section: StaffSection) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const storage = window.localStorage as { setItem?: (key: string, value: string) => void } | undefined;
+  if (typeof storage?.setItem !== "function") {
+    return;
+  }
+
+  storage.setItem(staffSectionStorageKey, section);
+}
+
+function getInitialStaffSection(): StaffSection {
+  const storedSection = readStoredStaffSection();
+  if (storedSection && sectionOrder.includes(storedSection as StaffSection)) {
+    return storedSection as StaffSection;
+  }
+
+  return "dashboard";
+}
 
 function StaffShell() {
   const { user, logout } = useAuth();
-  const [activeSection, setActiveSection] = useState<StaffSection>("dashboard");
+  const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
+
+  useEffect(() => {
+    writeStoredStaffSection(activeSection);
+  }, [activeSection]);
 
   return (
     <div className="shell">
@@ -32,7 +90,7 @@ function StaffShell() {
           </div>
 
           <nav className="shell-nav" aria-label="Staff sections">
-            {(Object.keys(sectionLabels) as StaffSection[]).map((section) => (
+            {sectionOrder.map((section) => (
               <button
                 key={section}
                 type="button"
@@ -40,7 +98,6 @@ function StaffShell() {
                 onClick={() => setActiveSection(section)}
               >
                 <span>{sectionLabels[section]}</span>
-                <small>{section === "dashboard" ? "Today" : section === "repairs" ? "Next" : "Registry"}</small>
               </button>
             ))}
           </nav>
@@ -53,15 +110,15 @@ function StaffShell() {
               the primary direction.
             </p>
             <div className="sidebar-actions">
-              <button type="button" className="button" onClick={() => setActiveSection("customers")}>
-                New Customer
-              </button>
               <button
                 type="button"
-                className="button button-ghost"
+                className="button"
                 onClick={() => setActiveSection("vehicles")}
               >
                 Add Vehicle
+              </button>
+              <button type="button" className="button button-ghost" onClick={() => setActiveSection("customers")}>
+                New Customer
               </button>
             </div>
           </section>

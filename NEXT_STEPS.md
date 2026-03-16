@@ -2,26 +2,29 @@
 
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
-- Last updated: `2026-03-13`
-- Status: `m1 core records in progress`
+- Last updated: `2026-03-14`
+- Status: `m2 repair operations prototype in progress`
 
 ## NOW
-- [ ] Подтвердить MVP baseline, зафиксированный в `DEVELOPMENT_PLAN.md`, как рабочий scope первой версии.
-- [ ] Утвердить core entities и связи из `DOMAIN_RULES.md`: `Customer`, `Vehicle`, `RepairOrder`, `RepairWork`, `RepairPart`, `Supplier`, `CompletionAct`, `RepairPhoto`.
-- [ ] Подтвердить основной lifecycle ремонта и минимальные статусы первой версии.
-- [ ] Подтвердить `TECH_STACK.md` как baseline: `Django + DRF + React + Vite + PostgreSQL`.
-- [ ] Утвердить access model: `Django Admin` для служебного управления, `Staff App` для сотрудников, `Client Portal` для клиентов.
-- [ ] Принять решения по открытым вопросам: `PDF`, `email клиента`, `multiple problems per repair`, `payments`, `employees`, `inventory`, `notifications`.
-- [ ] Подготовить список reusable technical blocks, которые переносим из `f-cmr-template`, без переноса invoice domain logic.
-- [ ] Провалидировать bootstrap foundation в ветке `feature/bootstrap-foundation` и решить, что идет в первый merge.
+- [ ] Поднять backend-модели и API для `RepairOrder`, repair statuses, tracking code `TOR-*`, assigned master и photo groups.
+- [ ] Поднять backend-модели и API для `Purchases` с optional linkage на repair/vehicle и сценарием закупки в запас.
+- [ ] Перевести frontend repair modal с demo-state на реальное сохранение в backend.
+- [ ] Перевести frontend purchases screen с demo-state на реальное сохранение в backend.
+- [ ] Зафиксировать note policy: issue note read-only, repair notes append-only с автором/временем, delete only by author.
+- [ ] Реализовать реальный список мастеров и роли вместо placeholder credentials.
+- [ ] Подтвердить или скорректировать baseline repair statuses `new`, `in_progress`, `waiting_parts`, `completed` и allowed transitions перед backend rollout.
+- [ ] Принять решения по открытым вопросам: `PDF`, `email клиента`, `multiple problems per repair`, `payments`, `inventory`, `notifications`.
 
 ## NEXT
 - [x] Реализовать базовые модели и CRUD для клиентов и автомобилей.
-- [ ] Реализовать создание ремонта с описанием проблемы, датой обращения и комментариями.
-- [ ] Реализовать добавление работ, запчастей, поставщиков и фотографий в ремонт.
-- [ ] Подготовить карточку автомобиля с историей ремонтов.
-- [ ] Подготовить карточку клиента со списком автомобилей и историей обращений.
-- [ ] Добавить первый end-to-end flow: `создать клиента -> добавить авто -> создать ремонт`.
+- [x] Реализовать frontend prototype для `Repairs`, `Purchases` и `Users`.
+- [x] Добавить demo tracking flow с кодами формата `TOR-*`.
+- [x] Добавить frontend note history и выбор мастера в repair modal.
+- [ ] Реализовать справочник автомобилей для выбора марки, модели, варианта и года.
+- [ ] Реализовать публичную страницу/экран проверки статуса ремонта без client account.
+- [ ] Подготовить карточку автомобиля с реальной историей ремонтов.
+- [ ] Подготовить карточку клиента с реальной историей обращений.
+- [ ] Добавить первый end-to-end flow: `создать клиента -> добавить авто -> создать ремонт -> обновить статус -> добавить закупку`.
 - [ ] Добавить smoke tests для backend/frontend и включить их в CI.
 
 ## LATER
@@ -34,4 +37,4 @@
 
 ## Notes
 - Этот файл намеренно короткий.
-- Пока проект на нулевой стадии, `NOW` должен закрыть не код ради кода, а продуктовый и архитектурный baseline.
+- Текущий переходный этап: frontend prototype уже собран, `NOW` должен перевести его в backend-backed операционный поток без потери согласованных правил.
