@@ -2,7 +2,7 @@
 
 Технический baseline для `car-service-platform`.
 
-- Last updated: `2026-03-13`
+- Last updated: `2026-03-14`
 - Status: `approved baseline for project bootstrap`
 
 ## 1) Recommended Stack
@@ -42,12 +42,12 @@
 
 1. `backend/`
 - Django monolith
-- REST API для staff UI и client portal
+- REST API для staff UI и публичного tracking flow
 - Django Admin только для служебного управления
 
 2. `frontend/`
 - Один React application
-- Внутри приложения отдельные маршруты и layouts для staff и client portal
+- Внутри приложения отдельные маршруты и layouts для staff и публичного tracking flow
 
 3. `db/`
 - PostgreSQL как единственный source of truth
@@ -83,24 +83,24 @@
 - поставщики
 - акты
 
-### C. Client Portal (`/portal/*` или `/track/*`)
+### C. Public Tracking View (`/track/*`)
 Для клиентов:
-- просмотр статуса ремонта
-- просмотр своей машины
-- просмотр фото и итоговых документов
-- доступ только к своим данным
+- просмотр статуса ремонта по `tracking code`
+- просмотр ограниченного набора данных по конкретному ремонту
+- просмотр фото и итоговых документов, если это разрешено продуктовым правилом
+- без отдельного клиентского аккаунта и без общего кабинета клиента
 
 ## 4) Authentication Strategy
 
 ### Staff
 - login/password
 - session auth или JWT в HttpOnly cookies
-- staff и admin не должны логиниться через client portal flow
+- staff и admin не должны логиниться через public tracking flow
 
 ### Clients
 - доступ по уникальному коду или signed token
 - код должен быть длинным и случайным, а не последовательным ID
-- доступ должен быть ограничен scope конкретного клиента, автомобиля или ремонта
+- доступ должен быть ограничен scope конкретного ремонта или акта
 
 ## 5) Why This Stack
 
@@ -143,6 +143,7 @@
 ### Photo Storage
 - размеры файлов
 - mobile upload UX
+- открытие камеры с телефона как основной staff-сценарий
 - EXIF/privacy cleanup
 - retention rules
 
@@ -179,7 +180,7 @@
 ## 9) Initial Technical Decisions To Confirm
 
 - `session auth` vs `JWT in HttpOnly cookies` для staff
-- `portal/<token>` vs `track/<code>` для client access
+- `track/<code>` vs `track/<signed-token>` для client access
 - `MinIO locally + S3 in prod` или сразу единый storage strategy
 - нужен ли `Celery` уже в M1 для фото и документов, или можно отложить
 
