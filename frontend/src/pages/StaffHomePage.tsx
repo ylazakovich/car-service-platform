@@ -548,7 +548,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageProps) {
-  const { user } = useAuth();
+  const { user, isStaff } = useAuth();
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
   const [demoCustomers, setDemoCustomers] = useState<Customer[]>(demoCustomersSeed);
@@ -1644,19 +1644,23 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   <h3 id="customer-modal-title">{selectedCustomer.full_name}</h3>
                 </div>
                 <div className="inline-actions">
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => {
-                      closeCustomerDetailModal();
-                      openCustomerEditModal(selectedCustomer);
-                    }}
-                  >
-                    Edit Customer
-                  </button>
-                  <button type="button" className="button button-danger" onClick={() => void handleCustomerDelete(selectedCustomer)}>
-                    Delete Customer
-                  </button>
+                  {!isStaff && (
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => {
+                        closeCustomerDetailModal();
+                        openCustomerEditModal(selectedCustomer);
+                      }}
+                    >
+                      Edit Customer
+                    </button>
+                  )}
+                  {!isStaff && (
+                    <button type="button" className="button button-danger" onClick={() => void handleCustomerDelete(selectedCustomer)}>
+                      Delete Customer
+                    </button>
+                  )}
                   <button type="button" className="button button-secondary" onClick={closeCustomerDetailModal}>
                     Close
                   </button>
@@ -1796,19 +1800,23 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   <h3 id="vehicle-modal-title">{selectedVehicle.license_plate}</h3>
                 </div>
                 <div className="inline-actions">
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => {
-                      closeVehicleDetailModal();
-                      openVehicleEditModal(selectedVehicle);
-                    }}
-                  >
-                    Edit Vehicle
-                  </button>
-                  <button type="button" className="button button-danger" onClick={() => void handleVehicleDelete(selectedVehicle)}>
-                    Delete Vehicle
-                  </button>
+                  {!isStaff && (
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => {
+                        closeVehicleDetailModal();
+                        openVehicleEditModal(selectedVehicle);
+                      }}
+                    >
+                      Edit Vehicle
+                    </button>
+                  )}
+                  {!isStaff && (
+                    <button type="button" className="button button-danger" onClick={() => void handleVehicleDelete(selectedVehicle)}>
+                      Delete Vehicle
+                    </button>
+                  )}
                   <button type="button" className="button button-secondary" onClick={closeVehicleDetailModal}>
                     Close
                   </button>
@@ -2409,13 +2417,15 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   <h3 id="repair-modal-title">{selectedRepair.vehicle_label}</h3>
                 </div>
                 <div className="inline-actions">
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    onClick={() => handleRepairDelete(selectedRepair)}
-                  >
-                    Delete Repair
-                  </button>
+                  {!isStaff && (
+                    <button
+                      type="button"
+                      className="button button-danger"
+                      onClick={() => handleRepairDelete(selectedRepair)}
+                    >
+                      Delete Repair
+                    </button>
+                  )}
                   <button type="button" className="button button-secondary" onClick={closeRepairModal}>
                     Close
                   </button>
@@ -2479,16 +2489,20 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
                 <label className="repair-status-field">
                   <span>Master</span>
-                  <select
-                    value={repairModalMasterId}
-                    onChange={(event) => setRepairModalMasterId(event.target.value)}
-                  >
-                    {masterProfiles.map((master) => (
-                      <option key={master.id} value={master.id}>
-                        {master.name}
-                      </option>
-                    ))}
-                  </select>
+                  {isStaff ? (
+                    <p>{selectedRepair.master_name}</p>
+                  ) : (
+                    <select
+                      value={repairModalMasterId}
+                      onChange={(event) => setRepairModalMasterId(event.target.value)}
+                    >
+                      {masterProfiles.map((master) => (
+                        <option key={master.id} value={master.id}>
+                          {master.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </label>
 
                 <label className="repair-status-field">

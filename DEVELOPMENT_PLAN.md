@@ -4,9 +4,9 @@
 История и завершенные крупные блоки выносятся в `docs/planning/archive/`.
 
 - Active plan owner: `planner` + `architect`
-- Last updated: `2026-03-14`
+- Last updated: `2026-03-18`
 - Archive: `docs/planning/archive/`
-- Status: `m2 repair operations prototype in progress`
+- Status: `m2 repair operations prototype in progress | staff role separation implemented`
 
 ## 1) Product Goal
 Собрать с нуля устойчивую `car-service-platform` для учета работ автосервиса, работы с клиентами и автомобилями, ведения истории ремонтов и формирования итоговых документов.
@@ -34,6 +34,8 @@
 - Во frontend реализован repair prototype: intake form, tracking code формата `TOR-*`, выбор мастера, фото `before/during/after`, статусы и modal repair card.
 - Во frontend реализован purchases prototype: optional vehicle / tracking / sale price, сценарий закупки в склад без привязки к ремонту.
 - `Dashboard` пока оставлен намеренно пустым до фиксации итоговой операционной структуры.
+- Реализовано разделение ролей: admin видит все данные, staff видит только своих клиентов и их автомобили, навигация staff ограничена вкладками Vehicles и Repairs.
+- Staff ограничен в правах UI: не может редактировать и удалять vehicle/customer записи, не может удалять repair карточки и переназначать мастера.
 
 ## 3) Product Scope (MVP Baseline)
 MVP первой версии должен включать:
@@ -168,7 +170,6 @@ Milestone `M2` считается завершенным, если:
 - нужно ли хранить email клиента
 - может ли один ремонт содержать несколько отдельных проблем
 - нужен ли VIN API enrichment после MVP
-- нужен ли учет сотрудников, выполняющих работы
 - нужно ли разделять note types на `client complaint`, `master note`, `admin note`
 - нужен ли учет оплат клиента
 - нужен ли склад запчастей
@@ -180,3 +181,22 @@ Milestone `M2` считается завершенным, если:
 - Domain rules: `DOMAIN_RULES.md`
 - Technical baseline: `TECH_STACK.md`
 - History: `docs/planning/archive/`
+
+## 11) Access Model
+
+Роли пользователей: `admin`, `staff`. Роль `manager` удалена.
+
+| Role  | Navigation | Data Access |
+|-------|-----------|-------------|
+| admin | все вкладки: dashboard, vehicles, repairs, purchases, users | все клиенты, все автомобили |
+| staff | только vehicles и repairs | только назначенные клиенты (`Customer.assigned_to`) и их автомобили |
+
+Правила:
+- Staff создает клиента → клиент автоматически привязывается к нему (`assigned_to = request.user`)
+- Admin создает клиента → `assigned_to = null` (виден всем admins)
+- Repairs пока frontend-only, фильтрация будет добавлена после бэкенда M2
+
+UI-ограничения для staff:
+- Vehicle detail: скрыты кнопки Edit Vehicle и Delete Vehicle
+- Customer detail: скрыты кнопки Edit Customer и Delete Customer
+- Repair detail: скрыта кнопка Delete Repair, поле Master отображается как текст (без возможности переназначения)

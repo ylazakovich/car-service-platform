@@ -19,6 +19,8 @@ type LoginPayload = {
 type AuthContextValue = {
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  isStaff: boolean;
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -77,6 +79,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       value={{
         user,
         isAuthenticated: Boolean(user),
+        isAdmin: user?.role === "admin",
+        isStaff: user?.role === "staff",
         isLoading,
         login,
         logout,
