@@ -1816,25 +1816,47 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
               </div>
 
               <div className="customer-detail-stack">
-                <div className="detail-card">
-                  <strong>Vehicle Info</strong>
-                  <p>
-                    {selectedVehicle.make} {selectedVehicle.model}
-                    {selectedVehicle.year ? `, ${selectedVehicle.year}` : ""}
-                  </p>
-                  <p>Owner: {selectedVehicle.customer.full_name}</p>
-                  {getVehicleDetails(selectedVehicle).mileage ? (
-                    <p>Mileage: {getVehicleDetails(selectedVehicle).mileage} km</p>
-                  ) : null}
-                  {getVehicleDetails(selectedVehicle).last_service_date ? (
-                    <p>Last Service Date: {getVehicleDetails(selectedVehicle).last_service_date}</p>
-                  ) : null}
-                  {getVehicleDetails(selectedVehicle).added_date ? (
-                    <p>Date Added: {getVehicleDetails(selectedVehicle).added_date}</p>
-                  ) : null}
-                  {selectedVehicle.vin ? <p>VIN: {selectedVehicle.vin}</p> : null}
-                  {selectedVehicle.color ? <p>Color: {selectedVehicle.color}</p> : null}
-                  <p className="meta-line">{selectedVehicle.notes || "No notes yet"}</p>
+                <div className="detail-card vehicle-info-split">
+                  {/* Left: vehicle data */}
+                  <div className="vehicle-info-col">
+                    <strong>Vehicle Info</strong>
+                    <p>
+                      {selectedVehicle.make} {selectedVehicle.model}
+                      {selectedVehicle.year ? `, ${selectedVehicle.year}` : ""}
+                    </p>
+                    {getVehicleDetails(selectedVehicle).mileage ? (
+                      <p>Mileage: {getVehicleDetails(selectedVehicle).mileage} km</p>
+                    ) : null}
+                    {getVehicleDetails(selectedVehicle).last_service_date ? (
+                      <p>Last Service Date: {getVehicleDetails(selectedVehicle).last_service_date}</p>
+                    ) : null}
+                    {getVehicleDetails(selectedVehicle).added_date ? (
+                      <p>Date Added: {getVehicleDetails(selectedVehicle).added_date}</p>
+                    ) : null}
+                    {selectedVehicle.vin ? <p>VIN: {selectedVehicle.vin}</p> : null}
+                    {selectedVehicle.color ? <p>Color: {selectedVehicle.color}</p> : null}
+                    {selectedVehicle.notes ? <p className="meta-line">{selectedVehicle.notes}</p> : null}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="vehicle-info-divider" />
+
+                  {/* Right: owner / customer data */}
+                  <div className="vehicle-info-col">
+                    <strong>Owner</strong>
+                    {(() => {
+                      const owner = customers.find((c) => c.id === selectedVehicle.customer.id) ?? null;
+                      return (
+                        <>
+                          <p>{selectedVehicle.customer.full_name}</p>
+                          {owner?.phone ? <p className="meta-line">📞 {owner.phone}</p> : null}
+                          {owner?.email ? <p className="meta-line">✉ {owner.email}</p> : null}
+                          {owner?.notes ? <p className="meta-line">{owner.notes}</p> : null}
+                          {!owner && <p className="meta-line">Customer details not loaded</p>}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <div className="detail-card">
@@ -2137,7 +2159,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
   function renderRepairsPreview() {
     return (
-      <div className="workspace-stack">
+      <div className="workspace-stack kanban-workspace">
 
         {/* Topbar */}
         <div className="kanban-topbar">
