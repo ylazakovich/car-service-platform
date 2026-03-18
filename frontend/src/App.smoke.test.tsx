@@ -115,21 +115,16 @@ describe("bootstrap application", () => {
     const user = userEvent.setup();
     renderApp("/app");
 
-    await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
-    expect(screen.getByText("Car Service Platform")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    expect(screen.getByText("Internal workspace for the team.")).toBeInTheDocument();
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Customers" }));
-    expect(await screen.findByRole("heading", { name: "Alex Johnson", level: 4 })).toBeInTheDocument();
-    await user.click(screen.getByRole("heading", { name: "Alex Johnson", level: 4 }));
-    expect(await screen.findByRole("heading", { name: "Alex Johnson", level: 3 })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
     expect(await screen.findByRole("heading", { name: "WB 1234K", level: 4 })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Repairs" }));
-    expect(await screen.findByRole("heading", { name: "Repair List", level: 3 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Kanban Board", level: 2 })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 3 })).toBeInTheDocument();
@@ -141,7 +136,7 @@ describe("bootstrap application", () => {
     window.localStorage.setItem("staff-active-section", "purchases");
     renderApp("/app");
 
-    await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 3 })).toBeInTheDocument();
   });
 
@@ -149,17 +144,12 @@ describe("bootstrap application", () => {
     const user = userEvent.setup();
     renderApp("/app");
 
-    await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
 
-    await user.click(screen.getByRole("button", { name: "Customers" }));
-    await user.click(await screen.findByRole("heading", { name: "Alex Johnson", level: 4 }));
-    expect(await screen.findByRole("button", { name: "Edit Customer" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Delete Customer" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Close" }));
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
     await user.click(await screen.findByRole("heading", { name: "KR 2048A", level: 4 }));
     expect(await screen.findByRole("button", { name: "Edit Vehicle" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
     expect(screen.getByText("Date Added: 2025-11-04")).toBeInTheDocument();
   });
 
@@ -167,7 +157,7 @@ describe("bootstrap application", () => {
     const user = userEvent.setup();
     renderApp("/app");
 
-    await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
     await user.click(await screen.findByRole("button", { name: "Add New Vehicle" }));
 
@@ -179,7 +169,7 @@ describe("bootstrap application", () => {
     const user = userEvent.setup();
     const view = renderApp("/app");
 
-    await waitFor(() => expect(screen.getByText("Service Desk")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     await user.click(await screen.findByRole("heading", { name: "Brake Pad Set", level: 4 }));
 
