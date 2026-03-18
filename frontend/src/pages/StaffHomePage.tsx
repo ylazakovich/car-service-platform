@@ -598,6 +598,12 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
   const [savedRepairServices, setSavedRepairServices] = useState<string[]>(readStoredRepairServices);
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
+  const [isInlineCustomerOpen, setIsInlineCustomerOpen] = useState(false);
+  const [draggingRepairId, setDraggingRepairId] = useState<number | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<RepairStatus | null>(null);
+  const [inlineCustomerForm, setInlineCustomerForm] = useState({ full_name: "", phone: "", email: "" });
+  const [inlineCustomerError, setInlineCustomerError] = useState("");
+  const [isSavingInlineCustomer, setIsSavingInlineCustomer] = useState(false);
   const [isRepairFormOpen, setIsRepairFormOpen] = useState(false);
   const [isPurchaseFormOpen, setIsPurchaseFormOpen] = useState(false);
 
@@ -741,12 +747,42 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
   function openVehicleCreateModal() {
     resetVehicleForm("");
+    setIsInlineCustomerOpen(false);
+    setInlineCustomerForm({ full_name: "", phone: "", email: "" });
+    setInlineCustomerError("");
     setIsVehicleFormOpen(true);
   }
 
   function closeVehicleFormModal() {
     resetVehicleForm("");
+    setIsInlineCustomerOpen(false);
+    setInlineCustomerForm({ full_name: "", phone: "", email: "" });
+    setInlineCustomerError("");
     setIsVehicleFormOpen(false);
+  }
+
+  async function handleInlineCustomerSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setInlineCustomerError("");
+    setIsSavingInlineCustomer(true);
+    try {
+      const payload = {
+        full_name: inlineCustomerForm.full_name.trim(),
+        phone: inlineCustomerForm.phone.trim(),
+        email: inlineCustomerForm.email.trim(),
+        notes: "",
+      };
+      const response = await api.post("/customers/", payload);
+      const newId = String(response.data.id);
+      await loadRegistries();
+      setVehicleForm((current) => ({ ...current, customer_id: newId }));
+      setIsInlineCustomerOpen(false);
+      setInlineCustomerForm({ full_name: "", phone: "", email: "" });
+    } catch (error) {
+      setInlineCustomerError(getErrorMessage(error, "Unable to create customer."));
+    } finally {
+      setIsSavingInlineCustomer(false);
+    }
   }
 
   function openVehicleEditModal(vehicle: Vehicle) {
@@ -1337,6 +1373,41 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     }
   }
 
+  function handleCardDragStart(repairId: number, event: React.DragEvent) {
+    event.dataTransfer.setData("repair-id", String(repairId));
+    event.dataTransfer.effectAllowed = "move";
+    setDraggingRepairId(repairId);
+  }
+
+  function handleCardDragEnd() {
+    setDraggingRepairId(null);
+    setDragOverColumn(null);
+  }
+
+  function handleColumnDragOver(status: RepairStatus, event: React.DragEvent) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverColumn(status);
+  }
+
+  function handleColumnDragLeave(event: React.DragEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+      setDragOverColumn(null);
+    }
+  }
+
+  function handleColumnDrop(status: RepairStatus, event: React.DragEvent) {
+    event.preventDefault();
+    const repairId = Number(event.dataTransfer.getData("repair-id"));
+    if (repairId) {
+      setRepairs((current) =>
+        current.map((r) => (r.id === repairId ? { ...r, status } : r))
+      );
+    }
+    setDraggingRepairId(null);
+    setDragOverColumn(null);
+  }
+
   async function handleCopyTrackingCode(trackingCode: string, event?: { stopPropagation?: () => void }) {
     event?.stopPropagation?.();
     await navigator.clipboard.writeText(trackingCode);
@@ -1500,18 +1571,21 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     value={customerForm.phone}
                     onChange={(event) => setCustomerForm((current) => ({ ...current, phone: event.target.value }))}
                     placeholder="e.g. +48 600 100 100"
-                    type="text"
+                    type="tel"
+                    pattern="[\+]?[0-9\s\-\(\)]{7,20}"
+                    title="Enter a valid phone number (7–20 digits, spaces, dashes, + allowed)"
                     required
                   />
                 </label>
 
                 <label>
-                  <span>Email</span>
+                  <span>Email <span className="field-hint" style={{ display: "inline" }}>(optional)</span></span>
                   <input
                     value={customerForm.email}
                     onChange={(event) => setCustomerForm((current) => ({ ...current, email: event.target.value }))}
                     placeholder="e.g. anna@example.com"
                     type="email"
+                    autoComplete="email"
                   />
                 </label>
 
@@ -1742,25 +1816,47 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
               </div>
 
               <div className="customer-detail-stack">
-                <div className="detail-card">
-                  <strong>Vehicle Info</strong>
-                  <p>
-                    {selectedVehicle.make} {selectedVehicle.model}
-                    {selectedVehicle.year ? `, ${selectedVehicle.year}` : ""}
-                  </p>
-                  <p>Owner: {selectedVehicle.customer.full_name}</p>
-                  {getVehicleDetails(selectedVehicle).mileage ? (
-                    <p>Mileage: {getVehicleDetails(selectedVehicle).mileage} km</p>
-                  ) : null}
-                  {getVehicleDetails(selectedVehicle).last_service_date ? (
-                    <p>Last Service Date: {getVehicleDetails(selectedVehicle).last_service_date}</p>
-                  ) : null}
-                  {getVehicleDetails(selectedVehicle).added_date ? (
-                    <p>Date Added: {getVehicleDetails(selectedVehicle).added_date}</p>
-                  ) : null}
-                  {selectedVehicle.vin ? <p>VIN: {selectedVehicle.vin}</p> : null}
-                  {selectedVehicle.color ? <p>Color: {selectedVehicle.color}</p> : null}
-                  <p className="meta-line">{selectedVehicle.notes || "No notes yet"}</p>
+                <div className="detail-card vehicle-info-split">
+                  {/* Left: vehicle data */}
+                  <div className="vehicle-info-col">
+                    <strong>Vehicle Info</strong>
+                    <p>
+                      {selectedVehicle.make} {selectedVehicle.model}
+                      {selectedVehicle.year ? `, ${selectedVehicle.year}` : ""}
+                    </p>
+                    {getVehicleDetails(selectedVehicle).mileage ? (
+                      <p>Mileage: {getVehicleDetails(selectedVehicle).mileage} km</p>
+                    ) : null}
+                    {getVehicleDetails(selectedVehicle).last_service_date ? (
+                      <p>Last Service Date: {getVehicleDetails(selectedVehicle).last_service_date}</p>
+                    ) : null}
+                    {getVehicleDetails(selectedVehicle).added_date ? (
+                      <p>Date Added: {getVehicleDetails(selectedVehicle).added_date}</p>
+                    ) : null}
+                    {selectedVehicle.vin ? <p>VIN: {selectedVehicle.vin}</p> : null}
+                    {selectedVehicle.color ? <p>Color: {selectedVehicle.color}</p> : null}
+                    {selectedVehicle.notes ? <p className="meta-line">{selectedVehicle.notes}</p> : null}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="vehicle-info-divider" />
+
+                  {/* Right: owner / customer data */}
+                  <div className="vehicle-info-col">
+                    <strong>Owner</strong>
+                    {(() => {
+                      const owner = customers.find((c) => c.id === selectedVehicle.customer.id) ?? null;
+                      return (
+                        <>
+                          <p>{selectedVehicle.customer.full_name}</p>
+                          {owner?.phone ? <p className="meta-line">📞 {owner.phone}</p> : null}
+                          {owner?.email ? <p className="meta-line">✉ {owner.email}</p> : null}
+                          {owner?.notes ? <p className="meta-line">{owner.notes}</p> : null}
+                          {!owner && <p className="meta-line">Customer details not loaded</p>}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <div className="detail-card">
@@ -1832,21 +1928,85 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
               </div>
 
               <form className="stack-form" onSubmit={handleVehicleSubmit}>
-                <label>
-                  <span>Owner</span>
-                  <select
-                    value={vehicleForm.customer_id}
-                    onChange={(event) => setVehicleForm((current) => ({ ...current, customer_id: event.target.value }))}
-                    required
-                  >
-                    <option value="">Select customer</option>
-                    {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+
+                {/* Owner field + inline customer creation */}
+                <div className="inline-owner-block">
+                  <div className="inline-owner-header">
+                    <label className="inline-owner-select">
+                      <span>Owner</span>
+                      <select
+                        value={vehicleForm.customer_id}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, customer_id: event.target.value }))}
+                        required={!isInlineCustomerOpen}
+                      >
+                        <option value="">Select existing customer</option>
+                        {customers.map((customer) => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.full_name} {customer.phone ? `· ${customer.phone}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      className={`button ${isInlineCustomerOpen ? "button-secondary" : "button-ghost"} inline-owner-toggle`}
+                      onClick={() => {
+                        setIsInlineCustomerOpen((open) => !open);
+                        setInlineCustomerError("");
+                      }}
+                    >
+                      {isInlineCustomerOpen ? "Cancel" : "+ New customer"}
+                    </button>
+                  </div>
+
+                  {isInlineCustomerOpen ? (
+                    <form className="inline-customer-form" onSubmit={handleInlineCustomerSave}>
+                      <p className="inline-customer-hint">Fill in the new customer — they'll be created and selected automatically.</p>
+                      <div className="form-grid">
+                        <label>
+                          <span>Full Name</span>
+                          <input
+                            value={inlineCustomerForm.full_name}
+                            onChange={(e) => setInlineCustomerForm((f) => ({ ...f, full_name: e.target.value }))}
+                            placeholder="e.g. Anna Kowalska"
+                            type="text"
+                            required
+                          />
+                        </label>
+                        <label>
+                          <span>Phone</span>
+                          <input
+                            value={inlineCustomerForm.phone}
+                            onChange={(e) => setInlineCustomerForm((f) => ({ ...f, phone: e.target.value }))}
+                            placeholder="e.g. +48 600 100 100"
+                            type="tel"
+                            pattern="[\+]?[0-9\s\-\(\)]{7,20}"
+                            title="Enter a valid phone number (7–20 digits, spaces, dashes, + allowed)"
+                            required
+                          />
+                        </label>
+                      </div>
+                      <label>
+                        <span>Email <span className="field-hint" style={{ display: "inline" }}>(optional)</span></span>
+                        <input
+                          value={inlineCustomerForm.email}
+                          onChange={(e) => setInlineCustomerForm((f) => ({ ...f, email: e.target.value }))}
+                          placeholder="e.g. anna@example.com"
+                          type="email"
+                        />
+                      </label>
+                      {inlineCustomerError ? <p className="form-error">{inlineCustomerError}</p> : null}
+                      <div className="form-actions">
+                        <button type="submit" className="button" disabled={isSavingInlineCustomer}>
+                          {isSavingInlineCustomer ? "Creating…" : "Create & Select"}
+                        </button>
+                        <button type="button" className="button button-secondary" onClick={() => setIsInlineCustomerOpen(false)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : null}
+                </div>
 
                 <div className="form-grid">
                   <label>
@@ -1902,12 +2062,16 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
                 <div className="form-grid">
                   <label>
-                    <span>VIN</span>
+                    <span>VIN <span className="field-hint" style={{ display: "inline" }}>(17 characters)</span></span>
                     <input
                       value={vehicleForm.vin}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, vin: event.target.value }))}
+                      onChange={(event) => setVehicleForm((current) => ({ ...current, vin: event.target.value.toUpperCase() }))}
                       placeholder="e.g. JTNB1234567890001"
                       type="text"
+                      maxLength={17}
+                      pattern="[A-HJ-NPR-Z0-9]{17}"
+                      title="VIN must be exactly 17 alphanumeric characters (no I, O, Q)"
+                      style={{ textTransform: "uppercase" }}
                     />
                   </label>
 
@@ -1924,13 +2088,14 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
                 <div className="form-grid">
                   <label>
-                    <span>Mileage</span>
+                    <span>Mileage <span className="field-hint" style={{ display: "inline" }}>km</span></span>
                     <input
                       value={vehicleForm.mileage}
                       onChange={(event) => setVehicleForm((current) => ({ ...current, mileage: event.target.value }))}
-                      inputMode="numeric"
                       placeholder="e.g. 78210"
-                      type="text"
+                      type="number"
+                      min="0"
+                      step="1"
                     />
                   </label>
 
@@ -1985,64 +2150,109 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     );
   }
 
+  const kanbanColumns: { status: RepairStatus; label: string }[] = [
+    { status: "new",           label: "New" },
+    { status: "in_progress",   label: "In Progress" },
+    { status: "waiting_parts", label: "Waiting Parts" },
+    { status: "completed",     label: "Completed" },
+  ];
+
   function renderRepairsPreview() {
     return (
-      <div className="workspace-stack">
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Current Repairs</p>
-              <h3>Repair List</h3>
-            </div>
+      <div className="workspace-stack kanban-workspace">
+
+        {/* Topbar */}
+        <div className="kanban-topbar">
+          <div>
+            <p className="eyebrow">Repairs</p>
+            <h2>Kanban Board</h2>
+          </div>
+          <div className="workspace-top-actions">
+            <label className="kanban-search">
+              <input
+                value={repairSearch}
+                onChange={(event) => setRepairSearch(event.target.value)}
+                placeholder="Search repairs…"
+                type="search"
+              />
+            </label>
             <button type="button" className="button" onClick={openRepairCreateModal}>
-              Add New Repair
+              + New Repair
             </button>
           </div>
+        </div>
 
-          <label className="search-field search-field-tight">
-            <span>Search repairs</span>
-            <input
-              value={repairSearch}
-              onChange={(event) => setRepairSearch(event.target.value)}
-              placeholder="Tracking, vehicle, owner, service or status"
-              type="search"
-            />
-          </label>
-
-          <div className="registry-list">
-            {visibleRepairs.map((repair) => (
-              <article className="registry-card repair-card repair-card-clickable" key={repair.id} onClick={() => openRepairModal(repair)}>
-                <div className="repair-card-main">
-                  <div className="repair-card-topline">
-                    <h4>{repair.vehicle_label}</h4>
-                    <span className={getRepairStatusClass(repair.status)}>{repairStatusLabels[repair.status]}</span>
-                  </div>
-                  <p>{repair.owner_name}</p>
-                  <p>Master: {repair.master_name}</p>
-                  <p>{repair.service_name}</p>
-                  <div className="tracking-chip-row">
-                    <span className="tracking-chip">Tracking: {repair.tracking_code}</span>
-                    <button
-                      type="button"
-                      className="copy-chip"
-                      aria-label={`Copy tracking code ${repair.tracking_code}`}
-                      onClick={(event) => void handleCopyTrackingCode(repair.tracking_code, event)}
-                    >
-                      ⧉
-                    </button>
-                  </div>
-                  <p className="meta-line">Created: {repair.created_at}</p>
-                  <p className="meta-line">{repair.issue_notes}</p>
-                  <p className="meta-line">Notes: {repair.repair_notes.length}</p>
-                  <p className="meta-line">
-                    Photos: before {repair.before_photos.length}, during {repair.during_photos.length}, after {repair.after_photos.length}
-                  </p>
+        {/* Board */}
+        <div className="kanban-board">
+          {kanbanColumns.map(({ status, label }) => {
+            const colRepairs = visibleRepairs.filter((r) => r.status === status);
+            const isDropTarget = dragOverColumn === status;
+            return (
+              <div
+                key={status}
+                className={`kanban-col ${isDropTarget ? "kanban-col-drop-target" : ""}`}
+                onDragOver={(e) => handleColumnDragOver(status, e)}
+                onDragLeave={handleColumnDragLeave}
+                onDrop={(e) => handleColumnDrop(status, e)}
+              >
+                {/* Column header */}
+                <div className="kanban-col-header">
+                  <span className={getRepairStatusClass(status)}>{label}</span>
+                  <span className="kanban-count">{colRepairs.length}</span>
                 </div>
-              </article>
-            ))}
-            {visibleRepairs.length === 0 ? <p className="workspace-note">No repairs match the current filter.</p> : null}
-          </div>
-        </section>
+
+                {/* Cards */}
+                <div className="kanban-cards">
+                  {colRepairs.map((repair) => (
+                    <article
+                      key={repair.id}
+                      className={`kanban-card ${draggingRepairId === repair.id ? "kanban-card-dragging" : ""}`}
+                      draggable
+                      onDragStart={(e) => handleCardDragStart(repair.id, e)}
+                      onDragEnd={handleCardDragEnd}
+                      onClick={() => openRepairModal(repair)}
+                    >
+                      <div className="kanban-card-top">
+                        <h4 className="kanban-card-vehicle">{repair.vehicle_label}</h4>
+                        <span className="kanban-drag-handle" title="Drag to move">⠿</span>
+                      </div>
+
+                      <p className="kanban-card-owner">{repair.owner_name}</p>
+                      <p className="kanban-card-service">{repair.service_name}</p>
+
+                      {repair.issue_notes ? (
+                        <p className="kanban-card-issue">{repair.issue_notes}</p>
+                      ) : null}
+
+                      <div className="kanban-card-footer">
+                        <span className="tracking-chip">#{repair.tracking_code}</span>
+                        <button
+                          type="button"
+                          className="copy-chip"
+                          aria-label={`Copy tracking code ${repair.tracking_code}`}
+                          onClick={(event) => void handleCopyTrackingCode(repair.tracking_code, event)}
+                        >
+                          ⧉
+                        </button>
+                      </div>
+
+                      <div className="kanban-card-meta">
+                        <span>{repair.master_name}</span>
+                        <span>{repair.created_at}</span>
+                      </div>
+                    </article>
+                  ))}
+
+                  {colRepairs.length === 0 ? (
+                    <div className={`kanban-empty ${isDropTarget ? "kanban-empty-active" : ""}`}>
+                      <span>{isDropTarget ? "Drop here" : "No repairs"}</span>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
         {isRepairFormOpen ? (
           <div className="modal-overlay" role="presentation" onClick={closeRepairCreateModal}>
@@ -2212,6 +2422,24 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                 </div>
               </div>
 
+              {/* ── Status Switcher ────────────────────────────── */}
+              <div className="status-switcher">
+                <span className="status-switcher-label">Status</span>
+                <div className="status-switcher-options">
+                  {kanbanColumns.map(({ status, label }) => (
+                    <button
+                      key={status}
+                      type="button"
+                      className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
+                      onClick={() => setRepairModalStatus(status)}
+                    >
+                      <span className="status-btn-dot" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="customer-detail-stack">
                 <div className="detail-card repair-info-card">
                   <strong>Repair Info</strong>
@@ -2227,12 +2455,6 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     <div className="repair-info-row">
                       <span className="repair-info-label">Service</span>
                       <p>{selectedRepair.service_name}</p>
-                    </div>
-                    <div className="repair-info-row">
-                      <span className="repair-info-label">Status</span>
-                      <div className="tracking-chip-row">
-                        <span className={getRepairStatusClass(selectedRepair.status)}>{repairStatusLabels[selectedRepair.status]}</span>
-                      </div>
                     </div>
                     <div className="repair-info-row">
                       <span className="repair-info-label">Tracking</span>
@@ -2264,20 +2486,6 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     {masterProfiles.map((master) => (
                       <option key={master.id} value={master.id}>
                         {master.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="repair-status-field">
-                  <span>Status</span>
-                  <select
-                    value={repairModalStatus}
-                    onChange={(event) => setRepairModalStatus(event.target.value as RepairStatus)}
-                  >
-                    {Object.entries(repairStatusLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
                       </option>
                     ))}
                   </select>
@@ -2518,8 +2726,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                           onChange={(event) =>
                             setPurchaseModalForm((current) => ({ ...current, quantity: event.target.value }))
                           }
-                          inputMode="numeric"
-                          type="text"
+                          type="number"
+                          min="1"
+                          step="1"
                         />
                       </label>
 
@@ -2544,8 +2753,10 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                           onChange={(event) =>
                             setPurchaseModalForm((current) => ({ ...current, purchase_price: event.target.value }))
                           }
-                          inputMode="decimal"
-                          type="text"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
                         />
                       </label>
 
@@ -2556,8 +2767,10 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                           onChange={(event) =>
                             setPurchaseModalForm((current) => ({ ...current, sale_price: event.target.value }))
                           }
-                          inputMode="decimal"
-                          type="text"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
                         />
                       </label>
                     </div>
@@ -2709,8 +2922,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     <input
                       value={purchaseForm.quantity}
                       onChange={(event) => setPurchaseForm((current) => ({ ...current, quantity: event.target.value }))}
-                      inputMode="numeric"
-                      type="text"
+                      type="number"
+                      min="1"
+                      step="1"
                       required
                     />
                   </label>
@@ -2731,11 +2945,10 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     <span>Purchase Price</span>
                     <input
                       value={purchaseForm.purchase_price}
-                      onChange={(event) =>
-                        setPurchaseForm((current) => ({ ...current, purchase_price: event.target.value }))
-                      }
-                      inputMode="decimal"
-                      type="text"
+                      onChange={(event) => setPurchaseForm((current) => ({ ...current, purchase_price: event.target.value }))}
+                      type="number"
+                      min="0"
+                      step="0.01"
                       placeholder="0.00"
                       required
                     />
@@ -2746,8 +2959,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     <input
                       value={purchaseForm.sale_price}
                       onChange={(event) => setPurchaseForm((current) => ({ ...current, sale_price: event.target.value }))}
-                      inputMode="decimal"
-                      type="text"
+                      type="number"
+                      min="0"
+                      step="0.01"
                       placeholder="0.00"
                     />
                   </label>
