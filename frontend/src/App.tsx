@@ -25,7 +25,6 @@ const sectionLabels: Record<StaffSection, string> = {
 
 const sectionOrder: StaffSection[] = [
   "dashboard",
-  "customers",
   "vehicles",
   "repairs",
   "purchases",
@@ -107,10 +106,10 @@ const sectionIcons: Record<StaffSection, JSX.Element> = {
 /* ── Section groups ─────────────────────────────────────── */
 
 const navGroups: { label: string; items: StaffSection[] }[] = [
-  { label: "Overview",  items: ["dashboard"] },
-  { label: "Records",   items: ["customers", "vehicles"] },
-  { label: "Operations",items: ["repairs", "purchases"] },
-  { label: "Settings",  items: ["users"] },
+  { label: "Overview",   items: ["dashboard"] },
+  { label: "Records",    items: ["vehicles"] },
+  { label: "Operations", items: ["repairs", "purchases"] },
+  { label: "Settings",   items: ["users"] },
 ];
 
 /* ── LocalStorage helpers ───────────────────────────────── */
@@ -188,14 +187,14 @@ function StaffShell() {
             <p className="eyebrow">Quick Focus</p>
             <h2>Start with records.</h2>
             <p>
-              Customers and vehicles are live. Repairs are the next vertical slice.
+              Find any vehicle by plate, make, owner name or VIN. Repairs are the next vertical slice.
             </p>
             <div className="sidebar-actions">
               <button type="button" className="button" onClick={() => setActiveSection("vehicles")}>
-                Add Vehicle
+                Go to Vehicles
               </button>
-              <button type="button" className="button button-ghost" onClick={() => setActiveSection("customers")}>
-                New Customer
+              <button type="button" className="button button-ghost" onClick={() => setActiveSection("repairs")}>
+                View Repairs
               </button>
             </div>
           </section>
