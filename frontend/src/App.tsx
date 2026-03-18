@@ -138,15 +138,30 @@ function getInitialStaffSection(): StaffSection {
   return "dashboard";
 }
 
+const STAFF_ALLOWED_SECTIONS: StaffSection[] = ["vehicles", "repairs"];
+
 /* ── Staff Shell ────────────────────────────────────────── */
 
 function StaffShell() {
-  const { user, logout } = useAuth();
+  const { user, logout, isStaff } = useAuth();
   const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
+
+  const visibleNavGroups = isStaff
+    ? [
+        { label: "Records",    items: ["vehicles"] as StaffSection[] },
+        { label: "Operations", items: ["repairs"]  as StaffSection[] },
+      ]
+    : navGroups;
 
   useEffect(() => {
     writeStoredStaffSection(activeSection);
   }, [activeSection]);
+
+  useEffect(() => {
+    if (isStaff && !STAFF_ALLOWED_SECTIONS.includes(activeSection)) {
+      setActiveSection("vehicles");
+    }
+  }, [isStaff, activeSection]);
 
   return (
     <div className="shell">
@@ -164,7 +179,7 @@ function StaffShell() {
 
           {/* Navigation */}
           <nav className="shell-nav" aria-label="Staff sections">
-            {navGroups.map((group) => (
+            {visibleNavGroups.map((group) => (
               <div key={group.label} className="nav-group">
                 <span className="nav-group-label">{group.label}</span>
                 {group.items.map((section) => (

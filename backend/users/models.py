@@ -8,7 +8,6 @@ from .managers import UserManager
 class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
         ADMIN = "admin", "Admin"
-        MANAGER = "manager", "Manager"
         STAFF = "staff", "Staff"
 
     email = models.EmailField(unique=True)
