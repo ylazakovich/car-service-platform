@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ("email", models.EmailField(max_length=254, unique=True)),
                 ("first_name", models.CharField(blank=True, max_length=150)),
                 ("last_name", models.CharField(blank=True, max_length=150)),
-                ("role", models.CharField(choices=[("admin", "Admin"), ("manager", "Manager"), ("staff", "Staff")], default="staff", max_length=20)),
+                ("role", models.CharField(choices=[("admin", "Admin"), ("staff", "Staff")], default="staff", max_length=20)),
                 ("is_active", models.BooleanField(default=True)),
                 ("is_staff", models.BooleanField(default=False)),
                 ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),

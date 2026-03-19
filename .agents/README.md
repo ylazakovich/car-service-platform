@@ -5,29 +5,28 @@
 ## Как использовать
 
 1. Откройте корневой `AGENTS.md`.
-2. Выберите роль по задаче.
-3. Следуйте `SKILL.md` выбранной роли.
-4. Передайте результат следующей роли в формате `Assumptions / Decisions / Output / Risks`.
+2. Определите обязательную последовательность ролей по workflow из `AGENTS.md`.
+3. Запускайте `SKILL.md` каждой роли в порядке, требуемом этим workflow.
+4. Передавайте результат следующей роли в формате `Assumptions / Decisions / Output / Risks`.
 
 ## Быстрый Маппинг Ролей
 
 - `planner` — строит исполнимый план.
 - `architect` — валидирует архитектурные решения и риски.
+- `domain-reviewer` — валидирует бизнес-инварианты и доменную корректность.
 - `backend-developer` — реализует серверные изменения.
 - `frontend-developer` — реализует клиентские изменения.
-- `domain-rules-reviewer` — проверяет соответствие `DOMAIN_RULES.md`.
 - `plan-reviewer` — сверяет план и реализацию, выдает вердикт.
 
 ## Обязательный Контекст
 
 - `DEVELOPMENT_PLAN.md` — active стратегия.
 - `NEXT_STEPS.md` — active backlog.
-- `DOMAIN_RULES.md` — source of truth для доменной логики.
+- `DOMAIN_RULES.md` — обязательный доменный контекст для задач, затрагивающих бизнес-правила, статусы, расчеты и инварианты.
 - `docs/planning/archive/` — история и старые snapshot-планы.
 
 ## Шаблоны
 
-- Domain compliance report: `.agents/templates/domain-compliance-report.md`
 - Plan review report: `.agents/templates/plan-review-report.md`
 
 ## Локальные Запуски
