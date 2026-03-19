@@ -14,7 +14,11 @@ class VehicleApiTests(TestCase):
             password="manager12345",
             role="staff",
         )
-        self.customer = Customer.objects.create(full_name="Alex Johnson", phone="+48 555 100 200")
+        self.customer = Customer.objects.create(
+            full_name="Alex Johnson",
+            phone="+48 555 100 200",
+            assigned_to=self.user,
+        )
 
     def test_staff_can_create_list_search_and_update_vehicles(self):
         self.client.force_authenticate(self.user)

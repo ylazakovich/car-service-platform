@@ -34,7 +34,11 @@ class CustomerApiTests(TestCase):
         self.assertEqual(create_response.status_code, 201)
         customer_id = create_response.json()["id"]
 
-        Customer.objects.create(full_name="Maria Hill", phone="+48 555 333 444")
+        Customer.objects.create(
+            full_name="Maria Hill",
+            phone="+48 555 333 444",
+            assigned_to=self.user,
+        )
 
         list_response = self.client.get("/api/customers/")
         self.assertEqual(list_response.status_code, 200)
@@ -56,7 +60,11 @@ class CustomerApiTests(TestCase):
 
     def test_customer_with_vehicles_cannot_be_deleted(self):
         self.client.force_authenticate(self.user)
-        customer = Customer.objects.create(full_name="Vehicle Owner", phone="+48 555 222 333")
+        customer = Customer.objects.create(
+            full_name="Vehicle Owner",
+            phone="+48 555 222 333",
+            assigned_to=self.user,
+        )
         customer.vehicles.create(license_plate="WX 1234A", make="Audi", model="A4")
 
         delete_response = self.client.delete(f"/api/customers/{customer.id}")
