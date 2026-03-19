@@ -1,8 +1,8 @@
 django>=5.2,<5.3
-django-unfold>=0.80,<0.84
-djangorestframework>=3.16,<3.17
+django-unfold>=0.85,<0.86
+djangorestframework>=3.17,<3.18
 django-cors-headers>=4.8,<5.0
 gunicorn>=23.0,<24.0
-psycopg[binary]>=3.2,<3.3
+psycopg[binary]>=3.3,<3.4
 whitenoise>=6.9,<7.0
 python-json-logger>=3.3,<4.0
