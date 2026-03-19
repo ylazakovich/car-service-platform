@@ -7,7 +7,8 @@
   - Plan: `<path or reference>`
   - Architecture notes: `<path or reference>`
   - Implementation diff: `<path or reference>`
-  - Domain compliance report: `<path or n/a>`
+  - Domain review (plan): `<path or n/a>`
+  - Domain review (final): `<path or n/a>`
 - Verdict: `<approved|changes_required>`
 
 ## Plan Coverage
@@ -38,5 +39,6 @@
 ## Final Checklist
 - [ ] Все обязательные шаги плана закрыты.
 - [ ] Архитектурные ограничения соблюдены.
-- [ ] Для задач с критичной доменной логикой приложен успешный compliance-отчет.
+- [ ] Для `mode: plan` задач с критичной доменной логикой приложен обязательный `domain-review-plan.md`.
+- [ ] Для `mode: execute` задач, изменяющих доменную логику, приложены оба обязательных артефакта: `domain-review-plan.md` и `domain-review-final.md`.
 - [ ] Есть верификация (тест, сборка или ручной сценарий).

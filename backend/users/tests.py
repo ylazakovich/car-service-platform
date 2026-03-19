@@ -10,7 +10,7 @@ class AuthApiTests(TestCase):
         self.user = get_user_model().objects.create_user(
             email="manager@test.local",
             password=self.password,
-            role="manager",
+            role="staff",
         )
 
     def test_login_me_and_logout_flow(self):
@@ -27,7 +27,7 @@ class AuthApiTests(TestCase):
 
         response = self.client.get("/api/auth/me")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["role"], "manager")
+        self.assertEqual(response.json()["role"], "staff")
 
         response = self.client.post("/api/auth/logout")
         self.assertEqual(response.status_code, 200)

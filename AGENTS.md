@@ -8,16 +8,16 @@
 
 - `.agents/planner/SKILL.md` — декомпозиция задачи и исполнимый план.
 - `.agents/architect/SKILL.md` — проверка архитектурной целостности.
+- `.agents/domain-reviewer/SKILL.md` — проверка доменной корректности и бизнес-инвариантов.
 - `.agents/backend-developer/SKILL.md` — реализация серверной части.
 - `.agents/frontend-developer/SKILL.md` — реализация клиентской части.
-- `.agents/domain-rules-reviewer/SKILL.md` — проверка соответствия `DOMAIN_RULES.md`.
 - `.agents/plan-reviewer/SKILL.md` — финальная сверка плана и результата.
 
 ## Обязательные Источники Контекста
 
 - `DEVELOPMENT_PLAN.md` — active стратегический план.
 - `NEXT_STEPS.md` — active backlog (`NOW/NEXT/LATER`).
-- `DOMAIN_RULES.md` — source of truth по доменным правилам, статусам и расчетам.
+- `DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов.
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
 
 ## Обязательный Порядок Работы
@@ -26,13 +26,16 @@
 2. Прочитать задачу и ограничения.
 3. Запустить `planner` для пошагового плана.
 4. Прогнать план через `architect`.
-5. Реализовать изменения через `backend-developer` и/или `frontend-developer`.
-6. Если задача меняет доменные правила, статусы, расчеты или критичные бизнес-потоки, прогнать `domain-rules-reviewer`.
-7. Прогнать итог через `plan-reviewer`.
-8. Вернуть результат с кратким changelog и остаточными рисками.
+5. Если задача затрагивает бизнес-правила, статусы, доменные ограничения или расчеты, прогнать план через `domain-reviewer`.
+6. Реализовать изменения через `backend-developer` и/или `frontend-developer`.
+7. Если доменная логика менялась, прогнать итог через `domain-reviewer`.
+8. Прогнать итог через `plan-reviewer`.
+9. Вернуть результат с кратким changelog и остаточными рисками.
+
+Примечание по совместимости:
+- `DOMAIN_RULES.md` мог ранее ссылаться на роль `domain-rules-reviewer`; в текущем workflow это имя заменено на `domain-reviewer`.
 
 Форматы выходных отчетов:
-- `domain-rules-reviewer` -> `.agents/templates/domain-compliance-report.md`
 - `plan-reviewer` -> `.agents/templates/plan-review-report.md`
 
 ## Локальное Хранение Артефактов
@@ -45,9 +48,10 @@
 Сохранять в `RUN_DIR`:
 - `planner.md`
 - `architect.md`
+- `domain-review-plan.md` (если был pre-implementation domain review)
+- `domain-review-final.md` (если был post-implementation domain review)
 - `backend-developer.md` (если роль участвовала)
 - `frontend-developer.md` (если роль участвовала)
-- `domain-compliance-report.md` (если применимо)
 - `plan-review-report.md`
 - `final-summary.md`
 
@@ -62,40 +66,37 @@
 
 ## Auto Routing Rules
 
-В режиме `execute` агент выбирает роль по триггерам:
+В режиме `execute` агент сначала обязан пройти все mandatory review stages из раздела `Обязательный Порядок Работы`, а правила ниже применяются только после этого — чтобы выбрать implementation role(s) и определить порядок review/rework при нескольких кандидатах.
 
 1. `backend-developer`, если задача затрагивает:
 - API, endpoint, controller, service, repository
 - DB, schema, migration, query, transaction
 - auth, permissions, integrations, бизнес-правила
 
-2. `frontend-developer`, если задача затрагивает:
+2. `domain-reviewer`, если задача затрагивает:
+- бизнес-правила, workflow, state machine, статусы
+- расчеты, eligibility, ограничения, инварианты
+- терминологию предметной области и правила согласованности данных
+
+3. `frontend-developer`, если задача затрагивает:
 - page, component, layout, form, validation
 - UX, state management, routing
 - работу с API на клиенте
 
-3. Обе роли, если задача сквозная:
+4. Обе роли, если задача сквозная:
 - меняется API-контракт и одновременно UI
 - новые поля/статусы приходят с backend и отображаются на frontend
+- доменные статусы или правила проходят через backend и отображаются на frontend
 
 При конфликте приоритета:
 - сначала `backend-developer`
+- затем `domain-reviewer`
 - затем `frontend-developer`
-- затем `domain-rules-reviewer`, если есть доменные триггеры
 - затем `plan-reviewer`
 
-## Auto Routing Rules (Domain Logic)
-
-В режиме `execute` запускать `domain-rules-reviewer` обязательно, если:
-- меняются статусы и переходы доменных сущностей;
-- меняются расчеты цен, скидок, итогов, SLA или иных бизнес-правил;
-- меняется поведение критичных пользовательских потоков;
-- меняются backend/frontend модули, которые являются source of truth для доменной логики.
-
-Минимальный вход для `domain-rules-reviewer`:
-1. diff изменений
-2. текущий `DOMAIN_RULES.md`
-3. короткое описание поведения "до/после"
+Важно:
+- если задача затрагивает бизнес-правила, статусы, расчеты, eligibility, ограничения или инварианты, `domain-reviewer` обязателен до реализации согласно mandatory workflow выше;
+- указанный приоритет не отменяет обязательные pre-implementation и post-implementation review stages.
 
 ## Hygiene For Planning
 
@@ -122,7 +123,7 @@
 ## Минимальный Формат Ответа От Агента
 
 ```md
-Role: <planner|architect|backend-developer|frontend-developer|domain-rules-reviewer|plan-reviewer>
+Role: <planner|architect|domain-reviewer|backend-developer|frontend-developer|plan-reviewer>
 Assumptions:
 - ...
 Decisions:

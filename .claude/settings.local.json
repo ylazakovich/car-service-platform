@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh run:*)",
+      "Bash(npx vitest:*)",
+      "Bash(python -m py_compile backend/users/models.py backend/users/permissions.py backend/customers/models.py backend/customers/views.py backend/vehicles/views.py)",
+      "Bash(python3 -m py_compile backend/users/models.py backend/users/permissions.py backend/customers/models.py backend/customers/views.py backend/vehicles/views.py)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

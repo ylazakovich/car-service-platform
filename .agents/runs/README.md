@@ -11,9 +11,10 @@
 
 - `planner.md`
 - `architect.md`
+- `domain-review-plan.md` (если был pre-implementation domain review)
+- `domain-review-final.md` (если был post-implementation domain review)
 - `backend-developer.md` (если роль участвовала)
 - `frontend-developer.md` (если роль участвовала)
-- `domain-compliance-report.md` (если применимо)
 - `plan-review-report.md`
 - `final-summary.md`
 
