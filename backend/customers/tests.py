@@ -11,7 +11,7 @@ class CustomerApiTests(TestCase):
         self.user = get_user_model().objects.create_user(
             email="manager@test.local",
             password="manager12345",
-            role="manager",
+            role="staff",
         )
 
     def test_authentication_is_required(self):
