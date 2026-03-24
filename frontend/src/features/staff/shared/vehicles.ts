@@ -30,6 +30,16 @@ export type VehicleOwnerDetails = {
   notes?: string;
 };
 
+export function formatVehicleDisplayDate(value: string) {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}:\d{2}))?/);
+  if (!match) {
+    return value;
+  }
+
+  const [, year, month, day, time] = match;
+  return time ? `${day}-${month}-${year} ${time}` : `${day}-${month}-${year}`;
+}
+
 export function formatVehicleTitle(vehicle: Vehicle) {
   return `${vehicle.make} ${vehicle.model}${vehicle.year ? `, ${vehicle.year}` : ""}`;
 }
@@ -42,11 +52,11 @@ export function formatVehicleMeta(vehicle: Vehicle, details: VehicleUiDetails) {
   }
 
   if (details.last_service_date) {
-    lines.push(`Last Service: ${details.last_service_date}`);
+    lines.push(`Last Service: ${formatVehicleDisplayDate(details.last_service_date)}`);
   }
 
   if (details.added_date) {
-    lines.push(`Added: ${details.added_date}`);
+    lines.push(`Added: ${formatVehicleDisplayDate(details.added_date)}`);
   }
 
   if (vehicle.vin) {

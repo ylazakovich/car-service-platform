@@ -1,5 +1,6 @@
 import type { RepairEntry } from "../shared/repairs";
 import {
+  formatVehicleDisplayDate,
   formatVehicleTitle,
   type Vehicle,
   type VehicleOwnerDetails,
@@ -46,8 +47,8 @@ export function StaffVehicleDetailPanel({
           <strong>Vehicle Info</strong>
           <p>{formatVehicleTitle(vehicle)}</p>
           {vehicleDetails.mileage ? <p>Mileage: {vehicleDetails.mileage} km</p> : null}
-          {vehicleDetails.last_service_date ? <p>Last Service Date: {vehicleDetails.last_service_date}</p> : null}
-          {vehicleDetails.added_date ? <p>Date Added: {vehicleDetails.added_date}</p> : null}
+          {vehicleDetails.last_service_date ? <p>Last Service Date: {formatVehicleDisplayDate(vehicleDetails.last_service_date)}</p> : null}
+          {vehicleDetails.added_date ? <p>Date Added: {formatVehicleDisplayDate(vehicleDetails.added_date)}</p> : null}
           {vehicle.vin ? <p>VIN: {vehicle.vin}</p> : null}
           {vehicle.color ? <p>Color: {vehicle.color}</p> : null}
           {vehicle.notes ? <p className="meta-line">{vehicle.notes}</p> : null}
