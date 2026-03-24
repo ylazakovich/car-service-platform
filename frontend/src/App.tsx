@@ -146,6 +146,7 @@ function StaffShell() {
   const { user, logout, isStaff } = useAuth();
   const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [openRepairComposerRequest, setOpenRepairComposerRequest] = useState(0);
 
   const visibleNavGroups = isStaff
     ? [
@@ -179,6 +180,12 @@ function StaffShell() {
 
   function handleSectionChange(section: StaffSection) {
     setActiveSection(section);
+    setIsMobileNavOpen(false);
+  }
+
+  function handleOpenRepairComposer() {
+    setActiveSection("repairs");
+    setOpenRepairComposerRequest((current) => current + 1);
     setIsMobileNavOpen(false);
   }
 
@@ -222,7 +229,7 @@ function StaffShell() {
               <span>CS</span>
             </div>
             <h1>Car Service</h1>
-            <p className="shell-copy">Internal workspace for the team.</p>
+            <p className="shell-copy">Run the entire workshop from one board.</p>
           </div>
 
           {/* Navigation */}
@@ -250,14 +257,11 @@ function StaffShell() {
             <p className="eyebrow">Quick Focus</p>
             <h2>Start with records.</h2>
             <p>
-              Find any vehicle by plate, make, owner name or VIN. Repairs are the next vertical slice.
+              Create repair jobs, assign masters, and keep every vehicle moving through the workshop.
             </p>
             <div className="sidebar-actions">
-              <button type="button" className="button" onClick={() => handleSectionChange("vehicles")}>
-                Go to Vehicles
-              </button>
-              <button type="button" className="button button-ghost" onClick={() => handleSectionChange("repairs")}>
-                View Repairs
+              <button type="button" className="button" onClick={handleOpenRepairComposer}>
+                Add New Repair
               </button>
             </div>
           </section>
@@ -281,7 +285,11 @@ function StaffShell() {
       </aside>
 
       <main className="shell-main">
-        <StaffHomePage activeSection={activeSection} onSelectSection={setActiveSection} />
+        <StaffHomePage
+          activeSection={activeSection}
+          onSelectSection={setActiveSection}
+          openRepairComposerRequest={openRepairComposerRequest}
+        />
       </main>
 
       {isStaff ? (

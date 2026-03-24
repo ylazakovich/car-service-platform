@@ -660,6 +660,239 @@ textarea { resize: vertical; }
 
 .hero-actions       { display: flex; flex-wrap: wrap; gap: var(--s2); }
 
+.dashboard-workspace {
+  padding-top: var(--s2);
+}
+
+.dashboard-shell {
+  display: grid;
+  gap: var(--s4);
+  border: 1px solid rgba(205, 216, 58, 0.14);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(205, 216, 58, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    var(--surface);
+  padding: var(--s6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 28px 80px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-shell-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+
+.dashboard-shell-head h2 {
+  margin: 0;
+  font-size: 1.58rem;
+  line-height: 1.05;
+}
+
+.dashboard-shell-head .workspace-copy {
+  max-width: 42rem;
+  margin-top: var(--s2);
+  font-size: 0.92rem;
+}
+
+.dashboard-folder-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
+}
+
+.dashboard-date-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  padding: 0.35rem 0 0.15rem;
+}
+
+.dashboard-date-field {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 188px;
+  color: var(--text-mid);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.dashboard-date-field span {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-date-field input {
+  min-width: 0;
+}
+
+.dashboard-folder-tab {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 168px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    rgba(15, 16, 24, 0.82);
+  color: var(--text-soft);
+  cursor: pointer;
+  padding: 0.82rem 1rem 0.88rem;
+  text-align: left;
+  transform: translateY(8px);
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.dashboard-folder-tab:hover {
+  border-color: rgba(205, 216, 58, 0.18);
+  color: var(--text);
+  transform: translateY(4px);
+}
+
+.dashboard-folder-label {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.dashboard-folder-tab-active {
+  position: relative;
+  z-index: 1;
+  border-color: rgba(205, 216, 58, 0.24);
+  background:
+    radial-gradient(circle at top right, rgba(205, 216, 58, 0.12), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
+    rgba(24, 26, 35, 0.96);
+  color: var(--text);
+  transform: translateY(0);
+  box-shadow: 0 -1px 0 rgba(205, 216, 58, 0.24);
+}
+
+.dashboard-folder-tab-active .dashboard-folder-label {
+  color: var(--accent);
+}
+
+.dashboard-folder-panel {
+  display: grid;
+  gap: var(--s4);
+  margin-top: -1px;
+  border: 1px solid rgba(205, 216, 58, 0.18);
+  border-radius: 0 20px 20px 20px;
+  background:
+    radial-gradient(circle at top left, rgba(205, 216, 58, 0.08), transparent 32%),
+    rgba(18, 20, 29, 0.96);
+  padding: var(--s5);
+}
+
+.dashboard-metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.dashboard-mini-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    var(--surface-mid);
+}
+
+.dashboard-inline-list {
+  display: grid;
+  gap: var(--s3);
+}
+
+.dashboard-inline-card {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--s3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(9, 10, 16, 0.34);
+  padding: 0.9rem 1rem;
+}
+
+.dashboard-inline-card h4 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.dashboard-inline-card p {
+  margin: 0.28rem 0 0;
+  color: var(--text-mid);
+  font-size: 0.84rem;
+}
+
+.dashboard-inline-meta {
+  display: grid;
+  justify-items: end;
+  gap: 0.34rem;
+  text-align: right;
+}
+
+.dashboard-inline-meta span {
+  font-weight: 700;
+}
+
+.dashboard-worker-grid {
+  display: grid;
+  gap: var(--s3);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-worker-grid > .workspace-note {
+  grid-column: 1 / -1;
+}
+
+.dashboard-worker-card {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(205, 216, 58, 0.06), transparent 35%),
+    rgba(9, 10, 16, 0.38);
+  padding: 1rem;
+}
+
+.dashboard-worker-card p {
+  margin: 0;
+  color: var(--text-mid);
+  font-size: 0.84rem;
+}
+
+.dashboard-worker-topline {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.dashboard-worker-topline strong {
+  font-size: 0.96rem;
+  line-height: 1.2;
+}
+
+.dashboard-worker-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* ═══════════════════════════════════════════════
    METRIC CARDS
    ═══════════════════════════════════════════════ */
@@ -2237,12 +2470,14 @@ textarea { resize: vertical; }
   }
 
   .workspace-topbar,
+  .dashboard-shell-head,
   .dashboard-hero,
   .compact-card,
   .registry-card,
   .panel-header,
   .purchase-card-topline,
-  .repair-card-topline {
+  .repair-card-topline,
+  .dashboard-inline-card {
     flex-direction: column;
   }
 
@@ -2317,6 +2552,15 @@ textarea { resize: vertical; }
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+
+  .dashboard-folder-tab {
+    min-width: min(100%, 220px);
+  }
+
+  .dashboard-inline-meta {
+    justify-items: start;
+    text-align: left;
   }
 
   .modal-overlay {

@@ -116,7 +116,8 @@ describe("bootstrap application", () => {
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
-    expect(screen.getByText("Internal workspace for the team.")).toBeInTheDocument();
+    expect(screen.getByText("Run the entire workshop from one board.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add New Repair" })).toBeInTheDocument();
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
 
@@ -130,6 +131,16 @@ describe("bootstrap application", () => {
     expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 3 })).toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Users" })).toBeInTheDocument();
+  });
+
+  it("opens the repair form from the quick focus action", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Add New Repair" }));
+
+    expect(await screen.findByRole("heading", { name: "Create Repair", level: 3 })).toBeInTheDocument();
   });
 
   it("restores the last active staff section after reload", async () => {
@@ -150,7 +161,7 @@ describe("bootstrap application", () => {
     await user.click(await screen.findByRole("heading", { name: "KR 2048A", level: 4 }));
     expect(await screen.findByRole("button", { name: "Edit Vehicle" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
-    expect(screen.getByText("Date Added: 2025-11-04")).toBeInTheDocument();
+    expect(screen.getByText("Date Added: 04-11-2025")).toBeInTheDocument();
   });
 
   it("prefills the added date when creating a new vehicle", async () => {
