@@ -1859,6 +1859,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <div className="dashboard-inline-meta">
                           <span>{formatCurrency(entry.purchase_price * entry.quantity)}</span>
                           <p>Ordered {formatDisplayDate(entry.order_date)}</p>
+                          {entry.approximate_delivery_date ? (
+                            <p>Approx. delivery {formatDisplayDate(entry.approximate_delivery_date)}</p>
+                          ) : null}
                         </div>
                       </article>
                     ))}
@@ -2917,7 +2920,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <article className="detail-item" key={note.id}>
                           <div className="note-header">
                             <strong>{note.author_name}</strong>
-                            <span className="meta-line">{note.created_at}</span>
+                            <span className="meta-line">{formatDisplayDate(note.created_at)}</span>
                           </div>
                           <p className="meta-line">{note.author_email}</p>
                           <p>{note.text}</p>
@@ -3024,13 +3027,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <div className="purchase-card-main">
                       <div className="purchase-card-topline">
                         <h4>{entry.part_name}</h4>
-                        <span className="tag">{entry.order_date}</span>
+                        <div className="purchase-date-stack">
+                          <span className="tag">{formatDisplayDate(entry.order_date)}</span>
+                          {entry.approximate_delivery_date ? (
+                            <span className="purchase-date-secondary">
+                              Approx. delivery {formatDisplayDate(entry.approximate_delivery_date)}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                       <p>{entry.supplier_name}</p>
                       {entry.supplier_nip ? <p className="meta-line">Supplier NIP: {entry.supplier_nip}</p> : null}
                       <p>{entry.vehicle_label}</p>
                       <p className="meta-line">Tracking: {entry.repair_code}</p>
-                      {entry.approximate_delivery_date ? <p className="meta-line">Approx. delivery: {entry.approximate_delivery_date}</p> : null}
                       {entry.invoice_name ? <p className="meta-line">Invoice: {entry.invoice_name}</p> : null}
                       <div className="purchase-amounts">
                         <span>Qty {entry.quantity}</span>
