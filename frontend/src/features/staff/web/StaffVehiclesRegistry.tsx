@@ -1,4 +1,5 @@
 import {
+  formatVehicleDisplayDate,
   formatVehicleTitle,
   type Vehicle,
   type VehicleUiDetails,
@@ -31,8 +32,8 @@ export function StaffVehiclesRegistry({
                   <p>{formatVehicleTitle(vehicle)}</p>
                   <p>{vehicle.customer.full_name}</p>
                   {details.mileage ? <p className="meta-line">Mileage: {details.mileage} km</p> : null}
-                  {details.last_service_date ? <p className="meta-line">Last Service: {details.last_service_date}</p> : null}
-                  {details.added_date ? <p className="meta-line">Added: {details.added_date}</p> : null}
+                  {details.last_service_date ? <p className="meta-line">Last Service: {formatVehicleDisplayDate(details.last_service_date)}</p> : null}
+                  {details.added_date ? <p className="meta-line">Added: {formatVehicleDisplayDate(details.added_date)}</p> : null}
                   {vehicle.vin ? <p className="meta-line">VIN: {vehicle.vin}</p> : null}
                   {vehicle.color ? <p className="meta-line">Color: {vehicle.color}</p> : null}
                 </div>
