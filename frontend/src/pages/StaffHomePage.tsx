@@ -3,6 +3,26 @@ import type { ChangeEvent, FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
+import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
+import { StaffVehiclesMobileList } from "../features/staff/mobile/StaffVehiclesMobileList";
+import {
+  getRepairStatusClass,
+  REPAIR_KANBAN_COLUMNS,
+  REPAIR_STATUS_LABELS,
+  type RepairEntry,
+  type RepairNote,
+  type RepairStatus,
+  type RepairStatusFilter,
+} from "../features/staff/shared/repairs";
+import {
+  type Vehicle,
+  type VehicleOwnerDetails,
+  type VehicleUiDetails,
+} from "../features/staff/shared/vehicles";
+import { StaffRepairsKanban } from "../features/staff/web/StaffRepairsKanban";
+import { StaffVehicleDetailPanel } from "../features/staff/web/StaffVehicleDetailPanel";
+import { StaffVehiclesRegistry } from "../features/staff/web/StaffVehiclesRegistry";
 
 type Customer = {
   id: number;
@@ -11,25 +31,6 @@ type Customer = {
   email: string;
   notes: string;
   vehicle_count: number;
-  is_demo?: boolean;
-};
-
-type Vehicle = {
-  id: number;
-  customer: {
-    id: number;
-    full_name: string;
-  };
-  license_plate: string;
-  make: string;
-  model: string;
-  year: number | null;
-  vin: string;
-  color: string;
-  notes: string;
-  mileage?: number | null;
-  last_service_date?: string;
-  added_date?: string;
   is_demo?: boolean;
 };
 
@@ -53,12 +54,6 @@ type VehicleFormState = {
   last_service_date: string;
   added_date: string;
   notes: string;
-};
-
-type VehicleUiDetails = {
-  mileage: string;
-  last_service_date: string;
-  added_date: string;
 };
 
 type StaffHomePageProps = {
@@ -92,34 +87,6 @@ type PurchaseFormState = {
   sale_price: string;
   repair_code: string;
   vehicle_id: string;
-};
-
-type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed";
-
-type RepairNote = {
-  id: string;
-  author_name: string;
-  author_email: string;
-  created_at: string;
-  text: string;
-};
-
-type RepairEntry = {
-  id: number;
-  created_at: string;
-  vehicle_id: number;
-  vehicle_label: string;
-  owner_name: string;
-  master_id: string;
-  master_name: string;
-  service_name: string;
-  issue_notes: string;
-  repair_notes: RepairNote[];
-  status: RepairStatus;
-  tracking_code: string;
-  before_photos: string[];
-  during_photos: string[];
-  after_photos: string[];
 };
 
 type RepairFormState = {
@@ -360,13 +327,6 @@ function getDefaultVehicleForm(nextCustomerId = ""): VehicleFormState {
   };
 }
 
-const repairStatusLabels: Record<RepairStatus, string> = {
-  new: "New",
-  in_progress: "In Progress",
-  waiting_parts: "Waiting for Parts",
-  completed: "Completed",
-};
-
 const initialRepairs: RepairEntry[] = [
   {
     id: 1,
@@ -561,6 +521,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
   const [vehicleSearch, setVehicleSearch] = useState("");
   const [purchaseSearch, setPurchaseSearch] = useState("");
   const [repairSearch, setRepairSearch] = useState("");
+  const [mobileRepairStatusFilter, setMobileRepairStatusFilter] = useState<RepairStatusFilter>("all");
   const [customerForm, setCustomerForm] = useState<CustomerFormState>(emptyCustomerForm);
   const [vehicleForm, setVehicleForm] = useState<VehicleFormState>(emptyVehicleForm);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseFormState>(emptyPurchaseForm);
@@ -761,8 +722,8 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     setIsVehicleFormOpen(false);
   }
 
-  async function handleInlineCustomerSave(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleInlineCustomerSave(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
     setInlineCustomerError("");
     setIsSavingInlineCustomer(true);
     try {
@@ -1332,7 +1293,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
     if (selectedRepair.status !== repairModalStatus) {
       const shouldChange = window.confirm(
-        `Change repair ${selectedRepair.tracking_code} status from ${repairStatusLabels[selectedRepair.status]} to ${repairStatusLabels[repairModalStatus]}?`
+        `Change repair ${selectedRepair.tracking_code} status from ${REPAIR_STATUS_LABELS[selectedRepair.status]} to ${REPAIR_STATUS_LABELS[repairModalStatus]}?`
       );
 
       if (!shouldChange) {
@@ -1476,6 +1437,19 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     ? repairs.filter((repair) => selectedCustomerVehicles.some((vehicle) => vehicle.id === repair.vehicle_id))
     : [];
   const selectedVehicle = vehicles.find((vehicle) => vehicle.id === selectedVehicleId) ?? null;
+  const selectedVehicleOwner: VehicleOwnerDetails | null = selectedVehicle
+    ? (() => {
+        const owner = customers.find((customer) => customer.id === selectedVehicle.customer.id) ?? null;
+        return owner
+          ? {
+              full_name: selectedVehicle.customer.full_name,
+              phone: owner.phone,
+              email: owner.email,
+              notes: owner.notes,
+            }
+          : null;
+      })()
+    : null;
   const selectedVehicleRepairs = selectedVehicle
     ? repairs.filter((repair) => repair.vehicle_id === selectedVehicle.id)
     : [];
@@ -1491,8 +1465,71 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     }).format(value);
   }
 
-  function getRepairStatusClass(status: RepairStatus) {
-    return `repair-status-chip repair-status-${status}`;
+  function renderStaffMobileTaskRail({
+    title,
+    summary,
+    searchValue,
+    searchPlaceholder,
+    onSearchChange,
+    primaryActionLabel,
+    onPrimaryAction,
+  }: {
+    title: string;
+    summary: string;
+    searchValue: string;
+    searchPlaceholder: string;
+    onSearchChange: (value: string) => void;
+    primaryActionLabel: string;
+    onPrimaryAction: () => void;
+  }) {
+    if (!isStaff) {
+      return null;
+    }
+
+    return (
+      <div className="staff-mobile-taskbar">
+        <div className="staff-mobile-switcher" aria-label="Staff task switcher">
+          <button
+            type="button"
+            className={`staff-mobile-switch ${activeSection === "vehicles" ? "staff-mobile-switch-active" : ""}`}
+            onClick={() => onSelectSection("vehicles")}
+          >
+            Vehicles
+          </button>
+          <button
+            type="button"
+            className={`staff-mobile-switch ${activeSection === "repairs" ? "staff-mobile-switch-active" : ""}`}
+            onClick={() => onSelectSection("repairs")}
+          >
+            Repairs
+          </button>
+        </div>
+
+        <div className="staff-mobile-taskcard">
+          <div className="staff-mobile-taskcopy">
+            <span className="mobile-section-pill">Staff Task</span>
+            <strong>{title}</strong>
+            <p>{summary}</p>
+          </div>
+
+          <div className="staff-mobile-taskactions">
+            <label className="search-field staff-mobile-search">
+              <span>Search</span>
+              <input
+                value={searchValue}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder={searchPlaceholder}
+                type="search"
+              />
+            </label>
+
+            <button type="button" className="button staff-mobile-primary-action" onClick={onPrimaryAction}>
+              {primaryActionLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   function renderDashboard() {
@@ -1706,7 +1743,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                           <h4>{repair.vehicle_label}</h4>
                           <p>{repair.service_name}</p>
                           <div className="tracking-chip-row">
-                            <span className={getRepairStatusClass(repair.status)}>{repairStatusLabels[repair.status]}</span>
+                            <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>
                           </div>
                           <div className="tracking-chip-row">
                             <span className="tracking-chip">Tracking: {repair.tracking_code}</span>
@@ -1734,9 +1771,22 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
   function renderVehiclesSection() {
     return (
-      <div className="workspace-stack">
+      <div className="workspace-stack vehicle-workspace">
+        {renderStaffMobileTaskRail({
+          title: "Vehicle flow",
+          summary:
+            visibleVehicles.length > 0
+              ? `${visibleVehicles.length} vehicles ready for lookup and detail review.`
+              : "Search the registry or create the next vehicle card.",
+          searchValue: vehicleSearch,
+          searchPlaceholder: "Search plate, owner, make, model or VIN",
+          onSearchChange: setVehicleSearch,
+          primaryActionLabel: "Add Vehicle",
+          onPrimaryAction: openVehicleCreateModal,
+        })}
+
         <section className="panel">
-          <div className="panel-header">
+          <div className="panel-header section-desktop-header">
             <div>
               <p className="eyebrow">Registry</p>
               <h3>Vehicle List</h3>
@@ -1746,7 +1796,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
             </button>
           </div>
 
-          <label className="search-field search-field-tight">
+          <label className="search-field search-field-tight section-desktop-search">
             <span>Search vehicles</span>
             <input
               value={vehicleSearch}
@@ -1756,39 +1806,25 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
             />
           </label>
 
-          <div className="registry-list">
-            {visibleVehicles.length === 0 ? (
-              <p className="workspace-note">No vehicles yet.</p>
-            ) : (
-              visibleVehicles.map((vehicle) => (
-                <article className="registry-card customer-card" key={vehicle.id} onClick={() => openVehicleDetailModal(vehicle)}>
-                  <div>
-                    <h4>{vehicle.license_plate}</h4>
-                    <p>
-                      {vehicle.make} {vehicle.model}
-                      {vehicle.year ? `, ${vehicle.year}` : ""}
-                    </p>
-                    <p>{vehicle.customer.full_name}</p>
-                    {getVehicleDetails(vehicle).mileage ? <p className="meta-line">Mileage: {getVehicleDetails(vehicle).mileage} km</p> : null}
-                    {getVehicleDetails(vehicle).last_service_date ? (
-                      <p className="meta-line">Last Service: {getVehicleDetails(vehicle).last_service_date}</p>
-                    ) : null}
-                    {getVehicleDetails(vehicle).added_date ? (
-                      <p className="meta-line">Added: {getVehicleDetails(vehicle).added_date}</p>
-                    ) : null}
-                    {vehicle.vin ? <p className="meta-line">VIN: {vehicle.vin}</p> : null}
-                    {vehicle.color ? <p className="meta-line">Color: {vehicle.color}</p> : null}
-                  </div>
-                </article>
-              ))
-            )}
+          <div className="vehicles-surface-stack">
+            <StaffVehiclesMobileList
+              vehicles={visibleVehicles}
+              getVehicleDetails={getVehicleDetails}
+              onOpenVehicle={openVehicleDetailModal}
+            />
+
+            <StaffVehiclesRegistry
+              vehicles={visibleVehicles}
+              getVehicleDetails={getVehicleDetails}
+              onOpenVehicle={openVehicleDetailModal}
+            />
           </div>
         </section>
 
         {selectedVehicle ? (
           <div className="modal-overlay" role="presentation" onClick={closeVehicleDetailModal}>
             <section
-              className="modal-card modal-card-large"
+              className="modal-card modal-card-large vehicle-detail-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="vehicle-modal-title"
@@ -1823,100 +1859,35 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                 </div>
               </div>
 
-              <div className="customer-detail-stack">
-                <div className="detail-card vehicle-info-split">
-                  {/* Left: vehicle data */}
-                  <div className="vehicle-info-col">
-                    <strong>Vehicle Info</strong>
-                    <p>
-                      {selectedVehicle.make} {selectedVehicle.model}
-                      {selectedVehicle.year ? `, ${selectedVehicle.year}` : ""}
-                    </p>
-                    {getVehicleDetails(selectedVehicle).mileage ? (
-                      <p>Mileage: {getVehicleDetails(selectedVehicle).mileage} km</p>
-                    ) : null}
-                    {getVehicleDetails(selectedVehicle).last_service_date ? (
-                      <p>Last Service Date: {getVehicleDetails(selectedVehicle).last_service_date}</p>
-                    ) : null}
-                    {getVehicleDetails(selectedVehicle).added_date ? (
-                      <p>Date Added: {getVehicleDetails(selectedVehicle).added_date}</p>
-                    ) : null}
-                    {selectedVehicle.vin ? <p>VIN: {selectedVehicle.vin}</p> : null}
-                    {selectedVehicle.color ? <p>Color: {selectedVehicle.color}</p> : null}
-                    {selectedVehicle.notes ? <p className="meta-line">{selectedVehicle.notes}</p> : null}
-                  </div>
+              <div className="customer-detail-stack vehicle-detail-stack">
+                <StaffVehicleMobileDetail
+                  vehicle={selectedVehicle}
+                  vehicleDetails={getVehicleDetails(selectedVehicle)}
+                  owner={selectedVehicleOwner}
+                  repairs={selectedVehicleRepairs}
+                  purchases={selectedVehiclePurchases}
+                  formatCurrency={formatCurrency}
+                  getRepairStatusClass={getRepairStatusClass}
+                  repairStatusLabels={REPAIR_STATUS_LABELS}
+                  onCopyTrackingCode={(trackingCode) => void handleCopyTrackingCode(trackingCode)}
+                  onOpenRepairs={() => {
+                    closeVehicleDetailModal();
+                    onSelectSection("repairs");
+                  }}
+                  onClose={closeVehicleDetailModal}
+                />
 
-                  {/* Divider */}
-                  <div className="vehicle-info-divider" />
-
-                  {/* Right: owner / customer data */}
-                  <div className="vehicle-info-col">
-                    <strong>Owner</strong>
-                    {(() => {
-                      const owner = customers.find((c) => c.id === selectedVehicle.customer.id) ?? null;
-                      return (
-                        <>
-                          <p>{selectedVehicle.customer.full_name}</p>
-                          {owner?.phone ? <p className="meta-line">📞 {owner.phone}</p> : null}
-                          {owner?.email ? <p className="meta-line">✉ {owner.email}</p> : null}
-                          {owner?.notes ? <p className="meta-line">{owner.notes}</p> : null}
-                          {!owner && <p className="meta-line">Customer details not loaded</p>}
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                <div className="detail-card">
-                  <strong>Repairs And Tracking</strong>
-                  {selectedVehicleRepairs.length === 0 ? (
-                    <p className="workspace-note">No repairs linked to this vehicle yet.</p>
-                  ) : (
-                    <div className="detail-list">
-                      {selectedVehicleRepairs.map((repair) => (
-                        <article className="detail-item" key={repair.id}>
-                          <h4>{repair.service_name}</h4>
-                          <p>Owner: {repair.owner_name}</p>
-                          <p>Master: {repair.master_name}</p>
-                          <div className="tracking-chip-row">
-                            <span className={getRepairStatusClass(repair.status)}>{repairStatusLabels[repair.status]}</span>
-                          </div>
-                          <div className="tracking-chip-row">
-                            <span className="tracking-chip">Tracking: {repair.tracking_code}</span>
-                            <button
-                              type="button"
-                              className="copy-chip"
-                              aria-label={`Copy tracking code ${repair.tracking_code}`}
-                              onClick={() => void handleCopyTrackingCode(repair.tracking_code)}
-                            >
-                              ⧉
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="detail-card">
-                  <strong>Linked Purchases</strong>
-                  {selectedVehiclePurchases.length === 0 ? (
-                    <p className="workspace-note">No purchases linked to this vehicle yet.</p>
-                  ) : (
-                    <div className="detail-list">
-                      {selectedVehiclePurchases.map((entry) => (
-                        <article className="detail-item" key={entry.id}>
-                          <h4>{entry.part_name}</h4>
-                          <p>{entry.supplier_name}</p>
-                          <p className="meta-line">Tracking: {entry.repair_code}</p>
-                          <p className="meta-line">
-                            Qty {entry.quantity} • Buy {formatCurrency(entry.purchase_price)} • Sell {formatCurrency(entry.sale_price)}
-                          </p>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <StaffVehicleDetailPanel
+                  vehicle={selectedVehicle}
+                  vehicleDetails={getVehicleDetails(selectedVehicle)}
+                  owner={selectedVehicleOwner}
+                  repairs={selectedVehicleRepairs}
+                  purchases={selectedVehiclePurchases}
+                  formatCurrency={formatCurrency}
+                  getRepairStatusClass={getRepairStatusClass}
+                  repairStatusLabels={REPAIR_STATUS_LABELS}
+                  onCopyTrackingCode={(trackingCode) => void handleCopyTrackingCode(trackingCode)}
+                />
               </div>
             </section>
           </div>
@@ -1924,7 +1895,12 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
         {isVehicleFormOpen ? (
           <div className="modal-overlay" role="presentation" onClick={closeVehicleFormModal}>
-            <section className="modal-card modal-card-large" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <section
+              className="modal-card modal-card-large vehicle-form-modal"
+              role="dialog"
+              aria-modal="true"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="panel-header">
                 <div>
                   <p className="eyebrow">Vehicle Intake</p>
@@ -1935,10 +1911,17 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                 </button>
               </div>
 
-              <form className="stack-form" onSubmit={handleVehicleSubmit}>
+              <form className="stack-form vehicle-form-stack" onSubmit={handleVehicleSubmit}>
 
                 {/* Owner field + inline customer creation */}
-                <div className="inline-owner-block">
+                <div className="inline-owner-block vehicle-form-section">
+                  <div className="vehicle-form-section-header">
+                    <div>
+                      <p className="eyebrow">Owner</p>
+                      <h4>Select Or Create Owner</h4>
+                    </div>
+                  </div>
+
                   <div className="inline-owner-header">
                     <label className="inline-owner-select">
                       <span>Owner</span>
@@ -1963,12 +1946,18 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                         setInlineCustomerError("");
                       }}
                     >
-                      {isInlineCustomerOpen ? "Cancel" : "+ New customer"}
+                      {isInlineCustomerOpen ? "Cancel new owner" : "Need new owner?"}
                     </button>
                   </div>
 
+                  {!isInlineCustomerOpen ? (
+                    <p className="inline-owner-hint">
+                      Use an existing owner first. Open the new-owner form only if this customer does not exist yet.
+                    </p>
+                  ) : null}
+
                   {isInlineCustomerOpen ? (
-                    <form className="inline-customer-form" onSubmit={handleInlineCustomerSave}>
+                    <div className="inline-customer-form inline-customer-form-expanded">
                       <p className="inline-customer-hint">Fill in the new customer — they'll be created and selected automatically.</p>
                       <div className="form-grid">
                         <label>
@@ -2004,145 +1993,163 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                         />
                       </label>
                       {inlineCustomerError ? <p className="form-error">{inlineCustomerError}</p> : null}
-                      <div className="form-actions">
-                        <button type="submit" className="button" disabled={isSavingInlineCustomer}>
+                      <div className="form-actions inline-owner-actions">
+                        <button type="button" className="button" disabled={isSavingInlineCustomer} onClick={() => void handleInlineCustomerSave()}>
                           {isSavingInlineCustomer ? "Creating…" : "Create & Select"}
                         </button>
                         <button type="button" className="button button-secondary" onClick={() => setIsInlineCustomerOpen(false)}>
                           Cancel
                         </button>
                       </div>
-                    </form>
+                    </div>
                   ) : null}
                 </div>
 
-                <div className="form-grid">
-                  <label>
-                    <span>License Plate</span>
-                    <input
-                      value={vehicleForm.license_plate}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, license_plate: event.target.value }))}
-                      placeholder="e.g. KR 2048A"
-                      type="text"
-                      required
-                    />
-                  </label>
+                <div className="vehicle-form-section">
+                  <div className="vehicle-form-section-header">
+                    <div>
+                      <p className="eyebrow">Identity</p>
+                      <h4>Core Vehicle Data</h4>
+                    </div>
+                  </div>
 
-                  <label>
-                    <span>Year</span>
-                    <select
-                      value={vehicleForm.year}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, year: event.target.value }))}
-                    >
-                      <option value="">Select year</option>
-                      {vehicleYearOptions.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="form-grid">
+                    <label>
+                      <span>License Plate</span>
+                      <input
+                        value={vehicleForm.license_plate}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, license_plate: event.target.value }))}
+                        placeholder="e.g. KR 2048A"
+                        type="text"
+                        required
+                      />
+                    </label>
+
+                    <label>
+                      <span>Year</span>
+                      <select
+                        value={vehicleForm.year}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, year: event.target.value }))}
+                      >
+                        <option value="">Select year</option>
+                        {vehicleYearOptions.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="form-grid">
+                    <label>
+                      <span>Make</span>
+                      <input
+                        value={vehicleForm.make}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, make: event.target.value }))}
+                        placeholder="e.g. Toyota"
+                        type="text"
+                        required
+                      />
+                    </label>
+
+                    <label>
+                      <span>Model</span>
+                      <input
+                        value={vehicleForm.model}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, model: event.target.value }))}
+                        placeholder="e.g. Yaris"
+                        type="text"
+                        required
+                      />
+                    </label>
+                  </div>
                 </div>
 
-                <div className="form-grid">
-                  <label>
-                    <span>Make</span>
-                    <input
-                      value={vehicleForm.make}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, make: event.target.value }))}
-                      placeholder="e.g. Toyota"
-                      type="text"
-                      required
-                    />
-                  </label>
+                <div className="vehicle-form-section vehicle-form-section-secondary">
+                  <div className="vehicle-form-section-header">
+                    <div>
+                      <p className="eyebrow">Specs</p>
+                      <h4>Technical And Service Details</h4>
+                    </div>
+                  </div>
+
+                  <div className="form-grid">
+                    <label>
+                      <span>VIN <span className="field-hint" style={{ display: "inline" }}>(17 characters)</span></span>
+                      <input
+                        value={vehicleForm.vin}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, vin: event.target.value.toUpperCase() }))}
+                        placeholder="e.g. JTNB1234567890001"
+                        type="text"
+                        maxLength={17}
+                        pattern="[A-HJ-NPR-Z0-9]{17}"
+                        title="VIN must be exactly 17 alphanumeric characters (no I, O, Q)"
+                        style={{ textTransform: "uppercase" }}
+                      />
+                    </label>
+
+                    <label>
+                      <span>Color</span>
+                      <input
+                        value={vehicleForm.color}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, color: event.target.value }))}
+                        placeholder="e.g. Silver"
+                        type="text"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="form-grid">
+                    <label>
+                      <span>Mileage <span className="field-hint" style={{ display: "inline" }}>km</span></span>
+                      <input
+                        value={vehicleForm.mileage}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, mileage: event.target.value }))}
+                        placeholder="e.g. 78210"
+                        type="number"
+                        min="0"
+                        step="1"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Last Service Date</span>
+                      <input
+                        value={vehicleForm.last_service_date}
+                        onChange={(event) => setVehicleForm((current) => ({ ...current, last_service_date: event.target.value }))}
+                        type="date"
+                      />
+                    </label>
+                  </div>
 
                   <label>
-                    <span>Model</span>
+                    <span>Date Added</span>
                     <input
-                      value={vehicleForm.model}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, model: event.target.value }))}
-                      placeholder="e.g. Yaris"
-                      type="text"
-                      required
-                    />
-                  </label>
-                </div>
-
-                <div className="form-grid">
-                  <label>
-                    <span>VIN <span className="field-hint" style={{ display: "inline" }}>(17 characters)</span></span>
-                    <input
-                      value={vehicleForm.vin}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, vin: event.target.value.toUpperCase() }))}
-                      placeholder="e.g. JTNB1234567890001"
-                      type="text"
-                      maxLength={17}
-                      pattern="[A-HJ-NPR-Z0-9]{17}"
-                      title="VIN must be exactly 17 alphanumeric characters (no I, O, Q)"
-                      style={{ textTransform: "uppercase" }}
-                    />
-                  </label>
-
-                  <label>
-                    <span>Color</span>
-                    <input
-                      value={vehicleForm.color}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, color: event.target.value }))}
-                      placeholder="e.g. Silver"
-                      type="text"
-                    />
-                  </label>
-                </div>
-
-                <div className="form-grid">
-                  <label>
-                    <span>Mileage <span className="field-hint" style={{ display: "inline" }}>km</span></span>
-                    <input
-                      value={vehicleForm.mileage}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, mileage: event.target.value }))}
-                      placeholder="e.g. 78210"
-                      type="number"
-                      min="0"
-                      step="1"
-                    />
-                  </label>
-
-                  <label>
-                    <span>Last Service Date</span>
-                    <input
-                      value={vehicleForm.last_service_date}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, last_service_date: event.target.value }))}
+                      value={vehicleForm.added_date}
+                      onChange={(event) => setVehicleForm((current) => ({ ...current, added_date: event.target.value }))}
                       type="date"
                     />
+                    <small className="field-hint">Defaults to today on this device, but you can change it.</small>
+                  </label>
+
+                  <label>
+                    <span>Notes</span>
+                    <textarea
+                      value={vehicleForm.notes}
+                      onChange={(event) => setVehicleForm((current) => ({ ...current, notes: event.target.value }))}
+                      placeholder="e.g. Customer requests photo before any paint work"
+                      rows={4}
+                    />
                   </label>
                 </div>
-
-                <label>
-                  <span>Date Added</span>
-                  <input
-                    value={vehicleForm.added_date}
-                    onChange={(event) => setVehicleForm((current) => ({ ...current, added_date: event.target.value }))}
-                    type="date"
-                  />
-                  <small className="field-hint">Defaults to today on this device, but you can change it.</small>
-                </label>
-
-                <label>
-                  <span>Notes</span>
-                  <textarea
-                    value={vehicleForm.notes}
-                    onChange={(event) => setVehicleForm((current) => ({ ...current, notes: event.target.value }))}
-                    placeholder="e.g. Customer requests photo before any paint work"
-                    rows={4}
-                  />
-                </label>
 
                 {customers.length === 0 ? (
                   <p className="workspace-note">Create a customer first, then attach the vehicle.</p>
                 ) : null}
                 {vehicleError ? <p className="form-error">{vehicleError}</p> : null}
 
-                <div className="form-actions">
+                <div className="form-actions vehicle-modal-actions">
                   <button type="submit" className="button" disabled={isSavingVehicle || customers.length === 0}>
                     {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
                   </button>
@@ -2158,19 +2165,24 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     );
   }
 
-  const kanbanColumns: { status: RepairStatus; label: string }[] = [
-    { status: "new",           label: "New" },
-    { status: "in_progress",   label: "In Progress" },
-    { status: "waiting_parts", label: "Waiting Parts" },
-    { status: "completed",     label: "Completed" },
-  ];
-
   function renderRepairsPreview() {
     return (
-      <div className="workspace-stack kanban-workspace">
+      <div className="workspace-stack kanban-workspace repairs-workspace">
+        {renderStaffMobileTaskRail({
+          title: "Repair flow",
+          summary:
+            visibleRepairs.length > 0
+              ? `${visibleRepairs.length} repairs ready for update, notes, and photo handling.`
+              : "Create the next repair card or clear the search to reveal more jobs.",
+          searchValue: repairSearch,
+          searchPlaceholder: "Search owner, vehicle, service or tracking",
+          onSearchChange: setRepairSearch,
+          primaryActionLabel: "New Repair",
+          onPrimaryAction: openRepairCreateModal,
+        })}
 
         {/* Topbar */}
-        <div className="kanban-topbar">
+        <div className="kanban-topbar section-desktop-topbar">
           <div>
             <p className="eyebrow">Repairs</p>
             <h2>Kanban Board</h2>
@@ -2190,81 +2202,37 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
           </div>
         </div>
 
-        {/* Board */}
-        <div className="kanban-board">
-          {kanbanColumns.map(({ status, label }) => {
-            const colRepairs = visibleRepairs.filter((r) => r.status === status);
-            const isDropTarget = dragOverColumn === status;
-            return (
-              <div
-                key={status}
-                className={`kanban-col ${isDropTarget ? "kanban-col-drop-target" : ""}`}
-                onDragOver={(e) => handleColumnDragOver(status, e)}
-                onDragLeave={handleColumnDragLeave}
-                onDrop={(e) => handleColumnDrop(status, e)}
-              >
-                {/* Column header */}
-                <div className="kanban-col-header">
-                  <span className={getRepairStatusClass(status)}>{label}</span>
-                  <span className="kanban-count">{colRepairs.length}</span>
-                </div>
+        <div className="repairs-surface-stack">
+          <StaffRepairsMobileList
+            repairs={visibleRepairs}
+            activeFilter={mobileRepairStatusFilter}
+            onFilterChange={setMobileRepairStatusFilter}
+            onOpenRepair={openRepairModal}
+            onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
+          />
 
-                {/* Cards */}
-                <div className="kanban-cards">
-                  {colRepairs.map((repair) => (
-                    <article
-                      key={repair.id}
-                      className={`kanban-card ${draggingRepairId === repair.id ? "kanban-card-dragging" : ""}`}
-                      draggable
-                      onDragStart={(e) => handleCardDragStart(repair.id, e)}
-                      onDragEnd={handleCardDragEnd}
-                      onClick={() => openRepairModal(repair)}
-                    >
-                      <div className="kanban-card-top">
-                        <h4 className="kanban-card-vehicle">{repair.vehicle_label}</h4>
-                        <span className="kanban-drag-handle" title="Drag to move">⠿</span>
-                      </div>
-
-                      <p className="kanban-card-owner">{repair.owner_name}</p>
-                      <p className="kanban-card-service">{repair.service_name}</p>
-
-                      {repair.issue_notes ? (
-                        <p className="kanban-card-issue">{repair.issue_notes}</p>
-                      ) : null}
-
-                      <div className="kanban-card-footer">
-                        <span className="tracking-chip">#{repair.tracking_code}</span>
-                        <button
-                          type="button"
-                          className="copy-chip"
-                          aria-label={`Copy tracking code ${repair.tracking_code}`}
-                          onClick={(event) => void handleCopyTrackingCode(repair.tracking_code, event)}
-                        >
-                          ⧉
-                        </button>
-                      </div>
-
-                      <div className="kanban-card-meta">
-                        <span>{repair.master_name}</span>
-                        <span>{repair.created_at}</span>
-                      </div>
-                    </article>
-                  ))}
-
-                  {colRepairs.length === 0 ? (
-                    <div className={`kanban-empty ${isDropTarget ? "kanban-empty-active" : ""}`}>
-                      <span>{isDropTarget ? "Drop here" : "No repairs"}</span>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
+          <StaffRepairsKanban
+            repairs={visibleRepairs}
+            draggingRepairId={draggingRepairId}
+            dragOverColumn={dragOverColumn}
+            onCardDragStart={handleCardDragStart}
+            onCardDragEnd={handleCardDragEnd}
+            onColumnDragOver={handleColumnDragOver}
+            onColumnDragLeave={handleColumnDragLeave}
+            onColumnDrop={handleColumnDrop}
+            onOpenRepair={openRepairModal}
+            onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
+          />
         </div>
 
         {isRepairFormOpen ? (
           <div className="modal-overlay" role="presentation" onClick={closeRepairCreateModal}>
-            <section className="modal-card modal-card-large" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <section
+              className="modal-card modal-card-large repair-form-modal"
+              role="dialog"
+              aria-modal="true"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="panel-header">
                 <div>
                   <p className="eyebrow">Repair Intake</p>
@@ -2275,7 +2243,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                 </button>
               </div>
 
-              <form className="stack-form" onSubmit={handleRepairSubmit}>
+              <form className="stack-form repair-form-stack" onSubmit={handleRepairSubmit}>
                 <label>
                   <span>Vehicle</span>
                   <select
@@ -2356,7 +2324,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                         }))
                       }
                     >
-                      {Object.entries(repairStatusLabels).map(([value, label]) => (
+                      {Object.entries(REPAIR_STATUS_LABELS).map(([value, label]) => (
                         <option key={value} value={value}>
                           {label}
                         </option>
@@ -2366,7 +2334,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
                   <label>
                     <span>Before Repair Photos</span>
-                    <input accept="image/*" multiple onChange={handleRepairPhotosChange} type="file" />
+                    <input accept="image/*" capture="environment" multiple onChange={handleRepairPhotosChange} type="file" />
                   </label>
                 </div>
 
@@ -2389,7 +2357,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
 
                 {repairError ? <p className="form-error">{repairError}</p> : null}
 
-                <div className="form-actions">
+                <div className="form-actions repair-modal-actions">
                   <button type="submit" className="button" disabled={isSavingRepair}>
                     {isSavingRepair ? "Saving..." : "Create Repair"}
                   </button>
@@ -2405,7 +2373,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
         {selectedRepair ? (
           <div className="modal-overlay" role="presentation" onClick={closeRepairModal}>
             <section
-              className="modal-card"
+              className="modal-card repair-update-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="repair-modal-title"
@@ -2436,7 +2404,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
               <div className="status-switcher">
                 <span className="status-switcher-label">Status</span>
                 <div className="status-switcher-options">
-                  {kanbanColumns.map(({ status, label }) => (
+                  {REPAIR_KANBAN_COLUMNS.map(({ status, label }) => (
                     <button
                       key={status}
                       type="button"
@@ -2450,7 +2418,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                 </div>
               </div>
 
-              <div className="customer-detail-stack">
+              <div className="customer-detail-stack repair-modal-sections">
                 <div className="detail-card repair-info-card">
                   <strong>Repair Info</strong>
                   <div className="repair-info-stack">
@@ -2487,7 +2455,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   </div>
                 </div>
 
-                <label className="repair-status-field">
+                <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Master</span>
                   {isStaff ? (
                     <p>{selectedRepair.master_name}</p>
@@ -2505,7 +2473,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   )}
                 </label>
 
-                <label className="repair-status-field">
+                <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Add Repair Note</span>
                   <textarea
                     value={repairModalNewNote}
@@ -2513,13 +2481,13 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     rows={4}
                   />
                 </label>
-                <div className="form-actions">
+                <div className="form-actions repair-note-actions">
                   <button type="button" className="button button-secondary" onClick={handleRepairNoteAdd}>
                     Add Note
                   </button>
                 </div>
 
-                <div className="detail-card">
+                <div className="detail-card repair-modal-panel">
                   <strong>Repair Notes History</strong>
                   {selectedRepair.repair_notes.length === 0 ? (
                     <p className="workspace-note">No repair notes yet.</p>
@@ -2548,9 +2516,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   )}
                 </div>
 
-                <label className="repair-status-field">
+                <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Photos Before Repair</span>
-                  <input accept="image/*" multiple onChange={handleRepairBeforePhotosChange} type="file" />
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairBeforePhotosChange} type="file" />
                 </label>
                 {repairBeforePhotos.length > 0 ? (
                   <div className="photo-preview-grid">
@@ -2560,9 +2528,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   </div>
                 ) : null}
 
-                <label className="repair-status-field">
+                <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Photos During Repair</span>
-                  <input accept="image/*" multiple onChange={handleRepairDuringPhotosChange} type="file" />
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairDuringPhotosChange} type="file" />
                 </label>
                 {repairDuringPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
@@ -2572,9 +2540,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   </div>
                 ) : null}
 
-                <label className="repair-status-field">
+                <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Photos After Repair</span>
-                  <input accept="image/*" multiple onChange={handleRepairAfterPhotosChange} type="file" />
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairAfterPhotosChange} type="file" />
                 </label>
                 {repairAfterPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
@@ -2584,7 +2552,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   </div>
                 ) : null}
 
-                <div className="form-actions">
+                <div className="form-actions repair-modal-actions">
                   <button type="button" className="button" onClick={handleRepairModalSave}>
                     Save Repair Update
                   </button>

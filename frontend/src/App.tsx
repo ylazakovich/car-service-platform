@@ -145,6 +145,7 @@ const STAFF_ALLOWED_SECTIONS: StaffSection[] = ["vehicles", "repairs"];
 function StaffShell() {
   const { user, logout, isStaff } = useAuth();
   const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const visibleNavGroups = isStaff
     ? [
@@ -152,6 +153,7 @@ function StaffShell() {
         { label: "Operations", items: ["repairs"]  as StaffSection[] },
       ]
     : navGroups;
+  const mobileSections = visibleNavGroups.flatMap((group) => group.items);
 
   useEffect(() => {
     writeStoredStaffSection(activeSection);
@@ -163,10 +165,56 @@ function StaffShell() {
     }
   }, [isStaff, activeSection]);
 
+  useEffect(() => {
+    setIsMobileNavOpen(false);
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    document.body.classList.toggle("mobile-nav-open", isMobileNavOpen);
+    return () => {
+      document.body.classList.remove("mobile-nav-open");
+    };
+  }, [isMobileNavOpen]);
+
+  function handleSectionChange(section: StaffSection) {
+    setActiveSection(section);
+    setIsMobileNavOpen(false);
+  }
+
   return (
     <div className="shell">
-      <aside className="shell-sidebar">
+      <header className="shell-mobile-bar">
+        <button
+          type="button"
+          className="mobile-menu-button"
+          aria-label={isMobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={isMobileNavOpen}
+          onClick={() => setIsMobileNavOpen((current) => !current)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <div className="shell-mobile-context">
+          <span className="mobile-section-pill">{isStaff ? "Staff Flow" : "Workspace"}</span>
+          <strong>{sectionLabels[activeSection]}</strong>
+        </div>
+        <button type="button" className="button button-secondary mobile-signout-button" onClick={logout}>
+          Sign Out
+        </button>
+      </header>
+
+      {isMobileNavOpen ? <button type="button" className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setIsMobileNavOpen(false)} /> : null}
+
+      <aside className={`shell-sidebar ${isMobileNavOpen ? "shell-sidebar-mobile-open" : ""}`}>
         <div className="shell-sidebar-top">
+          <div className="shell-sidebar-header">
+            <span className="mobile-section-pill">{isStaff ? "Staff Menu" : "Workspace Menu"}</span>
+            <button type="button" className="shell-sidebar-close" onClick={() => setIsMobileNavOpen(false)}>
+              Close
+            </button>
+          </div>
 
           {/* Brand */}
           <div className="brand-block">
@@ -187,7 +235,7 @@ function StaffShell() {
                     key={section}
                     type="button"
                     className={`nav-link ${activeSection === section ? "nav-link-active" : ""}`}
-                    onClick={() => setActiveSection(section)}
+                    onClick={() => handleSectionChange(section)}
                   >
                     <span className="nav-link-icon">{sectionIcons[section]}</span>
                     <span>{sectionLabels[section]}</span>
@@ -205,10 +253,10 @@ function StaffShell() {
               Find any vehicle by plate, make, owner name or VIN. Repairs are the next vertical slice.
             </p>
             <div className="sidebar-actions">
-              <button type="button" className="button" onClick={() => setActiveSection("vehicles")}>
+              <button type="button" className="button" onClick={() => handleSectionChange("vehicles")}>
                 Go to Vehicles
               </button>
-              <button type="button" className="button button-ghost" onClick={() => setActiveSection("repairs")}>
+              <button type="button" className="button button-ghost" onClick={() => handleSectionChange("repairs")}>
                 View Repairs
               </button>
             </div>
@@ -235,6 +283,22 @@ function StaffShell() {
       <main className="shell-main">
         <StaffHomePage activeSection={activeSection} onSelectSection={setActiveSection} />
       </main>
+
+      {isStaff ? (
+        <nav className="mobile-tabbar" aria-label="Staff quick navigation">
+          {mobileSections.map((section) => (
+            <button
+              key={section}
+              type="button"
+              className={`mobile-tabbar-link ${activeSection === section ? "mobile-tabbar-link-active" : ""}`}
+              onClick={() => handleSectionChange(section)}
+            >
+              <span className="nav-link-icon">{sectionIcons[section]}</span>
+              <span>{sectionLabels[section]}</span>
+            </button>
+          ))}
+        </nav>
+      ) : null}
     </div>
   );
 }
