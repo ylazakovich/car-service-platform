@@ -42,6 +42,16 @@ export const REPAIR_KANBAN_COLUMNS: { status: RepairStatus; label: string }[] = 
   { status: "completed", label: "Completed" },
 ];
 
+export function formatRepairDisplayDate(value: string) {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}:\d{2}))?/);
+  if (!match) {
+    return value;
+  }
+
+  const [, year, month, day, time] = match;
+  return time ? `${day}-${month}-${year} ${time}` : `${day}-${month}-${year}`;
+}
+
 export function getRepairStatusClass(status: RepairStatus) {
   return `repair-status-chip repair-status-${status}`;
 }

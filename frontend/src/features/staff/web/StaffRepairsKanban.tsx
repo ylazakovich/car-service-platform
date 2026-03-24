@@ -1,5 +1,6 @@
 import type { DragEvent } from "react";
 import {
+  formatRepairDisplayDate,
   getRepairStatusClass,
   REPAIR_KANBAN_COLUMNS,
   type RepairEntry,
@@ -87,7 +88,7 @@ export function StaffRepairsKanban({
 
                     <div className="kanban-card-meta">
                       <span>{repair.master_name}</span>
-                      <span>{repair.created_at}</span>
+                      <span>{formatRepairDisplayDate(repair.created_at)}</span>
                     </div>
                   </article>
                 ))}
