@@ -161,3 +161,82 @@ class VehicleApiTests(TestCase):
         vehicles = list_response.json()
         self.assertEqual(len(vehicles), 1)
         self.assertEqual(vehicles[0]["mileage"], 12000)
+
+
+class VehicleOwnershipTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        User = get_user_model()
+        self.staff_a = User.objects.create_user(
+            email="staff_a@test.local",
+            password="staff_a12345",
+            role="staff",
+        )
+        self.staff_b = User.objects.create_user(
+            email="staff_b@test.local",
+            password="staff_b12345",
+            role="staff",
+        )
+        self.admin = User.objects.create_user(
+            email="admin@test.local",
+            password="admin12345",
+            role="admin",
+        )
+        self.customer_of_a = Customer.objects.create(
+            full_name="Customer A",
+            phone="+48 100 000 001",
+            assigned_to=self.staff_a,
+        )
+        self.customer_of_b = Customer.objects.create(
+            full_name="Customer B",
+            phone="+48 100 000 002",
+            assigned_to=self.staff_b,
+        )
+
+    def test_staff_cannot_create_vehicle_for_others_customer(self):
+        self.client.force_authenticate(self.staff_a)
+
+        response = self.client.post(
+            "/api/vehicles/",
+            {
+                "customer_id": self.customer_of_b.id,
+                "license_plate": "EE 1111A",
+                "make": "Ford",
+                "model": "Focus",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_staff_can_create_vehicle_for_own_customer(self):
+        self.client.force_authenticate(self.staff_a)
+
+        response = self.client.post(
+            "/api/vehicles/",
+            {
+                "customer_id": self.customer_of_a.id,
+                "license_plate": "FF 2222B",
+                "make": "Opel",
+                "model": "Astra",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+
+    def test_admin_can_create_vehicle_for_any_customer(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            "/api/vehicles/",
+            {
+                "customer_id": self.customer_of_b.id,
+                "license_plate": "GG 3333C",
+                "make": "Nissan",
+                "model": "Leaf",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)

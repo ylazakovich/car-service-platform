@@ -33,7 +33,9 @@ class CustomerDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CustomerSerializer
 
     def get_queryset(self):
-        return Customer.objects.annotate(vehicle_count=Count("vehicles"))
+        if self.request.user.role == "admin":
+            return Customer.objects.annotate(vehicle_count=Count("vehicles"))
+        return Customer.objects.filter(assigned_to=self.request.user).annotate(vehicle_count=Count("vehicles"))
 
     def get_object(self):
         obj = super().get_object()
