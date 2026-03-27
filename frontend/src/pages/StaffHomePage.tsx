@@ -1446,41 +1446,39 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           onPrimaryAction: openVehicleCreateModal,
         })}
 
-        <section className="panel">
-          <div className="panel-header section-desktop-header">
-            <div>
-              <p className="eyebrow">Registry</p>
-              <h3>Vehicle List</h3>
-            </div>
+        <div className="kanban-topbar section-desktop-topbar">
+          <div>
+            <p className="eyebrow">Registry</p>
+            <h2>Vehicle List</h2>
+          </div>
+          <div className="workspace-top-actions">
+            <label className="kanban-search">
+              <input
+                value={vehicleSearch}
+                onChange={(event) => setVehicleSearch(event.target.value)}
+                placeholder="Search vehicles…"
+                type="search"
+              />
+            </label>
             <button type="button" className="button" onClick={openVehicleCreateModal}>
-              Add New Vehicle
+              + Add Vehicle
             </button>
           </div>
+        </div>
 
-          <label className="search-field search-field-tight section-desktop-search">
-            <span>Search vehicles</span>
-            <input
-              value={vehicleSearch}
-              onChange={(event) => setVehicleSearch(event.target.value)}
-              placeholder="Plate, make, model, VIN or customer"
-              type="search"
-            />
-          </label>
+        <div className="vehicles-surface-stack">
+          <StaffVehiclesMobileList
+            vehicles={visibleVehicles}
+            getVehicleDetails={getVehicleDetails}
+            onOpenVehicle={openVehicleDetailModal}
+          />
 
-          <div className="vehicles-surface-stack">
-            <StaffVehiclesMobileList
-              vehicles={visibleVehicles}
-              getVehicleDetails={getVehicleDetails}
-              onOpenVehicle={openVehicleDetailModal}
-            />
-
-            <StaffVehiclesRegistry
-              vehicles={visibleVehicles}
-              getVehicleDetails={getVehicleDetails}
-              onOpenVehicle={openVehicleDetailModal}
-            />
-          </div>
-        </section>
+          <StaffVehiclesRegistry
+            vehicles={visibleVehicles}
+            getVehicleDetails={getVehicleDetails}
+            onOpenVehicle={openVehicleDetailModal}
+          />
+        </div>
 
         {selectedVehicle ? (
           <div className="modal-overlay" role="presentation" onClick={closeVehicleDetailModal}>
