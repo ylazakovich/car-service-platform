@@ -3,6 +3,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from customers.models import Customer
+from purchases.models import Purchase, Supplier
 from .models import Vehicle
 
 
@@ -240,3 +241,31 @@ class VehicleOwnershipTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 201)
+
+    def test_delete_vehicle_with_linked_purchases_returns_409(self):
+        self.client.force_authenticate(self.admin)
+
+        vehicle = Vehicle.objects.create(
+            customer=self.customer_of_a,
+            license_plate="HH 4444D",
+            make="Mazda",
+            model="CX-5",
+        )
+
+        supplier = Supplier.objects.create(
+            name="TestSupplier",
+            nip="1234567890",
+        )
+
+        Purchase.objects.create(
+            vehicle=vehicle,
+            supplier=supplier,
+            order_date="2025-01-01",
+            part_name="Engine Oil",
+            quantity=2,
+            purchase_price="25.50",
+        )
+
+        response = self.client.delete(f"/api/vehicles/{vehicle.id}")
+
+        self.assertEqual(response.status_code, 409)

@@ -141,6 +141,8 @@ UNFOLD = {
 
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
+STAFF_EMAIL = os.environ.get("STAFF_EMAIL", "")
+STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "")
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = os.environ.get("TIME_ZONE", "UTC")
