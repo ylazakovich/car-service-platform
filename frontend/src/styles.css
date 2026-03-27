@@ -2839,3 +2839,70 @@ textarea { resize: vertical; }
   font-size: 0.92rem;
   margin: 0;
 }
+
+/* ═══════════════════════════════════════════════
+   VEHICLE CARDS
+   ═══════════════════════════════════════════════ */
+
+.vehicle-card-clickable { cursor: pointer; }
+
+.vehicle-card-body {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s4);
+  width: 100%;
+  align-items: start;
+}
+
+.vehicle-card-info {
+  display: grid;
+  gap: var(--s2);
+}
+
+.vehicle-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.vehicle-card-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.vehicle-card-owner {
+  margin: 0;
+  color: var(--text-mid);
+  font-size: 0.82rem;
+}
+
+.vehicle-card-service {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-high);
+  padding: var(--s3) var(--s4);
+  min-width: 160px;
+}
+
+.vehicle-service-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 3px var(--s3);
+  font-size: 0.78rem;
+  justify-content: end;
+  text-align: right;
+}
+
+.vehicle-service-label {
+  color: var(--text-soft);
+  text-align: left;
+}
+
+.vehicle-service-empty {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  text-align: right;
+}
