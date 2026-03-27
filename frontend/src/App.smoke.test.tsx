@@ -77,7 +77,7 @@ describe("bootstrap application", () => {
       }
       if (url === "/auth/me") {
         return Promise.resolve({
-          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "manager", is_staff: false },
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
       if (url === "/customers/") {
@@ -128,7 +128,7 @@ describe("bootstrap application", () => {
       return Promise.resolve({ data: [] });
     });
     mockApi.post.mockResolvedValue({
-      data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "manager", is_staff: false },
+      data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
     });
     mockApi.patch.mockResolvedValue({ data: {} });
     mockApi.delete.mockResolvedValue({ data: {} });

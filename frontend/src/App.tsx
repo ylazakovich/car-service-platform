@@ -25,6 +25,7 @@ const sectionLabels: Record<StaffSection, string> = {
 
 const sectionOrder: StaffSection[] = [
   "dashboard",
+  "customers",
   "vehicles",
   "repairs",
   "purchases",
