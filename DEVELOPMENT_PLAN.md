@@ -4,9 +4,9 @@
 История и завершенные крупные блоки выносятся в `docs/planning/archive/`.
 
 - Active plan owner: `planner` + `architect`
-- Last updated: `2026-03-18`
+- Last updated: `2026-03-27`
 - Archive: `docs/planning/archive/`
-- Status: `m2 repair operations prototype in progress | staff role separation implemented`
+- Status: `m2 completed | m3 reporting and documents — next`
 
 ## 1) Product Goal
 Собрать с нуля устойчивую `car-service-platform` для учета работ автосервиса, работы с клиентами и автомобилями, ведения истории ремонтов и формирования итоговых документов.
@@ -22,20 +22,20 @@
 - формирование акта выполненных работ
 
 ## 2) Current Baseline
-- Репозиторий инициализирован.
-- Базовый CI-каркас добавлен.
-- Локальный agent workflow добавлен.
-- Есть исходное product vision из `plan_autoservice_product.docx`.
-- Зафиксирован рекомендуемый technical baseline в `TECH_STACK.md`.
-- Поднят минимальный runnable skeleton: `backend`, `frontend`, `docker-compose`, `.env.example`, `start/stop` scripts.
-- Active planning docs переведены из template-состояния в стартовый project foundation.
-- Реализован первый доменный slice: `Customer + Vehicle` с backend CRUD, Django Admin и staff UI registries.
-- Staff frontend получил рабочие экраны `Customers`, `Vehicles`, `Repairs`, `Purchases`, `Users` с локальными demo flows для валидации продукта.
-- Во frontend реализован repair prototype: intake form, tracking code формата `TOR-*`, выбор мастера, фото `before/during/after`, статусы и modal repair card.
-- Во frontend реализован purchases prototype: optional vehicle / tracking / sale price, сценарий закупки в склад без привязки к ремонту.
-- `Dashboard` пока оставлен намеренно пустым до фиксации итоговой операционной структуры.
-- Реализовано разделение ролей: admin видит все данные, staff видит только своих клиентов и их автомобили, навигация staff ограничена вкладками Vehicles и Repairs.
-- Staff ограничен в правах UI: не может редактировать и удалять vehicle/customer записи, не может удалять repair карточки и переназначать мастера.
+- Репозиторий инициализирован, CI настроен, docker-compose + gunicorn + nginx в production-режиме.
+- Полный backend CRUD: `Customer`, `Vehicle`, `Repair`, `RepairNote`, `Purchase`, `Supplier`, `Service`.
+- REST API покрыт тестами: **48 backend + 8 frontend smoke tests**.
+- Роли `admin` / `staff` реализованы на уровне API (ownership, queryset scoping, perform_create guard).
+- Ремонты: backend-backed flow, tracking code `TOR-{id:04d}` генерируется на сервере, note history с авторством, смена статуса через drag-and-drop.
+- Purchases: API с auto-create supplier по имени, привязка к vehicle и repair_code.
+- Services: справочник услуг с API, frontend использует реальные записи вместо hardcoded presets.
+- Vehicle: поля `mileage`, `last_service_date`, `added_date` синхронизированы с backend.
+- Фото ремонта: кнопки UI присутствуют, upload отключён (деferred до выбора хранилища — MinIO / S3).
+- Staff frontend: экраны Vehicles, Repairs, Purchases, Users; drag-and-drop kanban; mobile list/detail.
+- Admin: Unfold admin, кастомный sidebar, clickable invoice_url, assigned_to в списке клиентов.
+- `StaffHomePage.tsx` рефакторен: выделены `usePurchases` и `useRepairs` custom hooks (3442 → 2904 строк).
+- Весь технический долг закрыт: TD-01 — TD-18.
+- `Dashboard` реализован как операционная сводка (moneyflow + service board tabs).
 
 ## 3) Product Scope (MVP Baseline)
 MVP первой версии должен включать:
@@ -88,16 +88,16 @@ MVP первой версии должен включать:
 - отдельные блоки для работ, запчастей и итогов
 
 ## 4) Active Milestone
-`M2: Repair Operations Prototype`
+`M3: Reporting And Documents`
 
-Цель milestone: перевести проект от базовых реестров к первому рабочему staff flow для ремонтов, закупок и назначения мастеров.
+Цель milestone: реализовать отчётность и итоговые документы на основе накопленных данных из M2.
 
 Milestone включает:
-1. Довести `RepairOrder` от frontend prototype до backend-backed flow.
-2. Зафиксировать source-of-truth по статусам ремонта, tracking code `TOR-*`, фото и note history.
-3. Реализовать назначение мастера на ремонт как часть операционного потока.
-4. Довести `Purchases` до реального учета деталей с привязкой или без привязки к ремонту.
-5. Подготовить переход к полным карточкам автомобиля и клиента с реальной историей ремонтов.
+1. Месячная история работ: срез по месяцу, фильтры по клиенту и машине, агрегаты.
+2. Отчёт по поставщикам: количество заказов и общая сумма закупок.
+3. Акт выполненных работ: генерация на основании завершённого ремонта.
+4. PDF-экспорт акта (если подтверждён как обязательный — см. open decisions).
+5. Хранение фото ремонта: выбрать и реализовать хранилище (MinIO или S3-compatible).
 
 ## 5) Delivery Roadmap
 
@@ -106,45 +106,35 @@ Milestone включает:
 - есть source-of-truth по ключевым сущностям и lifecycle
 - есть source-of-truth по техническому стеку и access model
 - CI, planning workflow и initial skeleton готовы
+- current status: `completed`
 
 ### M1: Core Records
-- клиенты
-- автомобили
-- справочник автомобилей для выбора из списка
-- связи клиент -> автомобили
-- базовые CRUD-операции
-- глобальный поиск по номеру машины и клиенту
-- current status: `completed in current baseline`, backend CRUD и staff registry UI уже реализованы
+- клиенты, автомобили, связи клиент → автомобили
+- базовые CRUD-операции, глобальный поиск
+- current status: `completed`
 
 ### M2: Repair Operations
-- создание ремонта
-- tracking code и публичная проверка статуса по коду
-- baseline статусы `new`, `in_progress`, `waiting_parts`, `completed`
-- фото процесса
-- mobile-friendly photo capture/upload/delete flow
-- note history по ремонту с авторством
-- назначение мастера на ремонт
-- работы
-- запчасти
-- поставщики
-- история ремонта и карточка автомобиля
-- current status: `frontend prototype in progress`, persistence и backend API еще впереди
+- backend-backed repair flow с tracking code `TOR-*`, статусами, мастером, note history
+- purchases API с auto-create supplier, привязкой к vehicle
+- services API, vehicle extra fields (mileage, last_service_date, added_date)
+- весь технический долг (TD-01 — TD-18) закрыт
+- 48 backend + 8 frontend тестов
+- current status: `completed 2026-03-27`
 
 ### M3: Reporting And Documents
 - месячная история работ
 - агрегаты и сводки
 - акты выполненных работ
-- подготовка PDF-генерации, если она подтверждена как обязательная
+- PDF-генерация (если подтверждена)
+- хранение фото ремонта (MinIO / S3)
+- current status: `next`
 
 ## 6) Acceptance Criteria
-Milestone `M2` считается завершенным, если:
-1. Можно создать ремонт для автомобиля и клиента через backend-backed flow.
-2. Для ремонта есть tracking code формата `TOR-*`, статус, мастер и issue notes.
-3. Для ремонта можно хранить фото `before`, `during`, `after`.
-4. Repair notes ведутся как append-only история с автором и временем создания.
-5. Закупки деталей можно вести как с привязкой к ремонту, так и в запас без привязки.
-6. Карточка клиента и автомобиля показывает реальные ремонты, а не только demo placeholders.
-7. Frontend и backend покрыты smoke-check сценарием `customer -> vehicle -> repair -> update status -> purchase`.
+Milestone `M3` считается завершённым, если:
+1. Есть страница месячной истории с фильтрами и агрегатами (сумма работ, запчастей, кол-во машин, клиентов).
+2. Есть отчёт по поставщикам с количеством заказов и суммой.
+3. Для завершённого ремонта можно сформировать акт выполненных работ.
+4. Фото ремонта хранятся на сервере (не только в сессии браузера).
 
 ## 7) Constraints
 - Не раздувать active-файлы историей.
@@ -156,7 +146,6 @@ Milestone `M2` считается завершенным, если:
 ## 8) Confirmed In Scope
 - клиенты
 - автомобили
-- справочник автомобилей для выбора марки/модели/года
 - ремонты и история ремонтов
 - tracking code для клиента без отдельного кабинета
 - фото процесса ремонта
@@ -167,13 +156,14 @@ Milestone `M2` считается завершенным, если:
 
 ## 9) Deferred / Open Decisions
 - нужен ли PDF-экспорт акта в первой версии
-- нужно ли хранить email клиента
+- хранилище фото: MinIO (self-hosted) vs S3-compatible cloud
 - может ли один ремонт содержать несколько отдельных проблем
 - нужен ли VIN API enrichment после MVP
 - нужно ли разделять note types на `client complaint`, `master note`, `admin note`
 - нужен ли учет оплат клиента
 - нужен ли склад запчастей
 - нужны ли уведомления о ТО и ремонтах
+- справочник марок/моделей автомобилей: внешний API или встроенный dataset
 
 ## 10) Source Of Truth Map
 - Strategy (active): `DEVELOPMENT_PLAN.md`
@@ -184,17 +174,19 @@ Milestone `M2` считается завершенным, если:
 
 ## 11) Access Model
 
-Роли пользователей: `admin`, `staff`. Роль `manager` удалена.
+Роли пользователей: `admin`, `staff`.
 
 | Role  | Navigation | Data Access |
 |-------|-----------|-------------|
-| admin | все вкладки: dashboard, vehicles, repairs, purchases, users | все клиенты, все автомобили |
+| admin | все вкладки: dashboard, customers, vehicles, repairs, purchases, users | все клиенты, все автомобили, все ремонты |
 | staff | только vehicles и repairs | только назначенные клиенты (`Customer.assigned_to`) и их автомобили |
 
 Правила:
-- Staff создает клиента → клиент автоматически привязывается к нему (`assigned_to = request.user`)
-- Admin создает клиента → `assigned_to = null` (виден всем admins)
-- Repairs пока frontend-only, фильтрация будет добавлена после бэкенда M2
+- Staff создаёт клиента → клиент автоматически привязывается к нему (`assigned_to = request.user`)
+- Admin создаёт клиента → `assigned_to = null` (виден всем admins)
+- Staff создаёт vehicle → проверяется, что customer принадлежит request.user (иначе 403)
+- Staff обращается к чужому customer по ID → 404 (queryset скоупирован, не 403)
+- Repairs: backend-backed, staff видит все ремонты (фильтрация по роли — open decision для M3)
 
 UI-ограничения для staff:
 - Vehicle detail: скрыты кнопки Edit Vehicle и Delete Vehicle
