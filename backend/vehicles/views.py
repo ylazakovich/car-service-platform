@@ -1,6 +1,7 @@
 from django.db.models import Q
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 
 from customers.models import Customer
 from .models import Vehicle
@@ -46,3 +47,12 @@ class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.user.role == "staff" and obj.customer.assigned_to != self.request.user:
             raise PermissionDenied
         return obj
+
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.purchases.exists():
+            return Response(
+                {"detail": "Reassign or delete linked purchases before deleting this vehicle."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return super().destroy(request, *args, **kwargs)

@@ -7,8 +7,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const [email, setEmail]           = useState("admin@autoservice.local");
-  const [password, setPassword]     = useState("admin12345");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
   const [error, setError]           = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
