@@ -1137,21 +1137,101 @@ textarea { resize: vertical; }
    PURCHASE / CUSTOMER CARDS
    ═══════════════════════════════════════════════ */
 
-.purchase-card           { align-items: stretch; }
+/* ═══════════════════════════════════════════════
+   PURCHASE CARDS
+   ═══════════════════════════════════════════════ */
+
+.purchase-card { align-items: stretch; }
 .purchase-card-clickable { cursor: pointer; }
 
-.purchase-card-main {
+.purchase-card-body {
   display: grid;
-  gap: var(--s1);
+  grid-template-columns: 1fr auto;
+  gap: var(--s4);
   width: 100%;
+  align-items: start;
 }
 
-.purchase-card-topline {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: var(--s3);
+.purchase-card-info {
+  display: grid;
+  gap: var(--s2);
 }
+
+.purchase-card-name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.purchase-card-supplier {
+  margin: 0;
+  color: var(--text-mid);
+  font-size: 0.82rem;
+}
+
+.purchase-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
+.purchase-chip-muted {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-high);
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.65rem;
+  line-height: 1;
+}
+
+.purchase-card-financials {
+  display: grid;
+  gap: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-high);
+  padding: var(--s3) var(--s4);
+  min-width: 164px;
+  text-align: right;
+}
+
+.purchase-financials-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+.purchase-delivery-date {
+  color: var(--text-soft);
+  font-size: 0.75rem;
+}
+
+.purchase-financials-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.purchase-financials-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 3px var(--s3);
+  justify-content: end;
+  font-size: 0.78rem;
+}
+
+.purchase-financials-label { color: var(--text-soft); }
+.purchase-margin-pos { color: var(--success); font-weight: 600; }
+.purchase-margin-neg { color: #e07070; font-weight: 600; }
 
 .customer-card        { cursor: pointer; }
 .customer-card-active {
@@ -1828,20 +1908,6 @@ textarea { resize: vertical; }
    PURCHASE DETAILS
    ═══════════════════════════════════════════════ */
 
-.purchase-amounts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2);
-  margin-top: var(--s2);
-}
-
-.purchase-amounts span {
-  border-radius: 999px;
-  background: var(--surface-high);
-  color: var(--text-mid);
-  font-size: 0.78rem;
-  padding: 0.25rem 0.6rem;
-}
 
 .purchase-inline-action {
   border: 1px solid var(--border);
@@ -2504,7 +2570,6 @@ textarea { resize: vertical; }
   .compact-card,
   .registry-card,
   .panel-header,
-  .purchase-card-topline,
   .repair-card-topline,
   .dashboard-inline-card {
     flex-direction: column;

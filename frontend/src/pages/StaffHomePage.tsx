@@ -2231,68 +2231,71 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   function renderPurchasesSection() {
     return (
-      <div className="workspace-stack">
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Ordered Parts</p>
-              <h3>Purchase Registry</h3>
-            </div>
+      <div className="workspace-stack purchases-workspace">
+        <div className="kanban-topbar section-desktop-topbar">
+          <div>
+            <p className="eyebrow">Ordered Parts</p>
+            <h2>Purchase Registry</h2>
+          </div>
+          <div className="workspace-top-actions">
+            <label className="kanban-search">
+              <input
+                value={purchaseSearch}
+                onChange={(event) => setPurchaseSearch(event.target.value)}
+                placeholder="Search purchases…"
+                type="search"
+              />
+            </label>
             <button type="button" className="button" onClick={openPurchaseCreateModal}>
-              Add New Purchase
+              + Add Purchase
             </button>
           </div>
+        </div>
 
-          <label className="search-field search-field-tight">
-            <span>Search purchases</span>
-            <input
-              value={purchaseSearch}
-              onChange={(event) => setPurchaseSearch(event.target.value)}
-              placeholder="Supplier, part, repair code or vehicle"
-              type="search"
-            />
-          </label>
-
-          <div className="registry-list">
-            {visiblePurchases.length === 0 ? (
-              <p className="workspace-note">No purchases match the current filter.</p>
-            ) : (
-              visiblePurchases.map((entry) => {
-                const purchaseTotal = entry.quantity * entry.purchase_price;
-                const saleTotal = entry.quantity * entry.sale_price;
-                return (
-                  <article className="registry-card purchase-card purchase-card-clickable" key={entry.id} onClick={() => openPurchaseDetailModal(entry)}>
-                    <div className="purchase-card-main">
-                      <div className="purchase-card-topline">
-                        <h4>{entry.part_name}</h4>
-                        <div className="purchase-date-stack">
-                          <span className="tag">{formatDisplayDate(entry.order_date)}</span>
-                          {entry.approximate_delivery_date ? (
-                            <span className="purchase-date-secondary">
-                              Approx. delivery {formatDisplayDate(entry.approximate_delivery_date)}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                      <p>{entry.supplier_name}</p>
-                      {entry.supplier_nip ? <p className="meta-line">Supplier NIP: {entry.supplier_nip}</p> : null}
-                      <p>{entry.vehicle_label}</p>
-                      <p className="meta-line">Tracking: {entry.repair_code}</p>
-                      {entry.invoice_name ? <p className="meta-line">Invoice: {entry.invoice_name}</p> : null}
-                      <div className="purchase-amounts">
-                        <span>Qty {entry.quantity}</span>
-                        <span>Buy {formatCurrency(entry.purchase_price)}</span>
-                        <span>Sell {formatCurrency(entry.sale_price)}</span>
-                        <span>Total Buy {formatCurrency(purchaseTotal)}</span>
-                        <span>Total Sell {formatCurrency(saleTotal)}</span>
+        <div className="registry-list">
+          {visiblePurchases.length === 0 ? (
+            <p className="workspace-note">No purchases match the current filter.</p>
+          ) : (
+            visiblePurchases.map((entry) => {
+              const purchaseTotal = entry.quantity * entry.purchase_price;
+              const saleTotal = entry.quantity * entry.sale_price;
+              return (
+                <article className="registry-card purchase-card purchase-card-clickable" key={entry.id} onClick={() => openPurchaseDetailModal(entry)}>
+                  <div className="purchase-card-body">
+                    <div className="purchase-card-info">
+                      <h4 className="purchase-card-name">{entry.part_name}</h4>
+                      <p className="purchase-card-supplier">{entry.supplier_name}</p>
+                      <div className="purchase-card-chips">
+                        {entry.repair_code ? <span className="tag">{entry.repair_code}</span> : null}
+                        {entry.vehicle_label ? <span className="purchase-chip-muted">{entry.vehicle_label}</span> : null}
+                        {entry.invoice_name ? <span className="purchase-chip-muted">{entry.invoice_name}</span> : null}
                       </div>
                     </div>
-                  </article>
-                );
-              })
-            )}
-          </div>
-        </section>
+                    <div className="purchase-card-financials">
+                      <div className="purchase-financials-header">
+                        <span className="tag">{formatDisplayDate(entry.order_date)}</span>
+                        {entry.approximate_delivery_date ? (
+                          <span className="purchase-delivery-date">→ {formatDisplayDate(entry.approximate_delivery_date)}</span>
+                        ) : null}
+                      </div>
+                      <div className="purchase-financials-total">{formatCurrency(saleTotal)}</div>
+                      <div className="purchase-financials-grid">
+                        <span className="purchase-financials-label">Buy</span>
+                        <span>{formatCurrency(purchaseTotal)}</span>
+                        <span className="purchase-financials-label">Qty</span>
+                        <span>×{entry.quantity}</span>
+                        <span className="purchase-financials-label">Margin</span>
+                        <span className={saleTotal - purchaseTotal >= 0 ? "purchase-margin-pos" : "purchase-margin-neg"}>
+                          {saleTotal - purchaseTotal >= 0 ? "+" : ""}{formatCurrency(saleTotal - purchaseTotal)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
 
         {selectedPurchase ? (
           <div className="modal-overlay" role="presentation" onClick={closePurchaseDetailModal}>
