@@ -1,5 +1,6 @@
 import type { RepairEntry } from "../shared/repairs";
 import {
+  formatVehicleDisplayDate,
   formatVehicleTitle,
   type Vehicle,
   type VehicleOwnerDetails,
@@ -54,8 +55,8 @@ export function StaffVehicleMobileDetail({
           <span>{purchases.length} purchases</span>
         </div>
         {vehicleDetails.mileage ? <p>Mileage: {vehicleDetails.mileage} km</p> : null}
-        {vehicleDetails.last_service_date ? <p>Last Service: {vehicleDetails.last_service_date}</p> : null}
-        {vehicleDetails.added_date ? <p>Added: {vehicleDetails.added_date}</p> : null}
+        {vehicleDetails.last_service_date ? <p>Last Service: {formatVehicleDisplayDate(vehicleDetails.last_service_date)}</p> : null}
+        {vehicleDetails.added_date ? <p>Added: {formatVehicleDisplayDate(vehicleDetails.added_date)}</p> : null}
         {vehicle.vin ? <p>VIN: {vehicle.vin}</p> : null}
         {vehicle.color ? <p>Color: {vehicle.color}</p> : null}
         {vehicle.notes ? <p className="meta-line">{vehicle.notes}</p> : null}
