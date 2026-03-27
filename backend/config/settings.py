@@ -4,6 +4,8 @@ from pathlib import Path
 from django.templatetags.static import static
 from django.urls import reverse_lazy
 
+from config.admin_navigation import build_sidebar_navigation
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
@@ -26,6 +28,8 @@ INSTALLED_APPS = [
     "users",
     "foundation",
     "customers",
+    "services",
+    "purchases",
     "vehicles",
 ]
 
@@ -130,24 +134,7 @@ UNFOLD = {
         lambda request: static("unfold/sidebar.css"),
     ],
     "SIDEBAR": {
-        "navigation": [
-            {
-                "title": "Authorization",
-                "collapsible": True,
-                "items": [
-                    {"title": "Groups", "link": reverse_lazy("admin:auth_group_changelist")},
-                    {"title": "Users", "link": reverse_lazy("admin:users_user_changelist")},
-                ],
-            },
-            {
-                "title": "Platform",
-                "collapsible": True,
-                "items": [
-                    {"title": "Customers", "link": reverse_lazy("admin:customers_customer_changelist")},
-                    {"title": "Vehicles", "link": reverse_lazy("admin:vehicles_vehicle_changelist")},
-                ],
-            },
-        ],
+        "navigation": build_sidebar_navigation(reverse_lazy),
     },
 }
 
