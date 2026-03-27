@@ -1,17 +1,26 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from users.models import User
 
 
 class Command(BaseCommand):
-    help = "Create a test staff user for local development."
+    help = "Create or update the initial staff user from environment or debug defaults."
 
     def handle(self, *args, **options):
-        email = "staff@autoservice.local"
-        password = "staff12345"
+        email = settings.STAFF_EMAIL or None
+        password = settings.STAFF_PASSWORD or None
+
+        if not email and settings.DEBUG:
+            email = "staff@autoservice.local"
+            password = "staff12345"
+
+        if not email or not password:
+            self.stdout.write("No staff credentials configured; skipping seed_staff.")
+            return
 
         user, created = User.objects.get_or_create(
-            email=email,
+            email=email.lower(),
             defaults={
                 "first_name": "Ivan",
                 "last_name": "Master",
