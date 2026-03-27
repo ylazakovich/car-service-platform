@@ -97,18 +97,18 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
-    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:4173").split(",")
+    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
     if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
-    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:4173").split(",")
+    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
     if origin.strip()
 ]
 
 # URL of the main frontend app (used e.g. for admin "View site" link)
-_frontend_base = (CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else "http://localhost:4173").rstrip("/")
+_frontend_base = (CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else "http://localhost:5173").rstrip("/")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", f"{_frontend_base}/app")
 
 UNFOLD = {
