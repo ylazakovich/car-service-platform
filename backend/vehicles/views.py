@@ -27,6 +27,13 @@ class VehicleListCreateView(generics.ListCreateAPIView):
             )
         return queryset
 
+    def perform_create(self, serializer):
+        if self.request.user.role == "staff":
+            customer = serializer.validated_data.get("customer")
+            if customer.assigned_to != self.request.user:
+                raise PermissionDenied
+        serializer.save()
+
 
 class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = VehicleSerializer

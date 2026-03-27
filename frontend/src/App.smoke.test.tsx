@@ -98,6 +98,7 @@ describe("bootstrap application", () => {
               vin: "",
               color: "White",
               notes: "",
+              added_date: "2024-11-04",
             },
           ],
         });
@@ -180,10 +181,10 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
 
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
-    await user.click(await screen.findByRole("heading", { name: "KR 2048A", level: 4 }));
+    await user.click(await screen.findByRole("heading", { name: "WB 1234K", level: 4 }));
     expect(await screen.findByRole("button", { name: "Edit Vehicle" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
-    expect(screen.getByText("Date Added: 04-11-2025")).toBeInTheDocument();
+    expect(screen.getByText("Date Added: 04-11-2024")).toBeInTheDocument();
   });
 
   it("prefills the added date when creating a new vehicle", async () => {

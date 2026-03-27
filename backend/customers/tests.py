@@ -70,3 +70,55 @@ class CustomerApiTests(TestCase):
         delete_response = self.client.delete(f"/api/customers/{customer.id}")
 
         self.assertEqual(delete_response.status_code, 409)
+
+
+class CustomerScopeTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        User = get_user_model()
+        self.staff_a = User.objects.create_user(
+            email="staff_a@test.local",
+            password="staff_a12345",
+            role="staff",
+        )
+        self.staff_b = User.objects.create_user(
+            email="staff_b@test.local",
+            password="staff_b12345",
+            role="staff",
+        )
+        self.admin = User.objects.create_user(
+            email="admin@test.local",
+            password="admin12345",
+            role="admin",
+        )
+        self.customer_of_a = Customer.objects.create(
+            full_name="Customer A",
+            phone="+48 200 000 001",
+            assigned_to=self.staff_a,
+        )
+        self.customer_of_b = Customer.objects.create(
+            full_name="Customer B",
+            phone="+48 200 000 002",
+            assigned_to=self.staff_b,
+        )
+
+    def test_staff_gets_404_for_others_customer_detail(self):
+        self.client.force_authenticate(self.staff_a)
+
+        response = self.client.get(f"/api/customers/{self.customer_of_b.id}")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_staff_can_access_own_customer_detail(self):
+        self.client.force_authenticate(self.staff_a)
+
+        response = self.client.get(f"/api/customers/{self.customer_of_a.id}")
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_can_access_any_customer_detail(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(f"/api/customers/{self.customer_of_b.id}")
+
+        self.assertEqual(response.status_code, 200)

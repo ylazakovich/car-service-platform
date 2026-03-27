@@ -177,84 +177,6 @@ function getDefaultVehicleForm(nextCustomerId = ""): VehicleFormState {
   };
 }
 
-const demoCustomersSeed: Customer[] = [
-  {
-    id: -101,
-    full_name: "Anna Kowalska",
-    phone: "+48 600 100 100",
-    email: "anna.demo@test.local",
-    notes: "Demo customer for intake testing",
-    vehicle_count: 1,
-    is_demo: true,
-  },
-  {
-    id: -102,
-    full_name: "Marek Zielinski",
-    phone: "+48 600 200 200",
-    email: "marek.demo@test.local",
-    notes: "Demo customer for repair history layout",
-    vehicle_count: 1,
-    is_demo: true,
-  },
-  {
-    id: -103,
-    full_name: "Julia Nowak",
-    phone: "+48 600 300 300",
-    email: "julia.demo@test.local",
-    notes: "Demo customer for purchases and tracking",
-    vehicle_count: 1,
-    is_demo: true,
-  },
-];
-
-const demoVehiclesSeed: Vehicle[] = [
-  {
-    id: -201,
-    customer: { id: -101, full_name: "Anna Kowalska" },
-    license_plate: "KR 2048A",
-    make: "Toyota",
-    model: "Yaris",
-    year: 2020,
-    vin: "JTNB1234567890001",
-    color: "Silver",
-    mileage: 78210,
-    last_service_date: "2026-02-10",
-    added_date: "2025-11-04",
-    notes: "Demo vehicle",
-    is_demo: true,
-  },
-  {
-    id: -202,
-    customer: { id: -102, full_name: "Marek Zielinski" },
-    license_plate: "WX 9088P",
-    make: "BMW",
-    model: "X3",
-    year: 2019,
-    vin: "WBA1234567890002",
-    color: "Black",
-    mileage: 114380,
-    last_service_date: "2026-01-28",
-    added_date: "2025-09-18",
-    notes: "Demo vehicle",
-    is_demo: true,
-  },
-  {
-    id: -203,
-    customer: { id: -103, full_name: "Julia Nowak" },
-    license_plate: "GD 4477M",
-    make: "Audi",
-    model: "A4",
-    year: 2021,
-    vin: "WAU1234567890003",
-    color: "White",
-    mileage: 46890,
-    last_service_date: "2026-03-02",
-    added_date: "2026-01-12",
-    notes: "Demo vehicle",
-    is_demo: true,
-  },
-];
-
 const vehicleYearOptions = Array.from(
   { length: new Date().getFullYear() - 1979 },
   (_, index) => new Date().getFullYear() - index
@@ -308,8 +230,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const lastHandledRepairComposerRequest = useRef(0);
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
-  const [demoCustomers, setDemoCustomers] = useState<Customer[]>(demoCustomersSeed);
-  const [demoVehicles, setDemoVehicles] = useState<Vehicle[]>(demoVehiclesSeed);
+  const [demoCustomers, setDemoCustomers] = useState<Customer[]>([]);
+  const [demoVehicles, setDemoVehicles] = useState<Vehicle[]>([]);
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
