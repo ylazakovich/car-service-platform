@@ -6,6 +6,7 @@ from vehicles.models import Vehicle
 
 class Supplier(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    nip = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     email = models.EmailField(blank=True)
     notes = models.TextField(blank=True)
@@ -22,6 +23,7 @@ class Supplier(models.Model):
 
 class Purchase(models.Model):
     order_date = models.DateField()
+    approximate_delivery_date = models.DateField(null=True, blank=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name="purchases")
     vehicle = models.ForeignKey(
         Vehicle,

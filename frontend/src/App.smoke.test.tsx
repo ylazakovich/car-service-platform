@@ -102,6 +102,28 @@ describe("bootstrap application", () => {
           ],
         });
       }
+      if (url === "/purchases/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 2,
+              order_date: "2025-04-05",
+              approximate_delivery_date: null,
+              supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
+              part_name: "Brake Pad Set",
+              quantity: 2,
+              purchase_price: "85.00",
+              sale_price: "120.00",
+              repair_code: "",
+              vehicle: null,
+              invoice_name: "",
+              invoice_url: "",
+              created_at: "2025-04-05T10:00:00Z",
+              updated_at: "2025-04-05T10:00:00Z",
+            },
+          ],
+        });
+      }
       return Promise.resolve({ data: [] });
     });
     mockApi.post.mockResolvedValue({
