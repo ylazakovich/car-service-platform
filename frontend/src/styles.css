@@ -754,6 +754,21 @@ textarea { resize: vertical; }
 
 .dashboard-date-field input {
   min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  outline: none;
+  min-height: 40px;
+  padding: 0 var(--s3);
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-date-field input:focus {
+  border-color: rgba(205, 216, 58, 0.4);
+  outline: none;
 }
 
 .dashboard-folder-tab {
@@ -761,8 +776,7 @@ textarea { resize: vertical; }
   gap: 0.2rem;
   min-width: 168px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 0;
-  border-radius: 16px 16px 0 0;
+  border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
     rgba(15, 16, 24, 0.82);
@@ -770,14 +784,12 @@ textarea { resize: vertical; }
   cursor: pointer;
   padding: 0.82rem 1rem 0.88rem;
   text-align: left;
-  transform: translateY(8px);
-  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
 
 .dashboard-folder-tab:hover {
   border-color: rgba(205, 216, 58, 0.18);
   color: var(--text);
-  transform: translateY(4px);
 }
 
 .dashboard-folder-label {
@@ -788,16 +800,12 @@ textarea { resize: vertical; }
 }
 
 .dashboard-folder-tab-active {
-  position: relative;
-  z-index: 1;
   border-color: rgba(205, 216, 58, 0.24);
   background:
     radial-gradient(circle at top right, rgba(205, 216, 58, 0.12), transparent 45%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
     rgba(24, 26, 35, 0.96);
   color: var(--text);
-  transform: translateY(0);
-  box-shadow: 0 -1px 0 rgba(205, 216, 58, 0.24);
 }
 
 .dashboard-folder-tab-active .dashboard-folder-label {
@@ -807,7 +815,6 @@ textarea { resize: vertical; }
 .dashboard-folder-panel {
   display: grid;
   gap: var(--s4);
-  margin-top: -1px;
   border: 1px solid rgba(205, 216, 58, 0.18);
   border-radius: 0 20px 20px 20px;
   background:
