@@ -2659,8 +2659,8 @@ textarea { resize: vertical; }
    ═══════════════════════════════════════════════ */
 
 .invite-panel {
-  border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
   background: var(--surface-mid);
   margin-bottom: var(--s5);
   overflow: hidden;
@@ -2670,10 +2670,10 @@ textarea { resize: vertical; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--s4) var(--s5);
+  padding: var(--s3) var(--s4);
   border-bottom: 1px solid var(--border);
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .invite-panel-close {
@@ -2690,17 +2690,56 @@ textarea { resize: vertical; }
 .invite-panel-close:hover { color: var(--text); }
 
 .invite-panel-body {
-  display: grid;
-  gap: var(--s4);
-  padding: var(--s5);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
 }
 
-.invite-field-label {
-  display: grid;
-  gap: var(--s2);
-  font-size: 0.85rem;
-  color: var(--text-mid);
+.invite-email-input {
+  flex: 1;
+  min-width: 180px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-high);
+  color: var(--text);
+  outline: none;
+  height: 36px;
+  padding: 0 var(--s3);
+  font-size: 0.88rem;
+}
+
+.invite-email-input:focus { border-color: rgba(205,216,58,0.4); }
+
+.invite-role-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.invite-role-btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.82rem;
   font-weight: 500;
+  padding: 0 var(--s3);
+  height: 36px;
+  white-space: nowrap;
+  transition: border-color 0.14s, color 0.14s, background 0.14s;
+}
+
+.invite-role-btn-active {
+  border-color: rgba(78,201,148,0.5);
+  background: rgba(78,201,148,0.1);
+  color: var(--success);
+}
+
+.invite-role-btn:hover:not(.invite-role-btn-active) {
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 
 .invite-panel-label {

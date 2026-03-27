@@ -2754,7 +2754,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             {canInvite ? (
               <button
                 type="button"
-                className="button button-secondary"
+                className="button"
                 onClick={() => setShowInviteForm(true)}
               >
                 Invite User
@@ -2785,29 +2785,34 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
               ) : (
                 <form className="invite-panel-body" onSubmit={handleInviteSubmit}>
-                  <label className="invite-field-label">
-                    <span>Email</span>
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      required
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label className="invite-field-label">
-                    <span>Role</span>
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value as "admin" | "staff")}
+                  <input
+                    type="email"
+                    className="invite-email-input"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    required
+                    autoComplete="off"
+                    placeholder="Email address"
+                  />
+                  <div className="invite-role-toggle">
+                    <button
+                      type="button"
+                      className={`invite-role-btn${inviteRole === "staff" ? " invite-role-btn-active" : ""}`}
+                      onClick={() => setInviteRole("staff")}
                     >
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </label>
-                  {inviteError ? <p className="form-error">{inviteError}</p> : null}
+                      Master
+                    </button>
+                    <button
+                      type="button"
+                      className={`invite-role-btn${inviteRole === "admin" ? " invite-role-btn-active" : ""}`}
+                      onClick={() => setInviteRole("admin")}
+                    >
+                      Admin
+                    </button>
+                  </div>
+                  {inviteError ? <p className="form-error" style={{ flex: "1 0 100%", margin: 0 }}>{inviteError}</p> : null}
                   <button type="submit" className="button" disabled={inviteLoading}>
-                    {inviteLoading ? "Sending…" : "Send Invite"}
+                    {inviteLoading ? "…" : "Send Invite"}
                   </button>
                 </form>
               )}
