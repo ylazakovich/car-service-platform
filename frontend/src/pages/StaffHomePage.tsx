@@ -9,6 +9,18 @@ import {
   type PurchaseItem,
   type PurchaseWritePayload,
 } from "../api/purchases";
+import {
+  addRepairNote,
+  createRepair,
+  deleteRepair,
+  deleteRepairNote,
+  fetchRepairs,
+  fetchStaffUsers,
+  updateRepair,
+  type RepairItem,
+  type RepairWritePayload,
+  type StaffUser,
+} from "../api/repairs";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
@@ -116,13 +128,6 @@ type RepairFormState = {
   status: RepairStatus;
 };
 
-type MasterProfile = {
-  id: string;
-  name: string;
-  login: string;
-  password: string;
-};
-
 const emptyCustomerForm: CustomerFormState = {
   full_name: "",
   phone: "",
@@ -167,20 +172,35 @@ const emptyRepairForm: RepairFormState = {
   status: "new",
 };
 
-const masterProfiles: MasterProfile[] = [
-  {
-    id: "master-1",
-    name: "Ivan Petrenko",
-    login: "master.one@autoservice.local",
-    password: "master12345",
-  },
-  {
-    id: "master-2",
-    name: "Oleh Bondar",
-    login: "master.two@autoservice.local",
-    password: "master67890",
-  },
-];
+function mapApiRepairToEntry(item: RepairItem): RepairEntry {
+  return {
+    id: item.id,
+    created_at: item.created_at.slice(0, 10),
+    vehicle_id: 0,
+    vehicle_label: item.vehicle_label,
+    owner_name: item.owner_name,
+    master_id: "",
+    master_name: item.master_name,
+    service_name: item.service_name,
+    issue_notes: item.issue_notes,
+    repair_notes: item.repair_notes.map((n) => ({
+      id: String(n.id),
+      author_name: n.author_name,
+      author_email: n.author_email,
+      created_at: n.created_at.slice(0, 16).replace("T", " "),
+      text: n.text,
+    })),
+    status: item.status,
+    tracking_code: item.tracking_code,
+    before_photos: item.before_photos,
+    during_photos: item.during_photos,
+    after_photos: item.after_photos,
+  };
+}
+
+function getStaffUserLabel(staff: StaffUser): string {
+  return [staff.first_name, staff.last_name].filter(Boolean).join(" ") || staff.email;
+}
 
 function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
   return {
@@ -281,60 +301,6 @@ function getDefaultVehicleForm(nextCustomerId = ""): VehicleFormState {
     added_date: getLocalTodayDate(),
   };
 }
-
-const initialRepairs: RepairEntry[] = [
-  {
-    id: 1,
-    created_at: "2026-03-13",
-    vehicle_id: -201,
-    vehicle_label: "KR 2048A • Toyota Yaris",
-    owner_name: "Anna Kowalska",
-    master_id: "master-1",
-    master_name: "Ivan Petrenko",
-    service_name: "Brake Service",
-    issue_notes: "Front brake pads worn out, noise during braking.",
-    repair_notes: [],
-    status: "new",
-    tracking_code: "TOR-6201",
-    before_photos: [],
-    during_photos: [],
-    after_photos: [],
-  },
-  {
-    id: 2,
-    created_at: "2026-03-14",
-    vehicle_id: -202,
-    vehicle_label: "WX 9088P • BMW X3",
-    owner_name: "Marek Zielinski",
-    master_id: "master-2",
-    master_name: "Oleh Bondar",
-    service_name: "Diagnostics",
-    issue_notes: "Dashboard warning light and unstable idle.",
-    repair_notes: [],
-    status: "in_progress",
-    tracking_code: "TOR-6202",
-    before_photos: [],
-    during_photos: [],
-    after_photos: [],
-  },
-  {
-    id: 3,
-    created_at: "2026-03-15",
-    vehicle_id: -203,
-    vehicle_label: "GD 4477M • Audi A4",
-    owner_name: "Julia Nowak",
-    master_id: "master-1",
-    master_name: "Ivan Petrenko",
-    service_name: "Suspension Repair",
-    issue_notes: "Customer reports knocking sound on front axle.",
-    repair_notes: [],
-    status: "waiting_parts",
-    tracking_code: "TOR-6203",
-    before_photos: [],
-    during_photos: [],
-    after_photos: [],
-  },
-];
 
 const demoCustomersSeed: Customer[] = [
   {
@@ -470,7 +436,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [demoCustomers, setDemoCustomers] = useState<Customer[]>(demoCustomersSeed);
   const [demoVehicles, setDemoVehicles] = useState<Vehicle[]>(demoVehiclesSeed);
   const [purchases, setPurchases] = useState<PurchaseEntry[]>([]);
-  const [repairs, setRepairs] = useState<RepairEntry[]>(initialRepairs);
+  const [repairs, setRepairs] = useState<RepairEntry[]>([]);
+  const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
@@ -555,6 +522,14 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     fetchPurchases().then((data) => {
       setPurchases(data.map(mapApiPurchaseToPurchaseEntry));
     }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry))).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchStaffUsers().then(setStaffUsers).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1171,7 +1146,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairAfterPhotos(files.map((file) => URL.createObjectURL(file)));
   }
 
-  function handleRepairSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleRepairSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setRepairError("");
     setIsSavingRepair(true);
@@ -1179,7 +1154,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id);
     const serviceName =
       repairForm.service_key === customRepairServiceOption ? repairForm.custom_service.trim() : repairForm.service_key;
-    const selectedMaster = masterProfiles.find((master) => master.id === repairForm.master_id);
+    const selectedMaster = staffUsers.find((master) => String(master.id) === repairForm.master_id);
 
     if (!selectedVehicle) {
       setRepairError("Select a vehicle for this repair.");
@@ -1199,28 +1174,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return;
     }
 
-    const nextRepair: RepairEntry = {
-      id: Date.now(),
-      created_at: new Date().toISOString().slice(0, 10),
-      vehicle_id: selectedVehicle.id,
-      vehicle_label: `${selectedVehicle.license_plate} • ${selectedVehicle.make} ${selectedVehicle.model}`,
-      owner_name: selectedVehicle.customer.full_name,
-      master_id: selectedMaster.id,
-      master_name: selectedMaster.name,
+    const payload: RepairWritePayload = {
+      vehicle_id: Number(repairForm.vehicle_id),
+      master_id: repairForm.master_id ? Number(repairForm.master_id) : null,
       service_name: serviceName,
       issue_notes: repairForm.issue_notes.trim() || "No issue notes provided yet.",
-      repair_notes: [],
       status: repairForm.status,
-      tracking_code: `TOR-${String(Date.now()).slice(-4)}`,
-      before_photos: repairPhotoPreviews,
-      during_photos: [],
-      after_photos: [],
     };
 
-    setRepairs((current) => [nextRepair, ...current]);
-    resetRepairForm();
-    setIsRepairFormOpen(false);
-    setIsSavingRepair(false);
+    try {
+      const created = await createRepair(payload);
+      setRepairs((prev) => [mapApiRepairToEntry(created), ...prev]);
+      resetRepairForm();
+      setIsRepairFormOpen(false);
+    } catch {
+      setRepairError("Failed to create repair. Please try again.");
+    } finally {
+      setIsSavingRepair(false);
+    }
   }
 
   function openRepairModal(repair: RepairEntry) {
@@ -1233,28 +1204,29 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairAfterPhotos(repair.after_photos);
   }
 
-  function handleRepairNoteAdd() {
+  async function handleRepairNoteAdd() {
     if (!selectedRepairId || !repairModalNewNote.trim()) {
       return;
     }
 
-    const nextNote: RepairNote = {
-      id: `note-${Date.now()}`,
-      author_name: currentUserLabel,
-      author_email: user?.email ?? "unknown@local",
-      created_at: new Date().toISOString().slice(0, 16).replace("T", " "),
-      text: repairModalNewNote.trim(),
+    const note = await addRepairNote(selectedRepairId, repairModalNewNote.trim());
+    const mappedNote: RepairNote = {
+      id: String(note.id),
+      author_name: note.author_name,
+      author_email: note.author_email,
+      created_at: note.created_at.slice(0, 16).replace("T", " "),
+      text: note.text,
     };
 
     setRepairs((current) =>
       current.map((repair) =>
-        repair.id === selectedRepairId ? { ...repair, repair_notes: [...repair.repair_notes, nextNote] } : repair
+        repair.id === selectedRepairId ? { ...repair, repair_notes: [...repair.repair_notes, mappedNote] } : repair
       )
     );
     setRepairModalNewNote("");
   }
 
-  function handleRepairNoteDelete(noteId: string) {
+  async function handleRepairNoteDelete(noteId: string) {
     if (!selectedRepairId || !selectedRepair || !user?.email) {
       return;
     }
@@ -1269,6 +1241,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return;
     }
 
+    await deleteRepairNote(selectedRepairId, Number(noteId));
     setRepairs((current) =>
       current.map((repair) =>
         repair.id === selectedRepairId
@@ -1278,7 +1251,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     );
   }
 
-  function handleRepairModalSave() {
+  async function handleRepairModalSave() {
     if (!selectedRepairId || !selectedRepair) {
       return;
     }
@@ -1293,6 +1266,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       }
     }
 
+    await updateRepair(selectedRepairId, {
+      status: repairModalStatus,
+      master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
+    });
+
+    const selectedMaster = staffUsers.find((master) => String(master.id) === repairModalMasterId);
     setRepairs((current) =>
       current.map((repair) =>
         repair.id === selectedRepairId
@@ -1300,7 +1279,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               ...repair,
               status: repairModalStatus,
               master_id: repairModalMasterId,
-              master_name: masterProfiles.find((master) => master.id === repairModalMasterId)?.name ?? repair.master_name,
+              master_name: selectedMaster ? getStaffUserLabel(selectedMaster) : repair.master_name,
               before_photos: repairBeforePhotos,
               during_photos: repairDuringPhotos,
               after_photos: repairAfterPhotos,
@@ -1312,7 +1291,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     closeRepairModal();
   }
 
-  function handleRepairDelete(repair: RepairEntry, event?: { stopPropagation?: () => void }) {
+  async function handleRepairDelete(repair: RepairEntry, event?: { stopPropagation?: () => void }) {
     event?.stopPropagation?.();
 
     const shouldDelete = window.confirm(`Delete repair ${repair.tracking_code}?`);
@@ -1320,6 +1299,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return;
     }
 
+    await deleteRepair(repair.id);
     setRepairs((current) => current.filter((entry) => entry.id !== repair.id));
     if (selectedRepairId === repair.id) {
       closeRepairModal();
@@ -1356,6 +1336,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       setRepairs((current) =>
         current.map((r) => (r.id === repairId ? { ...r, status } : r))
       );
+      updateRepair(repairId, { status }).catch(() => {
+        fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry)));
+      });
     }
     setDraggingRepairId(null);
     setDragOverColumn(null);
@@ -1493,18 +1476,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const totalMoneyflowRevenue = totalPartsSales + totalServiceSales;
   const dashboardWorkerLoad = useMemo(
     () =>
-      masterProfiles.map((master) => {
-        const assignedRepairs = filteredServiceBoardRepairs.filter((repair) => repair.master_id === master.id);
+      staffUsers.map((master) => {
+        const masterLabel = getStaffUserLabel(master);
+        const assignedRepairs = filteredServiceBoardRepairs.filter((repair) => repair.master_name === masterLabel);
         const liveRepairs = assignedRepairs.filter((repair) => repair.status !== "completed");
         return {
-          ...master,
+          id: master.id,
+          name: masterLabel,
           assignedCount: assignedRepairs.length,
           liveCount: liveRepairs.length,
           waitingPartsCount: liveRepairs.filter((repair) => repair.status === "waiting_parts").length,
           latestJob: assignedRepairs[0]?.service_name ?? "No jobs yet",
         };
       }),
-    [filteredServiceBoardRepairs]
+    [filteredServiceBoardRepairs, staffUsers]
   );
   const dashboardTabs: Array<{ id: DashboardTab; label: string }> = [
     {
@@ -2556,9 +2541,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     required
                   >
                     <option value="">Select master</option>
-                    {masterProfiles.map((master) => (
+                    {staffUsers.map((master) => (
                       <option key={master.id} value={master.id}>
-                        {master.name}
+                        {getStaffUserLabel(master)}
                       </option>
                     ))}
                   </select>
@@ -2617,7 +2602,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                   <label>
                     <span>Before Repair Photos</span>
-                    <input accept="image/*" capture="environment" multiple onChange={handleRepairPhotosChange} type="file" />
+                    <input accept="image/*" capture="environment" multiple onChange={handleRepairPhotosChange} type="file" disabled title="Photo upload coming soon" />
                   </label>
                 </div>
 
@@ -2672,7 +2657,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <button
                       type="button"
                       className="button button-danger"
-                      onClick={() => handleRepairDelete(selectedRepair)}
+                      onClick={() => void handleRepairDelete(selectedRepair)}
                     >
                       Delete Repair
                     </button>
@@ -2747,9 +2732,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       value={repairModalMasterId}
                       onChange={(event) => setRepairModalMasterId(event.target.value)}
                     >
-                      {masterProfiles.map((master) => (
+                      {staffUsers.map((master) => (
                         <option key={master.id} value={master.id}>
-                          {master.name}
+                          {getStaffUserLabel(master)}
                         </option>
                       ))}
                     </select>
@@ -2765,7 +2750,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   />
                 </label>
                 <div className="form-actions repair-note-actions">
-                  <button type="button" className="button button-secondary" onClick={handleRepairNoteAdd}>
+                  <button type="button" className="button button-secondary" onClick={() => void handleRepairNoteAdd()}>
                     Add Note
                   </button>
                 </div>
@@ -2788,7 +2773,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             <button
                               type="button"
                               className="text-action"
-                              onClick={() => handleRepairNoteDelete(note.id)}
+                              onClick={() => void handleRepairNoteDelete(note.id)}
                             >
                               Delete note
                             </button>
@@ -2801,7 +2786,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Photos Before Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairBeforePhotosChange} type="file" />
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairBeforePhotosChange} type="file" disabled title="Photo upload coming soon" />
                 </label>
                 {repairBeforePhotos.length > 0 ? (
                   <div className="photo-preview-grid">
@@ -2813,7 +2798,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Photos During Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairDuringPhotosChange} type="file" />
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairDuringPhotosChange} type="file" disabled title="Photo upload coming soon" />
                 </label>
                 {repairDuringPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
@@ -2825,7 +2810,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Photos After Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairAfterPhotosChange} type="file" />
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairAfterPhotosChange} type="file" disabled title="Photo upload coming soon" />
                 </label>
                 {repairAfterPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
@@ -2836,7 +2821,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 ) : null}
 
                 <div className="form-actions repair-modal-actions">
-                  <button type="button" className="button" onClick={handleRepairModalSave}>
+                  <button type="button" className="button" onClick={() => void handleRepairModalSave()}>
                     Save Repair Update
                   </button>
                   <button type="button" className="button button-secondary" onClick={closeRepairModal}>
@@ -3326,9 +3311,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       },
       masters: {
         title: "Masters",
-        login: masterProfiles[0].login,
-        password: masterProfiles[0].password,
-        note: "Demo masters are available below for repair assignment testing.",
+        login: staffUsers[0]?.email ?? "—",
+        password: "Managed via authentication system.",
+        note: "Staff users are loaded from the server.",
       },
     };
 
@@ -3375,11 +3360,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 <p>{currentUserTab.note}</p>
               </article>
               {activeUserTab === "masters"
-                ? masterProfiles.map((master) => (
+                ? staffUsers.map((master) => (
                     <article className="role-item" key={master.id}>
-                      <strong>{master.name}</strong>
-                      <p>Login: {master.login}</p>
-                      <p>Password: {master.password}</p>
+                      <strong>{getStaffUserLabel(master)}</strong>
+                      <p>Login: {master.email}</p>
+                      <p>Role: {master.role}</p>
                     </article>
                   ))
                 : null}
