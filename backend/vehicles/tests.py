@@ -65,3 +65,99 @@ class VehicleApiTests(TestCase):
         )
         self.assertEqual(update_response.status_code, 200)
         self.assertEqual(update_response.json()["color"], "Graphite")
+
+    def test_create_vehicle_with_extra_fields(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/vehicles/",
+            {
+                "customer_id": self.customer.id,
+                "license_plate": "AA 0001B",
+                "make": "BMW",
+                "model": "320i",
+                "year": 2020,
+                "mileage": 78210,
+                "last_service_date": "2025-01-15",
+                "added_date": "2024-11-04",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["mileage"], 78210)
+        self.assertEqual(data["last_service_date"], "2025-01-15")
+        self.assertEqual(data["added_date"], "2024-11-04")
+
+    def test_update_vehicle_extra_fields(self):
+        self.client.force_authenticate(self.user)
+
+        create_response = self.client.post(
+            "/api/vehicles/",
+            {
+                "customer_id": self.customer.id,
+                "license_plate": "BB 2222C",
+                "make": "Audi",
+                "model": "A4",
+            },
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, 201)
+        vehicle_id = create_response.json()["id"]
+
+        patch_response = self.client.patch(
+            f"/api/vehicles/{vehicle_id}",
+            {
+                "mileage": 50000,
+                "last_service_date": "2025-06-01",
+            },
+            format="json",
+        )
+
+        self.assertEqual(patch_response.status_code, 200)
+        data = patch_response.json()
+        self.assertEqual(data["mileage"], 50000)
+        self.assertEqual(data["last_service_date"], "2025-06-01")
+
+    def test_extra_fields_nullable(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/vehicles/",
+            {
+                "customer_id": self.customer.id,
+                "license_plate": "CC 3333D",
+                "make": "Ford",
+                "model": "Focus",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertIsNone(data["mileage"])
+        self.assertIsNone(data["last_service_date"])
+        self.assertIsNone(data["added_date"])
+
+    def test_extra_fields_returned_on_list(self):
+        self.client.force_authenticate(self.user)
+
+        self.client.post(
+            "/api/vehicles/",
+            {
+                "customer_id": self.customer.id,
+                "license_plate": "DD 4444E",
+                "make": "Honda",
+                "model": "Civic",
+                "mileage": 12000,
+            },
+            format="json",
+        )
+
+        list_response = self.client.get("/api/vehicles/")
+
+        self.assertEqual(list_response.status_code, 200)
+        vehicles = list_response.json()
+        self.assertEqual(len(vehicles), 1)
+        self.assertEqual(vehicles[0]["mileage"], 12000)
