@@ -18,6 +18,10 @@ set +a
 export GIT_COMMIT
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
+if docker compose ps db | grep -q "Up"; then
+  bash "${ROOT_DIR}/scripts/db-backup.sh" || true
+fi
+
 docker compose build --build-arg GIT_COMMIT="${GIT_COMMIT}" backend
 docker compose build frontend
 docker compose up -d

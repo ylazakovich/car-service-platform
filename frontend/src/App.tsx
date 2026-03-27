@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import { AcceptInvitePage } from "./pages/AcceptInvitePage";
 import { ClientPortalPage } from "./pages/ClientPortalPage";
 import { LoginPage } from "./pages/LoginPage";
 import { StaffHomePage } from "./pages/StaffHomePage";
@@ -319,6 +320,7 @@ export default function App() {
     <Routes>
       <Route path="/"    element={<Navigate to="/app" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/invite/accept" element={<AcceptInvitePage />} />
       <Route path="/portal/:accessCode" element={<ClientPortalPage />} />
       <Route
         path="/app"

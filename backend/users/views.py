@@ -1,13 +1,19 @@
+import logging
+
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
+from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import User
-from .serializers import LoginSerializer, UserSerializer
+from .models import InviteToken, User
+from .serializers import AcceptInviteSerializer, InviteCreateSerializer, LoginSerializer, UserListSerializer, UserSerializer
+
+logger = logging.getLogger(__name__)
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -59,3 +65,111 @@ class StaffListView(generics.ListAPIView):
 
     def get_queryset(self):
         return User.objects.filter(role="staff").order_by("first_name", "last_name", "id")
+
+
+class UserListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        users = User.objects.all().order_by("-created_at")
+        return Response(UserListSerializer(users, many=True).data)
+
+
+class InviteCreateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        serializer = InviteCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+        role = serializer.validated_data["role"]
+
+        user = User(email=email, role=role, is_staff=(role == "admin"))
+        user.set_unusable_password()
+        user.save()
+
+        InviteToken.objects.filter(user=user).delete()
+        invite = InviteToken.objects.create(user=user)
+
+        invite_url = f"{settings.FRONTEND_URL}/invite/accept?token={invite.token}"
+
+        try:
+            send_mail(
+                subject="You've been invited to Car Service Platform",
+                message=(
+                    f"You have been invited to Car Service Platform.\n\n"
+                    f"Click the link below to set your password and activate your account:\n\n"
+                    f"{invite_url}\n\n"
+                    f"This link expires in 7 days."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+            )
+        except Exception:
+            logger.warning("Failed to send invite email to %s", user.email)
+
+        return Response(
+            {"id": user.id, "email": user.email, "role": user.role, "invite_url": str(invite_url)},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AcceptInviteView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = AcceptInviteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            invite = InviteToken.objects.select_related("user").get(
+                token=serializer.validated_data["token"]
+            )
+        except InviteToken.DoesNotExist:
+            return Response({"detail": "Invalid or expired invite link"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if invite.is_expired:
+            invite.delete()
+            return Response({"detail": "This invite link has expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = invite.user
+        user.set_password(serializer.validated_data["password"])
+        user.save(update_fields=["password"])
+        invite.delete()
+
+        return Response({"detail": "Password set successfully. You can now sign in."})
+
+
+class ResetInviteView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        InviteToken.objects.filter(user=user).delete()
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+
+        invite = InviteToken.objects.create(user=user)
+        invite_url = f"{settings.FRONTEND_URL}/invite/accept?token={invite.token}"
+
+        try:
+            send_mail(
+                subject="Password Reset - Car Service Platform",
+                message=(
+                    f"Your password has been reset by an administrator.\n\n"
+                    f"Click the link below to set a new password:\n\n"
+                    f"{invite_url}\n\n"
+                    f"This link expires in 7 days."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+            )
+        except Exception:
+            logger.warning("Failed to send password reset email to %s", user.email)
+
+        return Response({"invite_url": str(invite_url)})

@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
 import { fetchStaffUsers, type StaffUser } from "../api/repairs";
+import { createInvite, type InviteResponse } from "../api/users";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases } from "../features/staff/hooks/usePurchases";
@@ -226,7 +227,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function StaffHomePage({ activeSection, onSelectSection, openRepairComposerRequest }: StaffHomePageProps) {
-  const { user, isStaff } = useAuth();
+  const { user, isStaff, isAdmin } = useAuth();
   const lastHandledRepairComposerRequest = useRef(0);
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
@@ -259,6 +260,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [inlineCustomerForm, setInlineCustomerForm] = useState({ full_name: "", phone: "", email: "" });
   const [inlineCustomerError, setInlineCustomerError] = useState("");
   const [isSavingInlineCustomer, setIsSavingInlineCustomer] = useState(false);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "staff">("staff");
+  const [inviteResult, setInviteResult] = useState<{ url: string } | null>(null);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
 
   const customers = useMemo(() => [...serverCustomers, ...demoCustomers], [serverCustomers, demoCustomers]);
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
@@ -2680,6 +2688,38 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     );
   }
 
+  function closeInvitePanel() {
+    setShowInviteForm(false);
+    setInviteEmail("");
+    setInviteRole("staff");
+    setInviteResult(null);
+    setInviteError("");
+    setInviteLoading(false);
+    setInviteCopied(false);
+  }
+
+  async function handleInviteSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setInviteError("");
+    setInviteLoading(true);
+    try {
+      const result: InviteResponse = await createInvite(inviteEmail, inviteRole);
+      setInviteResult({ url: result.invite_url });
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { detail?: string } } };
+      setInviteError(axiosError.response?.data?.detail ?? "Failed to send invite.");
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
+  function handleCopyInviteLink(url: string) {
+    void navigator.clipboard.writeText(url).then(() => {
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    });
+  }
+
   function renderUsersSection() {
     const userTabMeta: Record<UserAccessTab, { title: string; login: string; note: string }> = {
       owner: {
@@ -2690,7 +2730,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       admins: {
         title: "Admins",
         login: "admin@autoservice.local",
-        note: "Placeholder admin account for the next implementation step.",
+        note: "Admin accounts have full access to all platform settings and data.",
       },
       masters: {
         title: "Masters",
@@ -2701,6 +2741,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
     const currentUserTab = userTabMeta[activeUserTab];
 
+    const canInvite = isAdmin;
+
     return (
       <div className="workspace-stack">
         <section className="panel">
@@ -2709,7 +2751,68 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               <p className="eyebrow">Role Layers</p>
               <h3>User Access Structure</h3>
             </div>
+            {canInvite ? (
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => setShowInviteForm(true)}
+              >
+                Invite User
+              </button>
+            ) : null}
           </div>
+
+          {showInviteForm ? (
+            <div className="invite-panel">
+              <div className="invite-panel-header">
+                <strong>{inviteResult ? "Invite link created" : "Invite New User"}</strong>
+                <button type="button" className="invite-panel-close" aria-label="Close" onClick={closeInvitePanel}>
+                  ×
+                </button>
+              </div>
+
+              {inviteResult ? (
+                <div className="invite-panel-body">
+                  <p className="invite-panel-label">Share this link with the user:</p>
+                  <div className="invite-link-box">{inviteResult.url}</div>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => handleCopyInviteLink(inviteResult.url)}
+                  >
+                    {inviteCopied ? "Copied!" : "Copy Link"}
+                  </button>
+                </div>
+              ) : (
+                <form className="invite-panel-body" onSubmit={handleInviteSubmit}>
+                  <label className="invite-field-label">
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      required
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="invite-field-label">
+                    <span>Role</span>
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as "admin" | "staff")}
+                    >
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                  {inviteError ? <p className="form-error">{inviteError}</p> : null}
+                  <button type="submit" className="button" disabled={inviteLoading}>
+                    {inviteLoading ? "Sending…" : "Send Invite"}
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : null}
 
           <div className="subnav-tabs" role="tablist" aria-label="User access levels">
             {(["owner", "admins", "masters"] as UserAccessTab[]).map((tab) => (
