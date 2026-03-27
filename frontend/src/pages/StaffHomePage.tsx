@@ -1,28 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
-import {
-  createPurchase,
-  fetchPurchases,
-  updatePurchase,
-  type PurchaseItem,
-  type PurchaseWritePayload,
-} from "../api/purchases";
-import {
-  addRepairNote,
-  createRepair,
-  deleteRepair,
-  deleteRepairNote,
-  fetchRepairs,
-  fetchStaffUsers,
-  updateRepair,
-  type RepairItem,
-  type RepairWritePayload,
-  type StaffUser,
-} from "../api/repairs";
+import { fetchStaffUsers, type StaffUser } from "../api/repairs";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
+import { usePurchases } from "../features/staff/hooks/usePurchases";
+import { useRepairs, customRepairServiceOption } from "../features/staff/hooks/useRepairs";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
 import { StaffVehiclesMobileList } from "../features/staff/mobile/StaffVehiclesMobileList";
@@ -31,7 +15,6 @@ import {
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
   type RepairEntry,
-  type RepairNote,
   type RepairStatus,
   type RepairStatusFilter,
 } from "../features/staff/shared/repairs";
@@ -89,45 +72,6 @@ type DashboardDateRange = {
   end_date: string;
 };
 
-type PurchaseEntry = {
-  id: number;
-  order_date: string;
-  approximate_delivery_date: string;
-  supplier_name: string;
-  supplier_nip: string;
-  part_name: string;
-  quantity: number;
-  purchase_price: number;
-  sale_price: number;
-  repair_code: string;
-  vehicle_id: number | null;
-  vehicle_label: string;
-  invoice_name: string;
-  invoice_url: string;
-};
-
-type PurchaseFormState = {
-  order_date: string;
-  approximate_delivery_date: string;
-  supplier_name: string;
-  supplier_nip: string;
-  part_name: string;
-  quantity: string;
-  purchase_price: string;
-  sale_price: string;
-  repair_code: string;
-  vehicle_id: string;
-};
-
-type RepairFormState = {
-  vehicle_id: string;
-  master_id: string;
-  service_key: string;
-  custom_service: string;
-  issue_notes: string;
-  status: RepairStatus;
-};
-
 const emptyCustomerForm: CustomerFormState = {
   full_name: "",
   phone: "",
@@ -150,78 +94,9 @@ const emptyVehicleForm: VehicleFormState = {
   notes: "",
 };
 
-const emptyPurchaseForm: PurchaseFormState = {
-  order_date: "",
-  approximate_delivery_date: "",
-  supplier_name: "",
-  supplier_nip: "",
-  part_name: "",
-  quantity: "1",
-  purchase_price: "",
-  sale_price: "",
-  repair_code: "",
-  vehicle_id: "",
-};
-
-const emptyRepairForm: RepairFormState = {
-  vehicle_id: "",
-  master_id: "",
-  service_key: "",
-  custom_service: "",
-  issue_notes: "",
-  status: "new",
-};
-
-function mapApiRepairToEntry(item: RepairItem): RepairEntry {
-  return {
-    id: item.id,
-    created_at: item.created_at.slice(0, 10),
-    vehicle_id: 0,
-    vehicle_label: item.vehicle_label,
-    owner_name: item.owner_name,
-    master_id: "",
-    master_name: item.master_name,
-    service_name: item.service_name,
-    issue_notes: item.issue_notes,
-    repair_notes: item.repair_notes.map((n) => ({
-      id: String(n.id),
-      author_name: n.author_name,
-      author_email: n.author_email,
-      created_at: n.created_at.slice(0, 16).replace("T", " "),
-      text: n.text,
-    })),
-    status: item.status,
-    tracking_code: item.tracking_code,
-    before_photos: item.before_photos,
-    during_photos: item.during_photos,
-    after_photos: item.after_photos,
-  };
-}
-
 function getStaffUserLabel(staff: StaffUser): string {
   return [staff.first_name, staff.last_name].filter(Boolean).join(" ") || staff.email;
 }
-
-function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
-  return {
-    id: item.id,
-    order_date: item.order_date,
-    approximate_delivery_date: item.approximate_delivery_date ?? "",
-    supplier_name: item.supplier.name,
-    supplier_nip: item.supplier.nip,
-    part_name: item.part_name,
-    quantity: item.quantity,
-    purchase_price: parseFloat(item.purchase_price),
-    sale_price: parseFloat(item.sale_price),
-    repair_code: item.repair_code,
-    vehicle_id: item.vehicle,
-    vehicle_label: item.vehicle ? String(item.vehicle) : "",
-    invoice_name: item.invoice_name,
-    invoice_url: item.invoice_url,
-  };
-}
-
-const customRepairServiceOption = "Custom Service";
 
 const repairServiceSaleCatalog: Record<string, number> = {
   "Oil Change": 190,
@@ -435,67 +310,114 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
   const [demoCustomers, setDemoCustomers] = useState<Customer[]>(demoCustomersSeed);
   const [demoVehicles, setDemoVehicles] = useState<Vehicle[]>(demoVehiclesSeed);
-  const [purchases, setPurchases] = useState<PurchaseEntry[]>([]);
-  const [repairs, setRepairs] = useState<RepairEntry[]>([]);
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [vehicleSearch, setVehicleSearch] = useState("");
-  const [purchaseSearch, setPurchaseSearch] = useState("");
-  const [repairSearch, setRepairSearch] = useState("");
-  const [mobileRepairStatusFilter, setMobileRepairStatusFilter] = useState<RepairStatusFilter>("all");
   const [customerForm, setCustomerForm] = useState<CustomerFormState>(emptyCustomerForm);
   const [vehicleForm, setVehicleForm] = useState<VehicleFormState>(emptyVehicleForm);
-  const [purchaseForm, setPurchaseForm] = useState<PurchaseFormState>(emptyPurchaseForm);
-  const [repairForm, setRepairForm] = useState<RepairFormState>(emptyRepairForm);
   const [vehicleUiDetails, setVehicleUiDetails] = useState<Record<number, VehicleUiDetails>>({});
   const [editingCustomerId, setEditingCustomerId] = useState<number | null>(null);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
-  const [selectedPurchaseId, setSelectedPurchaseId] = useState<number | null>(null);
   const [customerError, setCustomerError] = useState("");
   const [vehicleError, setVehicleError] = useState("");
-  const [purchaseError, setPurchaseError] = useState("");
-  const [purchaseModalError, setPurchaseModalError] = useState("");
-  const [repairError, setRepairError] = useState("");
   const [isSavingCustomer, setIsSavingCustomer] = useState(false);
   const [isSavingVehicle, setIsSavingVehicle] = useState(false);
-  const [isSavingPurchase, setIsSavingPurchase] = useState(false);
-  const [isSavingRepair, setIsSavingRepair] = useState(false);
   const [activeUserTab, setActiveUserTab] = useState<UserAccessTab>("owner");
   const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>("moneyflow");
   const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
   const [serviceBoardDateRange, setServiceBoardDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
-  const [repairPhotoPreviews, setRepairPhotoPreviews] = useState<string[]>([]);
-  const [selectedRepairId, setSelectedRepairId] = useState<number | null>(null);
-  const [repairModalStatus, setRepairModalStatus] = useState<RepairStatus>("new");
-  const [repairModalMasterId, setRepairModalMasterId] = useState("");
-  const [repairModalNewNote, setRepairModalNewNote] = useState("");
-  const [repairBeforePhotos, setRepairBeforePhotos] = useState<string[]>([]);
-  const [repairDuringPhotos, setRepairDuringPhotos] = useState<string[]>([]);
-  const [repairAfterPhotos, setRepairAfterPhotos] = useState<string[]>([]);
-  const [purchaseInvoiceName, setPurchaseInvoiceName] = useState("");
-  const [purchaseInvoiceUrl, setPurchaseInvoiceUrl] = useState("");
-  const [purchaseModalForm, setPurchaseModalForm] = useState<PurchaseFormState>(emptyPurchaseForm);
-  const [purchaseModalInvoiceName, setPurchaseModalInvoiceName] = useState("");
-  const [purchaseModalInvoiceUrl, setPurchaseModalInvoiceUrl] = useState("");
-  const [copyToast, setCopyToast] = useState("");
   const [apiServices, setApiServices] = useState<ServiceItem[]>([]);
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
   const [isInlineCustomerOpen, setIsInlineCustomerOpen] = useState(false);
-  const [draggingRepairId, setDraggingRepairId] = useState<number | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<RepairStatus | null>(null);
   const [inlineCustomerForm, setInlineCustomerForm] = useState({ full_name: "", phone: "", email: "" });
   const [inlineCustomerError, setInlineCustomerError] = useState("");
   const [isSavingInlineCustomer, setIsSavingInlineCustomer] = useState(false);
-  const [isRepairFormOpen, setIsRepairFormOpen] = useState(false);
-  const [isPurchaseFormOpen, setIsPurchaseFormOpen] = useState(false);
 
   const customers = useMemo(() => [...serverCustomers, ...demoCustomers], [serverCustomers, demoCustomers]);
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
+
+  const {
+    purchases,
+    setPurchases,
+    purchaseSearch,
+    setPurchaseSearch,
+    purchaseForm,
+    setPurchaseForm,
+    purchaseError,
+    purchaseModalError,
+    isSavingPurchase,
+    isPurchaseFormOpen,
+    selectedPurchaseId,
+    selectedPurchase,
+    purchaseModalForm,
+    setPurchaseModalForm,
+    purchaseInvoiceName,
+    purchaseInvoiceUrl,
+    purchaseModalInvoiceName,
+    purchaseModalInvoiceUrl,
+    openPurchaseCreateModal,
+    closePurchaseFormModal,
+    openPurchaseDetailModal,
+    closePurchaseDetailModal,
+    handlePurchaseSubmit,
+    handlePurchaseModalSave,
+    handlePurchaseInvoiceChange,
+    handlePurchaseModalInvoiceChange,
+    handlePurchaseModalInvoiceRemove,
+    handleOpenInvoice,
+  } = usePurchases(vehicles);
+
+  const {
+    repairs,
+    repairSearch,
+    setRepairSearch,
+    mobileRepairStatusFilter,
+    setMobileRepairStatusFilter,
+    repairForm,
+    setRepairForm,
+    repairError,
+    isSavingRepair,
+    isRepairFormOpen,
+    repairPhotoPreviews,
+    selectedRepairId,
+    repairModalStatus,
+    setRepairModalStatus,
+    repairModalMasterId,
+    setRepairModalMasterId,
+    repairModalNewNote,
+    setRepairModalNewNote,
+    repairBeforePhotos,
+    repairDuringPhotos,
+    repairAfterPhotos,
+    draggingRepairId,
+    dragOverColumn,
+    copyToast,
+    resetRepairForm,
+    closeRepairModal,
+    openRepairCreateModal,
+    closeRepairCreateModal,
+    openRepairModal,
+    handleRepairSubmit,
+    handleRepairNoteAdd,
+    handleRepairNoteDelete,
+    handleRepairModalSave,
+    handleRepairDelete,
+    handleRepairPhotosChange,
+    handleRepairBeforePhotosChange,
+    handleRepairDuringPhotosChange,
+    handleRepairAfterPhotosChange,
+    handleCardDragStart,
+    handleCardDragEnd,
+    handleColumnDragOver,
+    handleColumnDragLeave,
+    handleColumnDrop,
+    handleCopyTrackingCode,
+  } = useRepairs(vehicles, staffUsers);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
   const repairServiceOptions = useMemo(
     () => [...apiServices.map((s) => s.name), customRepairServiceOption],
@@ -516,16 +438,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   useEffect(() => {
     fetchServices().then(setApiServices).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetchPurchases().then((data) => {
-      setPurchases(data.map(mapApiPurchaseToPurchaseEntry));
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -600,56 +512,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       last_service_date: vehicleUiDetails[vehicle.id]?.last_service_date ?? vehicle.last_service_date ?? "",
       added_date: vehicleUiDetails[vehicle.id]?.added_date ?? vehicle.added_date ?? "",
     };
-  }
-
-  function resetPurchaseForm() {
-    setPurchaseForm(emptyPurchaseForm);
-    setPurchaseError("");
-    setPurchaseInvoiceName("");
-    setPurchaseInvoiceUrl("");
-  }
-
-  function resetRepairForm() {
-    setRepairForm(emptyRepairForm);
-    setRepairError("");
-    setRepairPhotoPreviews([]);
-  }
-
-  function closeRepairModal() {
-    setSelectedRepairId(null);
-    setRepairModalStatus("new");
-    setRepairModalMasterId("");
-    setRepairModalNewNote("");
-    setRepairBeforePhotos([]);
-    setRepairDuringPhotos([]);
-    setRepairAfterPhotos([]);
-  }
-
-  function closePurchaseDetailModal() {
-    setSelectedPurchaseId(null);
-    setPurchaseModalForm(emptyPurchaseForm);
-    setPurchaseModalInvoiceName("");
-    setPurchaseModalInvoiceUrl("");
-    setPurchaseModalError("");
-  }
-
-  function openPurchaseDetailModal(entry: PurchaseEntry) {
-    setSelectedPurchaseId(entry.id);
-    setPurchaseModalError("");
-    setPurchaseModalForm({
-      order_date: entry.order_date,
-      approximate_delivery_date: entry.approximate_delivery_date,
-      supplier_name: entry.supplier_name,
-      supplier_nip: entry.supplier_nip,
-      part_name: entry.part_name,
-      quantity: String(entry.quantity),
-      purchase_price: String(entry.purchase_price),
-      sale_price: String(entry.sale_price),
-      repair_code: entry.repair_code === "Unassigned" ? "" : entry.repair_code,
-      vehicle_id: entry.vehicle_id ? String(entry.vehicle_id) : "",
-    });
-    setPurchaseModalInvoiceName(entry.invoice_name);
-    setPurchaseModalInvoiceUrl(entry.invoice_url);
   }
 
   function openCustomerCreateModal() {
@@ -751,26 +613,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   function closeVehicleDetailModal() {
     setSelectedVehicleId(null);
-  }
-
-  function openRepairCreateModal() {
-    resetRepairForm();
-    setIsRepairFormOpen(true);
-  }
-
-  function closeRepairCreateModal() {
-    resetRepairForm();
-    setIsRepairFormOpen(false);
-  }
-
-  function openPurchaseCreateModal() {
-    resetPurchaseForm();
-    setIsPurchaseFormOpen(true);
-  }
-
-  function closePurchaseFormModal() {
-    resetPurchaseForm();
-    setIsPurchaseFormOpen(false);
   }
 
   async function handleCustomerSubmit(event: FormEvent<HTMLFormElement>) {
@@ -975,384 +817,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
   }
 
-  async function handlePurchaseSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPurchaseError("");
-    setIsSavingPurchase(true);
-
-    const quantity = Number(purchaseForm.quantity);
-    const purchasePrice = Number(purchaseForm.purchase_price);
-    const salePrice = purchaseForm.sale_price ? Number(purchaseForm.sale_price) : 0;
-    const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === purchaseForm.vehicle_id);
-
-    if (!purchaseForm.order_date || !purchaseForm.part_name.trim() || !purchaseForm.supplier_name.trim()) {
-      setPurchaseError("Order date, supplier and part name are required.");
-      setIsSavingPurchase(false);
-      return;
-    }
-
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      setPurchaseError("Quantity must be greater than zero.");
-      setIsSavingPurchase(false);
-      return;
-    }
-
-    if (
-      !Number.isFinite(purchasePrice) ||
-      purchasePrice < 0 ||
-      !Number.isFinite(salePrice) ||
-      salePrice < 0
-    ) {
-      setPurchaseError("Purchase and sale price must be valid numbers.");
-      setIsSavingPurchase(false);
-      return;
-    }
-
-    const payload: PurchaseWritePayload = {
-      order_date: purchaseForm.order_date,
-      approximate_delivery_date: purchaseForm.approximate_delivery_date || null,
-      supplier_name: purchaseForm.supplier_name.trim(),
-      part_name: purchaseForm.part_name.trim(),
-      quantity,
-      purchase_price: purchasePrice,
-      sale_price: salePrice,
-      repair_code: purchaseForm.repair_code.trim(),
-      vehicle_id: selectedVehicle?.id ?? null,
-      invoice_name: purchaseInvoiceName,
-      invoice_url: purchaseInvoiceUrl,
-    };
-
-    try {
-      const created = await createPurchase(payload);
-      setPurchases((current) => [mapApiPurchaseToPurchaseEntry(created), ...current]);
-      resetPurchaseForm();
-      setIsPurchaseFormOpen(false);
-    } catch {
-      setPurchaseError("Failed to save purchase. Please try again.");
-    } finally {
-      setIsSavingPurchase(false);
-    }
-  }
-
-  function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setPurchaseInvoiceName("");
-      setPurchaseInvoiceUrl("");
-      return;
-    }
-
-    setPurchaseInvoiceName(file.name);
-    setPurchaseInvoiceUrl(URL.createObjectURL(file));
-  }
-
-  function handlePurchaseModalInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    setPurchaseModalInvoiceName(file.name);
-    setPurchaseModalInvoiceUrl(URL.createObjectURL(file));
-  }
-
-  function handlePurchaseModalInvoiceRemove() {
-    if (!purchaseModalInvoiceName && !purchaseModalInvoiceUrl) {
-      return;
-    }
-
-    const shouldRemove = window.confirm("Remove the attached invoice from this purchase?");
-    if (!shouldRemove) {
-      return;
-    }
-
-    setPurchaseModalInvoiceName("");
-    setPurchaseModalInvoiceUrl("");
-  }
-
-  function handleOpenInvoice(invoiceUrl: string) {
-    window.open(invoiceUrl, "_blank", "noopener,noreferrer");
-  }
-
-  async function handlePurchaseModalSave() {
-    if (!selectedPurchase) {
-      return;
-    }
-
-    const quantity = Number(purchaseModalForm.quantity);
-    const purchasePrice = Number(purchaseModalForm.purchase_price);
-    const salePrice = purchaseModalForm.sale_price ? Number(purchaseModalForm.sale_price) : 0;
-    const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === purchaseModalForm.vehicle_id);
-
-    if (!purchaseModalForm.order_date || !purchaseModalForm.part_name.trim() || !purchaseModalForm.supplier_name.trim()) {
-      setPurchaseModalError("Order date, supplier and part name are required.");
-      return;
-    }
-
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      setPurchaseModalError("Quantity must be greater than zero.");
-      return;
-    }
-
-    if (!Number.isFinite(purchasePrice) || purchasePrice < 0 || !Number.isFinite(salePrice) || salePrice < 0) {
-      setPurchaseModalError("Purchase and sale price must be valid numbers.");
-      return;
-    }
-
-    const payload: Partial<PurchaseWritePayload> = {
-      order_date: purchaseModalForm.order_date,
-      approximate_delivery_date: purchaseModalForm.approximate_delivery_date || null,
-      supplier_name: purchaseModalForm.supplier_name.trim(),
-      part_name: purchaseModalForm.part_name.trim(),
-      quantity,
-      purchase_price: purchasePrice,
-      sale_price: salePrice,
-      repair_code: purchaseModalForm.repair_code.trim(),
-      vehicle_id: selectedVehicle?.id ?? null,
-      invoice_name: purchaseModalInvoiceName,
-      invoice_url: purchaseModalInvoiceUrl,
-    };
-
-    try {
-      const updated = await updatePurchase(selectedPurchase.id, payload);
-      setPurchases((current) =>
-        current.map((entry) =>
-          entry.id === selectedPurchase.id ? mapApiPurchaseToPurchaseEntry(updated) : entry
-        )
-      );
-      closePurchaseDetailModal();
-    } catch {
-      setPurchaseModalError("Failed to save changes. Please try again.");
-    }
-  }
-
-  function handleRepairPhotosChange(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    setRepairPhotoPreviews(files.map((file) => URL.createObjectURL(file)));
-  }
-
-  function handleRepairDuringPhotosChange(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    setRepairDuringPhotos(files.map((file) => URL.createObjectURL(file)));
-  }
-
-  function handleRepairBeforePhotosChange(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    setRepairBeforePhotos(files.map((file) => URL.createObjectURL(file)));
-  }
-
-  function handleRepairAfterPhotosChange(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    setRepairAfterPhotos(files.map((file) => URL.createObjectURL(file)));
-  }
-
-  async function handleRepairSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setRepairError("");
-    setIsSavingRepair(true);
-
-    const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id);
-    const serviceName =
-      repairForm.service_key === customRepairServiceOption ? repairForm.custom_service.trim() : repairForm.service_key;
-    const selectedMaster = staffUsers.find((master) => String(master.id) === repairForm.master_id);
-
-    if (!selectedVehicle) {
-      setRepairError("Select a vehicle for this repair.");
-      setIsSavingRepair(false);
-      return;
-    }
-
-    if (!selectedMaster) {
-      setRepairError("Select a master for this repair.");
-      setIsSavingRepair(false);
-      return;
-    }
-
-    if (!serviceName) {
-      setRepairError("Choose a service or write your own.");
-      setIsSavingRepair(false);
-      return;
-    }
-
-    const payload: RepairWritePayload = {
-      vehicle_id: Number(repairForm.vehicle_id),
-      master_id: repairForm.master_id ? Number(repairForm.master_id) : null,
-      service_name: serviceName,
-      issue_notes: repairForm.issue_notes.trim() || "No issue notes provided yet.",
-      status: repairForm.status,
-    };
-
-    try {
-      const created = await createRepair(payload);
-      setRepairs((prev) => [mapApiRepairToEntry(created), ...prev]);
-      resetRepairForm();
-      setIsRepairFormOpen(false);
-    } catch {
-      setRepairError("Failed to create repair. Please try again.");
-    } finally {
-      setIsSavingRepair(false);
-    }
-  }
-
-  function openRepairModal(repair: RepairEntry) {
-    setSelectedRepairId(repair.id);
-    setRepairModalStatus(repair.status);
-    setRepairModalMasterId(repair.master_id);
-    setRepairModalNewNote("");
-    setRepairBeforePhotos(repair.before_photos);
-    setRepairDuringPhotos(repair.during_photos);
-    setRepairAfterPhotos(repair.after_photos);
-  }
-
-  async function handleRepairNoteAdd() {
-    if (!selectedRepairId || !repairModalNewNote.trim()) {
-      return;
-    }
-
-    const note = await addRepairNote(selectedRepairId, repairModalNewNote.trim());
-    const mappedNote: RepairNote = {
-      id: String(note.id),
-      author_name: note.author_name,
-      author_email: note.author_email,
-      created_at: note.created_at.slice(0, 16).replace("T", " "),
-      text: note.text,
-    };
-
-    setRepairs((current) =>
-      current.map((repair) =>
-        repair.id === selectedRepairId ? { ...repair, repair_notes: [...repair.repair_notes, mappedNote] } : repair
-      )
-    );
-    setRepairModalNewNote("");
-  }
-
-  async function handleRepairNoteDelete(noteId: string) {
-    if (!selectedRepairId || !selectedRepair || !user?.email) {
-      return;
-    }
-
-    const note = selectedRepair.repair_notes.find((entry) => entry.id === noteId);
-    if (!note || note.author_email !== user.email) {
-      return;
-    }
-
-    const shouldDelete = window.confirm("Delete this repair note?");
-    if (!shouldDelete) {
-      return;
-    }
-
-    await deleteRepairNote(selectedRepairId, Number(noteId));
-    setRepairs((current) =>
-      current.map((repair) =>
-        repair.id === selectedRepairId
-          ? { ...repair, repair_notes: repair.repair_notes.filter((entry) => entry.id !== noteId) }
-          : repair
-      )
-    );
-  }
-
-  async function handleRepairModalSave() {
-    if (!selectedRepairId || !selectedRepair) {
-      return;
-    }
-
-    if (selectedRepair.status !== repairModalStatus) {
-      const shouldChange = window.confirm(
-        `Change repair ${selectedRepair.tracking_code} status from ${REPAIR_STATUS_LABELS[selectedRepair.status]} to ${REPAIR_STATUS_LABELS[repairModalStatus]}?`
-      );
-
-      if (!shouldChange) {
-        return;
-      }
-    }
-
-    await updateRepair(selectedRepairId, {
-      status: repairModalStatus,
-      master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
-    });
-
-    const selectedMaster = staffUsers.find((master) => String(master.id) === repairModalMasterId);
-    setRepairs((current) =>
-      current.map((repair) =>
-        repair.id === selectedRepairId
-          ? {
-              ...repair,
-              status: repairModalStatus,
-              master_id: repairModalMasterId,
-              master_name: selectedMaster ? getStaffUserLabel(selectedMaster) : repair.master_name,
-              before_photos: repairBeforePhotos,
-              during_photos: repairDuringPhotos,
-              after_photos: repairAfterPhotos,
-            }
-          : repair
-      )
-    );
-
-    closeRepairModal();
-  }
-
-  async function handleRepairDelete(repair: RepairEntry, event?: { stopPropagation?: () => void }) {
-    event?.stopPropagation?.();
-
-    const shouldDelete = window.confirm(`Delete repair ${repair.tracking_code}?`);
-    if (!shouldDelete) {
-      return;
-    }
-
-    await deleteRepair(repair.id);
-    setRepairs((current) => current.filter((entry) => entry.id !== repair.id));
-    if (selectedRepairId === repair.id) {
-      closeRepairModal();
-    }
-  }
-
-  function handleCardDragStart(repairId: number, event: React.DragEvent) {
-    event.dataTransfer.setData("repair-id", String(repairId));
-    event.dataTransfer.effectAllowed = "move";
-    setDraggingRepairId(repairId);
-  }
-
-  function handleCardDragEnd() {
-    setDraggingRepairId(null);
-    setDragOverColumn(null);
-  }
-
-  function handleColumnDragOver(status: RepairStatus, event: React.DragEvent) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    setDragOverColumn(status);
-  }
-
-  function handleColumnDragLeave(event: React.DragEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
-      setDragOverColumn(null);
-    }
-  }
-
-  function handleColumnDrop(status: RepairStatus, event: React.DragEvent) {
-    event.preventDefault();
-    const repairId = Number(event.dataTransfer.getData("repair-id"));
-    if (repairId) {
-      setRepairs((current) =>
-        current.map((r) => (r.id === repairId ? { ...r, status } : r))
-      );
-      updateRepair(repairId, { status }).catch(() => {
-        fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry)));
-      });
-    }
-    setDraggingRepairId(null);
-    setDragOverColumn(null);
-  }
-
-  async function handleCopyTrackingCode(trackingCode: string, event?: { stopPropagation?: () => void }) {
-    event?.stopPropagation?.();
-    await navigator.clipboard.writeText(trackingCode);
-    setCopyToast(`Copied ${trackingCode}`);
-    window.setTimeout(() => {
-      setCopyToast((current) => (current === `Copied ${trackingCode}` ? "" : current));
-    }, 1600);
-  }
-
   const visibleCustomers = useMemo(
     () =>
       customers.filter((customer) => {
@@ -1396,7 +860,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   const selectedRepairVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id) ?? null;
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
-  const selectedPurchase = purchases.find((entry) => entry.id === selectedPurchaseId) ?? null;
 
   const customerVehicleCounts = useMemo(() => {
     return vehicles.reduce<Record<number, number>>((accumulator, vehicle) => {
