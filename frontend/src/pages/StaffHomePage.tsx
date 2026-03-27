@@ -2,6 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
+import {
+  createPurchase,
+  fetchPurchases,
+  updatePurchase,
+  type PurchaseItem,
+  type PurchaseWritePayload,
+} from "../api/purchases";
+import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
@@ -174,68 +182,27 @@ const masterProfiles: MasterProfile[] = [
   },
 ];
 
-const initialPurchases: PurchaseEntry[] = [
-  {
-    id: 1,
-    order_date: "2026-03-13",
-    approximate_delivery_date: "2026-03-17",
-    supplier_name: "Auto Parts Hub",
-    supplier_nip: "5252871234",
-    part_name: "Brake Pad Set",
-    quantity: 1,
-    purchase_price: 220,
-    sale_price: 320,
-    repair_code: "TOR-1042",
-    vehicle_id: -201,
-    vehicle_label: "WB 1234K • Toyota Corolla",
-    invoice_name: "",
-    invoice_url: "",
-  },
-  {
-    id: 2,
-    order_date: "2026-03-14",
-    approximate_delivery_date: "2026-03-18",
-    supplier_name: "Motor Line",
-    supplier_nip: "6772459812",
-    part_name: "Engine Oil 5W-30",
-    quantity: 4,
-    purchase_price: 32,
-    sale_price: 54,
-    repair_code: "TOR-1047",
-    vehicle_id: -202,
-    vehicle_label: "WX 9088P • BMW X3",
-    invoice_name: "",
-    invoice_url: "",
-  },
-  {
-    id: 3,
-    order_date: "2026-03-15",
-    approximate_delivery_date: "2026-03-19",
-    supplier_name: "Nordic Garage Supply",
-    supplier_nip: "5842764310",
-    part_name: "Air Filter",
-    quantity: 2,
-    purchase_price: 18,
-    sale_price: 34,
-    repair_code: "TOR-1053",
-    vehicle_id: -203,
-    vehicle_label: "GD 4477M • Audi A4",
-    invoice_name: "",
-    invoice_url: "",
-  },
-];
+function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
+  return {
+    id: item.id,
+    order_date: item.order_date,
+    approximate_delivery_date: item.approximate_delivery_date ?? "",
+    supplier_name: item.supplier.name,
+    supplier_nip: item.supplier.nip,
+    part_name: item.part_name,
+    quantity: item.quantity,
+    purchase_price: parseFloat(item.purchase_price),
+    sale_price: parseFloat(item.sale_price),
+    repair_code: item.repair_code,
+    vehicle_id: item.vehicle,
+    vehicle_label: item.vehicle ? String(item.vehicle) : "",
+    invoice_name: item.invoice_name,
+    invoice_url: item.invoice_url,
+  };
+}
 
 const customRepairServiceOption = "Custom Service";
 
-const presetRepairServiceOptions = [
-  "Oil Change",
-  "Brake Service",
-  "Diagnostics",
-  "Suspension Repair",
-  "Engine Check",
-];
-
-const repairServicesStorageKey = "repair-service-options";
 const vehicleDetailsStorageKey = "vehicle-ui-details";
 const repairServiceSaleCatalog: Record<string, number> = {
   "Oil Change": 190,
@@ -307,32 +274,6 @@ function getRepairServiceSaleValue(serviceName: string) {
   return repairServiceSaleCatalog[serviceName] ?? 320;
 }
 
-function readStoredRepairServices(): string[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  const storage = window.localStorage as { getItem?: (key: string) => string | null } | undefined;
-  if (typeof storage?.getItem !== "function") {
-    return [];
-  }
-
-  const rawValue = storage.getItem(repairServicesStorageKey);
-  if (!rawValue) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
-  } catch {
-    return [];
-  }
-}
 
 function readStoredVehicleDetails(): Record<number, VehicleUiDetails> {
   if (typeof window === "undefined") {
@@ -387,18 +328,6 @@ function writeStoredVehicleDetails(details: Record<number, VehicleUiDetails>) {
   storage.setItem(vehicleDetailsStorageKey, JSON.stringify(details));
 }
 
-function writeStoredRepairServices(services: string[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const storage = window.localStorage as { setItem?: (key: string, value: string) => void } | undefined;
-  if (typeof storage?.setItem !== "function") {
-    return;
-  }
-
-  storage.setItem(repairServicesStorageKey, JSON.stringify(services));
-}
 
 function getDefaultVehicleForm(nextCustomerId = ""): VehicleFormState {
   return {
@@ -595,7 +524,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
   const [demoCustomers, setDemoCustomers] = useState<Customer[]>(demoCustomersSeed);
   const [demoVehicles, setDemoVehicles] = useState<Vehicle[]>(demoVehiclesSeed);
-  const [purchases, setPurchases] = useState<PurchaseEntry[]>(initialPurchases);
+  const [purchases, setPurchases] = useState<PurchaseEntry[]>([]);
   const [repairs, setRepairs] = useState<RepairEntry[]>(initialRepairs);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -641,7 +570,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [purchaseModalInvoiceName, setPurchaseModalInvoiceName] = useState("");
   const [purchaseModalInvoiceUrl, setPurchaseModalInvoiceUrl] = useState("");
   const [copyToast, setCopyToast] = useState("");
-  const [savedRepairServices, setSavedRepairServices] = useState<string[]>(readStoredRepairServices);
+  const [apiServices, setApiServices] = useState<ServiceItem[]>([]);
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
   const [isInlineCustomerOpen, setIsInlineCustomerOpen] = useState(false);
@@ -657,8 +586,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
   const repairServiceOptions = useMemo(
-    () => [...presetRepairServiceOptions, ...savedRepairServices, customRepairServiceOption],
-    [savedRepairServices]
+    () => [...apiServices.map((s) => s.name), customRepairServiceOption],
+    [apiServices]
   );
   const moneyflowDateBounds = useMemo(
     () => getDateBounds([...purchases.map((entry) => entry.order_date), ...repairs.map((repair) => repair.created_at)]),
@@ -674,8 +603,14 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }, []);
 
   useEffect(() => {
-    writeStoredRepairServices(savedRepairServices);
-  }, [savedRepairServices]);
+    fetchServices().then(setApiServices).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchPurchases().then((data) => {
+      setPurchases(data.map(mapApiPurchaseToPurchaseEntry));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     writeStoredVehicleDetails(vehicleUiDetails);
@@ -1132,7 +1067,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
   }
 
-  function handlePurchaseSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handlePurchaseSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPurchaseError("");
     setIsSavingPurchase(true);
@@ -1165,29 +1100,30 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return;
     }
 
-    const nextEntry: PurchaseEntry = {
-      id: Date.now(),
+    const payload: PurchaseWritePayload = {
       order_date: purchaseForm.order_date,
-      approximate_delivery_date: purchaseForm.approximate_delivery_date,
+      approximate_delivery_date: purchaseForm.approximate_delivery_date || null,
       supplier_name: purchaseForm.supplier_name.trim(),
-      supplier_nip: purchaseForm.supplier_nip.trim(),
       part_name: purchaseForm.part_name.trim(),
       quantity,
       purchase_price: purchasePrice,
       sale_price: salePrice,
-      repair_code: purchaseForm.repair_code.trim() || "Unassigned",
+      repair_code: purchaseForm.repair_code.trim(),
       vehicle_id: selectedVehicle?.id ?? null,
-      vehicle_label: selectedVehicle
-        ? `${selectedVehicle.license_plate} • ${selectedVehicle.make} ${selectedVehicle.model}`
-        : "Stock / Unassigned",
       invoice_name: purchaseInvoiceName,
       invoice_url: purchaseInvoiceUrl,
     };
 
-    setPurchases((current) => [nextEntry, ...current]);
-    resetPurchaseForm();
-    setIsPurchaseFormOpen(false);
-    setIsSavingPurchase(false);
+    try {
+      const created = await createPurchase(payload);
+      setPurchases((current) => [mapApiPurchaseToPurchaseEntry(created), ...current]);
+      resetPurchaseForm();
+      setIsPurchaseFormOpen(false);
+    } catch {
+      setPurchaseError("Failed to save purchase. Please try again.");
+    } finally {
+      setIsSavingPurchase(false);
+    }
   }
 
   function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
@@ -1230,7 +1166,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     window.open(invoiceUrl, "_blank", "noopener,noreferrer");
   }
 
-  function handlePurchaseModalSave() {
+  async function handlePurchaseModalSave() {
     if (!selectedPurchase) {
       return;
     }
@@ -1255,32 +1191,31 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return;
     }
 
-    setPurchases((current) =>
-      current.map((entry) =>
-        entry.id === selectedPurchase.id
-          ? {
-              ...entry,
-              order_date: purchaseModalForm.order_date,
-              approximate_delivery_date: purchaseModalForm.approximate_delivery_date,
-              supplier_name: purchaseModalForm.supplier_name.trim(),
-              supplier_nip: purchaseModalForm.supplier_nip.trim(),
-              part_name: purchaseModalForm.part_name.trim(),
-              quantity,
-              purchase_price: purchasePrice,
-              sale_price: salePrice,
-              repair_code: purchaseModalForm.repair_code.trim() || "Unassigned",
-              vehicle_id: selectedVehicle?.id ?? null,
-              vehicle_label: selectedVehicle
-                ? `${selectedVehicle.license_plate} • ${selectedVehicle.make} ${selectedVehicle.model}`
-                : "Stock / Unassigned",
-              invoice_name: purchaseModalInvoiceName,
-              invoice_url: purchaseModalInvoiceUrl,
-            }
-          : entry
-      )
-    );
+    const payload: Partial<PurchaseWritePayload> = {
+      order_date: purchaseModalForm.order_date,
+      approximate_delivery_date: purchaseModalForm.approximate_delivery_date || null,
+      supplier_name: purchaseModalForm.supplier_name.trim(),
+      part_name: purchaseModalForm.part_name.trim(),
+      quantity,
+      purchase_price: purchasePrice,
+      sale_price: salePrice,
+      repair_code: purchaseModalForm.repair_code.trim(),
+      vehicle_id: selectedVehicle?.id ?? null,
+      invoice_name: purchaseModalInvoiceName,
+      invoice_url: purchaseModalInvoiceUrl,
+    };
 
-    closePurchaseDetailModal();
+    try {
+      const updated = await updatePurchase(selectedPurchase.id, payload);
+      setPurchases((current) =>
+        current.map((entry) =>
+          entry.id === selectedPurchase.id ? mapApiPurchaseToPurchaseEntry(updated) : entry
+        )
+      );
+      closePurchaseDetailModal();
+    } catch {
+      setPurchaseModalError("Failed to save changes. Please try again.");
+    }
   }
 
   function handleRepairPhotosChange(event: ChangeEvent<HTMLInputElement>) {
@@ -1329,14 +1264,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       setRepairError("Choose a service or write your own.");
       setIsSavingRepair(false);
       return;
-    }
-
-    if (
-      repairForm.service_key === customRepairServiceOption &&
-      !presetRepairServiceOptions.includes(serviceName) &&
-      !savedRepairServices.includes(serviceName)
-    ) {
-      setSavedRepairServices((current) => [...current, serviceName]);
     }
 
     const nextRepair: RepairEntry = {
