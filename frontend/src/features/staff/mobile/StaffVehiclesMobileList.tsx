@@ -1,4 +1,5 @@
 import {
+  formatVehicleDisplayDate,
   formatVehicleMeta,
   formatVehicleTitle,
   type Vehicle,
@@ -35,7 +36,7 @@ export function StaffVehiclesMobileList({
                   <div className="vehicle-mobile-card-top">
                     <strong>{vehicle.license_plate}</strong>
                     {details.last_service_date ? (
-                      <span className="vehicle-mobile-chip">Service {details.last_service_date}</span>
+                      <span className="vehicle-mobile-chip">Service {formatVehicleDisplayDate(details.last_service_date)}</span>
                     ) : null}
                   </div>
 

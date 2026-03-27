@@ -1,4 +1,5 @@
 import {
+  formatRepairDisplayDate,
   getRepairStatusClass,
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
@@ -86,7 +87,7 @@ export function StaffRepairsMobileList({
               <button type="button" className="repair-mobile-open" onClick={() => onOpenRepair(repair)}>
                 <div className="repair-mobile-card-top">
                   <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>
-                  <span className="repair-mobile-date">{repair.created_at}</span>
+                  <span className="repair-mobile-date">{formatRepairDisplayDate(repair.created_at)}</span>
                 </div>
 
                 <div className="repair-mobile-main">

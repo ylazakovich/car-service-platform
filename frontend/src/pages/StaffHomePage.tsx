@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
@@ -59,14 +59,22 @@ type VehicleFormState = {
 type StaffHomePageProps = {
   activeSection: StaffSection;
   onSelectSection: (section: StaffSection) => void;
+  openRepairComposerRequest: number;
 };
 
 type UserAccessTab = "owner" | "admins" | "masters";
+type DashboardTab = "moneyflow" | "service_board";
+type DashboardDateRange = {
+  start_date: string;
+  end_date: string;
+};
 
 type PurchaseEntry = {
   id: number;
   order_date: string;
+  approximate_delivery_date: string;
   supplier_name: string;
+  supplier_nip: string;
   part_name: string;
   quantity: number;
   purchase_price: number;
@@ -80,7 +88,9 @@ type PurchaseEntry = {
 
 type PurchaseFormState = {
   order_date: string;
+  approximate_delivery_date: string;
   supplier_name: string;
+  supplier_nip: string;
   part_name: string;
   quantity: string;
   purchase_price: string;
@@ -129,7 +139,9 @@ const emptyVehicleForm: VehicleFormState = {
 
 const emptyPurchaseForm: PurchaseFormState = {
   order_date: "",
+  approximate_delivery_date: "",
   supplier_name: "",
+  supplier_nip: "",
   part_name: "",
   quantity: "1",
   purchase_price: "",
@@ -166,7 +178,9 @@ const initialPurchases: PurchaseEntry[] = [
   {
     id: 1,
     order_date: "2026-03-13",
+    approximate_delivery_date: "2026-03-17",
     supplier_name: "Auto Parts Hub",
+    supplier_nip: "5252871234",
     part_name: "Brake Pad Set",
     quantity: 1,
     purchase_price: 220,
@@ -180,7 +194,9 @@ const initialPurchases: PurchaseEntry[] = [
   {
     id: 2,
     order_date: "2026-03-14",
+    approximate_delivery_date: "2026-03-18",
     supplier_name: "Motor Line",
+    supplier_nip: "6772459812",
     part_name: "Engine Oil 5W-30",
     quantity: 4,
     purchase_price: 32,
@@ -194,7 +210,9 @@ const initialPurchases: PurchaseEntry[] = [
   {
     id: 3,
     order_date: "2026-03-15",
+    approximate_delivery_date: "2026-03-19",
     supplier_name: "Nordic Garage Supply",
+    supplier_nip: "5842764310",
     part_name: "Air Filter",
     quantity: 2,
     purchase_price: 18,
@@ -219,11 +237,74 @@ const presetRepairServiceOptions = [
 
 const repairServicesStorageKey = "repair-service-options";
 const vehicleDetailsStorageKey = "vehicle-ui-details";
+const repairServiceSaleCatalog: Record<string, number> = {
+  "Oil Change": 190,
+  "Brake Service": 420,
+  Diagnostics: 260,
+  "Suspension Repair": 780,
+  "Engine Check": 340,
+  [customRepairServiceOption]: 320,
+};
 
 function getLocalTodayDate(): string {
   const now = new Date();
   const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
   return localTime.toISOString().slice(0, 10);
+}
+
+function getApproximateDeliveryDate(orderDate: string): string {
+  if (!orderDate) {
+    return "";
+  }
+
+  const parsed = new Date(`${orderDate}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  parsed.setDate(parsed.getDate() + 4);
+  return parsed.toISOString().slice(0, 10);
+}
+
+function formatDisplayDate(value: string): string {
+  if (!value) {
+    return "";
+  }
+
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}:\d{2}))?/);
+  if (!match) {
+    return value;
+  }
+
+  const [, year, month, day, time] = match;
+  return time ? `${day}-${month}-${year} ${time}` : `${day}-${month}-${year}`;
+}
+
+function getDateBounds(values: string[]) {
+  const normalized = values.filter((value) => /^\d{4}-\d{2}-\d{2}/.test(value)).sort();
+  return {
+    start_date: normalized[0] ?? "",
+    end_date: normalized[normalized.length - 1] ?? "",
+  };
+}
+
+function isDateWithinRange(value: string, startDate: string, endDate: string) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.slice(0, 10);
+  if (startDate && normalized < startDate) {
+    return false;
+  }
+  if (endDate && normalized > endDate) {
+    return false;
+  }
+  return true;
+}
+
+function getRepairServiceSaleValue(serviceName: string) {
+  return repairServiceSaleCatalog[serviceName] ?? 320;
 }
 
 function readStoredRepairServices(): string[] {
@@ -466,9 +547,9 @@ const vehicleYearOptions = Array.from(
 
 const sectionMeta: Record<StaffSection, { eyebrow: string; title: string; copy: string }> = {
   dashboard: {
-    eyebrow: "Reserved Space",
+    eyebrow: "Workshop Command",
     title: "Operations Dashboard",
-    copy: "This area stays intentionally empty until the base registries and working flows are fully defined.",
+    copy: "Monitor repair flow, purchase movement and current crew workload from one operational view.",
   },
   customers: {
     eyebrow: "Registry",
@@ -507,8 +588,9 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageProps) {
+export function StaffHomePage({ activeSection, onSelectSection, openRepairComposerRequest }: StaffHomePageProps) {
   const { user, isStaff } = useAuth();
+  const lastHandledRepairComposerRequest = useRef(0);
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
   const [demoCustomers, setDemoCustomers] = useState<Customer[]>(demoCustomersSeed);
@@ -542,6 +624,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
   const [isSavingPurchase, setIsSavingPurchase] = useState(false);
   const [isSavingRepair, setIsSavingRepair] = useState(false);
   const [activeUserTab, setActiveUserTab] = useState<UserAccessTab>("owner");
+  const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>("moneyflow");
+  const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
+  const [serviceBoardDateRange, setServiceBoardDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
   const [repairPhotoPreviews, setRepairPhotoPreviews] = useState<string[]>([]);
   const [selectedRepairId, setSelectedRepairId] = useState<number | null>(null);
   const [repairModalStatus, setRepairModalStatus] = useState<RepairStatus>("new");
@@ -575,6 +660,14 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     () => [...presetRepairServiceOptions, ...savedRepairServices, customRepairServiceOption],
     [savedRepairServices]
   );
+  const moneyflowDateBounds = useMemo(
+    () => getDateBounds([...purchases.map((entry) => entry.order_date), ...repairs.map((repair) => repair.created_at)]),
+    [purchases, repairs]
+  );
+  const serviceBoardDateBounds = useMemo(
+    () => getDateBounds(repairs.map((repair) => repair.created_at)),
+    [repairs]
+  );
 
   useEffect(() => {
     void loadRegistries();
@@ -587,6 +680,39 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
   useEffect(() => {
     writeStoredVehicleDetails(vehicleUiDetails);
   }, [vehicleUiDetails]);
+
+  useEffect(() => {
+    if (!moneyflowDateRange.start_date && !moneyflowDateRange.end_date && moneyflowDateBounds.start_date && moneyflowDateBounds.end_date) {
+      setMoneyflowDateRange(moneyflowDateBounds);
+    }
+  }, [moneyflowDateBounds, moneyflowDateRange.end_date, moneyflowDateRange.start_date]);
+
+  useEffect(() => {
+    if (
+      !serviceBoardDateRange.start_date &&
+      !serviceBoardDateRange.end_date &&
+      serviceBoardDateBounds.start_date &&
+      serviceBoardDateBounds.end_date
+    ) {
+      setServiceBoardDateRange(serviceBoardDateBounds);
+    }
+  }, [serviceBoardDateBounds, serviceBoardDateRange.end_date, serviceBoardDateRange.start_date]);
+
+  useEffect(() => {
+    if (activeSection !== "repairs") {
+      return;
+    }
+
+    if (
+      openRepairComposerRequest === 0 ||
+      openRepairComposerRequest === lastHandledRepairComposerRequest.current
+    ) {
+      return;
+    }
+
+    lastHandledRepairComposerRequest.current = openRepairComposerRequest;
+    openRepairCreateModal();
+  }, [activeSection, openRepairComposerRequest]);
 
   async function loadRegistries() {
     setLoadError("");
@@ -661,7 +787,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     setPurchaseModalError("");
     setPurchaseModalForm({
       order_date: entry.order_date,
+      approximate_delivery_date: entry.approximate_delivery_date,
       supplier_name: entry.supplier_name,
+      supplier_nip: entry.supplier_nip,
       part_name: entry.part_name,
       quantity: String(entry.quantity),
       purchase_price: String(entry.purchase_price),
@@ -1040,7 +1168,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
     const nextEntry: PurchaseEntry = {
       id: Date.now(),
       order_date: purchaseForm.order_date,
+      approximate_delivery_date: purchaseForm.approximate_delivery_date,
       supplier_name: purchaseForm.supplier_name.trim(),
+      supplier_nip: purchaseForm.supplier_nip.trim(),
       part_name: purchaseForm.part_name.trim(),
       quantity,
       purchase_price: purchasePrice,
@@ -1131,7 +1261,9 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
           ? {
               ...entry,
               order_date: purchaseModalForm.order_date,
+              approximate_delivery_date: purchaseModalForm.approximate_delivery_date,
               supplier_name: purchaseModalForm.supplier_name.trim(),
+              supplier_nip: purchaseModalForm.supplier_nip.trim(),
               part_name: purchaseModalForm.part_name.trim(),
               quantity,
               purchase_price: purchasePrice,
@@ -1456,6 +1588,74 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
   const selectedVehiclePurchases = selectedVehicle
     ? purchases.filter((entry) => entry.vehicle_id === selectedVehicle.id)
     : [];
+  const filteredMoneyflowPurchases = useMemo(
+    () =>
+      purchases.filter((entry) =>
+        isDateWithinRange(entry.order_date, moneyflowDateRange.start_date, moneyflowDateRange.end_date)
+      ),
+    [moneyflowDateRange.end_date, moneyflowDateRange.start_date, purchases]
+  );
+  const filteredMoneyflowRepairs = useMemo(
+    () =>
+      repairs.filter((repair) =>
+        isDateWithinRange(repair.created_at, moneyflowDateRange.start_date, moneyflowDateRange.end_date)
+      ),
+    [moneyflowDateRange.end_date, moneyflowDateRange.start_date, repairs]
+  );
+  const filteredServiceBoardRepairs = useMemo(
+    () =>
+      repairs.filter((repair) =>
+        isDateWithinRange(repair.created_at, serviceBoardDateRange.start_date, serviceBoardDateRange.end_date)
+      ),
+    [repairs, serviceBoardDateRange.end_date, serviceBoardDateRange.start_date]
+  );
+  const activeRepairs = useMemo(
+    () => filteredServiceBoardRepairs.filter((repair) => repair.status !== "completed"),
+    [filteredServiceBoardRepairs]
+  );
+  const waitingPartsRepairs = useMemo(
+    () => filteredServiceBoardRepairs.filter((repair) => repair.status === "waiting_parts"),
+    [filteredServiceBoardRepairs]
+  );
+  const totalPurchaseCost = useMemo(
+    () => filteredMoneyflowPurchases.reduce((sum, entry) => sum + entry.purchase_price * entry.quantity, 0),
+    [filteredMoneyflowPurchases]
+  );
+  const totalPartsSales = useMemo(
+    () => filteredMoneyflowPurchases.reduce((sum, entry) => sum + entry.sale_price * entry.quantity, 0),
+    [filteredMoneyflowPurchases]
+  );
+  const totalServiceSales = useMemo(
+    () => filteredMoneyflowRepairs.reduce((sum, repair) => sum + getRepairServiceSaleValue(repair.service_name), 0),
+    [filteredMoneyflowRepairs]
+  );
+  const projectedMargin = totalPartsSales - totalPurchaseCost;
+  const totalMoneyflowRevenue = totalPartsSales + totalServiceSales;
+  const dashboardWorkerLoad = useMemo(
+    () =>
+      masterProfiles.map((master) => {
+        const assignedRepairs = filteredServiceBoardRepairs.filter((repair) => repair.master_id === master.id);
+        const liveRepairs = assignedRepairs.filter((repair) => repair.status !== "completed");
+        return {
+          ...master,
+          assignedCount: assignedRepairs.length,
+          liveCount: liveRepairs.length,
+          waitingPartsCount: liveRepairs.filter((repair) => repair.status === "waiting_parts").length,
+          latestJob: assignedRepairs[0]?.service_name ?? "No jobs yet",
+        };
+      }),
+    [filteredServiceBoardRepairs]
+  );
+  const dashboardTabs: Array<{ id: DashboardTab; label: string }> = [
+    {
+      id: "moneyflow",
+      label: "Moneyflow",
+    },
+    {
+      id: "service_board",
+      label: "Service board",
+    },
+  ];
 
   function formatCurrency(value: number) {
     return new Intl.NumberFormat("en-US", {
@@ -1533,7 +1733,230 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
   }
 
   function renderDashboard() {
-    return null;
+    const recentPurchases = [...filteredMoneyflowPurchases]
+      .sort((left, right) => right.order_date.localeCompare(left.order_date))
+      .slice(0, 3);
+    const recentRepairs = [...filteredServiceBoardRepairs]
+      .sort((left, right) => right.created_at.localeCompare(left.created_at))
+      .slice(0, 3);
+    const activeDateRange = activeDashboardTab === "moneyflow" ? moneyflowDateRange : serviceBoardDateRange;
+    const activeDateBounds = activeDashboardTab === "moneyflow" ? moneyflowDateBounds : serviceBoardDateBounds;
+    const updateActiveDateRange = (field: keyof DashboardDateRange, value: string) => {
+      if (activeDashboardTab === "moneyflow") {
+        setMoneyflowDateRange((current) => ({ ...current, [field]: value }));
+        return;
+      }
+      setServiceBoardDateRange((current) => ({ ...current, [field]: value }));
+    };
+
+    return (
+      <div className="workspace-stack dashboard-workspace">
+        <section className="dashboard-shell">
+          <div className="dashboard-shell-head">
+            <div>
+              <p className="eyebrow">Workshop Command</p>
+              <h2>Operations Dashboard</h2>
+              <p className="workspace-copy">
+                Track intake volume, purchase movement and repair load without leaving the staff workspace.
+              </p>
+            </div>
+          </div>
+
+          <div className="dashboard-folder-tabs" role="tablist" aria-label="Dashboard views">
+            {dashboardTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeDashboardTab === tab.id}
+                className={`dashboard-folder-tab ${activeDashboardTab === tab.id ? "dashboard-folder-tab-active" : ""}`}
+                onClick={() => setActiveDashboardTab(tab.id)}
+              >
+                <span className="dashboard-folder-label">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="dashboard-date-bar">
+            <label className="dashboard-date-field">
+              <span>Start date</span>
+              <input
+                type="date"
+                value={activeDateRange.start_date}
+                min={activeDateBounds.start_date || undefined}
+                max={activeDateRange.end_date || activeDateBounds.end_date || undefined}
+                onChange={(event) => updateActiveDateRange("start_date", event.target.value)}
+              />
+            </label>
+            <label className="dashboard-date-field">
+              <span>End date</span>
+              <input
+                type="date"
+                value={activeDateRange.end_date}
+                min={activeDateRange.start_date || activeDateBounds.start_date || undefined}
+                max={activeDateBounds.end_date || undefined}
+                onChange={(event) => updateActiveDateRange("end_date", event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="dashboard-folder-panel">
+            {activeDashboardTab === "moneyflow" ? (
+              <div className="workspace-stack">
+                <div className="metric-grid dashboard-metric-grid">
+                  <article className="metric-card metric-card-accent">
+                    <span className="metric-label">Purchase Spend</span>
+                    <strong>{formatCurrency(totalPurchaseCost)}</strong>
+                    <p>Current ordered parts across the board.</p>
+                  </article>
+                  <article className="metric-card">
+                    <span className="metric-label">Parts Sales</span>
+                    <strong>{formatCurrency(totalPartsSales)}</strong>
+                    <p>Potential resale value of booked purchases.</p>
+                  </article>
+                  <article className="metric-card">
+                    <span className="metric-label">Service Jobs</span>
+                    <strong>{filteredMoneyflowRepairs.length}</strong>
+                    <p>Repairs opened inside the selected period.</p>
+                  </article>
+                  <article className="metric-card">
+                    <span className="metric-label">Total Service Sales</span>
+                    <strong>{formatCurrency(totalServiceSales)}</strong>
+                    <p>Estimated labour sales across selected repairs.</p>
+                  </article>
+                  <article className="metric-card">
+                    <span className="metric-label">Total Revenue</span>
+                    <strong>{formatCurrency(totalMoneyflowRevenue)}</strong>
+                    <p>Parts sales plus service sales in one view.</p>
+                  </article>
+                  <article className="metric-card">
+                    <span className="metric-label">Projected Margin</span>
+                    <strong>{formatCurrency(projectedMargin)}</strong>
+                    <p>Spread between buy and sell values for parts.</p>
+                  </article>
+                </div>
+
+                <section className="panel dashboard-mini-panel">
+                  <div className="panel-header">
+                    <div>
+                      <p className="eyebrow">Procurement Pulse</p>
+                      <h3>Latest Purchase Entries</h3>
+                    </div>
+                    <button type="button" className="button button-secondary" onClick={() => onSelectSection("purchases")}>
+                      Open Purchases
+                    </button>
+                  </div>
+
+                  <div className="dashboard-inline-list">
+                    {recentPurchases.length === 0 ? <p className="workspace-note">No purchase entries inside this period.</p> : null}
+                    {recentPurchases.map((entry) => (
+                      <article className="dashboard-inline-card" key={entry.id}>
+                        <div>
+                          <h4>{entry.part_name}</h4>
+                          <p>{entry.supplier_name}</p>
+                          <p>Tracking {entry.repair_code}</p>
+                        </div>
+                        <div className="dashboard-inline-meta">
+                          <span>{formatCurrency(entry.purchase_price * entry.quantity)}</span>
+                          <p>Ordered {formatDisplayDate(entry.order_date)}</p>
+                          {entry.approximate_delivery_date ? (
+                            <p>Approx. delivery {formatDisplayDate(entry.approximate_delivery_date)}</p>
+                          ) : null}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            ) : null}
+
+            {activeDashboardTab === "service_board" ? (
+              <div className="workspace-stack">
+                <div className="metric-grid metric-grid-three">
+                  <article className="metric-card metric-card-accent">
+                    <span className="metric-label">Open Repairs</span>
+                    <strong>{activeRepairs.length}</strong>
+                    <p>Everything not yet moved to completed.</p>
+                  </article>
+                  <article className="metric-card">
+                    <span className="metric-label">Waiting Parts</span>
+                    <strong>{waitingPartsRepairs.length}</strong>
+                    <p>Jobs blocked on procurement delivery.</p>
+                  </article>
+                  <article className="metric-card">
+                    <span className="metric-label">Vehicles</span>
+                    <strong>{vehicles.length}</strong>
+                    <p>Active registry entries available for intake.</p>
+                  </article>
+                </div>
+
+                <section className="panel dashboard-mini-panel">
+                  <div className="panel-header">
+                    <div>
+                      <p className="eyebrow">Repair Flow</p>
+                      <h3>Current Work Queue</h3>
+                    </div>
+                    <div className="hero-actions">
+                      <button type="button" className="button button-secondary" onClick={() => onSelectSection("vehicles")}>
+                        Open Vehicles
+                      </button>
+                      <button type="button" className="button" onClick={() => onSelectSection("repairs")}>
+                        Open Repairs
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-inline-list">
+                    {recentRepairs.length === 0 ? <p className="workspace-note">No repair jobs inside this period.</p> : null}
+                    {recentRepairs.map((repair) => (
+                      <article className="dashboard-inline-card" key={repair.id}>
+                        <div>
+                          <h4>{repair.service_name}</h4>
+                          <p>{repair.vehicle_label}</p>
+                        </div>
+                        <div className="dashboard-inline-meta">
+                          <span className={getRepairStatusClass(repair.status)}>
+                            {REPAIR_STATUS_LABELS[repair.status]}
+                          </span>
+                          <p>{repair.master_name}</p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="panel dashboard-mini-panel">
+                  <div className="panel-header">
+                    <div>
+                      <p className="eyebrow">Crew Snapshot</p>
+                      <h3>Master Workload</h3>
+                    </div>
+                  </div>
+                  <div className="dashboard-worker-grid">
+                    {dashboardWorkerLoad.every((master) => master.assignedCount === 0) ? (
+                      <p className="workspace-note">No worker load inside this period.</p>
+                    ) : null}
+                    {dashboardWorkerLoad.map((master) => (
+                      <article className="dashboard-worker-card" key={master.id}>
+                        <div className="dashboard-worker-topline">
+                          <strong>{master.name}</strong>
+                          <span className="tag">{master.liveCount} live</span>
+                        </div>
+                        <p>{master.latestJob}</p>
+                        <div className="dashboard-worker-stats">
+                          <span>Assigned {master.assignedCount}</span>
+                          <span>Waiting parts {master.waitingPartsCount}</span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </div>
+    );
   }
 
   function renderCustomersSection() {
@@ -2497,7 +2920,7 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                         <article className="detail-item" key={note.id}>
                           <div className="note-header">
                             <strong>{note.author_name}</strong>
-                            <span className="meta-line">{note.created_at}</span>
+                            <span className="meta-line">{formatDisplayDate(note.created_at)}</span>
                           </div>
                           <p className="meta-line">{note.author_email}</p>
                           <p>{note.text}</p>
@@ -2604,9 +3027,17 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                     <div className="purchase-card-main">
                       <div className="purchase-card-topline">
                         <h4>{entry.part_name}</h4>
-                        <span className="tag">{entry.order_date}</span>
+                        <div className="purchase-date-stack">
+                          <span className="tag">{formatDisplayDate(entry.order_date)}</span>
+                          {entry.approximate_delivery_date ? (
+                            <span className="purchase-date-secondary">
+                              Approx. delivery {formatDisplayDate(entry.approximate_delivery_date)}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                       <p>{entry.supplier_name}</p>
+                      {entry.supplier_nip ? <p className="meta-line">Supplier NIP: {entry.supplier_nip}</p> : null}
                       <p>{entry.vehicle_label}</p>
                       <p className="meta-line">Tracking: {entry.repair_code}</p>
                       {entry.invoice_name ? <p className="meta-line">Invoice: {entry.invoice_name}</p> : null}
@@ -2661,6 +3092,17 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                       </label>
 
                       <label>
+                        <span>Approximate Delivery Date</span>
+                        <input
+                          value={purchaseModalForm.approximate_delivery_date}
+                          onChange={(event) =>
+                            setPurchaseModalForm((current) => ({ ...current, approximate_delivery_date: event.target.value }))
+                          }
+                          type="date"
+                        />
+                      </label>
+
+                      <label>
                         <span>Supplier</span>
                         <input
                           value={purchaseModalForm.supplier_name}
@@ -2668,6 +3110,18 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                             setPurchaseModalForm((current) => ({ ...current, supplier_name: event.target.value }))
                           }
                           type="text"
+                        />
+                      </label>
+
+                      <label>
+                        <span>Supplier NIP</span>
+                        <input
+                          value={purchaseModalForm.supplier_nip}
+                          onChange={(event) =>
+                            setPurchaseModalForm((current) => ({ ...current, supplier_nip: event.target.value }))
+                          }
+                          type="text"
+                          placeholder="1234567890"
                         />
                       </label>
                     </div>
@@ -2859,6 +3313,17 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                   </label>
 
                   <label>
+                    <span>Approximate Delivery Date</span>
+                    <input
+                      value={purchaseForm.approximate_delivery_date}
+                      onChange={(event) =>
+                        setPurchaseForm((current) => ({ ...current, approximate_delivery_date: event.target.value }))
+                      }
+                      type="date"
+                    />
+                  </label>
+
+                  <label>
                     <span>Supplier</span>
                     <input
                       value={purchaseForm.supplier_name}
@@ -2868,6 +3333,18 @@ export function StaffHomePage({ activeSection, onSelectSection }: StaffHomePageP
                       type="text"
                       placeholder="Supplier name"
                       required
+                    />
+                  </label>
+
+                  <label>
+                    <span>Supplier NIP</span>
+                    <input
+                      value={purchaseForm.supplier_nip}
+                      onChange={(event) =>
+                        setPurchaseForm((current) => ({ ...current, supplier_nip: event.target.value }))
+                      }
+                      type="text"
+                      placeholder="1234567890"
                     />
                   </label>
                 </div>
