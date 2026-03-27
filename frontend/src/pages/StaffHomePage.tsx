@@ -203,7 +203,6 @@ function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
 
 const customRepairServiceOption = "Custom Service";
 
-const vehicleDetailsStorageKey = "vehicle-ui-details";
 const repairServiceSaleCatalog: Record<string, number> = {
   "Oil Change": 190,
   "Brake Service": 420,
@@ -272,60 +271,6 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 
 function getRepairServiceSaleValue(serviceName: string) {
   return repairServiceSaleCatalog[serviceName] ?? 320;
-}
-
-
-function readStoredVehicleDetails(): Record<number, VehicleUiDetails> {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  const storage = window.localStorage as { getItem?: (key: string) => string | null } | undefined;
-  if (typeof storage?.getItem !== "function") {
-    return {};
-  }
-
-  const rawValue = storage.getItem(vehicleDetailsStorageKey);
-  if (!rawValue) {
-    return {};
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {};
-    }
-    return Object.entries(parsed).reduce<Record<number, VehicleUiDetails>>((accumulator, [key, value]) => {
-      if (
-        value &&
-        typeof value === "object" &&
-        "mileage" in value &&
-        "last_service_date" in value
-      ) {
-        accumulator[Number(key)] = {
-          mileage: String((value as VehicleUiDetails).mileage ?? ""),
-          last_service_date: String((value as VehicleUiDetails).last_service_date ?? ""),
-          added_date: String((value as VehicleUiDetails).added_date ?? ""),
-        };
-      }
-      return accumulator;
-    }, {});
-  } catch {
-    return {};
-  }
-}
-
-function writeStoredVehicleDetails(details: Record<number, VehicleUiDetails>) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const storage = window.localStorage as { setItem?: (key: string, value: string) => void } | undefined;
-  if (typeof storage?.setItem !== "function") {
-    return;
-  }
-
-  storage.setItem(vehicleDetailsStorageKey, JSON.stringify(details));
 }
 
 
@@ -537,7 +482,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [vehicleForm, setVehicleForm] = useState<VehicleFormState>(emptyVehicleForm);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseFormState>(emptyPurchaseForm);
   const [repairForm, setRepairForm] = useState<RepairFormState>(emptyRepairForm);
-  const [vehicleUiDetails, setVehicleUiDetails] = useState<Record<number, VehicleUiDetails>>(readStoredVehicleDetails);
+  const [vehicleUiDetails, setVehicleUiDetails] = useState<Record<number, VehicleUiDetails>>({});
   const [editingCustomerId, setEditingCustomerId] = useState<number | null>(null);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
@@ -613,10 +558,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }, []);
 
   useEffect(() => {
-    writeStoredVehicleDetails(vehicleUiDetails);
-  }, [vehicleUiDetails]);
-
-  useEffect(() => {
     if (!moneyflowDateRange.start_date && !moneyflowDateRange.end_date && moneyflowDateBounds.start_date && moneyflowDateBounds.end_date) {
       setMoneyflowDateRange(moneyflowDateBounds);
     }
@@ -680,7 +621,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   function getVehicleDetails(vehicle: Vehicle): VehicleUiDetails {
     return {
-      mileage: vehicleUiDetails[vehicle.id]?.mileage ?? (vehicle.mileage ? String(vehicle.mileage) : ""),
+      mileage: vehicleUiDetails[vehicle.id]?.mileage ?? (vehicle.mileage != null ? String(vehicle.mileage) : ""),
       last_service_date: vehicleUiDetails[vehicle.id]?.last_service_date ?? vehicle.last_service_date ?? "",
       added_date: vehicleUiDetails[vehicle.id]?.added_date ?? vehicle.added_date ?? "",
     };
@@ -943,6 +884,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         vin: vehicleForm.vin.trim(),
         color: vehicleForm.color.trim(),
         notes: vehicleForm.notes.trim(),
+        mileage: vehicleForm.mileage ? Number(vehicleForm.mileage) : null,
+        last_service_date: vehicleForm.last_service_date || null,
+        added_date: vehicleForm.added_date || null,
       };
       const nextVehicleDetails = {
         mileage: vehicleForm.mileage.trim(),
@@ -983,19 +927,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         }));
       } else if (editingVehicleId) {
         await api.patch(`/vehicles/${editingVehicleId}`, payload);
-        setVehicleUiDetails((current) => ({
-          ...current,
-          [editingVehicleId]: nextVehicleDetails,
-        }));
       } else {
-        const response = await api.post("/vehicles/", payload);
-        const nextId = response?.data?.id;
-        if (typeof nextId === "number") {
-          setVehicleUiDetails((current) => ({
-            ...current,
-            [nextId]: nextVehicleDetails,
-          }));
-        }
+        await api.post("/vehicles/", payload);
       }
       await loadRegistries();
       resetVehicleForm("");
