@@ -247,6 +247,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   const [customerError, setCustomerError] = useState("");
   const [vehicleError, setVehicleError] = useState("");
+  const [sectionVehicles, setSectionVehicles] = useState<Vehicle[]>([]);
+  const [sectionVehiclesCount, setSectionVehiclesCount] = useState(0);
+  const [sectionVehiclesPage, setSectionVehiclesPage] = useState(1);
+  const [sectionVehiclesHasMore, setSectionVehiclesHasMore] = useState(false);
+  const [sectionVehiclesLoading, setSectionVehiclesLoading] = useState(false);
   const [isSavingCustomer, setIsSavingCustomer] = useState(false);
   const [isSavingVehicle, setIsSavingVehicle] = useState(false);
   const [activeUserTab, setActiveUserTab] = useState<UserAccessTab>("owner");
@@ -300,6 +305,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handlePurchaseModalInvoiceChange,
     handlePurchaseModalInvoiceRemove,
     handleOpenInvoice,
+    purchaseCount,
+    purchaseHasMore,
+    purchaseLoadingMore,
+    loadMorePurchases,
   } = usePurchases(vehicles);
 
   const {
@@ -407,20 +416,50 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     openRepairCreateModal();
   }, [activeSection, openRepairComposerRequest]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadSectionVehicles(vehicleSearch, 1, false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [vehicleSearch]);
+
   async function loadRegistries() {
     setLoadError("");
     setIsLoading(true);
     try {
       const [customersResponse, vehiclesResponse] = await Promise.all([
-        api.get("/customers/"),
-        api.get("/vehicles/"),
+        api.get("/customers/?page_size=500"),
+        api.get("/vehicles/?page_size=500"),
       ]);
-      setServerCustomers(Array.isArray(customersResponse.data) ? customersResponse.data : []);
-      setServerVehicles(Array.isArray(vehiclesResponse.data) ? vehiclesResponse.data : []);
+      setServerCustomers(customersResponse.data.results ?? customersResponse.data);
+      setServerVehicles(vehiclesResponse.data.results ?? vehiclesResponse.data);
     } catch (error) {
       setLoadError(getErrorMessage(error, "Unable to load customers and vehicles."));
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loadSectionVehicles(q: string, page: number, append: boolean) {
+    if (page === 1) setSectionVehiclesLoading(true);
+    try {
+      const params = new URLSearchParams({ page_size: "50", page: String(page) });
+      if (q.trim()) params.set("q", q.trim());
+      const response = await api.get(`/vehicles/?${params.toString()}`);
+      const data = response.data;
+      const results: Vehicle[] = data.results ?? data;
+      if (append) {
+        setSectionVehicles((prev) => [...prev, ...results]);
+      } else {
+        setSectionVehicles(results);
+      }
+      setSectionVehiclesCount(data.count ?? results.length);
+      setSectionVehiclesHasMore(data.next !== null && data.next !== undefined);
+      setSectionVehiclesPage(page);
+    } catch {
+      // silent
+    } finally {
+      setSectionVehiclesLoading(false);
     }
   }
 
@@ -766,15 +805,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [vehicleSearch, vehicles]
   );
 
-  const visiblePurchases = useMemo(
-    () =>
-      purchases.filter((entry) => {
-        const haystack =
-          `${entry.order_date} ${entry.supplier_name} ${entry.part_name} ${entry.repair_code} ${entry.vehicle_label}`.toLowerCase();
-        return haystack.includes(purchaseSearch.trim().toLowerCase());
-      }),
-    [purchaseSearch, purchases]
-  );
+  const visiblePurchases = purchases;
 
   const visibleRepairs = useMemo(
     () =>
@@ -1450,6 +1481,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           <div>
             <p className="eyebrow">Registry</p>
             <h2>Vehicle List</h2>
+            {sectionVehiclesCount > 0 ? (
+              <span className="registry-count">{sectionVehiclesCount} total</span>
+            ) : null}
           </div>
           <div className="workspace-top-actions">
             <label className="kanban-search">
@@ -1468,17 +1502,34 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
         <div className="vehicles-surface-stack">
           <StaffVehiclesMobileList
-            vehicles={visibleVehicles}
+            vehicles={sectionVehicles}
             getVehicleDetails={getVehicleDetails}
             onOpenVehicle={openVehicleDetailModal}
           />
 
           <StaffVehiclesRegistry
-            vehicles={visibleVehicles}
+            vehicles={sectionVehicles}
             getVehicleDetails={getVehicleDetails}
             onOpenVehicle={openVehicleDetailModal}
           />
         </div>
+
+        {sectionVehiclesHasMore ? (
+          <div className="load-more-bar">
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() =>
+                void loadSectionVehicles(vehicleSearch, sectionVehiclesPage + 1, true)
+              }
+              disabled={sectionVehiclesLoading}
+            >
+              {sectionVehiclesLoading
+                ? "Loading…"
+                : `Load more (${sectionVehiclesCount - sectionVehicles.length} remaining)`}
+            </button>
+          </div>
+        ) : null}
 
         {selectedVehicle ? (
           <div className="modal-overlay" role="presentation" onClick={closeVehicleDetailModal}>
@@ -2234,6 +2285,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           <div>
             <p className="eyebrow">Ordered Parts</p>
             <h2>Purchase Registry</h2>
+            {purchaseCount > 0 ? <span className="registry-count">{purchaseCount} total</span> : null}
           </div>
           <div className="workspace-top-actions">
             <label className="kanban-search">
@@ -2293,6 +2345,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               );
             })
           )}
+          {purchaseHasMore ? (
+            <div className="load-more-bar">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => void loadMorePurchases()}
+                disabled={purchaseLoadingMore}
+              >
+                {purchaseLoadingMore ? "Loading…" : `Load more (${purchaseCount - visiblePurchases.length} remaining)`}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {selectedPurchase ? (

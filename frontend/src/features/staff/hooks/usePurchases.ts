@@ -74,6 +74,10 @@ function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
 export function usePurchases(vehicles: Vehicle[]) {
   const [purchases, setPurchases] = useState<PurchaseEntry[]>([]);
   const [purchaseSearch, setPurchaseSearch] = useState("");
+  const [purchasePage, setPurchasePage] = useState(1);
+  const [purchaseCount, setPurchaseCount] = useState(0);
+  const [purchaseHasMore, setPurchaseHasMore] = useState(false);
+  const [purchaseLoadingMore, setPurchaseLoadingMore] = useState(false);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseFormState>(emptyPurchaseForm);
   const [purchaseError, setPurchaseError] = useState("");
   const [purchaseModalError, setPurchaseModalError] = useState("");
@@ -89,10 +93,32 @@ export function usePurchases(vehicles: Vehicle[]) {
   const selectedPurchase = purchases.find((entry) => entry.id === selectedPurchaseId) ?? null;
 
   useEffect(() => {
-    fetchPurchases().then((data) => {
-      setPurchases(data.map(mapApiPurchaseToPurchaseEntry));
-    }).catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      setPurchasePage(1);
+      fetchPurchases({ q: purchaseSearch, page: 1, pageSize: 50 })
+        .then((result) => {
+          setPurchases(result.results.map(mapApiPurchaseToPurchaseEntry));
+          setPurchaseCount(result.count);
+          setPurchaseHasMore(result.next !== null);
+        })
+        .catch(() => {});
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [purchaseSearch]);
+
+  async function loadMorePurchases() {
+    setPurchaseLoadingMore(true);
+    try {
+      const result = await fetchPurchases({ q: purchaseSearch, page: purchasePage + 1, pageSize: 50 });
+      setPurchases((current) => [...current, ...result.results.map(mapApiPurchaseToPurchaseEntry)]);
+      setPurchasePage((current) => current + 1);
+      setPurchaseCount(result.count);
+      setPurchaseHasMore(result.next !== null);
+    } catch {
+    } finally {
+      setPurchaseLoadingMore(false);
+    }
+  }
 
   function resetPurchaseForm() {
     setPurchaseForm(emptyPurchaseForm);
@@ -294,6 +320,10 @@ export function usePurchases(vehicles: Vehicle[]) {
     setPurchases,
     purchaseSearch,
     setPurchaseSearch,
+    purchaseCount,
+    purchaseHasMore,
+    purchaseLoadingMore,
+    loadMorePurchases,
     purchaseForm,
     setPurchaseForm,
     purchaseError,

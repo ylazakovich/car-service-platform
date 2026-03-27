@@ -40,8 +40,25 @@ export interface PurchaseWritePayload {
   invoice_url?: string;
 }
 
-export async function fetchPurchases(q?: string): Promise<PurchaseItem[]> {
-  const response = await api.get<PurchaseItem[]>("/purchases/", { params: q ? { q } : undefined });
+export interface PurchasePage {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: PurchaseItem[];
+}
+
+export interface FetchPurchasesParams {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function fetchPurchases(params: FetchPurchasesParams = {}): Promise<PurchasePage> {
+  const query: Record<string, string | number> = {};
+  if (params.q) query.q = params.q;
+  if (params.page) query.page = params.page;
+  if (params.pageSize) query.page_size = params.pageSize;
+  const response = await api.get<PurchasePage>("/purchases/", { params: query });
   return response.data;
 }
 

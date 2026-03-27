@@ -2472,6 +2472,19 @@ textarea { resize: vertical; }
   }
 }
 
+.load-more-bar {
+  display: flex;
+  justify-content: center;
+  padding: var(--s4) 0 var(--s2);
+}
+
+.registry-count {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
 @media (max-width: 820px) {
   body.mobile-nav-open {
     overflow: hidden;
