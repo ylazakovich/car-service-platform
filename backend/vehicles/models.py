@@ -13,6 +13,9 @@ class Vehicle(models.Model):
     vin = models.CharField(max_length=64, blank=True)
     color = models.CharField(max_length=64, blank=True)
     notes = models.TextField(blank=True)
+    mileage = models.PositiveIntegerField(null=True, blank=True)
+    last_service_date = models.DateField(null=True, blank=True)
+    added_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 
