@@ -32,7 +32,7 @@ jobs:
 
       - name: Frontend Test Report
         if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
-        uses: dorny/test-reporter@3d76b34a4535afbd0600d347b09a6ee5deb3ed7f # v2
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: Frontend Tests
           path: artifacts/frontend-test-results/junit.xml
@@ -40,7 +40,7 @@ jobs:
 
       - name: Backend Test Report
         if: ${{ hashFiles('artifacts/backend-test-results/*.xml') != '' }}
-        uses: dorny/test-reporter@3d76b34a4535afbd0600d347b09a6ee5deb3ed7f # v2
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: Backend Tests
           path: artifacts/backend-test-results/*.xml
