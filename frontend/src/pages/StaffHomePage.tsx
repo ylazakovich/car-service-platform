@@ -2681,23 +2681,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderUsersSection() {
-    const userTabMeta: Record<UserAccessTab, { title: string; login: string; password: string; note: string }> = {
+    const userTabMeta: Record<UserAccessTab, { title: string; login: string; note: string }> = {
       owner: {
         title: "Owner",
         login: user?.email ?? "owner@autoservice.local",
-        password: "Current owner session",
         note: "Full access to the entire system.",
       },
       admins: {
         title: "Admins",
         login: "admin@autoservice.local",
-        password: "admin12345",
         note: "Placeholder admin account for the next implementation step.",
       },
       masters: {
         title: "Masters",
         login: staffUsers[0]?.email ?? "—",
-        password: "Managed via authentication system.",
         note: "Staff users are loaded from the server.",
       },
     };
@@ -2735,10 +2732,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               <article className="role-item">
                 <strong>Login</strong>
                 <p>{currentUserTab.login}</p>
-              </article>
-              <article className="role-item">
-                <strong>Password</strong>
-                <p>{currentUserTab.password}</p>
               </article>
               <article className="role-item">
                 <strong>Note</strong>
