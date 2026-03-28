@@ -102,7 +102,7 @@ class PurchaseApiTests(TestCase):
         response = self.client.get("/api/purchases/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(len(response.json()["results"]), 1)
 
     def test_create_purchase_with_new_supplier_name_auto_creates_supplier(self):
         self.client.force_authenticate(self.user)
@@ -151,8 +151,8 @@ class PurchaseApiTests(TestCase):
         response = self.client.get("/api/purchases/", {"q": "brake"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 1)
-        self.assertEqual(response.json()[0]["part_name"], "Brake Pad")
+        self.assertEqual(len(response.json()["results"]), 1)
+        self.assertEqual(response.json()["results"][0]["part_name"], "Brake Pad")
 
     def test_detail_returns_nested_supplier_data(self):
         self.client.force_authenticate(self.user)

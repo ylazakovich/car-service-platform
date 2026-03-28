@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
 import { fetchStaffUsers, type StaffUser } from "../api/repairs";
-import { createInvite, type InviteResponse } from "../api/users";
+import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases } from "../features/staff/hooks/usePurchases";
@@ -267,11 +267,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [isSavingInlineCustomer, setIsSavingInlineCustomer] = useState(false);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteFirstName, setInviteFirstName] = useState("");
+  const [inviteLastName, setInviteLastName] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "staff">("staff");
   const [inviteResult, setInviteResult] = useState<{ url: string } | null>(null);
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [copiedResetUserId, setCopiedResetUserId] = useState<number | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [allUsers, setAllUsers] = useState<UserItem[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [resetLinkResult, setResetLinkResult] = useState<{ userId: number; url: string } | null>(null);
 
   const customers = useMemo(() => [...serverCustomers, ...demoCustomers], [serverCustomers, demoCustomers]);
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
@@ -413,8 +422,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
 
     lastHandledRepairComposerRequest.current = openRepairComposerRequest;
-    openRepairCreateModal();
+    handleOpenRepairCreate();
   }, [activeSection, openRepairComposerRequest]);
+
+  function handleOpenRepairCreate() {
+    openRepairCreateModal();
+    if (!isAdmin && user?.id) {
+      setRepairForm((current) => ({ ...current, master_id: String(user.id) }));
+    }
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -422,6 +438,54 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }, 350);
     return () => clearTimeout(timer);
   }, [vehicleSearch]);
+
+  useEffect(() => {
+    if (activeSection === "users") {
+      loadAllUsers();
+    }
+  }, [activeSection]);
+
+  async function loadAllUsers() {
+    setUsersLoading(true);
+    try {
+      const data = await fetchUsers();
+      setAllUsers(data);
+    } catch {
+    } finally {
+      setUsersLoading(false);
+    }
+  }
+
+  async function handleResetUserPassword(userId: number, email: string) {
+    if (!window.confirm(`Send a new invite link to ${email}?`)) return;
+    try {
+      const { invite_url } = await resetInvite(userId);
+      setResetLinkResult({ userId, url: invite_url });
+      loadAllUsers();
+    } catch {
+    }
+  }
+
+  function startEditUser(u: UserItem) {
+    setEditingUserId(u.id);
+    setEditFirstName(u.first_name);
+    setEditLastName(u.last_name);
+  }
+
+  function cancelEditUser() {
+    setEditingUserId(null);
+    setEditFirstName("");
+    setEditLastName("");
+  }
+
+  async function saveEditUser(userId: number) {
+    try {
+      const updated = await updateUserName(userId, editFirstName, editLastName);
+      setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      cancelEditUser();
+    } catch {
+    }
+  }
 
   async function loadRegistries() {
     setLoadError("");
@@ -1046,30 +1110,29 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             ))}
           </div>
 
-          <div className="dashboard-date-bar">
-            <label className="dashboard-date-field">
-              <span>Start date</span>
-              <input
-                type="date"
-                value={activeDateRange.start_date}
-                min={activeDateBounds.start_date || undefined}
-                max={activeDateRange.end_date || activeDateBounds.end_date || undefined}
-                onChange={(event) => updateActiveDateRange("start_date", event.target.value)}
-              />
-            </label>
-            <label className="dashboard-date-field">
-              <span>End date</span>
-              <input
-                type="date"
-                value={activeDateRange.end_date}
-                min={activeDateRange.start_date || activeDateBounds.start_date || undefined}
-                max={activeDateBounds.end_date || undefined}
-                onChange={(event) => updateActiveDateRange("end_date", event.target.value)}
-              />
-            </label>
-          </div>
-
           <div className="dashboard-folder-panel">
+            <div className="dashboard-date-bar">
+              <label className="dashboard-date-field">
+                <span>Start date</span>
+                <input
+                  type="date"
+                  value={activeDateRange.start_date}
+                  min={activeDateBounds.start_date || undefined}
+                  max={activeDateRange.end_date || activeDateBounds.end_date || undefined}
+                  onChange={(event) => updateActiveDateRange("start_date", event.target.value)}
+                />
+              </label>
+              <label className="dashboard-date-field">
+                <span>End date</span>
+                <input
+                  type="date"
+                  value={activeDateRange.end_date}
+                  min={activeDateRange.start_date || activeDateBounds.start_date || undefined}
+                  max={activeDateBounds.end_date || undefined}
+                  onChange={(event) => updateActiveDateRange("end_date", event.target.value)}
+                />
+              </label>
+            </div>
             {activeDashboardTab === "moneyflow" ? (
               <div className="workspace-stack">
                 <div className="metric-grid dashboard-metric-grid">
@@ -1888,7 +1951,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           searchPlaceholder: "Search owner, vehicle, service or tracking",
           onSearchChange: setRepairSearch,
           primaryActionLabel: "New Repair",
-          onPrimaryAction: openRepairCreateModal,
+          onPrimaryAction: handleOpenRepairCreate,
         })}
 
         {/* Topbar */}
@@ -1906,7 +1969,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 type="search"
               />
             </label>
-            <button type="button" className="button" onClick={openRepairCreateModal}>
+            <button type="button" className="button" onClick={handleOpenRepairCreate}>
               + New Repair
             </button>
           </div>
@@ -1977,18 +2040,26 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 <label>
                   <span>Master</span>
-                  <select
-                    value={repairForm.master_id}
-                    onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
-                    required
-                  >
-                    <option value="">Select master</option>
-                    {staffUsers.map((master) => (
-                      <option key={master.id} value={master.id}>
-                        {getStaffUserLabel(master)}
-                      </option>
-                    ))}
-                  </select>
+                  {isAdmin ? (
+                    <select
+                      value={repairForm.master_id}
+                      onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
+                      required
+                    >
+                      <option value="">Select master</option>
+                      {staffUsers.map((master) => (
+                        <option key={master.id} value={master.id}>
+                          {getStaffUserLabel(master)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={getStaffUserLabel(staffUsers.find((m) => m.id === user?.id) ?? { id: 0, email: user?.email ?? "", first_name: user?.first_name ?? "", last_name: user?.last_name ?? "", role: "staff" })}
+                      readOnly
+                    />
+                  )}
                 </label>
 
                 <label>
@@ -2318,7 +2389,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <div className="purchase-card-chips">
                         {entry.repair_code ? <span className="tag">{entry.repair_code}</span> : null}
                         {entry.vehicle_label ? <span className="purchase-chip-muted">{entry.vehicle_label}</span> : null}
-                        {entry.invoice_name ? <span className="purchase-chip-muted">{entry.invoice_name}</span> : null}
+                        {entry.invoice_url ? (
+                          <button
+                            className="purchase-chip-muted purchase-chip-link"
+                            onClick={(e) => { e.stopPropagation(); handleOpenInvoice(entry.invoice_url); }}
+                            title="Open invoice"
+                          >
+                            {entry.invoice_name || "Invoice"}
+                          </button>
+                        ) : entry.invoice_name ? (
+                          <span className="purchase-chip-muted">{entry.invoice_name}</span>
+                        ) : null}
                       </div>
                     </div>
                     <div className="purchase-card-financials">
@@ -2756,6 +2837,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   function closeInvitePanel() {
     setShowInviteForm(false);
     setInviteEmail("");
+    setInviteFirstName("");
+    setInviteLastName("");
     setInviteRole("staff");
     setInviteResult(null);
     setInviteError("");
@@ -2768,7 +2851,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setInviteError("");
     setInviteLoading(true);
     try {
-      const result: InviteResponse = await createInvite(inviteEmail, inviteRole);
+      const result: InviteResponse = await createInvite(inviteEmail, inviteRole, inviteFirstName, inviteLastName);
       setInviteResult({ url: result.invite_url });
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { detail?: string } } };
@@ -2786,142 +2869,197 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderUsersSection() {
-    const userTabMeta: Record<UserAccessTab, { title: string; login: string; note: string }> = {
-      owner: {
-        title: "Owner",
-        login: user?.email ?? "owner@autoservice.local",
-        note: "Full access to the entire system.",
-      },
-      admins: {
-        title: "Admins",
-        login: "admin@autoservice.local",
-        note: "Admin accounts have full access to all platform settings and data.",
-      },
-      masters: {
-        title: "Masters",
-        login: staffUsers[0]?.email ?? "—",
-        note: "Staff users are loaded from the server.",
-      },
-    };
-
-    const currentUserTab = userTabMeta[activeUserTab];
-
-    const canInvite = isAdmin;
-
     return (
-      <div className="workspace-stack">
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Role Layers</p>
-              <h3>User Access Structure</h3>
-            </div>
-            {canInvite ? (
-              <button
-                type="button"
-                className="button"
-                onClick={() => setShowInviteForm(true)}
-              >
-                Invite User
-              </button>
-            ) : null}
+      <div className="workspace-stack users-workspace">
+        <div className="kanban-topbar">
+          <div>
+            <p className="section-eyebrow">Team</p>
+            <h2>User Management</h2>
           </div>
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <span className="registry-count">{allUsers.length} users</span>
+            {isAdmin && (
+              <button className="button" onClick={() => setShowInviteForm((v) => !v)}>
+                + Invite User
+              </button>
+            )}
+          </div>
+        </div>
 
-          {showInviteForm ? (
-            <div className="invite-panel">
-              <div className="invite-panel-header">
-                <strong>{inviteResult ? "Invite link created" : "Invite New User"}</strong>
-                <button type="button" className="invite-panel-close" aria-label="Close" onClick={closeInvitePanel}>
-                  ×
+        {showInviteForm && isAdmin && (
+          <div className="invite-panel">
+            <div className="invite-panel-header">
+              <strong>{inviteResult ? "Invite link created" : "Invite New User"}</strong>
+              <button type="button" className="invite-panel-close" aria-label="Close" onClick={closeInvitePanel}>
+                ×
+              </button>
+            </div>
+
+            {inviteResult ? (
+              <div className="invite-panel-body">
+                <p className="invite-panel-label">Share this link with the user:</p>
+                <div className="invite-link-box">{inviteResult.url}</div>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => handleCopyInviteLink(inviteResult.url)}
+                >
+                  {inviteCopied ? "Copied!" : "Copy Link"}
                 </button>
               </div>
-
-              {inviteResult ? (
-                <div className="invite-panel-body">
-                  <p className="invite-panel-label">Share this link with the user:</p>
-                  <div className="invite-link-box">{inviteResult.url}</div>
+            ) : (
+              <form className="invite-panel-body" onSubmit={handleInviteSubmit}>
+                <div className="invite-name-row">
+                  <input
+                    type="text"
+                    className="invite-email-input"
+                    value={inviteFirstName}
+                    onChange={(e) => setInviteFirstName(e.target.value)}
+                    autoComplete="off"
+                    placeholder="First name"
+                  />
+                  <input
+                    type="text"
+                    className="invite-email-input"
+                    value={inviteLastName}
+                    onChange={(e) => setInviteLastName(e.target.value)}
+                    autoComplete="off"
+                    placeholder="Last name"
+                  />
+                </div>
+                <input
+                  type="email"
+                  className="invite-email-input"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  required
+                  autoComplete="off"
+                  placeholder="Email address"
+                />
+                <div className="invite-role-toggle">
                   <button
                     type="button"
-                    className="button"
-                    onClick={() => handleCopyInviteLink(inviteResult.url)}
+                    className={`invite-role-btn${inviteRole === "staff" ? " invite-role-btn-active" : ""}`}
+                    onClick={() => setInviteRole("staff")}
                   >
-                    {inviteCopied ? "Copied!" : "Copy Link"}
+                    Master
+                  </button>
+                  <button
+                    type="button"
+                    className={`invite-role-btn${inviteRole === "admin" ? " invite-role-btn-active" : ""}`}
+                    onClick={() => setInviteRole("admin")}
+                  >
+                    Admin
                   </button>
                 </div>
-              ) : (
-                <form className="invite-panel-body" onSubmit={handleInviteSubmit}>
-                  <input
-                    type="email"
-                    className="invite-email-input"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    required
-                    autoComplete="off"
-                    placeholder="Email address"
-                  />
-                  <div className="invite-role-toggle">
-                    <button
-                      type="button"
-                      className={`invite-role-btn${inviteRole === "staff" ? " invite-role-btn-active" : ""}`}
-                      onClick={() => setInviteRole("staff")}
-                    >
-                      Master
-                    </button>
-                    <button
-                      type="button"
-                      className={`invite-role-btn${inviteRole === "admin" ? " invite-role-btn-active" : ""}`}
-                      onClick={() => setInviteRole("admin")}
-                    >
-                      Admin
-                    </button>
+                {inviteError ? <p className="form-error" style={{ flex: "1 0 100%", margin: 0 }}>{inviteError}</p> : null}
+                <button type="submit" className="button" disabled={inviteLoading}>
+                  {inviteLoading ? "…" : "Send Invite"}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
+        {usersLoading ? (
+          <p className="section-empty">Loading...</p>
+        ) : allUsers.length === 0 ? (
+          <p className="section-empty">No users found.</p>
+        ) : (
+          <div className="registry-list users-list">
+            {allUsers.map((u) => {
+              const isRegistered = u.has_usable_password;
+              const isCurrentUser = u.email === user?.email;
+              return (
+                <article key={u.id} className="registry-card user-card">
+                  <div className="user-card-info">
+                    {editingUserId === u.id ? (
+                      <div className="user-edit-row">
+                        <input
+                          className="user-edit-input"
+                          value={editFirstName}
+                          onChange={(e) => setEditFirstName(e.target.value)}
+                          placeholder="First name"
+                          autoFocus
+                        />
+                        <input
+                          className="user-edit-input"
+                          value={editLastName}
+                          onChange={(e) => setEditLastName(e.target.value)}
+                          placeholder="Last name"
+                        />
+                        <button className="button" style={{ padding: "0.4rem 0.85rem", fontSize: "0.82rem" }} onClick={() => void saveEditUser(u.id)}>Save</button>
+                        <button className="button-secondary" style={{ padding: "0.4rem 0.7rem", fontSize: "0.82rem" }} onClick={cancelEditUser}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="user-card-name">
+                        {u.first_name || u.last_name
+                          ? `${u.first_name} ${u.last_name}`.trim()
+                          : u.email}
+                        {isCurrentUser && <span className="user-badge user-badge-you">You</span>}
+                        {(isAdmin || isCurrentUser) && (
+                          <button className="user-edit-btn" onClick={() => startEditUser(u)} title="Edit name" aria-label="Edit name">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {(u.first_name || u.last_name) && editingUserId !== u.id && (
+                      <div className="user-card-email">{u.email}</div>
+                    )}
+                    <div className="user-card-meta">
+                      <span className="user-badge" data-role={u.role}>{u.role}</span>
+                      <span className={`user-badge ${isRegistered ? "user-badge-registered" : "user-badge-pending"}`}>
+                        {isRegistered ? "Registered" : "Pending"}
+                      </span>
+                    </div>
                   </div>
-                  {inviteError ? <p className="form-error" style={{ flex: "1 0 100%", margin: 0 }}>{inviteError}</p> : null}
-                  <button type="submit" className="button" disabled={inviteLoading}>
-                    {inviteLoading ? "…" : "Send Invite"}
-                  </button>
-                </form>
-              )}
-            </div>
-          ) : null}
-
-          <div className="subnav-tabs" role="tablist" aria-label="User access levels">
-            {(["owner", "admins", "masters"] as UserAccessTab[]).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={activeUserTab === tab}
-                className={`subnav-tab ${activeUserTab === tab ? "subnav-tab-active" : ""}`}
-                onClick={() => setActiveUserTab(tab)}
-              >
-                {tab === "owner" ? "Owner" : tab === "admins" ? "Admins" : "Masters"}
-              </button>
-            ))}
+                  {isAdmin && !isCurrentUser && (
+                    <div className="user-card-actions">
+                      <button
+                        className="button-secondary"
+                        onClick={() => handleResetUserPassword(u.id, u.email)}
+                        title="Send a new invite / reset password link"
+                      >
+                        Reset Password
+                      </button>
+                      {resetLinkResult?.userId === u.id && (
+                        <div className="invite-link-box">
+                          <span className="invite-link-url">{resetLinkResult.url}</span>
+                          <button
+                            className={`icon-copy-btn${copiedResetUserId === u.id ? " icon-copy-btn-done" : ""}`}
+                            onClick={() => {
+                              void navigator.clipboard.writeText(resetLinkResult.url).then(() => {
+                                setCopiedResetUserId(u.id);
+                                setTimeout(() => setCopiedResetUserId(null), 2000);
+                              });
+                            }}
+                            title={copiedResetUserId === u.id ? "Copied!" : "Copy link"}
+                            aria-label="Copy invite link"
+                          >
+                            {copiedResetUserId === u.id ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
-
-          <div className="role-card">
-            <h3>{currentUserTab.title}</h3>
-            <div className="credential-list">
-              <article className="role-item">
-                <strong>Login</strong>
-                <p>{currentUserTab.login}</p>
-              </article>
-              <article className="role-item">
-                <strong>Note</strong>
-                <p>{currentUserTab.note}</p>
-              </article>
-              {activeUserTab === "masters"
-                ? staffUsers.map((master) => (
-                    <article className="role-item" key={master.id}>
-                      <strong>{getStaffUserLabel(master)}</strong>
-                      <p>Login: {master.email}</p>
-                      <p>Role: {master.role}</p>
-                    </article>
-                  ))
-                : null}
-            </div>
-          </div>
-        </section>
+        )}
       </div>
     );
   }

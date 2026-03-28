@@ -20,6 +20,7 @@ export interface PurchaseItem {
   sale_price: string;
   repair_code: string;
   vehicle: number | null;
+  vehicle_license_plate?: string;
   invoice_name: string;
   invoice_url: string;
   created_at: string;
@@ -68,10 +69,10 @@ export async function createPurchase(data: PurchaseWritePayload): Promise<Purcha
 }
 
 export async function updatePurchase(id: number, data: Partial<PurchaseWritePayload>): Promise<PurchaseItem> {
-  const response = await api.patch<PurchaseItem>(`/purchases/${id}/`, data);
+  const response = await api.patch<PurchaseItem>(`/purchases/${id}`, data);
   return response.data;
 }
 
 export async function deletePurchase(id: number): Promise<void> {
-  await api.delete(`/purchases/${id}/`);
+  await api.delete(`/purchases/${id}`);
 }
