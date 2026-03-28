@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
 import { fetchStaffUsers, type StaffUser } from "../api/repairs";
+import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases } from "../features/staff/hooks/usePurchases";
@@ -226,7 +227,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function StaffHomePage({ activeSection, onSelectSection, openRepairComposerRequest }: StaffHomePageProps) {
-  const { user, isStaff } = useAuth();
+  const { user, isStaff, isAdmin } = useAuth();
   const lastHandledRepairComposerRequest = useRef(0);
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
@@ -246,6 +247,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   const [customerError, setCustomerError] = useState("");
   const [vehicleError, setVehicleError] = useState("");
+  const [sectionVehicles, setSectionVehicles] = useState<Vehicle[]>([]);
+  const [sectionVehiclesCount, setSectionVehiclesCount] = useState(0);
+  const [sectionVehiclesPage, setSectionVehiclesPage] = useState(1);
+  const [sectionVehiclesHasMore, setSectionVehiclesHasMore] = useState(false);
+  const [sectionVehiclesLoading, setSectionVehiclesLoading] = useState(false);
   const [isSavingCustomer, setIsSavingCustomer] = useState(false);
   const [isSavingVehicle, setIsSavingVehicle] = useState(false);
   const [activeUserTab, setActiveUserTab] = useState<UserAccessTab>("owner");
@@ -259,6 +265,22 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [inlineCustomerForm, setInlineCustomerForm] = useState({ full_name: "", phone: "", email: "" });
   const [inlineCustomerError, setInlineCustomerError] = useState("");
   const [isSavingInlineCustomer, setIsSavingInlineCustomer] = useState(false);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteFirstName, setInviteFirstName] = useState("");
+  const [inviteLastName, setInviteLastName] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "staff">("staff");
+  const [inviteResult, setInviteResult] = useState<{ url: string } | null>(null);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [copiedResetUserId, setCopiedResetUserId] = useState<number | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [allUsers, setAllUsers] = useState<UserItem[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [resetLinkResult, setResetLinkResult] = useState<{ userId: number; url: string } | null>(null);
 
   const customers = useMemo(() => [...serverCustomers, ...demoCustomers], [serverCustomers, demoCustomers]);
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
@@ -292,6 +314,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handlePurchaseModalInvoiceChange,
     handlePurchaseModalInvoiceRemove,
     handleOpenInvoice,
+    purchaseCount,
+    purchaseHasMore,
+    purchaseLoadingMore,
+    loadMorePurchases,
+    createSupplierSuggestions,
+    modalSupplierSuggestions,
+    showCreateSuggestions,
+    setShowCreateSuggestions,
+    showModalSuggestions,
+    setShowModalSuggestions,
+    handleCreateSupplierInput,
+    handleCreateSupplierSelect,
+    handleModalSupplierInput,
+    handleModalSupplierSelect,
   } = usePurchases(vehicles);
 
   const {
@@ -396,23 +432,150 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
 
     lastHandledRepairComposerRequest.current = openRepairComposerRequest;
-    openRepairCreateModal();
+    handleOpenRepairCreate();
   }, [activeSection, openRepairComposerRequest]);
+
+  function handleOpenRepairCreate() {
+    openRepairCreateModal();
+    if (!isAdmin && user?.id) {
+      setRepairForm((current) => ({ ...current, master_id: String(user.id) }));
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadSectionVehicles(vehicleSearch, 1, false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [vehicleSearch]);
+
+  useEffect(() => {
+    if (activeSection === "users") {
+      loadAllUsers();
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (isPurchaseFormOpen) {
+        closePurchaseFormModal();
+      } else if (selectedPurchaseId !== null) {
+        closePurchaseDetailModal();
+      } else if (isVehicleFormOpen) {
+        closeVehicleFormModal();
+      } else if (selectedVehicleId !== null) {
+        closeVehicleDetailModal();
+      } else if (isCustomerFormOpen) {
+        closeCustomerFormModal();
+      } else if (selectedCustomerId !== null) {
+        closeCustomerDetailModal();
+      } else if (isRepairFormOpen) {
+        closeRepairCreateModal();
+      } else if (selectedRepairId !== null) {
+        closeRepairModal();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [
+    isPurchaseFormOpen,
+    selectedPurchaseId,
+    isVehicleFormOpen,
+    selectedVehicleId,
+    isCustomerFormOpen,
+    selectedCustomerId,
+    isRepairFormOpen,
+    selectedRepairId,
+    closePurchaseFormModal,
+    closePurchaseDetailModal,
+    closeVehicleFormModal,
+    closeVehicleDetailModal,
+    closeCustomerFormModal,
+    closeCustomerDetailModal,
+    closeRepairCreateModal,
+    closeRepairModal,
+  ]);
+
+  async function loadAllUsers() {
+    setUsersLoading(true);
+    try {
+      const data = await fetchUsers();
+      setAllUsers(data);
+    } catch {
+    } finally {
+      setUsersLoading(false);
+    }
+  }
+
+  async function handleResetUserPassword(userId: number, email: string) {
+    if (!window.confirm(`Send a new invite link to ${email}?`)) return;
+    try {
+      const { invite_url } = await resetInvite(userId);
+      setResetLinkResult({ userId, url: invite_url });
+      loadAllUsers();
+    } catch {
+    }
+  }
+
+  function startEditUser(u: UserItem) {
+    setEditingUserId(u.id);
+    setEditFirstName(u.first_name);
+    setEditLastName(u.last_name);
+  }
+
+  function cancelEditUser() {
+    setEditingUserId(null);
+    setEditFirstName("");
+    setEditLastName("");
+  }
+
+  async function saveEditUser(userId: number) {
+    try {
+      const updated = await updateUserName(userId, editFirstName, editLastName);
+      setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      cancelEditUser();
+    } catch {
+    }
+  }
 
   async function loadRegistries() {
     setLoadError("");
     setIsLoading(true);
     try {
       const [customersResponse, vehiclesResponse] = await Promise.all([
-        api.get("/customers/"),
-        api.get("/vehicles/"),
+        api.get("/customers/?page_size=500"),
+        api.get("/vehicles/?page_size=500"),
       ]);
-      setServerCustomers(Array.isArray(customersResponse.data) ? customersResponse.data : []);
-      setServerVehicles(Array.isArray(vehiclesResponse.data) ? vehiclesResponse.data : []);
+      setServerCustomers(customersResponse.data.results ?? customersResponse.data);
+      setServerVehicles(vehiclesResponse.data.results ?? vehiclesResponse.data);
     } catch (error) {
       setLoadError(getErrorMessage(error, "Unable to load customers and vehicles."));
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loadSectionVehicles(q: string, page: number, append: boolean) {
+    if (page === 1) setSectionVehiclesLoading(true);
+    try {
+      const params = new URLSearchParams({ page_size: "50", page: String(page) });
+      if (q.trim()) params.set("q", q.trim());
+      const response = await api.get(`/vehicles/?${params.toString()}`);
+      const data = response.data;
+      const results: Vehicle[] = data.results ?? data;
+      if (append) {
+        setSectionVehicles((prev) => [...prev, ...results]);
+      } else {
+        setSectionVehicles(results);
+      }
+      setSectionVehiclesCount(data.count ?? results.length);
+      setSectionVehiclesHasMore(data.next !== null && data.next !== undefined);
+      setSectionVehiclesPage(page);
+    } catch {
+      // silent
+    } finally {
+      setSectionVehiclesLoading(false);
     }
   }
 
@@ -758,15 +921,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [vehicleSearch, vehicles]
   );
 
-  const visiblePurchases = useMemo(
-    () =>
-      purchases.filter((entry) => {
-        const haystack =
-          `${entry.order_date} ${entry.supplier_name} ${entry.part_name} ${entry.repair_code} ${entry.vehicle_label}`.toLowerCase();
-        return haystack.includes(purchaseSearch.trim().toLowerCase());
-      }),
-    [purchaseSearch, purchases]
-  );
+  const visiblePurchases = purchases;
 
   const visibleRepairs = useMemo(
     () =>
@@ -888,9 +1043,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   ];
 
   function formatCurrency(value: number) {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("pl-PL", {
       style: "currency",
-      currency: "USD",
+      currency: "PLN",
       maximumFractionDigits: 2,
     }).format(value);
   }
@@ -1007,30 +1162,29 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             ))}
           </div>
 
-          <div className="dashboard-date-bar">
-            <label className="dashboard-date-field">
-              <span>Start date</span>
-              <input
-                type="date"
-                value={activeDateRange.start_date}
-                min={activeDateBounds.start_date || undefined}
-                max={activeDateRange.end_date || activeDateBounds.end_date || undefined}
-                onChange={(event) => updateActiveDateRange("start_date", event.target.value)}
-              />
-            </label>
-            <label className="dashboard-date-field">
-              <span>End date</span>
-              <input
-                type="date"
-                value={activeDateRange.end_date}
-                min={activeDateRange.start_date || activeDateBounds.start_date || undefined}
-                max={activeDateBounds.end_date || undefined}
-                onChange={(event) => updateActiveDateRange("end_date", event.target.value)}
-              />
-            </label>
-          </div>
-
           <div className="dashboard-folder-panel">
+            <div className="dashboard-date-bar">
+              <label className="dashboard-date-field">
+                <span>Start date</span>
+                <input
+                  type="date"
+                  value={activeDateRange.start_date}
+                  min={activeDateBounds.start_date || undefined}
+                  max={activeDateRange.end_date || activeDateBounds.end_date || undefined}
+                  onChange={(event) => updateActiveDateRange("start_date", event.target.value)}
+                />
+              </label>
+              <label className="dashboard-date-field">
+                <span>End date</span>
+                <input
+                  type="date"
+                  value={activeDateRange.end_date}
+                  min={activeDateRange.start_date || activeDateBounds.start_date || undefined}
+                  max={activeDateBounds.end_date || undefined}
+                  onChange={(event) => updateActiveDateRange("end_date", event.target.value)}
+                />
+              </label>
+            </div>
             {activeDashboardTab === "moneyflow" ? (
               <div className="workspace-stack">
                 <div className="metric-grid dashboard-metric-grid">
@@ -1438,41 +1592,59 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           onPrimaryAction: openVehicleCreateModal,
         })}
 
-        <section className="panel">
-          <div className="panel-header section-desktop-header">
-            <div>
-              <p className="eyebrow">Registry</p>
-              <h3>Vehicle List</h3>
-            </div>
+        <div className="kanban-topbar section-desktop-topbar">
+          <div>
+            <p className="eyebrow">Registry</p>
+            <h2>Vehicle List</h2>
+            {sectionVehiclesCount > 0 ? (
+              <span className="registry-count">{sectionVehiclesCount} total</span>
+            ) : null}
+          </div>
+          <div className="workspace-top-actions">
+            <label className="kanban-search">
+              <input
+                value={vehicleSearch}
+                onChange={(event) => setVehicleSearch(event.target.value)}
+                placeholder="Search vehicles…"
+                type="search"
+              />
+            </label>
             <button type="button" className="button" onClick={openVehicleCreateModal}>
-              Add New Vehicle
+              + Add Vehicle
             </button>
           </div>
+        </div>
 
-          <label className="search-field search-field-tight section-desktop-search">
-            <span>Search vehicles</span>
-            <input
-              value={vehicleSearch}
-              onChange={(event) => setVehicleSearch(event.target.value)}
-              placeholder="Plate, make, model, VIN or customer"
-              type="search"
-            />
-          </label>
+        <div className="vehicles-surface-stack">
+          <StaffVehiclesMobileList
+            vehicles={sectionVehicles}
+            getVehicleDetails={getVehicleDetails}
+            onOpenVehicle={openVehicleDetailModal}
+          />
 
-          <div className="vehicles-surface-stack">
-            <StaffVehiclesMobileList
-              vehicles={visibleVehicles}
-              getVehicleDetails={getVehicleDetails}
-              onOpenVehicle={openVehicleDetailModal}
-            />
+          <StaffVehiclesRegistry
+            vehicles={sectionVehicles}
+            getVehicleDetails={getVehicleDetails}
+            onOpenVehicle={openVehicleDetailModal}
+          />
+        </div>
 
-            <StaffVehiclesRegistry
-              vehicles={visibleVehicles}
-              getVehicleDetails={getVehicleDetails}
-              onOpenVehicle={openVehicleDetailModal}
-            />
+        {sectionVehiclesHasMore ? (
+          <div className="load-more-bar">
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() =>
+                void loadSectionVehicles(vehicleSearch, sectionVehiclesPage + 1, true)
+              }
+              disabled={sectionVehiclesLoading}
+            >
+              {sectionVehiclesLoading
+                ? "Loading…"
+                : `Load more (${sectionVehiclesCount - sectionVehicles.length} remaining)`}
+            </button>
           </div>
-        </section>
+        ) : null}
 
         {selectedVehicle ? (
           <div className="modal-overlay" role="presentation" onClick={closeVehicleDetailModal}>
@@ -1831,7 +2003,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           searchPlaceholder: "Search owner, vehicle, service or tracking",
           onSearchChange: setRepairSearch,
           primaryActionLabel: "New Repair",
-          onPrimaryAction: openRepairCreateModal,
+          onPrimaryAction: handleOpenRepairCreate,
         })}
 
         {/* Topbar */}
@@ -1849,7 +2021,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 type="search"
               />
             </label>
-            <button type="button" className="button" onClick={openRepairCreateModal}>
+            <button type="button" className="button" onClick={handleOpenRepairCreate}>
               + New Repair
             </button>
           </div>
@@ -1920,18 +2092,26 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 <label>
                   <span>Master</span>
-                  <select
-                    value={repairForm.master_id}
-                    onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
-                    required
-                  >
-                    <option value="">Select master</option>
-                    {staffUsers.map((master) => (
-                      <option key={master.id} value={master.id}>
-                        {getStaffUserLabel(master)}
-                      </option>
-                    ))}
-                  </select>
+                  {isAdmin ? (
+                    <select
+                      value={repairForm.master_id}
+                      onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
+                      required
+                    >
+                      <option value="">Select master</option>
+                      {staffUsers.map((master) => (
+                        <option key={master.id} value={master.id}>
+                          {getStaffUserLabel(master)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={getStaffUserLabel(staffUsers.find((m) => m.id === user?.id) ?? { id: 0, email: user?.email ?? "", first_name: user?.first_name ?? "", last_name: user?.last_name ?? "", role: "staff" })}
+                      readOnly
+                    />
+                  )}
                 </label>
 
                 <label>
@@ -2080,10 +2260,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <p>{selectedRepair.owner_name}</p>
                     </div>
                     <div className="repair-info-row">
-                      <span className="repair-info-label">Master</span>
-                      <p>{selectedRepair.master_name}</p>
-                    </div>
-                    <div className="repair-info-row">
                       <span className="repair-info-label">Service</span>
                       <p>{selectedRepair.service_name}</p>
                     </div>
@@ -2223,68 +2399,94 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   function renderPurchasesSection() {
     return (
-      <div className="workspace-stack">
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Ordered Parts</p>
-              <h3>Purchase Registry</h3>
-            </div>
+      <div className="workspace-stack purchases-workspace">
+        <div className="kanban-topbar section-desktop-topbar">
+          <div>
+            <p className="eyebrow">Ordered Parts</p>
+            <h2>Purchase Registry</h2>
+            {purchaseCount > 0 ? <span className="registry-count">{purchaseCount} total</span> : null}
+          </div>
+          <div className="workspace-top-actions">
+            <label className="kanban-search">
+              <input
+                value={purchaseSearch}
+                onChange={(event) => setPurchaseSearch(event.target.value)}
+                placeholder="Search purchases…"
+                type="search"
+              />
+            </label>
             <button type="button" className="button" onClick={openPurchaseCreateModal}>
-              Add New Purchase
+              + Add Purchase
             </button>
           </div>
+        </div>
 
-          <label className="search-field search-field-tight">
-            <span>Search purchases</span>
-            <input
-              value={purchaseSearch}
-              onChange={(event) => setPurchaseSearch(event.target.value)}
-              placeholder="Supplier, part, repair code or vehicle"
-              type="search"
-            />
-          </label>
-
-          <div className="registry-list">
-            {visiblePurchases.length === 0 ? (
-              <p className="workspace-note">No purchases match the current filter.</p>
-            ) : (
-              visiblePurchases.map((entry) => {
-                const purchaseTotal = entry.quantity * entry.purchase_price;
-                const saleTotal = entry.quantity * entry.sale_price;
-                return (
-                  <article className="registry-card purchase-card purchase-card-clickable" key={entry.id} onClick={() => openPurchaseDetailModal(entry)}>
-                    <div className="purchase-card-main">
-                      <div className="purchase-card-topline">
-                        <h4>{entry.part_name}</h4>
-                        <div className="purchase-date-stack">
-                          <span className="tag">{formatDisplayDate(entry.order_date)}</span>
-                          {entry.approximate_delivery_date ? (
-                            <span className="purchase-date-secondary">
-                              Approx. delivery {formatDisplayDate(entry.approximate_delivery_date)}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                      <p>{entry.supplier_name}</p>
-                      {entry.supplier_nip ? <p className="meta-line">Supplier NIP: {entry.supplier_nip}</p> : null}
-                      <p>{entry.vehicle_label}</p>
-                      <p className="meta-line">Tracking: {entry.repair_code}</p>
-                      {entry.invoice_name ? <p className="meta-line">Invoice: {entry.invoice_name}</p> : null}
-                      <div className="purchase-amounts">
-                        <span>Qty {entry.quantity}</span>
-                        <span>Buy {formatCurrency(entry.purchase_price)}</span>
-                        <span>Sell {formatCurrency(entry.sale_price)}</span>
-                        <span>Total Buy {formatCurrency(purchaseTotal)}</span>
-                        <span>Total Sell {formatCurrency(saleTotal)}</span>
+        <div className="registry-list">
+          {visiblePurchases.length === 0 ? (
+            <p className="workspace-note">No purchases match the current filter.</p>
+          ) : (
+            visiblePurchases.map((entry) => {
+              const purchaseTotal = entry.quantity * entry.purchase_price;
+              const saleTotal = entry.quantity * entry.sale_price;
+              return (
+                <article className="registry-card purchase-card purchase-card-clickable" key={entry.id} onClick={() => openPurchaseDetailModal(entry)}>
+                  <div className="purchase-card-body">
+                    <div className="purchase-card-info">
+                      <h4 className="purchase-card-name">{entry.part_name}</h4>
+                      <p className="purchase-card-supplier">{entry.supplier_name}</p>
+                      <div className="purchase-card-chips">
+                        {entry.repair_code ? <span className="tag">{entry.repair_code}</span> : null}
+                        {entry.vehicle_label ? <span className="purchase-chip-muted">{entry.vehicle_label}</span> : null}
+                        {entry.invoice_url ? (
+                          <button
+                            className="purchase-chip-muted purchase-chip-link"
+                            onClick={(e) => { e.stopPropagation(); handleOpenInvoice(entry.invoice_url); }}
+                            title="Open invoice"
+                          >
+                            {entry.invoice_name || "Invoice"}
+                          </button>
+                        ) : entry.invoice_name ? (
+                          <span className="purchase-chip-muted">{entry.invoice_name}</span>
+                        ) : null}
                       </div>
                     </div>
-                  </article>
-                );
-              })
-            )}
-          </div>
-        </section>
+                    <div className="purchase-card-financials">
+                      <div className="purchase-financials-header">
+                        <span className="tag">{formatDisplayDate(entry.order_date)}</span>
+                        {entry.approximate_delivery_date ? (
+                          <span className="purchase-delivery-date">→ {formatDisplayDate(entry.approximate_delivery_date)}</span>
+                        ) : null}
+                      </div>
+                      <div className="purchase-financials-total">{formatCurrency(saleTotal)}</div>
+                      <div className="purchase-financials-grid">
+                        <span className="purchase-financials-label">Buy</span>
+                        <span>{formatCurrency(purchaseTotal)}</span>
+                        <span className="purchase-financials-label">Qty</span>
+                        <span>×{entry.quantity}</span>
+                        <span className="purchase-financials-label">Margin</span>
+                        <span className={saleTotal - purchaseTotal >= 0 ? "purchase-margin-pos" : "purchase-margin-neg"}>
+                          {saleTotal - purchaseTotal >= 0 ? "+" : ""}{formatCurrency(saleTotal - purchaseTotal)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
+          {purchaseHasMore ? (
+            <div className="load-more-bar">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => void loadMorePurchases()}
+                disabled={purchaseLoadingMore}
+              >
+                {purchaseLoadingMore ? "Loading…" : `Load more (${purchaseCount - visiblePurchases.length} remaining)`}
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         {selectedPurchase ? (
           <div className="modal-overlay" role="presentation" onClick={closePurchaseDetailModal}>
@@ -2334,17 +2536,29 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                       <label>
                         <span>Supplier</span>
-                        <input
-                          value={purchaseModalForm.supplier_name}
-                          onChange={(event) =>
-                            setPurchaseModalForm((current) => ({ ...current, supplier_name: event.target.value }))
-                          }
-                          type="text"
-                        />
+                        <div className="autocomplete-wrapper">
+                          <input
+                            value={purchaseModalForm.supplier_name}
+                            onChange={(event) => handleModalSupplierInput(event.target.value)}
+                            onFocus={() => setShowModalSuggestions(true)}
+                            onBlur={() => setTimeout(() => setShowModalSuggestions(false), 150)}
+                            type="text"
+                          />
+                          {modalSupplierSuggestions.length > 0 && (
+                            <ul className="autocomplete-dropdown">
+                              {modalSupplierSuggestions.map((s) => (
+                                <li key={s.id} onMouseDown={() => handleModalSupplierSelect(s)}>
+                                  <span>{s.name}</span>
+                                  {s.nip && <span className="autocomplete-nip">{s.nip}</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </label>
 
                       <label>
-                        <span>Supplier NIP</span>
+                        <span>NIP</span>
                         <input
                           value={purchaseModalForm.supplier_nip}
                           onChange={(event) =>
@@ -2555,19 +2769,31 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                   <label>
                     <span>Supplier</span>
-                    <input
-                      value={purchaseForm.supplier_name}
-                      onChange={(event) =>
-                        setPurchaseForm((current) => ({ ...current, supplier_name: event.target.value }))
-                      }
-                      type="text"
-                      placeholder="Supplier name"
-                      required
-                    />
+                    <div className="autocomplete-wrapper">
+                      <input
+                        value={purchaseForm.supplier_name}
+                        onChange={(event) => handleCreateSupplierInput(event.target.value)}
+                        onFocus={() => setShowCreateSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowCreateSuggestions(false), 150)}
+                        type="text"
+                        placeholder="Supplier name"
+                        required
+                      />
+                      {createSupplierSuggestions.length > 0 && (
+                        <ul className="autocomplete-dropdown">
+                          {createSupplierSuggestions.map((s) => (
+                            <li key={s.id} onMouseDown={() => handleCreateSupplierSelect(s)}>
+                              <span>{s.name}</span>
+                              {s.nip && <span className="autocomplete-nip">{s.nip}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </label>
 
                   <label>
-                    <span>Supplier NIP</span>
+                    <span>NIP</span>
                     <input
                       value={purchaseForm.supplier_nip}
                       onChange={(event) =>
@@ -2680,82 +2906,232 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     );
   }
 
+  function closeInvitePanel() {
+    setShowInviteForm(false);
+    setInviteEmail("");
+    setInviteFirstName("");
+    setInviteLastName("");
+    setInviteRole("staff");
+    setInviteResult(null);
+    setInviteError("");
+    setInviteLoading(false);
+    setInviteCopied(false);
+  }
+
+  async function handleInviteSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setInviteError("");
+    setInviteLoading(true);
+    try {
+      const result: InviteResponse = await createInvite(inviteEmail, inviteRole, inviteFirstName, inviteLastName);
+      setInviteResult({ url: result.invite_url });
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { detail?: string } } };
+      setInviteError(axiosError.response?.data?.detail ?? "Failed to send invite.");
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
+  function handleCopyInviteLink(url: string) {
+    void navigator.clipboard.writeText(url).then(() => {
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    });
+  }
+
   function renderUsersSection() {
-    const userTabMeta: Record<UserAccessTab, { title: string; login: string; password: string; note: string }> = {
-      owner: {
-        title: "Owner",
-        login: user?.email ?? "owner@autoservice.local",
-        password: "Current owner session",
-        note: "Full access to the entire system.",
-      },
-      admins: {
-        title: "Admins",
-        login: "admin@autoservice.local",
-        password: "admin12345",
-        note: "Placeholder admin account for the next implementation step.",
-      },
-      masters: {
-        title: "Masters",
-        login: staffUsers[0]?.email ?? "—",
-        password: "Managed via authentication system.",
-        note: "Staff users are loaded from the server.",
-      },
-    };
-
-    const currentUserTab = userTabMeta[activeUserTab];
-
     return (
-      <div className="workspace-stack">
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Role Layers</p>
-              <h3>User Access Structure</h3>
-            </div>
+      <div className="workspace-stack users-workspace">
+        <div className="kanban-topbar">
+          <div>
+            <p className="section-eyebrow">Team</p>
+            <h2>User Management</h2>
           </div>
-
-          <div className="subnav-tabs" role="tablist" aria-label="User access levels">
-            {(["owner", "admins", "masters"] as UserAccessTab[]).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={activeUserTab === tab}
-                className={`subnav-tab ${activeUserTab === tab ? "subnav-tab-active" : ""}`}
-                onClick={() => setActiveUserTab(tab)}
-              >
-                {tab === "owner" ? "Owner" : tab === "admins" ? "Admins" : "Masters"}
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <span className="registry-count">{allUsers.length} users</span>
+            {isAdmin && (
+              <button className="button" onClick={() => setShowInviteForm((v) => !v)}>
+                + Invite User
               </button>
-            ))}
+            )}
           </div>
+        </div>
 
-          <div className="role-card">
-            <h3>{currentUserTab.title}</h3>
-            <div className="credential-list">
-              <article className="role-item">
-                <strong>Login</strong>
-                <p>{currentUserTab.login}</p>
-              </article>
-              <article className="role-item">
-                <strong>Password</strong>
-                <p>{currentUserTab.password}</p>
-              </article>
-              <article className="role-item">
-                <strong>Note</strong>
-                <p>{currentUserTab.note}</p>
-              </article>
-              {activeUserTab === "masters"
-                ? staffUsers.map((master) => (
-                    <article className="role-item" key={master.id}>
-                      <strong>{getStaffUserLabel(master)}</strong>
-                      <p>Login: {master.email}</p>
-                      <p>Role: {master.role}</p>
-                    </article>
-                  ))
-                : null}
+        {showInviteForm && isAdmin && (
+          <div className="invite-panel">
+            <div className="invite-panel-header">
+              <strong>{inviteResult ? "Invite link created" : "Invite New User"}</strong>
+              <button type="button" className="invite-panel-close" aria-label="Close" onClick={closeInvitePanel}>
+                ×
+              </button>
             </div>
+
+            {inviteResult ? (
+              <div className="invite-panel-body">
+                <p className="invite-panel-label">Share this link with the user:</p>
+                <div className="invite-link-box">{inviteResult.url}</div>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => handleCopyInviteLink(inviteResult.url)}
+                >
+                  {inviteCopied ? "Copied!" : "Copy Link"}
+                </button>
+              </div>
+            ) : (
+              <form className="invite-panel-body" onSubmit={handleInviteSubmit}>
+                <div className="invite-name-row">
+                  <input
+                    type="text"
+                    className="invite-email-input"
+                    value={inviteFirstName}
+                    onChange={(e) => setInviteFirstName(e.target.value)}
+                    autoComplete="off"
+                    placeholder="First name"
+                  />
+                  <input
+                    type="text"
+                    className="invite-email-input"
+                    value={inviteLastName}
+                    onChange={(e) => setInviteLastName(e.target.value)}
+                    autoComplete="off"
+                    placeholder="Last name"
+                  />
+                </div>
+                <input
+                  type="email"
+                  className="invite-email-input"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  required
+                  autoComplete="off"
+                  placeholder="Email address"
+                />
+                <div className="invite-role-toggle">
+                  <button
+                    type="button"
+                    className={`invite-role-btn${inviteRole === "staff" ? " invite-role-btn-active" : ""}`}
+                    onClick={() => setInviteRole("staff")}
+                  >
+                    Master
+                  </button>
+                  <button
+                    type="button"
+                    className={`invite-role-btn${inviteRole === "admin" ? " invite-role-btn-active" : ""}`}
+                    onClick={() => setInviteRole("admin")}
+                  >
+                    Admin
+                  </button>
+                </div>
+                {inviteError ? <p className="form-error" style={{ flex: "1 0 100%", margin: 0 }}>{inviteError}</p> : null}
+                <button type="submit" className="button" disabled={inviteLoading}>
+                  {inviteLoading ? "…" : "Send Invite"}
+                </button>
+              </form>
+            )}
           </div>
-        </section>
+        )}
+
+        {usersLoading ? (
+          <p className="section-empty">Loading...</p>
+        ) : allUsers.length === 0 ? (
+          <p className="section-empty">No users found.</p>
+        ) : (
+          <div className="registry-list users-list">
+            {allUsers.map((u) => {
+              const isRegistered = u.has_usable_password;
+              const isCurrentUser = u.email === user?.email;
+              return (
+                <article key={u.id} className="registry-card user-card">
+                  <div className="user-card-info">
+                    {editingUserId === u.id ? (
+                      <div className="user-edit-row">
+                        <input
+                          className="user-edit-input"
+                          value={editFirstName}
+                          onChange={(e) => setEditFirstName(e.target.value)}
+                          placeholder="First name"
+                          autoFocus
+                        />
+                        <input
+                          className="user-edit-input"
+                          value={editLastName}
+                          onChange={(e) => setEditLastName(e.target.value)}
+                          placeholder="Last name"
+                        />
+                        <button className="button" style={{ padding: "0.4rem 0.85rem", fontSize: "0.82rem" }} onClick={() => void saveEditUser(u.id)}>Save</button>
+                        <button className="button-secondary" style={{ padding: "0.4rem 0.7rem", fontSize: "0.82rem" }} onClick={cancelEditUser}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="user-card-name">
+                        {u.first_name || u.last_name
+                          ? `${u.first_name} ${u.last_name}`.trim()
+                          : u.email}
+                        {isCurrentUser && <span className="user-badge user-badge-you">You</span>}
+                        {(isAdmin || isCurrentUser) && (
+                          <button className="user-edit-btn" onClick={() => startEditUser(u)} title="Edit name" aria-label="Edit name">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {(u.first_name || u.last_name) && editingUserId !== u.id && (
+                      <div className="user-card-email">{u.email}</div>
+                    )}
+                    <div className="user-card-meta">
+                      <span className="user-badge" data-role={u.role}>{u.role}</span>
+                      <span className={`user-badge ${isRegistered ? "user-badge-registered" : "user-badge-pending"}`}>
+                        {isRegistered ? "Registered" : "Pending"}
+                      </span>
+                    </div>
+                  </div>
+                  {isAdmin && !isCurrentUser && (
+                    <div className="user-card-actions">
+                      <button
+                        className="button-secondary"
+                        onClick={() => handleResetUserPassword(u.id, u.email)}
+                        title="Send a new invite / reset password link"
+                      >
+                        Reset Password
+                      </button>
+                      {resetLinkResult?.userId === u.id && (
+                        <div className="invite-link-box">
+                          <span className="invite-link-url">{resetLinkResult.url}</span>
+                          <button
+                            className={`icon-copy-btn${copiedResetUserId === u.id ? " icon-copy-btn-done" : ""}`}
+                            onClick={() => {
+                              void navigator.clipboard.writeText(resetLinkResult.url).then(() => {
+                                setCopiedResetUserId(u.id);
+                                setTimeout(() => setCopiedResetUserId(null), 2000);
+                              });
+                            }}
+                            title={copiedResetUserId === u.id ? "Copied!" : "Copy link"}
+                            aria-label="Copy invite link"
+                          >
+                            {copiedResetUserId === u.id ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }

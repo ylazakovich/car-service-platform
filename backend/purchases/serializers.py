@@ -22,6 +22,12 @@ class PurchaseSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False,
     )
+    vehicle_license_plate = serializers.SerializerMethodField()
+
+    def get_vehicle_license_plate(self, obj):
+        if obj.vehicle:
+            return obj.vehicle.license_plate
+        return ""
 
     class Meta:
         model = Purchase
@@ -33,6 +39,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "supplier_name",
             "vehicle",
             "vehicle_id",
+            "vehicle_license_plate",
             "part_name",
             "quantity",
             "purchase_price",

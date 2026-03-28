@@ -26,16 +26,43 @@ export function StaffVehiclesRegistry({
             const details = getVehicleDetails(vehicle);
 
             return (
-              <article className="registry-card customer-card" key={vehicle.id} onClick={() => onOpenVehicle(vehicle)}>
-                <div>
-                  <h4>{vehicle.license_plate}</h4>
-                  <p>{formatVehicleTitle(vehicle)}</p>
-                  <p>{vehicle.customer.full_name}</p>
-                  {details.mileage ? <p className="meta-line">Mileage: {details.mileage} km</p> : null}
-                  {details.last_service_date ? <p className="meta-line">Last Service: {formatVehicleDisplayDate(details.last_service_date)}</p> : null}
-                  {details.added_date ? <p className="meta-line">Added: {formatVehicleDisplayDate(details.added_date)}</p> : null}
-                  {vehicle.vin ? <p className="meta-line">VIN: {vehicle.vin}</p> : null}
-                  {vehicle.color ? <p className="meta-line">Color: {vehicle.color}</p> : null}
+              <article className="registry-card customer-card vehicle-card-clickable" key={vehicle.id} onClick={() => onOpenVehicle(vehicle)}>
+                <div className="vehicle-card-body">
+                  <div className="vehicle-card-info">
+                    <div className="vehicle-card-chips">
+                      <span className="tag">{vehicle.license_plate}</span>
+                      {vehicle.vin ? <span className="purchase-chip-muted">VIN: {vehicle.vin}</span> : null}
+                      {vehicle.color ? <span className="purchase-chip-muted">{vehicle.color}</span> : null}
+                    </div>
+                    <h4 className="vehicle-card-title">{formatVehicleTitle(vehicle)}</h4>
+                    <p className="vehicle-card-owner">{vehicle.customer.full_name}</p>
+                  </div>
+                  <div className="vehicle-card-service">
+                    {details.mileage || details.last_service_date || details.added_date ? (
+                      <div className="vehicle-service-grid">
+                        {details.mileage ? (
+                          <>
+                            <span className="vehicle-service-label">Mileage</span>
+                            <span>{details.mileage} km</span>
+                          </>
+                        ) : null}
+                        {details.last_service_date ? (
+                          <>
+                            <span className="vehicle-service-label">Last service</span>
+                            <span>{formatVehicleDisplayDate(details.last_service_date)}</span>
+                          </>
+                        ) : null}
+                        {details.added_date ? (
+                          <>
+                            <span className="vehicle-service-label">Added</span>
+                            <span>{formatVehicleDisplayDate(details.added_date)}</span>
+                          </>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="vehicle-service-empty">No service data</p>
+                    )}
+                  </div>
                 </div>
               </article>
             );

@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from foundation.pagination import StandardPagination
 from customers.models import Customer
 from .models import Vehicle
 from .serializers import VehicleSerializer
@@ -10,6 +11,7 @@ from .serializers import VehicleSerializer
 
 class VehicleListCreateView(generics.ListCreateAPIView):
     serializer_class = VehicleSerializer
+    pagination_class = StandardPagination
 
     def get_queryset(self):
         if self.request.user.role == "admin":

@@ -38,7 +38,7 @@ class Purchase(models.Model):
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     repair_code = models.CharField(max_length=32, blank=True)
     invoice_name = models.CharField(max_length=255, blank=True)
-    invoice_url = models.URLField(blank=True)
+    invoice_url = models.CharField(max_length=500, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 

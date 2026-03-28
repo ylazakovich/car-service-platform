@@ -52,12 +52,12 @@ class VehicleApiTests(TestCase):
 
         list_response = self.client.get("/api/vehicles/")
         self.assertEqual(list_response.status_code, 200)
-        self.assertEqual(len(list_response.json()), 2)
+        self.assertEqual(len(list_response.json()["results"]), 2)
 
         search_response = self.client.get("/api/vehicles/", {"q": "toyota"})
         self.assertEqual(search_response.status_code, 200)
-        self.assertEqual(len(search_response.json()), 1)
-        self.assertEqual(search_response.json()[0]["license_plate"], "WB 1234K")
+        self.assertEqual(len(search_response.json()["results"]), 1)
+        self.assertEqual(search_response.json()["results"][0]["license_plate"], "WB 1234K")
 
         update_response = self.client.patch(
             f"/api/vehicles/{vehicle_id}",
@@ -159,7 +159,7 @@ class VehicleApiTests(TestCase):
         list_response = self.client.get("/api/vehicles/")
 
         self.assertEqual(list_response.status_code, 200)
-        vehicles = list_response.json()
+        vehicles = list_response.json()["results"]
         self.assertEqual(len(vehicles), 1)
         self.assertEqual(vehicles[0]["mileage"], 12000)
 

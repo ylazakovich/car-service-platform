@@ -216,3 +216,76 @@ class RepairApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_master_id_returned_in_list_response(self):
+        master = get_user_model().objects.create_user(
+            email="master@test.local",
+            password="master12345",
+            role="staff",
+        )
+        self.client.force_authenticate(self.staff_user)
+        Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Wheel Alignment",
+            status="new",
+            master=master,
+        )
+
+        response = self.client.get("/api/repairs/", format="json")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+        self.assertIn("master_id", data[0])
+        self.assertEqual(data[0]["master_id"], master.id)
+
+    def test_master_id_null_when_unassigned(self):
+        self.client.force_authenticate(self.staff_user)
+        Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Wheel Alignment",
+            status="new",
+        )
+
+        response = self.client.get("/api/repairs/", format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()[0]["master_id"])
+
+    def test_create_repair_with_master_returns_master_id(self):
+        self.client.force_authenticate(self.admin_user)
+
+        response = self.client.post(
+            "/api/repairs/",
+            {
+                "vehicle_id": self.vehicle.id,
+                "service_name": "Gearbox Service",
+                "issue_notes": "Grinding on 3rd gear",
+                "status": "new",
+                "master_id": self.staff_user.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["master_id"], self.staff_user.id)
+        self.assertEqual(data["master_name"], self.staff_user.email)
+
+    def test_update_master_via_patch_reflects_in_response(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Timing Belt",
+            status="new",
+        )
+        self.client.force_authenticate(self.admin_user)
+
+        response = self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"master_id": self.staff_user.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["master_id"], self.staff_user.id)
