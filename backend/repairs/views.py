@@ -23,6 +23,9 @@ class RepairListCreateView(generics.ListCreateAPIView):
                 | Q(vehicle__license_plate__icontains=q)
                 | Q(vehicle__customer__full_name__icontains=q)
             )
+        master_id = self.request.query_params.get("master_id", "").strip()
+        if master_id:
+            qs = qs.filter(master_id=master_id)
         return qs
 
 
