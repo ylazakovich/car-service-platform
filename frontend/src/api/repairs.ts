@@ -11,6 +11,7 @@ export interface RepairNoteItem {
 
 export interface RepairItem {
   id: number;
+  vehicle_id: number;
   vehicle_label: string;
   owner_name: string;
   master_id: number | null;

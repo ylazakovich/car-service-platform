@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
@@ -41,6 +42,20 @@ class AuthApiTests(TestCase):
 
         response = self.client.get("/api/auth/me")
         self.assertEqual(response.status_code, 403)
+
+    def test_login_sets_persistent_session_cookie(self):
+        self.client.get("/api/auth/csrf")
+
+        response = self.client.post(
+            "/api/auth/login",
+            {"email": self.user.email, "password": self.password},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        session_cookie = response.cookies.get(settings.SESSION_COOKIE_NAME)
+        self.assertIsNotNone(session_cookie)
+        self.assertEqual(int(session_cookie["max-age"]), settings.SESSION_COOKIE_AGE)
 
 
 class InviteApiTests(TestCase):

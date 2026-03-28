@@ -71,6 +71,7 @@ class RepairApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         data = response.json()
+        self.assertEqual(data["vehicle_id"], self.vehicle.id)
         self.assertTrue(data["tracking_code"].startswith("TOR-"))
         self.assertIn(self.vehicle.license_plate, data["vehicle_label"])
         self.assertEqual(data["owner_name"], self.customer.full_name)
@@ -104,6 +105,7 @@ class RepairApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 2)
+        self.assertEqual(response.json()[0]["vehicle_id"], self.vehicle.id)
 
     def test_search_repairs(self):
         self.client.force_authenticate(self.staff_user)

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
+import axios from "axios";
 import api from "../api/client";
 
 type User = {
@@ -28,13 +29,54 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const authUserStorageKey = "auth-user";
+
+function readStoredUser(): User | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(authUserStorageKey);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredUser(user: User | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    if (user) {
+      window.localStorage.setItem(authUserStorageKey, JSON.stringify(user));
+    } else {
+      window.localStorage.removeItem(authUserStorageKey);
+    }
+  } catch {
+    // Ignore storage failures and keep the auth flow usable.
+  }
+}
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(() => readStoredUser());
   const [isLoading, setIsLoading] = useState(true);
+
+  function setUser(user: User) {
+    setUserState(user);
+    writeStoredUser(user);
+  }
+
+  function clearUser() {
+    setUserState(null);
+    writeStoredUser(null);
+  }
 
   useEffect(() => {
     let active = true;
+    const cachedUser = readStoredUser();
 
     async function loadUser() {
       try {
@@ -43,9 +85,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (active) {
           setUser(response.data);
         }
-      } catch {
+      } catch (error) {
         if (active) {
-          setUser(null);
+          if (axios.isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0)) {
+            clearUser();
+          } else if (!cachedUser) {
+            clearUser();
+          }
         }
       } finally {
         if (active) {
@@ -71,7 +117,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     try {
       await api.post("/auth/logout");
     } finally {
-      setUser(null);
+      clearUser();
     }
   }
 
