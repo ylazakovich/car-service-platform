@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import axios from "axios";
 import type { Vehicle } from "../shared/vehicles";
 import {
   createPurchase,
@@ -72,6 +73,17 @@ function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
     invoice_name: item.invoice_name,
     invoice_url: item.invoice_url,
   };
+}
+
+function getUploadErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === "string" && detail.trim()) {
+      return detail;
+    }
+  }
+
+  return fallback;
 }
 
 export function usePurchases(vehicles: Vehicle[]) {
@@ -223,7 +235,6 @@ export function usePurchases(vehicles: Vehicle[]) {
       quantity,
       purchase_price: purchasePrice,
       sale_price: salePrice,
-      repair_code: purchaseForm.repair_code.trim(),
       vehicle_id: selectedVehicle?.id ?? null,
       invoice_name: purchaseInvoiceName,
       invoice_url: purchaseInvoiceUrl,
@@ -253,8 +264,8 @@ export function usePurchases(vehicles: Vehicle[]) {
       const result = await uploadInvoiceFile(file);
       setPurchaseInvoiceName(result.name);
       setPurchaseInvoiceUrl(result.url);
-    } catch {
-      setPurchaseError("Failed to upload invoice file.");
+    } catch (error) {
+      setPurchaseError(getUploadErrorMessage(error, "Failed to upload invoice file."));
     }
   }
 
@@ -268,8 +279,8 @@ export function usePurchases(vehicles: Vehicle[]) {
       const result = await uploadInvoiceFile(file);
       setPurchaseModalInvoiceName(result.name);
       setPurchaseModalInvoiceUrl(result.url);
-    } catch {
-      setPurchaseModalError("Failed to upload invoice file.");
+    } catch (error) {
+      setPurchaseModalError(getUploadErrorMessage(error, "Failed to upload invoice file."));
     }
   }
 
@@ -358,7 +369,6 @@ export function usePurchases(vehicles: Vehicle[]) {
       quantity,
       purchase_price: purchasePrice,
       sale_price: salePrice,
-      repair_code: purchaseModalForm.repair_code.trim(),
       vehicle_id: selectedVehicle?.id ?? null,
       invoice_name: purchaseModalInvoiceName,
       invoice_url: purchaseModalInvoiceUrl,

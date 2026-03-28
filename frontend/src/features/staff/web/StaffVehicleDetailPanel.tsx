@@ -11,7 +11,6 @@ type LinkedPurchase = {
   id: number;
   part_name: string;
   supplier_name: string;
-  repair_code: string;
   quantity: number;
   purchase_price: number;
   sale_price: number;
@@ -107,7 +106,6 @@ export function StaffVehicleDetailPanel({
               <article className="detail-item" key={entry.id}>
                 <h4>{entry.part_name}</h4>
                 <p>{entry.supplier_name}</p>
-                <p className="meta-line">Tracking: {entry.repair_code}</p>
                 <p className="meta-line">
                   Qty {entry.quantity} • Buy {formatCurrency(entry.purchase_price)} • Sell {formatCurrency(entry.sale_price)}
                 </p>
