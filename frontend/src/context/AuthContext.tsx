@@ -24,6 +24,7 @@ type AuthContextValue = {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
+  setUser: (user: User) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         isLoading,
         login,
         logout,
+        setUser,
       }}
     >
       {children}
