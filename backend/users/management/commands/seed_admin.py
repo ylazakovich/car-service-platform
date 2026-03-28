@@ -13,7 +13,7 @@ class Command(BaseCommand):
 
         if not email and settings.DEBUG:
             email = "admin@autoservice.local"
-            password = "admin12345"
+            password = "demo-admin-change-me"
 
         if not email or not password:
             self.stdout.write("No admin credentials configured; skipping seed_admin.")
