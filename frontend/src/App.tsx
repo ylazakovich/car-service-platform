@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
@@ -97,7 +97,7 @@ function IconUsers() {
   );
 }
 
-const sectionIcons: Record<StaffSection, JSX.Element> = {
+const sectionIcons: Record<StaffSection, ReactElement> = {
   dashboard: <IconDashboard />,
   customers: <IconCustomers />,
   vehicles:  <IconVehicles />,
