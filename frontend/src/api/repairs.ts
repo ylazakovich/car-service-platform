@@ -20,6 +20,7 @@ export interface RepairItem {
   issue_notes: string;
   status: RepairStatus;
   tracking_code: string;
+  completed_at: string | null;
   repair_notes: RepairNoteItem[];
   before_photos: string[];
   during_photos: string[];
@@ -42,6 +43,7 @@ export interface RepairWritePayload {
   service_name: string;
   issue_notes: string;
   status: RepairStatus;
+  completed_at?: string | null;
 }
 
 export async function fetchRepairs(q?: string): Promise<RepairItem[]> {
