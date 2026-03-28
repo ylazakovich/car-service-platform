@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { BrandMark } from "../components/BrandMark";
 import { acceptInvite } from "../api/users";
 
 type PageState = "form" | "success" | "error";
@@ -47,10 +48,7 @@ export function AcceptInvitePage() {
   return (
     <div className="login-shell">
       <div className="login-card">
-
-        <div className="login-logo">
-          <span>CS</span>
-        </div>
+        <BrandMark variant="auth" />
 
         <div className="login-header">
           <p className="eyebrow">Account Setup</p>
