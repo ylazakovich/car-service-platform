@@ -121,16 +121,20 @@ const staffSectionStorageKey = "staff-active-section";
 
 function readStoredStaffSection(): string | null {
   if (typeof window === "undefined") return null;
-  const storage = window.localStorage as { getItem?: (key: string) => string | null } | undefined;
-  if (typeof storage?.getItem !== "function") return null;
-  return storage.getItem(staffSectionStorageKey);
+  try {
+    return window.localStorage.getItem(staffSectionStorageKey);
+  } catch {
+    return null;
+  }
 }
 
 function writeStoredStaffSection(section: StaffSection) {
   if (typeof window === "undefined") return;
-  const storage = window.localStorage as { setItem?: (key: string, value: string) => void } | undefined;
-  if (typeof storage?.setItem !== "function") return;
-  storage.setItem(staffSectionStorageKey, section);
+  try {
+    window.localStorage.setItem(staffSectionStorageKey, section);
+  } catch {
+    // Ignore storage failures to keep the UI usable.
+  }
 }
 
 function getInitialStaffSection(): StaffSection {
@@ -159,7 +163,7 @@ function StaffShell() {
     setProfileFirstName(user?.first_name ?? "");
     setProfileLastName(user?.last_name ?? "");
     setEditingProfile(true);
-    setTimeout(() => profileFirstRef.current?.focus(), 0);
+    window.requestAnimationFrame(() => profileFirstRef.current?.focus());
   }
 
   async function saveProfile() {
