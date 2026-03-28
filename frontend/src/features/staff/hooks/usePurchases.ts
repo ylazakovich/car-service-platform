@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import type { Vehicle } from "../shared/vehicles";
 import {
@@ -98,24 +98,31 @@ export function usePurchases(vehicles: Vehicle[]) {
   const [showModalSuggestions, setShowModalSuggestions] = useState(false);
 
   const selectedPurchase = purchases.find((entry) => entry.id === selectedPurchaseId) ?? null;
+  const deferredPurchaseSearch = useDeferredValue(purchaseSearch);
 
   useEffect(() => {
     fetchSuppliers().then(setSuppliers).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPurchasePage(1);
-      fetchPurchases({ q: purchaseSearch, page: 1, pageSize: 50 })
-        .then((result) => {
-          setPurchases(result.results.map(mapApiPurchaseToPurchaseEntry));
-          setPurchaseCount(result.count);
-          setPurchaseHasMore(result.next !== null);
-        })
-        .catch(() => {});
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [purchaseSearch]);
+    let ignore = false;
+
+    setPurchasePage(1);
+    fetchPurchases({ q: deferredPurchaseSearch, page: 1, pageSize: 50 })
+      .then((result) => {
+        if (ignore) {
+          return;
+        }
+        setPurchases(result.results.map(mapApiPurchaseToPurchaseEntry));
+        setPurchaseCount(result.count);
+        setPurchaseHasMore(result.next !== null);
+      })
+      .catch(() => {});
+
+    return () => {
+      ignore = true;
+    };
+  }, [deferredPurchaseSearch]);
 
   async function loadMorePurchases() {
     setPurchaseLoadingMore(true);

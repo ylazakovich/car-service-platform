@@ -71,6 +71,18 @@ function getStaffUserLabel(staff: StaffUser): string {
   return [staff.first_name, staff.last_name].filter(Boolean).join(" ") || staff.email;
 }
 
+function createPreviewUrls(files: File[]) {
+  return files.map((file) => URL.createObjectURL(file));
+}
+
+function revokePreviewUrls(urls: string[]) {
+  urls.forEach((url) => {
+    if (url.startsWith("blob:")) {
+      URL.revokeObjectURL(url);
+    }
+  });
+}
+
 export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[]) {
   const { user } = useAuth();
   const [repairs, setRepairs] = useState<RepairEntry[]>([]);
@@ -97,6 +109,15 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[]) {
   useEffect(() => {
     fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry))).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    return () => {
+      revokePreviewUrls(repairPhotoPreviews);
+      revokePreviewUrls(repairBeforePhotos);
+      revokePreviewUrls(repairDuringPhotos);
+      revokePreviewUrls(repairAfterPhotos);
+    };
+  }, [repairAfterPhotos, repairBeforePhotos, repairDuringPhotos, repairPhotoPreviews]);
 
   function resetRepairForm() {
     setRepairForm(emptyRepairForm);
@@ -286,22 +307,22 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[]) {
 
   function handleRepairPhotosChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
-    setRepairPhotoPreviews(files.map((file) => URL.createObjectURL(file)));
+    setRepairPhotoPreviews(createPreviewUrls(files));
   }
 
   function handleRepairBeforePhotosChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
-    setRepairBeforePhotos(files.map((file) => URL.createObjectURL(file)));
+    setRepairBeforePhotos(createPreviewUrls(files));
   }
 
   function handleRepairDuringPhotosChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
-    setRepairDuringPhotos(files.map((file) => URL.createObjectURL(file)));
+    setRepairDuringPhotos(createPreviewUrls(files));
   }
 
   function handleRepairAfterPhotosChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
-    setRepairAfterPhotos(files.map((file) => URL.createObjectURL(file)));
+    setRepairAfterPhotos(createPreviewUrls(files));
   }
 
   function handleCardDragStart(repairId: number, event: React.DragEvent) {
