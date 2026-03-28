@@ -445,6 +445,44 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
   }, [activeSection]);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (isPurchaseFormOpen) {
+        closePurchaseFormModal();
+      } else if (selectedPurchaseId !== null) {
+        closePurchaseDetailModal();
+      } else if (isVehicleFormOpen) {
+        closeVehicleFormModal();
+      } else if (selectedVehicleId !== null) {
+        closeVehicleDetailModal();
+      } else if (isCustomerFormOpen) {
+        closeCustomerFormModal();
+      } else if (selectedCustomerId !== null) {
+        closeCustomerDetailModal();
+      } else if (isRepairFormOpen) {
+        closeRepairModal();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [
+    isPurchaseFormOpen,
+    selectedPurchaseId,
+    isVehicleFormOpen,
+    selectedVehicleId,
+    isCustomerFormOpen,
+    selectedCustomerId,
+    isRepairFormOpen,
+    closePurchaseFormModal,
+    closePurchaseDetailModal,
+    closeVehicleFormModal,
+    closeVehicleDetailModal,
+    closeCustomerFormModal,
+    closeCustomerDetailModal,
+    closeRepairModal,
+  ]);
+
   async function loadAllUsers() {
     setUsersLoading(true);
     try {
