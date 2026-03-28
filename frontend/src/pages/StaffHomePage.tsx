@@ -461,6 +461,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       } else if (selectedCustomerId !== null) {
         closeCustomerDetailModal();
       } else if (isRepairFormOpen) {
+        closeRepairCreateModal();
+      } else if (selectedRepairId !== null) {
         closeRepairModal();
       }
     }
@@ -474,12 +476,14 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     isCustomerFormOpen,
     selectedCustomerId,
     isRepairFormOpen,
+    selectedRepairId,
     closePurchaseFormModal,
     closePurchaseDetailModal,
     closeVehicleFormModal,
     closeVehicleDetailModal,
     closeCustomerFormModal,
     closeCustomerDetailModal,
+    closeRepairCreateModal,
     closeRepairModal,
   ]);
 
