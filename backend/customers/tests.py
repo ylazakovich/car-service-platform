@@ -42,13 +42,13 @@ class CustomerApiTests(TestCase):
 
         list_response = self.client.get("/api/customers/")
         self.assertEqual(list_response.status_code, 200)
-        self.assertEqual(len(list_response.json()), 2)
-        self.assertEqual(list_response.json()[0]["vehicle_count"], 0)
+        self.assertEqual(len(list_response.json()["results"]), 2)
+        self.assertEqual(list_response.json()["results"][0]["vehicle_count"], 0)
 
         search_response = self.client.get("/api/customers/", {"q": "alex"})
         self.assertEqual(search_response.status_code, 200)
-        self.assertEqual(len(search_response.json()), 1)
-        self.assertEqual(search_response.json()[0]["full_name"], "Alex Johnson")
+        self.assertEqual(len(search_response.json()["results"]), 1)
+        self.assertEqual(search_response.json()["results"][0]["full_name"], "Alex Johnson")
 
         update_response = self.client.patch(
             f"/api/customers/{customer_id}",

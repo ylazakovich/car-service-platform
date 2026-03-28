@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -9,6 +10,9 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+LOGIN_RATE_LIMIT = 10
+LOGIN_BLOCK_SECONDS = 60
 
 from .models import InviteToken, User
 from .serializers import AcceptInviteSerializer, InviteCreateSerializer, LoginSerializer, UserListSerializer, UserSerializer
@@ -30,6 +34,16 @@ class LoginView(APIView):
     authentication_classes = []
 
     def post(self, request):
+        ip = request.META.get("HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")).split(",")[0].strip()
+        cache_key = f"login_attempts:{ip}"
+        attempts = cache.get(cache_key, 0)
+
+        if attempts >= LOGIN_RATE_LIMIT:
+            return Response(
+                {"detail": "Too many login attempts. Please wait 1 minute."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -39,8 +53,10 @@ class LoginView(APIView):
             password=serializer.validated_data["password"],
         )
         if user is None or not user.is_active:
+            cache.set(cache_key, attempts + 1, LOGIN_BLOCK_SECONDS)
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
+        cache.delete(cache_key)
         login(request, user)
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
@@ -75,6 +91,23 @@ class UserListView(APIView):
         return Response(UserListSerializer(users, many=True).data)
 
 
+class UserUpdateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        first_name = request.data.get("first_name", user.first_name)
+        last_name = request.data.get("last_name", user.last_name)
+        user.first_name = first_name.strip()
+        user.last_name = last_name.strip()
+        user.save(update_fields=["first_name", "last_name"])
+        return Response(UserListSerializer(user).data)
+
+
 class InviteCreateView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -84,8 +117,10 @@ class InviteCreateView(APIView):
 
         email = serializer.validated_data["email"]
         role = serializer.validated_data["role"]
+        first_name = serializer.validated_data.get("first_name", "")
+        last_name = serializer.validated_data.get("last_name", "")
 
-        user = User(email=email, role=role, is_staff=(role == "admin"))
+        user = User(email=email, role=role, is_staff=(role == "admin"), first_name=first_name, last_name=last_name)
         user.set_unusable_password()
         user.save()
 

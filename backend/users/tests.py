@@ -195,3 +195,49 @@ class InviteApiTests(TestCase):
         admin_response = self.client.get("/api/auth/users/")
         self.assertEqual(admin_response.status_code, 200)
         self.assertIsInstance(admin_response.json(), list)
+
+
+class LoginRateLimitTests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=False)
+        self.user = User.objects.create_user(
+            email="ratelimit@test.local",
+            password="correctpass123",
+            role="staff",
+        )
+
+    def tearDown(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def _attempt_login(self, password="wrongpassword"):
+        return self.client.post(
+            "/api/auth/login",
+            {"email": self.user.email, "password": password},
+            format="json",
+        )
+
+    def test_login_blocked_after_10_failed_attempts(self):
+        for _ in range(10):
+            response = self._attempt_login("wrongpassword")
+            self.assertEqual(response.status_code, 401)
+
+        response = self._attempt_login("wrongpassword")
+        self.assertEqual(response.status_code, 429)
+
+    def test_rate_limit_cleared_on_successful_login(self):
+        for _ in range(5):
+            self._attempt_login("wrongpassword")
+
+        response = self._attempt_login("correctpass123")
+        self.assertEqual(response.status_code, 200)
+
+        response = self._attempt_login("wrongpassword")
+        self.assertEqual(response.status_code, 401)
+
+    def test_correct_login_not_blocked_before_limit(self):
+        for _ in range(9):
+            self._attempt_login("wrongpassword")
+
+        response = self._attempt_login("correctpass123")
+        self.assertEqual(response.status_code, 200)

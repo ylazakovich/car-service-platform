@@ -65,7 +65,7 @@ function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
     sale_price: parseFloat(item.sale_price),
     repair_code: item.repair_code,
     vehicle_id: item.vehicle,
-    vehicle_label: item.vehicle ? String(item.vehicle) : "",
+    vehicle_label: item.vehicle_license_plate ?? "",
     invoice_name: item.invoice_name,
     invoice_url: item.invoice_url,
   };

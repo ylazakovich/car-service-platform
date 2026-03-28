@@ -22,6 +22,8 @@ class CsrfSerializer(serializers.Serializer):
 class InviteCreateSerializer(serializers.Serializer):
     email = serializers.EmailField()
     role = serializers.ChoiceField(choices=["admin", "staff"])
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
 
     def validate_email(self, value):
         value = value.lower()

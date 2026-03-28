@@ -10,6 +10,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "price",
             "is_active",
             "created_at",
             "updated_at",
