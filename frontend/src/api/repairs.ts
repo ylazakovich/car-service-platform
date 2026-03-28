@@ -13,6 +13,7 @@ export interface RepairItem {
   id: number;
   vehicle_label: string;
   owner_name: string;
+  master_id: number | null;
   master_name: string;
   service_name: string;
   issue_notes: string;
@@ -53,12 +54,12 @@ export async function createRepair(data: RepairWritePayload): Promise<RepairItem
 }
 
 export async function updateRepair(id: number, data: Partial<RepairWritePayload>): Promise<RepairItem> {
-  const response = await api.patch<RepairItem>(`/repairs/${id}/`, data);
+  const response = await api.patch<RepairItem>(`/repairs/${id}`, data);
   return response.data;
 }
 
 export async function deleteRepair(id: number): Promise<void> {
-  await api.delete(`/repairs/${id}/`);
+  await api.delete(`/repairs/${id}`);
 }
 
 export async function addRepairNote(repairId: number, text: string): Promise<RepairNoteItem> {
@@ -67,7 +68,7 @@ export async function addRepairNote(repairId: number, text: string): Promise<Rep
 }
 
 export async function deleteRepairNote(repairId: number, noteId: number): Promise<void> {
-  await api.delete(`/repairs/${repairId}/notes/${noteId}/`);
+  await api.delete(`/repairs/${repairId}/notes/${noteId}`);
 }
 
 export async function fetchStaffUsers(): Promise<StaffUser[]> {

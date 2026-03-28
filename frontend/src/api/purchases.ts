@@ -20,6 +20,7 @@ export interface PurchaseItem {
   sale_price: string;
   repair_code: string;
   vehicle: number | null;
+  vehicle_license_plate?: string;
   invoice_name: string;
   invoice_url: string;
   created_at: string;
@@ -40,8 +41,25 @@ export interface PurchaseWritePayload {
   invoice_url?: string;
 }
 
-export async function fetchPurchases(q?: string): Promise<PurchaseItem[]> {
-  const response = await api.get<PurchaseItem[]>("/purchases/", { params: q ? { q } : undefined });
+export interface PurchasePage {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: PurchaseItem[];
+}
+
+export interface FetchPurchasesParams {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function fetchPurchases(params: FetchPurchasesParams = {}): Promise<PurchasePage> {
+  const query: Record<string, string | number> = {};
+  if (params.q) query.q = params.q;
+  if (params.page) query.page = params.page;
+  if (params.pageSize) query.page_size = params.pageSize;
+  const response = await api.get<PurchasePage>("/purchases/", { params: query });
   return response.data;
 }
 
@@ -51,10 +69,26 @@ export async function createPurchase(data: PurchaseWritePayload): Promise<Purcha
 }
 
 export async function updatePurchase(id: number, data: Partial<PurchaseWritePayload>): Promise<PurchaseItem> {
-  const response = await api.patch<PurchaseItem>(`/purchases/${id}/`, data);
+  const response = await api.patch<PurchaseItem>(`/purchases/${id}`, data);
   return response.data;
 }
 
 export async function deletePurchase(id: number): Promise<void> {
-  await api.delete(`/purchases/${id}/`);
+  await api.delete(`/purchases/${id}`);
+}
+
+export async function uploadInvoiceFile(file: File): Promise<{ url: string; name: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await api.post<{ url: string; name: string }>("/uploads/invoice/", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+export async function fetchSuppliers(q?: string): Promise<SupplierItem[]> {
+  const params: Record<string, string> = {};
+  if (q) params.q = q;
+  const response = await api.get<SupplierItem[]>("/purchases/suppliers/", { params });
+  return response.data;
 }

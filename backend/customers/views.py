@@ -3,12 +3,14 @@ from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from foundation.pagination import StandardPagination
 from .models import Customer
 from .serializers import CustomerSerializer
 
 
 class CustomerListCreateView(generics.ListCreateAPIView):
     serializer_class = CustomerSerializer
+    pagination_class = StandardPagination
 
     def get_queryset(self):
         if self.request.user.role == "admin":

@@ -4,9 +4,12 @@ import type { Vehicle } from "../shared/vehicles";
 import {
   createPurchase,
   fetchPurchases,
+  fetchSuppliers,
   updatePurchase,
+  uploadInvoiceFile,
   type PurchaseItem,
   type PurchaseWritePayload,
+  type SupplierItem,
 } from "../../../api/purchases";
 
 export type PurchaseEntry = {
@@ -65,7 +68,7 @@ function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
     sale_price: parseFloat(item.sale_price),
     repair_code: item.repair_code,
     vehicle_id: item.vehicle,
-    vehicle_label: item.vehicle ? String(item.vehicle) : "",
+    vehicle_label: item.vehicle_license_plate ?? "",
     invoice_name: item.invoice_name,
     invoice_url: item.invoice_url,
   };
@@ -74,6 +77,10 @@ function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
 export function usePurchases(vehicles: Vehicle[]) {
   const [purchases, setPurchases] = useState<PurchaseEntry[]>([]);
   const [purchaseSearch, setPurchaseSearch] = useState("");
+  const [purchasePage, setPurchasePage] = useState(1);
+  const [purchaseCount, setPurchaseCount] = useState(0);
+  const [purchaseHasMore, setPurchaseHasMore] = useState(false);
+  const [purchaseLoadingMore, setPurchaseLoadingMore] = useState(false);
   const [purchaseForm, setPurchaseForm] = useState<PurchaseFormState>(emptyPurchaseForm);
   const [purchaseError, setPurchaseError] = useState("");
   const [purchaseModalError, setPurchaseModalError] = useState("");
@@ -86,13 +93,43 @@ export function usePurchases(vehicles: Vehicle[]) {
   const [purchaseModalInvoiceName, setPurchaseModalInvoiceName] = useState("");
   const [purchaseModalInvoiceUrl, setPurchaseModalInvoiceUrl] = useState("");
 
+  const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
+  const [showCreateSuggestions, setShowCreateSuggestions] = useState(false);
+  const [showModalSuggestions, setShowModalSuggestions] = useState(false);
+
   const selectedPurchase = purchases.find((entry) => entry.id === selectedPurchaseId) ?? null;
 
   useEffect(() => {
-    fetchPurchases().then((data) => {
-      setPurchases(data.map(mapApiPurchaseToPurchaseEntry));
-    }).catch(() => {});
+    fetchSuppliers().then(setSuppliers).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPurchasePage(1);
+      fetchPurchases({ q: purchaseSearch, page: 1, pageSize: 50 })
+        .then((result) => {
+          setPurchases(result.results.map(mapApiPurchaseToPurchaseEntry));
+          setPurchaseCount(result.count);
+          setPurchaseHasMore(result.next !== null);
+        })
+        .catch(() => {});
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [purchaseSearch]);
+
+  async function loadMorePurchases() {
+    setPurchaseLoadingMore(true);
+    try {
+      const result = await fetchPurchases({ q: purchaseSearch, page: purchasePage + 1, pageSize: 50 });
+      setPurchases((current) => [...current, ...result.results.map(mapApiPurchaseToPurchaseEntry)]);
+      setPurchasePage((current) => current + 1);
+      setPurchaseCount(result.count);
+      setPurchaseHasMore(result.next !== null);
+    } catch {
+    } finally {
+      setPurchaseLoadingMore(false);
+    }
+  }
 
   function resetPurchaseForm() {
     setPurchaseForm(emptyPurchaseForm);
@@ -197,7 +234,7 @@ export function usePurchases(vehicles: Vehicle[]) {
     }
   }
 
-  function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
       setPurchaseInvoiceName("");
@@ -205,18 +242,28 @@ export function usePurchases(vehicles: Vehicle[]) {
       return;
     }
 
-    setPurchaseInvoiceName(file.name);
-    setPurchaseInvoiceUrl(URL.createObjectURL(file));
+    try {
+      const result = await uploadInvoiceFile(file);
+      setPurchaseInvoiceName(result.name);
+      setPurchaseInvoiceUrl(result.url);
+    } catch {
+      setPurchaseError("Failed to upload invoice file.");
+    }
   }
 
-  function handlePurchaseModalInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handlePurchaseModalInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
 
-    setPurchaseModalInvoiceName(file.name);
-    setPurchaseModalInvoiceUrl(URL.createObjectURL(file));
+    try {
+      const result = await uploadInvoiceFile(file);
+      setPurchaseModalInvoiceName(result.name);
+      setPurchaseModalInvoiceUrl(result.url);
+    } catch {
+      setPurchaseModalError("Failed to upload invoice file.");
+    }
   }
 
   function handlePurchaseModalInvoiceRemove() {
@@ -235,6 +282,40 @@ export function usePurchases(vehicles: Vehicle[]) {
 
   function handleOpenInvoice(invoiceUrl: string) {
     window.open(invoiceUrl, "_blank", "noopener,noreferrer");
+  }
+
+  const createSupplierSuggestions: SupplierItem[] =
+    showCreateSuggestions && purchaseForm.supplier_name.length >= 1
+      ? suppliers
+          .filter((s) => s.name.toLowerCase().includes(purchaseForm.supplier_name.toLowerCase()))
+          .slice(0, 8)
+      : [];
+
+  const modalSupplierSuggestions: SupplierItem[] =
+    showModalSuggestions && purchaseModalForm.supplier_name.length >= 1
+      ? suppliers
+          .filter((s) => s.name.toLowerCase().includes(purchaseModalForm.supplier_name.toLowerCase()))
+          .slice(0, 8)
+      : [];
+
+  function handleCreateSupplierInput(value: string) {
+    setPurchaseForm((current) => ({ ...current, supplier_name: value }));
+    setShowCreateSuggestions(true);
+  }
+
+  function handleCreateSupplierSelect(supplier: SupplierItem) {
+    setPurchaseForm((current) => ({ ...current, supplier_name: supplier.name, supplier_nip: supplier.nip }));
+    setShowCreateSuggestions(false);
+  }
+
+  function handleModalSupplierInput(value: string) {
+    setPurchaseModalForm((current) => ({ ...current, supplier_name: value }));
+    setShowModalSuggestions(true);
+  }
+
+  function handleModalSupplierSelect(supplier: SupplierItem) {
+    setPurchaseModalForm((current) => ({ ...current, supplier_name: supplier.name, supplier_nip: supplier.nip }));
+    setShowModalSuggestions(false);
   }
 
   async function handlePurchaseModalSave() {
@@ -294,6 +375,10 @@ export function usePurchases(vehicles: Vehicle[]) {
     setPurchases,
     purchaseSearch,
     setPurchaseSearch,
+    purchaseCount,
+    purchaseHasMore,
+    purchaseLoadingMore,
+    loadMorePurchases,
     purchaseForm,
     setPurchaseForm,
     purchaseError,
@@ -318,5 +403,15 @@ export function usePurchases(vehicles: Vehicle[]) {
     handlePurchaseModalInvoiceChange,
     handlePurchaseModalInvoiceRemove,
     handleOpenInvoice,
+    createSupplierSuggestions,
+    modalSupplierSuggestions,
+    showCreateSuggestions,
+    setShowCreateSuggestions,
+    showModalSuggestions,
+    setShowModalSuggestions,
+    handleCreateSupplierInput,
+    handleCreateSupplierSelect,
+    handleModalSupplierInput,
+    handleModalSupplierSelect,
   };
 }

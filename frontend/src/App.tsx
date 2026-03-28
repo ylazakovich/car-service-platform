@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import { updateUserName } from "./api/users";
+import { AcceptInvitePage } from "./pages/AcceptInvitePage";
 import { ClientPortalPage } from "./pages/ClientPortalPage";
 import { LoginPage } from "./pages/LoginPage";
 import { StaffHomePage } from "./pages/StaffHomePage";
@@ -144,10 +146,31 @@ const STAFF_ALLOWED_SECTIONS: StaffSection[] = ["vehicles", "repairs"];
 /* ── Staff Shell ────────────────────────────────────────── */
 
 function StaffShell() {
-  const { user, logout, isStaff } = useAuth();
+  const { user, logout, isStaff, setUser } = useAuth();
   const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [openRepairComposerRequest, setOpenRepairComposerRequest] = useState(0);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileFirstName, setProfileFirstName] = useState("");
+  const [profileLastName, setProfileLastName] = useState("");
+  const profileFirstRef = useRef<HTMLInputElement>(null);
+
+  function startEditProfile() {
+    setProfileFirstName(user?.first_name ?? "");
+    setProfileLastName(user?.last_name ?? "");
+    setEditingProfile(true);
+    setTimeout(() => profileFirstRef.current?.focus(), 0);
+  }
+
+  async function saveProfile() {
+    if (!user) return;
+    try {
+      const updated = await updateUserName(user.id, profileFirstName.trim(), profileLastName.trim());
+      setUser(updated);
+      setEditingProfile(false);
+    } catch {
+    }
+  }
 
   const visibleNavGroups = isStaff
     ? [
@@ -274,9 +297,36 @@ function StaffShell() {
             <div className="user-avatar">
               {user?.email?.charAt(0).toUpperCase() ?? "?"}
             </div>
-            <div>
+            <div className="shell-user-details">
               <span className="user-label">Signed in as</span>
               <strong>{user?.email}</strong>
+              {editingProfile ? (
+                <div className="profile-edit-row">
+                  <input
+                    ref={profileFirstRef}
+                    className="user-edit-input"
+                    value={profileFirstName}
+                    onChange={(e) => setProfileFirstName(e.target.value)}
+                    placeholder="First name"
+                  />
+                  <input
+                    className="user-edit-input"
+                    value={profileLastName}
+                    onChange={(e) => setProfileLastName(e.target.value)}
+                    placeholder="Last name"
+                  />
+                  <div className="profile-edit-actions">
+                    <button type="button" className="button" style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }} onClick={saveProfile}>Save</button>
+                    <button type="button" className="button button-secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }} onClick={() => setEditingProfile(false)}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" className="profile-edit-trigger" onClick={startEditProfile}>
+                  {user?.first_name || user?.last_name
+                    ? `${user.first_name} ${user.last_name}`.trim()
+                    : "Set your name"}
+                </button>
+              )}
             </div>
           </div>
           <button type="button" className="button button-secondary" onClick={logout}>
@@ -319,6 +369,7 @@ export default function App() {
     <Routes>
       <Route path="/"    element={<Navigate to="/app" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/invite/accept" element={<AcceptInvitePage />} />
       <Route path="/portal/:accessCode" element={<ClientPortalPage />} />
       <Route
         path="/app"

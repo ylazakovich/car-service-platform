@@ -1,6 +1,7 @@
 from django.db.models import Q
 from rest_framework import generics
 
+from foundation.pagination import StandardPagination
 from .models import Purchase, Supplier
 from .serializers import PurchaseSerializer, SupplierSerializer
 
@@ -23,6 +24,7 @@ class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class PurchaseListCreateView(generics.ListCreateAPIView):
     serializer_class = PurchaseSerializer
+    pagination_class = StandardPagination
 
     def get_queryset(self):
         queryset = Purchase.objects.select_related("supplier", "vehicle").all()

@@ -1,3 +1,6 @@
+import uuid
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
@@ -32,3 +35,24 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
+
+
+class InviteToken(models.Model):
+    LIFETIME = timedelta(days=7)
+
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="invite_token")
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + self.LIFETIME
+        super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    class Meta:
+        db_table = "invite_tokens"
