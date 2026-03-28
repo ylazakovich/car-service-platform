@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { BrandMark } from "./components/BrandMark";
 import { useAuth } from "./context/AuthContext";
 import { updateUserName } from "./api/users";
 import { AcceptInvitePage } from "./pages/AcceptInvitePage";
@@ -253,9 +254,7 @@ function StaffShell() {
 
           {/* Brand */}
           <div className="brand-block">
-            <div className="brand-logo">
-              <span>CS</span>
-            </div>
+            <BrandMark variant="compact" />
             <h1>Car Service</h1>
             <p className="shell-copy">Run the entire workshop from one board.</p>
           </div>
