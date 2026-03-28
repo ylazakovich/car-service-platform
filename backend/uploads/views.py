@@ -35,5 +35,5 @@ class InvoiceUploadView(APIView):
             for chunk in file.chunks():
                 dest.write(chunk)
 
-        url = request.build_absolute_uri(f"{settings.MEDIA_URL}invoices/{filename}")
+        url = f"{settings.MEDIA_URL}invoices/{filename}"
         return Response({"url": url, "name": file.name}, status=status.HTTP_201_CREATED)
