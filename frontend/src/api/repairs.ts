@@ -13,6 +13,7 @@ export interface RepairItem {
   id: number;
   vehicle_label: string;
   owner_name: string;
+  master_id: number | null;
   master_name: string;
   service_name: string;
   issue_notes: string;

@@ -27,7 +27,6 @@ class RepairSerializer(serializers.ModelSerializer):
     master_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source="master",
-        write_only=True,
         allow_null=True,
         required=False,
     )

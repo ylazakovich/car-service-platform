@@ -2250,10 +2250,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <p>{selectedRepair.owner_name}</p>
                     </div>
                     <div className="repair-info-row">
-                      <span className="repair-info-label">Master</span>
-                      <p>{selectedRepair.master_name}</p>
-                    </div>
-                    <div className="repair-info-row">
                       <span className="repair-info-label">Service</span>
                       <p>{selectedRepair.service_name}</p>
                     </div>
