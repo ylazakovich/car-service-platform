@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
@@ -16,6 +16,7 @@ import {
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
   type RepairEntry,
+  type RepairPartsSummary,
   type RepairStatus,
   type RepairStatusFilter,
 } from "../features/staff/shared/repairs";
@@ -167,6 +168,286 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 
 function getRepairServiceSaleValue(serviceName: string) {
   return repairServiceSaleCatalog[serviceName] ?? 320;
+}
+
+const calendarWeekdayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+const calendarMonthFormatter = new Intl.DateTimeFormat("en-GB", {
+  month: "short",
+  year: "numeric",
+});
+
+function parseIsoDate(value: string): Date | null {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day] = match;
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+  if (
+    parsed.getFullYear() !== Number(year) ||
+    parsed.getMonth() !== Number(month) - 1 ||
+    parsed.getDate() !== Number(day)
+  ) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function formatDateInputValue(value: string): string {
+  const parsed = parseIsoDate(value);
+  if (!parsed) {
+    return "";
+  }
+
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = String(parsed.getFullYear());
+  return `${day}-${month}-${year}`;
+}
+
+function parseDateInputValue(value: string): string | null {
+  const normalized = value.trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const isoCandidate = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoCandidate) {
+    return parseIsoDate(normalized) ? normalized : null;
+  }
+
+  const match = normalized.match(/^(\d{2})[./-](\d{2})[./-](\d{4})$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, day, month, year] = match;
+  const iso = `${year}-${month}-${day}`;
+  return parseIsoDate(iso) ? iso : null;
+}
+
+function getMonthStart(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function addMonths(date: Date, offset: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + offset, 1);
+}
+
+function getMonthIndex(date: Date): number {
+  return date.getFullYear() * 12 + date.getMonth();
+}
+
+function isIsoDateWithinBounds(value: string, min?: string, max?: string): boolean {
+  if (min && value < min) {
+    return false;
+  }
+  if (max && value > max) {
+    return false;
+  }
+  return true;
+}
+
+function getInitialCalendarMonth(value: string, min?: string, max?: string): Date {
+  const candidate = parseIsoDate(value) ?? parseIsoDate(min ?? "") ?? parseIsoDate(max ?? "") ?? new Date();
+  return getMonthStart(candidate);
+}
+
+function buildCalendarDays(visibleMonth: Date) {
+  const firstDayOfMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+  const startOffset = (firstDayOfMonth.getDay() + 6) % 7;
+  const gridStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1 - startOffset);
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
+    const iso = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    return {
+      iso,
+      label: String(date.getDate()),
+      isCurrentMonth: date.getMonth() === visibleMonth.getMonth(),
+    };
+  });
+}
+
+type FriendlyDateInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+  required?: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+};
+
+function FriendlyDateInput({
+  value,
+  onChange,
+  min,
+  max,
+  required = false,
+  disabled = false,
+  placeholder = "dd-mm-yyyy",
+}: FriendlyDateInputProps) {
+  const inputId = useId();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [draftValue, setDraftValue] = useState(formatDateInputValue(value));
+  const [visibleMonth, setVisibleMonth] = useState(() => getInitialCalendarMonth(value, min, max));
+
+  useEffect(() => {
+    setDraftValue(formatDateInputValue(value));
+  }, [value]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setVisibleMonth(getInitialCalendarMonth(value, min, max));
+    }
+  }, [isOpen, max, min, value]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setDraftValue(formatDateInputValue(value));
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        setDraftValue(formatDateInputValue(value));
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [value]);
+
+  const minMonth = min ? getMonthStart(parseIsoDate(min) ?? getInitialCalendarMonth(value, min, max)) : null;
+  const maxMonth = max ? getMonthStart(parseIsoDate(max) ?? getInitialCalendarMonth(value, min, max)) : null;
+  const canGoPrevMonth = !minMonth || getMonthIndex(visibleMonth) > getMonthIndex(minMonth);
+  const canGoNextMonth = !maxMonth || getMonthIndex(visibleMonth) < getMonthIndex(maxMonth);
+  const calendarDays = buildCalendarDays(visibleMonth);
+
+  function commitDraft() {
+    const normalized = parseDateInputValue(draftValue);
+    if (normalized === "") {
+      onChange("");
+      setDraftValue("");
+      return;
+    }
+
+    if (normalized && isIsoDateWithinBounds(normalized, min, max)) {
+      onChange(normalized);
+      setDraftValue(formatDateInputValue(normalized));
+      return;
+    }
+
+    setDraftValue(formatDateInputValue(value));
+  }
+
+  return (
+    <div className={`friendly-date ${isOpen ? "friendly-date-open" : ""}`} ref={rootRef}>
+      <div className="friendly-date-input-wrap">
+        <input
+          id={inputId}
+          className="friendly-date-input"
+          value={draftValue}
+      onChange={(event) => setDraftValue(event.target.value)}
+      onFocus={() => setIsOpen(true)}
+      onClick={() => setIsOpen(true)}
+      onBlur={commitDraft}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commitDraft();
+              setIsOpen(false);
+            }
+          }}
+          placeholder={placeholder}
+          inputMode="numeric"
+          autoComplete="off"
+          required={required}
+          disabled={disabled}
+        />
+      </div>
+
+      {isOpen ? (
+        <div className="friendly-date-popover" role="dialog" aria-modal="false" aria-label="Calendar">
+          <div className="friendly-date-header">
+            <button
+              type="button"
+              className="friendly-date-nav"
+              onClick={() => setVisibleMonth((current) => addMonths(current, -1))}
+              disabled={!canGoPrevMonth}
+              aria-label="Previous month"
+            >
+              Prev
+            </button>
+            <strong>{calendarMonthFormatter.format(visibleMonth)}</strong>
+            <button
+              type="button"
+              className="friendly-date-nav"
+              onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
+              disabled={!canGoNextMonth}
+              aria-label="Next month"
+            >
+              Next
+            </button>
+          </div>
+
+          <div className="friendly-date-weekdays" aria-hidden="true">
+            {calendarWeekdayLabels.map((label) => (
+              <span key={label}>{label}</span>
+            ))}
+          </div>
+
+          <div className="friendly-date-grid">
+            {calendarDays.map((day) => {
+              const isSelected = day.iso === value;
+              const isDisabled = !isIsoDateWithinBounds(day.iso, min, max);
+              return (
+                <button
+                  key={day.iso}
+                  type="button"
+                  className={[
+                    "friendly-date-day",
+                    day.isCurrentMonth ? "" : "friendly-date-day-muted",
+                    isSelected ? "friendly-date-day-selected" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => {
+                    if (isDisabled) {
+                      return;
+                    }
+                    onChange(day.iso);
+                    setDraftValue(formatDateInputValue(day.iso));
+                    setVisibleMonth(getMonthStart(parseIsoDate(day.iso) ?? visibleMonth));
+                    setIsOpen(false);
+                  }}
+                  disabled={isDisabled}
+                >
+                  {day.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 
@@ -348,6 +629,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairModalStatus,
     repairModalMasterId,
     setRepairModalMasterId,
+    repairModalCompletedAt,
+    setRepairModalCompletedAt,
     repairModalNewNote,
     setRepairModalNewNote,
     repairBeforePhotos,
@@ -383,7 +666,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [apiServices]
   );
   const moneyflowDateBounds = useMemo(
-    () => getDateBounds([...purchases.map((entry) => entry.order_date), ...repairs.map((repair) => repair.created_at)]),
+    () =>
+      getDateBounds([
+        ...purchases.map((entry) => entry.order_date),
+        ...repairs.map((repair) => repair.completed_at).filter(Boolean),
+      ]),
     [purchases, repairs]
   );
   const serviceBoardDateBounds = useMemo(
@@ -980,6 +1267,35 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const selectedVehiclePurchases = selectedVehicle
     ? purchases.filter((entry) => entry.vehicle_id === selectedVehicle.id)
     : [];
+  const repairPartSummaries = useMemo(() => {
+    const next: Record<string, RepairPartsSummary> = {};
+
+    purchases.forEach((entry) => {
+      const repairCode = entry.repair_code.trim();
+      if (!repairCode) {
+        return;
+      }
+
+      const current = next[repairCode] ?? { lineCount: 0, totalQuantity: 0, preview: [] };
+      current.lineCount += 1;
+      current.totalQuantity += entry.quantity;
+      if (current.preview.length < 2) {
+        current.preview.push(entry.part_name);
+      }
+      next[repairCode] = current;
+    });
+
+    return next;
+  }, [purchases]);
+  const selectedRepairPurchases = selectedRepair
+    ? purchases.filter((entry) => entry.repair_code === selectedRepair.tracking_code)
+    : [];
+  const purchaseCreateRepairOptions = purchaseForm.vehicle_id
+    ? repairs.filter((repair) => String(repair.vehicle_id) === purchaseForm.vehicle_id)
+    : repairs;
+  const purchaseModalRepairOptions = purchaseModalForm.vehicle_id
+    ? repairs.filter((repair) => String(repair.vehicle_id) === purchaseModalForm.vehicle_id)
+    : repairs;
   const filteredMoneyflowPurchases = useMemo(
     () =>
       purchases.filter((entry) =>
@@ -987,12 +1303,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       ),
     [moneyflowDateRange.end_date, moneyflowDateRange.start_date, purchases]
   );
-  const filteredMoneyflowRepairs = useMemo(
+  const completedRepairsForServiceSales = useMemo(
     () =>
-      repairs.filter((repair) =>
-        isDateWithinRange(repair.created_at, moneyflowDateRange.start_date, moneyflowDateRange.end_date)
+      repairs.filter(
+        (repair) =>
+          repair.status === "completed" &&
+          isDateWithinRange(repair.completed_at, moneyflowDateRange.start_date, moneyflowDateRange.end_date)
       ),
     [moneyflowDateRange.end_date, moneyflowDateRange.start_date, repairs]
+  );
+  const completedRepairCodesInMoneyflowRange = useMemo(
+    () => new Set(completedRepairsForServiceSales.map((repair) => repair.tracking_code)),
+    [completedRepairsForServiceSales]
   );
   const filteredServiceBoardRepairs = useMemo(
     () =>
@@ -1014,15 +1336,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [filteredMoneyflowPurchases]
   );
   const totalPartsSales = useMemo(
-    () => filteredMoneyflowPurchases.reduce((sum, entry) => sum + entry.sale_price * entry.quantity, 0),
-    [filteredMoneyflowPurchases]
+    () =>
+      purchases.reduce(
+        (sum, entry) =>
+          entry.repair_code && completedRepairCodesInMoneyflowRange.has(entry.repair_code)
+            ? sum + entry.sale_price * entry.quantity
+            : sum,
+        0
+      ),
+    [completedRepairCodesInMoneyflowRange, purchases]
   );
   const totalServiceSales = useMemo(
-    () => filteredMoneyflowRepairs.reduce((sum, repair) => sum + getRepairServiceSaleValue(repair.service_name), 0),
-    [filteredMoneyflowRepairs]
+    () => completedRepairsForServiceSales.reduce((sum, repair) => sum + getRepairServiceSaleValue(repair.service_name), 0),
+    [completedRepairsForServiceSales]
   );
   const projectedMargin = totalPartsSales - totalPurchaseCost;
-  const totalMoneyflowRevenue = totalPartsSales + totalServiceSales;
   const dashboardWorkerLoad = useMemo(
     () =>
       staffUsers.map((master) => {
@@ -1043,11 +1371,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const dashboardTabs: Array<{ id: DashboardTab; label: string }> = [
     {
       id: "moneyflow",
-      label: "Moneyflow",
+      label: "MoneyFlow",
     },
     {
       id: "service_board",
-      label: "Service board",
+      label: "ServiceBoard",
     },
   ];
 
@@ -1127,20 +1455,40 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderDashboard() {
-    const recentPurchases = [...filteredMoneyflowPurchases]
-      .sort((left, right) => right.order_date.localeCompare(left.order_date))
-      .slice(0, 3);
     const recentRepairs = [...filteredServiceBoardRepairs]
       .sort((left, right) => right.created_at.localeCompare(left.created_at))
       .slice(0, 3);
     const activeDateRange = activeDashboardTab === "moneyflow" ? moneyflowDateRange : serviceBoardDateRange;
-    const activeDateBounds = activeDashboardTab === "moneyflow" ? moneyflowDateBounds : serviceBoardDateBounds;
     const updateActiveDateRange = (field: keyof DashboardDateRange, value: string) => {
       if (activeDashboardTab === "moneyflow") {
-        setMoneyflowDateRange((current) => ({ ...current, [field]: value }));
+        setMoneyflowDateRange((current) => {
+          if (field === "start_date") {
+            return {
+              start_date: value,
+              end_date: current.end_date && value && current.end_date < value ? value : current.end_date,
+            };
+          }
+
+          return {
+            start_date: current.start_date && value && current.start_date > value ? value : current.start_date,
+            end_date: value,
+          };
+        });
         return;
       }
-      setServiceBoardDateRange((current) => ({ ...current, [field]: value }));
+      setServiceBoardDateRange((current) => {
+        if (field === "start_date") {
+          return {
+            start_date: value,
+            end_date: current.end_date && value && current.end_date < value ? value : current.end_date,
+          };
+        }
+
+        return {
+          start_date: current.start_date && value && current.start_date > value ? value : current.start_date,
+          end_date: value,
+        };
+      });
     };
 
     return (
@@ -1175,89 +1523,62 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             <div className="dashboard-date-bar">
               <label className="dashboard-date-field">
                 <span>Start date</span>
-                <input
-                  type="date"
+                <FriendlyDateInput
                   value={activeDateRange.start_date}
-                  min={activeDateBounds.start_date || undefined}
-                  max={activeDateRange.end_date || activeDateBounds.end_date || undefined}
-                  onChange={(event) => updateActiveDateRange("start_date", event.target.value)}
+                  onChange={(nextValue) => updateActiveDateRange("start_date", nextValue)}
                 />
               </label>
               <label className="dashboard-date-field">
                 <span>End date</span>
-                <input
-                  type="date"
+                <FriendlyDateInput
                   value={activeDateRange.end_date}
-                  min={activeDateRange.start_date || activeDateBounds.start_date || undefined}
-                  max={activeDateBounds.end_date || undefined}
-                  onChange={(event) => updateActiveDateRange("end_date", event.target.value)}
+                  onChange={(nextValue) => updateActiveDateRange("end_date", nextValue)}
                 />
               </label>
             </div>
             {activeDashboardTab === "moneyflow" ? (
               <div className="workspace-stack">
-                <div className="metric-grid dashboard-metric-grid">
-                  <article className="metric-card metric-card-accent">
-                    <span className="metric-label">Purchase Spend</span>
-                    <strong>{formatCurrency(totalPurchaseCost)}</strong>
-                    <p>Current ordered parts across the board.</p>
-                  </article>
-                  <article className="metric-card">
-                    <span className="metric-label">Parts Sales</span>
-                    <strong>{formatCurrency(totalPartsSales)}</strong>
-                    <p>Potential resale value of booked purchases.</p>
-                  </article>
-                  <article className="metric-card">
-                    <span className="metric-label">Service Jobs</span>
-                    <strong>{filteredMoneyflowRepairs.length}</strong>
-                    <p>Repairs opened inside the selected period.</p>
-                  </article>
-                  <article className="metric-card">
-                    <span className="metric-label">Total Service Sales</span>
-                    <strong>{formatCurrency(totalServiceSales)}</strong>
-                    <p>Estimated labour sales across selected repairs.</p>
-                  </article>
-                  <article className="metric-card">
-                    <span className="metric-label">Total Revenue</span>
-                    <strong>{formatCurrency(totalMoneyflowRevenue)}</strong>
-                    <p>Parts sales plus service sales in one view.</p>
-                  </article>
-                  <article className="metric-card">
-                    <span className="metric-label">Projected Margin</span>
-                    <strong>{formatCurrency(projectedMargin)}</strong>
-                    <p>Spread between buy and sell values for parts.</p>
-                  </article>
-                </div>
-
-                <section className="panel dashboard-mini-panel">
-                  <div className="panel-header">
+                <section className="dashboard-report-section">
+                  <div className="dashboard-report-head">
                     <div>
-                      <p className="eyebrow">Procurement Pulse</p>
-                      <h3>Latest Purchase Entries</h3>
+                      <p className="eyebrow">Service Sales</p>
+                      <h3>Service Results</h3>
                     </div>
-                    <button type="button" className="button button-secondary" onClick={() => onSelectSection("purchases")}>
-                      Open Purchases
-                    </button>
                   </div>
 
-                  <div className="dashboard-inline-list">
-                    {recentPurchases.length === 0 ? <p className="workspace-note">No purchase entries inside this period.</p> : null}
-                    {recentPurchases.map((entry) => (
-                      <article className="dashboard-inline-card" key={entry.id}>
-                        <div>
-                          <h4>{entry.part_name}</h4>
-                          <p>{entry.supplier_name}</p>
-                          {entry.vehicle_label ? <p>{entry.vehicle_label}</p> : null}
-                        </div>
-                        <div className="dashboard-inline-meta">
-                          <span>{formatCurrency(entry.purchase_price * entry.quantity)}</span>
-                          <p>Ordered {formatDisplayDate(entry.order_date)}</p>
-                          {entry.approximate_delivery_date ? (
-                            <p>Approx. delivery {formatDisplayDate(entry.approximate_delivery_date)}</p>
-                          ) : null}
-                        </div>
-                      </article>
-                    ))}
+                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-single">
+                    <article className="metric-card">
+                      <span className="metric-label">Total Service Sales</span>
+                      <strong>{formatCurrency(totalServiceSales)}</strong>
+                      <p>Total amount sold from services inside the selected period.</p>
+                    </article>
+                  </div>
+                </section>
+
+                <section className="dashboard-report-section">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">Parts Sales</p>
+                      <h3>Parts Results</h3>
+                    </div>
+                  </div>
+
+                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
+                    <article className="metric-card">
+                      <span className="metric-label">Purchase Spend</span>
+                      <strong>{formatCurrency(totalPurchaseCost)}</strong>
+                      <p>Total amount spent on ordered parts inside the selected period.</p>
+                    </article>
+                    <article className="metric-card">
+                      <span className="metric-label">Parts Sales</span>
+                      <strong>{formatCurrency(totalPartsSales)}</strong>
+                      <p>Total resale value of booked parts inside the selected period.</p>
+                    </article>
+                    <article className="metric-card">
+                      <span className="metric-label">Total Margin</span>
+                      <strong>{formatCurrency(projectedMargin)}</strong>
+                      <p>Difference between parts purchase spend and parts sales.</p>
+                    </article>
                   </div>
                 </section>
               </div>
@@ -1949,20 +2270,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                     <label>
                       <span>Last Service Date</span>
-                      <input
+                      <FriendlyDateInput
                         value={vehicleForm.last_service_date}
-                        onChange={(event) => setVehicleForm((current) => ({ ...current, last_service_date: event.target.value }))}
-                        type="date"
+                        onChange={(nextValue) => setVehicleForm((current) => ({ ...current, last_service_date: nextValue }))}
                       />
                     </label>
                   </div>
 
                   <label>
                     <span>Date Added</span>
-                    <input
+                    <FriendlyDateInput
                       value={vehicleForm.added_date}
-                      onChange={(event) => setVehicleForm((current) => ({ ...current, added_date: event.target.value }))}
-                      type="date"
+                      onChange={(nextValue) => setVehicleForm((current) => ({ ...current, added_date: nextValue }))}
                     />
                     <small className="field-hint">Defaults to today on this device, but you can change it.</small>
                   </label>
@@ -2043,6 +2362,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onFilterChange={setMobileRepairStatusFilter}
             onOpenRepair={openRepairModal}
             onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
+            repairPartSummaries={repairPartSummaries}
           />
 
           <StaffRepairsKanban
@@ -2056,6 +2376,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onColumnDrop={handleColumnDrop}
             onOpenRepair={openRepairModal}
             onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
+            repairPartSummaries={repairPartSummaries}
           />
         </div>
 
@@ -2251,7 +2572,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       key={status}
                       type="button"
                       className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
-                      onClick={() => setRepairModalStatus(status)}
+                      onClick={() => {
+                        setRepairModalStatus(status);
+                        if (status === "completed") {
+                          setRepairModalCompletedAt((current) => current || selectedRepair.completed_at || getLocalTodayDate());
+                        }
+                      }}
                     >
                       <span className="status-btn-dot" />
                       {label}
@@ -2260,10 +2586,31 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
               </div>
 
+              {repairModalStatus === "completed" ? (
+                <label className="detail-card repair-status-field repair-modal-panel">
+                  <span>Completed Date</span>
+                  <FriendlyDateInput
+                    value={repairModalCompletedAt}
+                    onChange={setRepairModalCompletedAt}
+                    required
+                  />
+                </label>
+              ) : null}
+
               <div className="customer-detail-stack repair-modal-sections">
                 <div className="detail-card repair-info-card">
                   <strong>Repair Info</strong>
                   <div className="repair-info-stack">
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Created</span>
+                      <p>{formatDisplayDate(selectedRepair.created_at)}</p>
+                    </div>
+                    {selectedRepair.status === "completed" && selectedRepair.completed_at ? (
+                      <div className="repair-info-row">
+                        <span className="repair-info-label">Completed</span>
+                        <p>{formatDisplayDate(selectedRepair.completed_at)}</p>
+                      </div>
+                    ) : null}
                     <div className="repair-info-row">
                       <span className="repair-info-label">Owner</span>
                       <p>{selectedRepair.owner_name}</p>
@@ -2291,6 +2638,26 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <p className="repair-info-issue">{selectedRepair.issue_notes}</p>
                     </div>
                   </div>
+                </div>
+
+                <div className="detail-card repair-modal-panel">
+                  <strong>Linked Parts</strong>
+                  {selectedRepairPurchases.length === 0 ? (
+                    <p className="workspace-note">No ordered parts linked to this repair yet.</p>
+                  ) : (
+                    <div className="detail-list">
+                      {selectedRepairPurchases.map((entry) => (
+                        <article className="detail-item" key={entry.id}>
+                          <h4>{entry.part_name}</h4>
+                          <p>{entry.supplier_name}</p>
+                          <p className="meta-line">
+                            Qty {entry.quantity} • Buy {formatCurrency(entry.purchase_price)} • Sell {formatCurrency(entry.sale_price)}
+                          </p>
+                          <p className="meta-line">Ordered {formatDisplayDate(entry.order_date)}</p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <label className="detail-card repair-status-field repair-modal-panel">
@@ -2522,23 +2889,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <div className="form-grid">
                       <label>
                         <span>Order Date</span>
-                        <input
+                        <FriendlyDateInput
                           value={purchaseModalForm.order_date}
-                          onChange={(event) =>
-                            setPurchaseModalForm((current) => ({ ...current, order_date: event.target.value }))
+                          onChange={(nextValue) =>
+                            setPurchaseModalForm((current) => ({ ...current, order_date: nextValue }))
                           }
-                          type="date"
                         />
                       </label>
 
                       <label>
                         <span>Approximate Delivery Date</span>
-                        <input
+                        <FriendlyDateInput
                           value={purchaseModalForm.approximate_delivery_date}
-                          onChange={(event) =>
-                            setPurchaseModalForm((current) => ({ ...current, approximate_delivery_date: event.target.value }))
+                          onChange={(nextValue) =>
+                            setPurchaseModalForm((current) => ({ ...current, approximate_delivery_date: nextValue }))
                           }
-                          type="date"
                         />
                       </label>
 
@@ -2594,13 +2959,41 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <select
                         value={purchaseModalForm.vehicle_id}
                         onChange={(event) =>
-                          setPurchaseModalForm((current) => ({ ...current, vehicle_id: event.target.value }))
+                          setPurchaseModalForm((current) => ({
+                            ...current,
+                            vehicle_id: event.target.value,
+                            repair_code: "",
+                          }))
                         }
                       >
                         <option value="">Optional</option>
                         {vehicles.map((vehicle) => (
                           <option key={vehicle.id} value={vehicle.id}>
                             {vehicle.license_plate} • {vehicle.make} {vehicle.model}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Linked Repair</span>
+                      <select
+                        value={purchaseModalForm.repair_code}
+                        onChange={(event) =>
+                          setPurchaseModalForm((current) => {
+                            const linkedRepair = repairs.find((repair) => repair.tracking_code === event.target.value);
+                            return {
+                              ...current,
+                              repair_code: event.target.value,
+                              vehicle_id: linkedRepair ? String(linkedRepair.vehicle_id) : current.vehicle_id,
+                            };
+                          })
+                        }
+                      >
+                        <option value="">Optional</option>
+                        {purchaseModalRepairOptions.map((repair) => (
+                          <option key={repair.id} value={repair.tracking_code}>
+                            {repair.tracking_code} • {repair.vehicle_label}
                           </option>
                         ))}
                       </select>
@@ -2742,24 +3135,22 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 <div className="form-grid">
                   <label>
                     <span>Order Date</span>
-                    <input
+                    <FriendlyDateInput
                       value={purchaseForm.order_date}
-                      onChange={(event) =>
-                        setPurchaseForm((current) => ({ ...current, order_date: event.target.value }))
+                      onChange={(nextValue) =>
+                        setPurchaseForm((current) => ({ ...current, order_date: nextValue }))
                       }
-                      type="date"
                       required
                     />
                   </label>
 
                   <label>
                     <span>Approximate Delivery Date</span>
-                    <input
+                    <FriendlyDateInput
                       value={purchaseForm.approximate_delivery_date}
-                      onChange={(event) =>
-                        setPurchaseForm((current) => ({ ...current, approximate_delivery_date: event.target.value }))
+                      onChange={(nextValue) =>
+                        setPurchaseForm((current) => ({ ...current, approximate_delivery_date: nextValue }))
                       }
-                      type="date"
                     />
                   </label>
 
@@ -2816,12 +3207,42 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <span>Vehicle</span>
                   <select
                     value={purchaseForm.vehicle_id}
-                    onChange={(event) => setPurchaseForm((current) => ({ ...current, vehicle_id: event.target.value }))}
+                    onChange={(event) =>
+                      setPurchaseForm((current) => ({
+                        ...current,
+                        vehicle_id: event.target.value,
+                        repair_code: "",
+                      }))
+                    }
                   >
                     <option value="">Optional</option>
                     {vehicles.map((vehicle) => (
                       <option key={vehicle.id} value={vehicle.id}>
                         {vehicle.license_plate} • {vehicle.make} {vehicle.model}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span>Linked Repair</span>
+                  <select
+                    value={purchaseForm.repair_code}
+                    onChange={(event) =>
+                      setPurchaseForm((current) => {
+                        const linkedRepair = repairs.find((repair) => repair.tracking_code === event.target.value);
+                        return {
+                          ...current,
+                          repair_code: event.target.value,
+                          vehicle_id: linkedRepair ? String(linkedRepair.vehicle_id) : current.vehicle_id,
+                        };
+                      })
+                    }
+                  >
+                    <option value="">Optional</option>
+                    {purchaseCreateRepairOptions.map((repair) => (
+                      <option key={repair.id} value={repair.tracking_code}>
+                        {repair.tracking_code} • {repair.vehicle_label}
                       </option>
                     ))}
                   </select>

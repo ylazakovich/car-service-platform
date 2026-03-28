@@ -24,6 +24,7 @@ class Repair(models.Model):
     issue_notes = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
     tracking_code = models.CharField(max_length=20, unique=True, blank=True)
+    completed_at = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -35,6 +36,18 @@ class Repair(models.Model):
         return f"{self.tracking_code} — {self.service_name}"
 
     def save(self, *args, **kwargs):
+        if self.status != self.Status.COMPLETED:
+            self.completed_at = None
+        elif self.completed_at is None:
+            previous = None
+            if self.pk:
+                previous = Repair.objects.filter(pk=self.pk).values("status", "completed_at").first()
+
+            if previous and previous["completed_at"] is not None:
+                self.completed_at = previous["completed_at"]
+            else:
+                self.completed_at = timezone.localdate()
+
         super().save(*args, **kwargs)
         if not self.tracking_code:
             self.tracking_code = f"TOR-{self.pk:04d}"

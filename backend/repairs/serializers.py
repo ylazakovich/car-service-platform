@@ -44,6 +44,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "issue_notes",
             "status",
             "tracking_code",
+            "completed_at",
             "repair_notes",
             "before_photos",
             "during_photos",
