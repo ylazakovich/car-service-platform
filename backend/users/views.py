@@ -58,6 +58,7 @@ class LoginView(APIView):
 
         cache.delete(cache_key)
         login(request, user)
+        request.session.set_expiry(settings.SESSION_COOKIE_AGE)
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
 

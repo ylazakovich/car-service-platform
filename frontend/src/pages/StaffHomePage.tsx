@@ -1247,7 +1247,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <div>
                           <h4>{entry.part_name}</h4>
                           <p>{entry.supplier_name}</p>
-                          <p>Tracking {entry.repair_code}</p>
+                          {entry.vehicle_label ? <p>{entry.vehicle_label}</p> : null}
                         </div>
                         <div className="dashboard-inline-meta">
                           <span>{formatCurrency(entry.purchase_price * entry.quantity)}</span>
@@ -2444,7 +2444,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <h4 className="purchase-card-name">{entry.part_name}</h4>
                       <p className="purchase-card-supplier">{entry.supplier_name}</p>
                       <div className="purchase-card-chips">
-                        {entry.repair_code ? <span className="tag">{entry.repair_code}</span> : null}
                         {entry.vehicle_label ? <span className="purchase-chip-muted">{entry.vehicle_label}</span> : null}
                         {entry.invoice_url ? (
                           <button
@@ -2620,18 +2619,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           step="1"
                         />
                       </label>
-
-                      <label>
-                        <span>Tracking</span>
-                        <input
-                          value={purchaseModalForm.repair_code}
-                          onChange={(event) =>
-                            setPurchaseModalForm((current) => ({ ...current, repair_code: event.target.value }))
-                          }
-                          type="text"
-                          placeholder="TOR-0000"
-                        />
-                      </label>
                     </div>
 
                     <div className="form-grid">
@@ -2671,11 +2658,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <div className="invoice-panel">
                     <div className="invoice-summary">
                       <div className="invoice-copy">
-                        <span className="invoice-label">Supplier Document</span>
-                        <p className="invoice-file-name">{purchaseModalInvoiceName || "No invoice attached yet"}</p>
+                        {purchaseModalInvoiceUrl ? (
+                          <button
+                            type="button"
+                            className="invoice-file-trigger"
+                            onClick={() => handleOpenInvoice(purchaseModalInvoiceUrl)}
+                          >
+                            {purchaseModalInvoiceName || "No invoice attached yet"}
+                          </button>
+                        ) : (
+                          <p className="invoice-file-name">{purchaseModalInvoiceName || "No invoice attached yet"}</p>
+                        )}
                         <p className="invoice-file-note">
                           {purchaseModalInvoiceName
-                            ? "This file is linked to the purchase and can be opened, replaced or removed."
+                            ? "This file is linked to the purchase and can be replaced or deleted."
                             : "Attach a supplier invoice, scan or photo for this purchase."}
                         </p>
                       </div>
@@ -2698,26 +2694,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                     <div className="invoice-actions">
                       <label htmlFor="purchase-modal-invoice-input" className="purchase-inline-action purchase-inline-action-primary">
-                        {purchaseModalInvoiceName ? "Replace Invoice" : "Attach Invoice"}
+                        {purchaseModalInvoiceName ? "Replace Invoice" : "Add Invoice"}
                       </label>
 
                       {purchaseModalInvoiceUrl ? (
-                        <>
-                          <button
-                            type="button"
-                            className="purchase-inline-action"
-                            onClick={() => handleOpenInvoice(purchaseModalInvoiceUrl)}
-                          >
-                            Open Invoice
-                          </button>
-                          <button
-                            type="button"
-                            className="purchase-inline-action purchase-inline-action-danger"
-                            onClick={handlePurchaseModalInvoiceRemove}
-                          >
-                            Remove Invoice
-                          </button>
-                        </>
+                        <button
+                          type="button"
+                          className="purchase-inline-action purchase-inline-action-danger"
+                          onClick={handlePurchaseModalInvoiceRemove}
+                        >
+                          Delete Invoice
+                        </button>
                       ) : null}
                     </div>
                   </div>
@@ -2850,16 +2837,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       min="1"
                       step="1"
                       required
-                    />
-                  </label>
-
-                  <label>
-                    <span>Repair Code</span>
-                    <input
-                      value={purchaseForm.repair_code}
-                      onChange={(event) => setPurchaseForm((current) => ({ ...current, repair_code: event.target.value }))}
-                      type="text"
-                      placeholder="TOR-0000"
                     />
                   </label>
                 </div>

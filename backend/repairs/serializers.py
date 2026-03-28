@@ -22,7 +22,7 @@ class RepairSerializer(serializers.ModelSerializer):
     during_photos = serializers.SerializerMethodField()
     after_photos = serializers.SerializerMethodField()
     vehicle_id = serializers.PrimaryKeyRelatedField(
-        queryset=Vehicle.objects.all(), source="vehicle", write_only=True
+        queryset=Vehicle.objects.all(), source="vehicle"
     )
     master_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),

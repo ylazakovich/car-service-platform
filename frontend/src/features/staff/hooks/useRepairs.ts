@@ -45,7 +45,7 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
   return {
     id: item.id,
     created_at: item.created_at.slice(0, 10),
-    vehicle_id: 0,
+    vehicle_id: item.vehicle_id,
     vehicle_label: item.vehicle_label,
     owner_name: item.owner_name,
     master_id: item.master_id != null ? String(item.master_id) : "",

@@ -80,9 +80,7 @@ export async function deletePurchase(id: number): Promise<void> {
 export async function uploadInvoiceFile(file: File): Promise<{ url: string; name: string }> {
   const form = new FormData();
   form.append("file", file);
-  const response = await api.post<{ url: string; name: string }>("/uploads/invoice/", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post<{ url: string; name: string }>("/uploads/invoice/", form);
   return response.data;
 }
 
