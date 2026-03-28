@@ -142,6 +142,7 @@ class InviteCreateView(APIView):
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
+                fail_silently=False,
             )
         except Exception:
             logger.warning("Failed to send invite email to %s", user.email)
@@ -205,6 +206,7 @@ class ResetInviteView(APIView):
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
+                fail_silently=False,
             )
         except Exception:
             logger.warning("Failed to send password reset email to %s", user.email)

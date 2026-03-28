@@ -1,7 +1,7 @@
 import os
 import uuid
 
-from django.conf import settings
+from django.core.files.storage import default_storage
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -27,13 +27,6 @@ class InvoiceUploadView(APIView):
             return Response({"detail": "File too large (max 10 MB)."}, status=status.HTTP_400_BAD_REQUEST)
 
         filename = f"{uuid.uuid4().hex}{ext}"
-        upload_dir = os.path.join(settings.MEDIA_ROOT, "invoices")
-        os.makedirs(upload_dir, exist_ok=True)
-        file_path = os.path.join(upload_dir, filename)
-
-        with open(file_path, "wb") as dest:
-            for chunk in file.chunks():
-                dest.write(chunk)
-
-        url = f"{settings.MEDIA_URL}invoices/{filename}"
+        storage_path = default_storage.save(f"invoices/{filename}", file)
+        url = default_storage.url(storage_path)
         return Response({"url": url, "name": file.name}, status=status.HTTP_201_CREATED)

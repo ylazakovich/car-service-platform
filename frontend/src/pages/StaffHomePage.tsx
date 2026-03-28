@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
@@ -281,6 +281,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [resetLinkResult, setResetLinkResult] = useState<{ userId: number; url: string } | null>(null);
+  const deferredVehicleSearch = useDeferredValue(vehicleSearch);
 
   const customers = useMemo(() => [...serverCustomers, ...demoCustomers], [serverCustomers, demoCustomers]);
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
@@ -443,11 +444,14 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadSectionVehicles(vehicleSearch, 1, false);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [vehicleSearch]);
+    let ignore = false;
+
+    void loadSectionVehicles(deferredVehicleSearch, 1, false, () => ignore);
+
+    return () => {
+      ignore = true;
+    };
+  }, [deferredVehicleSearch]);
 
   useEffect(() => {
     if (activeSection === "users") {
@@ -556,12 +560,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
   }
 
-  async function loadSectionVehicles(q: string, page: number, append: boolean) {
+  async function loadSectionVehicles(q: string, page: number, append: boolean, shouldIgnore?: () => boolean) {
     if (page === 1) setSectionVehiclesLoading(true);
     try {
       const params = new URLSearchParams({ page_size: "50", page: String(page) });
       if (q.trim()) params.set("q", q.trim());
       const response = await api.get(`/vehicles/?${params.toString()}`);
+      if (shouldIgnore?.()) {
+        return;
+      }
       const data = response.data;
       const results: Vehicle[] = data.results ?? data;
       if (append) {
@@ -575,7 +582,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     } catch {
       // silent
     } finally {
-      setSectionVehiclesLoading(false);
+      if (!shouldIgnore?.()) {
+        setSectionVehiclesLoading(false);
+      }
     }
   }
 
