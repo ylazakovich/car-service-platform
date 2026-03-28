@@ -376,7 +376,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleColumnDragLeave,
     handleColumnDrop,
     handleCopyTrackingCode,
-  } = useRepairs(vehicles, staffUsers);
+  } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
   const repairServiceOptions = useMemo(
     () => [...apiServices.map((s) => s.name), customRepairServiceOption],
@@ -1618,7 +1618,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 type="search"
               />
             </label>
-            <button type="button" className="button" onClick={openVehicleCreateModal}>
+            <button type="button" className="button button-sm" onClick={openVehicleCreateModal}>
               + Add Vehicle
             </button>
           </div>
@@ -2030,7 +2030,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 type="search"
               />
             </label>
-            <button type="button" className="button" onClick={handleOpenRepairCreate}>
+            <button type="button" className="button button-sm" onClick={handleOpenRepairCreate}>
               + New Repair
             </button>
           </div>
