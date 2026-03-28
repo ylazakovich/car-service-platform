@@ -221,23 +221,38 @@ p  { margin: 0.4em 0 0; }
   padding: var(--s8) var(--s8) calc(var(--s8) + var(--s3));
 }
 
-/* Logo mark shared between login and sidebar */
-.login-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: var(--accent);
+/* Brand mark shared between login and sidebar */
+.brand-mark {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  color: #0d0d11;
+  background: linear-gradient(180deg, #d9e34e 0%, var(--accent) 100%);
+  border: 1px solid rgba(13, 13, 17, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.brand-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.brand-mark--auth {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   margin-bottom: var(--s5);
 }
 
-.login-logo span {
-  color: #0d0d11;
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+.brand-mark--compact {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
 }
 
 .login-header { display: grid; gap: var(--s1); }
@@ -502,24 +517,6 @@ textarea { resize: vertical; }
 .shell-sidebar-top { display: grid; gap: var(--s5); }
 
 .brand-block { display: flex; flex-direction: column; gap: var(--s2); }
-
-.brand-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.brand-logo span {
-  color: #0d0d11;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
 
 .brand-block h1 { font-size: 0.98rem; font-weight: 700; line-height: 1.3; margin: 0; }
 .shell-copy {
