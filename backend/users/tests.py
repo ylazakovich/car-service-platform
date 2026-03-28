@@ -241,3 +241,86 @@ class LoginRateLimitTests(TestCase):
 
         response = self._attempt_login("correctpass123")
         self.assertEqual(response.status_code, 200)
+
+
+class UserUpdateViewTests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=False)
+        self.admin_password = "adminpass123"
+        self.staff_password = "staffpass123"
+        self.admin = User.objects.create_user(
+            email="admin@update.local",
+            password=self.admin_password,
+            role="admin",
+            is_staff=True,
+        )
+        self.staff = User.objects.create_user(
+            email="staff@update.local",
+            password=self.staff_password,
+            role="staff",
+        )
+        self.other_staff = User.objects.create_user(
+            email="other@update.local",
+            password="otherpass123",
+            role="staff",
+        )
+
+    def _login(self, user, password):
+        self.client.post(
+            "/api/auth/login",
+            {"email": user.email, "password": password},
+            format="json",
+        )
+
+    def test_admin_can_update_any_user_name(self):
+        self._login(self.admin, self.admin_password)
+        response = self.client.patch(
+            f"/api/auth/users/{self.staff.id}/",
+            {"first_name": "Alice", "last_name": "Smith"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["first_name"], "Alice")
+        self.assertEqual(data["last_name"], "Smith")
+
+    def test_user_can_update_own_name(self):
+        self._login(self.staff, self.staff_password)
+        response = self.client.patch(
+            f"/api/auth/users/{self.staff.id}/",
+            {"first_name": "Bob", "last_name": "Jones"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["first_name"], "Bob")
+        self.assertEqual(data["last_name"], "Jones")
+
+    def test_staff_cannot_update_other_user_name(self):
+        self._login(self.staff, self.staff_password)
+        response = self.client.patch(
+            f"/api/auth/users/{self.other_staff.id}/",
+            {"first_name": "Hacker", "last_name": "Name"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_unauthenticated_cannot_update_name(self):
+        response = self.client.patch(
+            f"/api/auth/users/{self.staff.id}/",
+            {"first_name": "Anon", "last_name": "User"},
+            format="json",
+        )
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_update_trims_whitespace(self):
+        self._login(self.admin, self.admin_password)
+        response = self.client.patch(
+            f"/api/auth/users/{self.staff.id}/",
+            {"first_name": "  Carol  ", "last_name": "  White  "},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["first_name"], "Carol")
+        self.assertEqual(data["last_name"], "White")

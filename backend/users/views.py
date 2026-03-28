@@ -92,9 +92,11 @@ class UserListView(APIView):
 
 
 class UserUpdateView(APIView):
-    permission_classes = [IsAdminUser]
-
     def patch(self, request, pk):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        if not (request.user.is_staff or request.user.pk == pk):
+            return Response(status=status.HTTP_403_FORBIDDEN)
         try:
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:

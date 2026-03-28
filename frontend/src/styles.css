@@ -606,8 +606,39 @@ textarea { resize: vertical; }
 
 .shell-user-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--s3);
+}
+
+.shell-user-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-edit-trigger {
+  display: block;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  text-align: left;
+  margin-top: 2px;
+}
+
+.profile-edit-trigger:hover { color: var(--accent); }
+
+.profile-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.profile-edit-actions {
+  display: flex;
+  gap: 4px;
 }
 
 .user-avatar {
