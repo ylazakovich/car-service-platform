@@ -76,3 +76,12 @@ export async function updatePurchase(id: number, data: Partial<PurchaseWritePayl
 export async function deletePurchase(id: number): Promise<void> {
   await api.delete(`/purchases/${id}`);
 }
+
+export async function uploadInvoiceFile(file: File): Promise<{ url: string; name: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await api.post<{ url: string; name: string }>("/uploads/invoice/", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}

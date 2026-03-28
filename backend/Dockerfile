@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
 COPY --chown=appuser:appuser . .
-RUN mkdir -p /app/staticfiles && chown -R appuser:appuser /app
+RUN mkdir -p /app/staticfiles /app/media && chown -R appuser:appuser /app
 
 ARG GIT_COMMIT=unknown
 ENV GIT_COMMIT=${GIT_COMMIT}

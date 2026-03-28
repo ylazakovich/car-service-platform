@@ -62,6 +62,8 @@ services:
       options:
         max-size: "25m"
         max-file: "3"
+    volumes:
+      - media_data:/app/media
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\""]
       interval: 30s
@@ -91,3 +93,4 @@ services:
 
 volumes:
   pgdata:
+  media_data:
