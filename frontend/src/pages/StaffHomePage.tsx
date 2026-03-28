@@ -318,6 +318,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     purchaseHasMore,
     purchaseLoadingMore,
     loadMorePurchases,
+    createSupplierSuggestions,
+    modalSupplierSuggestions,
+    showCreateSuggestions,
+    setShowCreateSuggestions,
+    showModalSuggestions,
+    setShowModalSuggestions,
+    handleCreateSupplierInput,
+    handleCreateSupplierSelect,
+    handleModalSupplierInput,
+    handleModalSupplierSelect,
   } = usePurchases(vehicles);
 
   const {
@@ -2526,17 +2536,29 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                       <label>
                         <span>Supplier</span>
-                        <input
-                          value={purchaseModalForm.supplier_name}
-                          onChange={(event) =>
-                            setPurchaseModalForm((current) => ({ ...current, supplier_name: event.target.value }))
-                          }
-                          type="text"
-                        />
+                        <div className="autocomplete-wrapper">
+                          <input
+                            value={purchaseModalForm.supplier_name}
+                            onChange={(event) => handleModalSupplierInput(event.target.value)}
+                            onFocus={() => setShowModalSuggestions(true)}
+                            onBlur={() => setTimeout(() => setShowModalSuggestions(false), 150)}
+                            type="text"
+                          />
+                          {modalSupplierSuggestions.length > 0 && (
+                            <ul className="autocomplete-dropdown">
+                              {modalSupplierSuggestions.map((s) => (
+                                <li key={s.id} onMouseDown={() => handleModalSupplierSelect(s)}>
+                                  <span>{s.name}</span>
+                                  {s.nip && <span className="autocomplete-nip">{s.nip}</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </label>
 
                       <label>
-                        <span>Supplier NIP</span>
+                        <span>NIP</span>
                         <input
                           value={purchaseModalForm.supplier_nip}
                           onChange={(event) =>
@@ -2747,19 +2769,31 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                   <label>
                     <span>Supplier</span>
-                    <input
-                      value={purchaseForm.supplier_name}
-                      onChange={(event) =>
-                        setPurchaseForm((current) => ({ ...current, supplier_name: event.target.value }))
-                      }
-                      type="text"
-                      placeholder="Supplier name"
-                      required
-                    />
+                    <div className="autocomplete-wrapper">
+                      <input
+                        value={purchaseForm.supplier_name}
+                        onChange={(event) => handleCreateSupplierInput(event.target.value)}
+                        onFocus={() => setShowCreateSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowCreateSuggestions(false), 150)}
+                        type="text"
+                        placeholder="Supplier name"
+                        required
+                      />
+                      {createSupplierSuggestions.length > 0 && (
+                        <ul className="autocomplete-dropdown">
+                          {createSupplierSuggestions.map((s) => (
+                            <li key={s.id} onMouseDown={() => handleCreateSupplierSelect(s)}>
+                              <span>{s.name}</span>
+                              {s.nip && <span className="autocomplete-nip">{s.nip}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </label>
 
                   <label>
-                    <span>Supplier NIP</span>
+                    <span>NIP</span>
                     <input
                       value={purchaseForm.supplier_nip}
                       onChange={(event) =>

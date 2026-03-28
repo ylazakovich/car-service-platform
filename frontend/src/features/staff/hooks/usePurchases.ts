@@ -4,10 +4,12 @@ import type { Vehicle } from "../shared/vehicles";
 import {
   createPurchase,
   fetchPurchases,
+  fetchSuppliers,
   updatePurchase,
   uploadInvoiceFile,
   type PurchaseItem,
   type PurchaseWritePayload,
+  type SupplierItem,
 } from "../../../api/purchases";
 
 export type PurchaseEntry = {
@@ -91,7 +93,15 @@ export function usePurchases(vehicles: Vehicle[]) {
   const [purchaseModalInvoiceName, setPurchaseModalInvoiceName] = useState("");
   const [purchaseModalInvoiceUrl, setPurchaseModalInvoiceUrl] = useState("");
 
+  const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
+  const [showCreateSuggestions, setShowCreateSuggestions] = useState(false);
+  const [showModalSuggestions, setShowModalSuggestions] = useState(false);
+
   const selectedPurchase = purchases.find((entry) => entry.id === selectedPurchaseId) ?? null;
+
+  useEffect(() => {
+    fetchSuppliers().then(setSuppliers).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -274,6 +284,40 @@ export function usePurchases(vehicles: Vehicle[]) {
     window.open(invoiceUrl, "_blank", "noopener,noreferrer");
   }
 
+  const createSupplierSuggestions: SupplierItem[] =
+    showCreateSuggestions && purchaseForm.supplier_name.length >= 1
+      ? suppliers
+          .filter((s) => s.name.toLowerCase().includes(purchaseForm.supplier_name.toLowerCase()))
+          .slice(0, 8)
+      : [];
+
+  const modalSupplierSuggestions: SupplierItem[] =
+    showModalSuggestions && purchaseModalForm.supplier_name.length >= 1
+      ? suppliers
+          .filter((s) => s.name.toLowerCase().includes(purchaseModalForm.supplier_name.toLowerCase()))
+          .slice(0, 8)
+      : [];
+
+  function handleCreateSupplierInput(value: string) {
+    setPurchaseForm((current) => ({ ...current, supplier_name: value }));
+    setShowCreateSuggestions(true);
+  }
+
+  function handleCreateSupplierSelect(supplier: SupplierItem) {
+    setPurchaseForm((current) => ({ ...current, supplier_name: supplier.name, supplier_nip: supplier.nip }));
+    setShowCreateSuggestions(false);
+  }
+
+  function handleModalSupplierInput(value: string) {
+    setPurchaseModalForm((current) => ({ ...current, supplier_name: value }));
+    setShowModalSuggestions(true);
+  }
+
+  function handleModalSupplierSelect(supplier: SupplierItem) {
+    setPurchaseModalForm((current) => ({ ...current, supplier_name: supplier.name, supplier_nip: supplier.nip }));
+    setShowModalSuggestions(false);
+  }
+
   async function handlePurchaseModalSave() {
     if (!selectedPurchase) {
       return;
@@ -359,5 +403,15 @@ export function usePurchases(vehicles: Vehicle[]) {
     handlePurchaseModalInvoiceChange,
     handlePurchaseModalInvoiceRemove,
     handleOpenInvoice,
+    createSupplierSuggestions,
+    modalSupplierSuggestions,
+    showCreateSuggestions,
+    setShowCreateSuggestions,
+    showModalSuggestions,
+    setShowModalSuggestions,
+    handleCreateSupplierInput,
+    handleCreateSupplierSelect,
+    handleModalSupplierInput,
+    handleModalSupplierSelect,
   };
 }
