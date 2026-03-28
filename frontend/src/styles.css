@@ -236,10 +236,18 @@ p  { margin: 0.4em 0 0; }
     0 12px 28px rgba(0, 0, 0, 0.18);
 }
 
-.brand-mark svg {
+.brand-mark svg,
+.brand-mark img {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.brand-mark__text {
+  color: #0d0d11;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 .brand-mark--auth {
@@ -249,11 +257,15 @@ p  { margin: 0.4em 0 0; }
   margin-bottom: var(--s5);
 }
 
+.brand-mark--auth .brand-mark__text { font-size: 1.1rem; }
+
 .brand-mark--compact {
   width: 38px;
   height: 38px;
   border-radius: 10px;
 }
+
+.brand-mark--compact .brand-mark__text { font-size: 0.75rem; }
 
 .login-header { display: grid; gap: var(--s1); }
 .login-card h1 { font-size: 1.5rem; margin-top: var(--s1); }
