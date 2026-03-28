@@ -5,6 +5,7 @@ import {
   createPurchase,
   fetchPurchases,
   updatePurchase,
+  uploadInvoiceFile,
   type PurchaseItem,
   type PurchaseWritePayload,
 } from "../../../api/purchases";
@@ -223,7 +224,7 @@ export function usePurchases(vehicles: Vehicle[]) {
     }
   }
 
-  function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
       setPurchaseInvoiceName("");
@@ -231,18 +232,28 @@ export function usePurchases(vehicles: Vehicle[]) {
       return;
     }
 
-    setPurchaseInvoiceName(file.name);
-    setPurchaseInvoiceUrl(URL.createObjectURL(file));
+    try {
+      const result = await uploadInvoiceFile(file);
+      setPurchaseInvoiceName(result.name);
+      setPurchaseInvoiceUrl(result.url);
+    } catch {
+      setPurchaseError("Failed to upload invoice file.");
+    }
   }
 
-  function handlePurchaseModalInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handlePurchaseModalInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
 
-    setPurchaseModalInvoiceName(file.name);
-    setPurchaseModalInvoiceUrl(URL.createObjectURL(file));
+    try {
+      const result = await uploadInvoiceFile(file);
+      setPurchaseModalInvoiceName(result.name);
+      setPurchaseModalInvoiceUrl(result.url);
+    } catch {
+      setPurchaseModalError("Failed to upload invoice file.");
+    }
   }
 
   function handlePurchaseModalInvoiceRemove() {

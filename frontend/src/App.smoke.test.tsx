@@ -80,12 +80,12 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
-      if (url === "/customers/") {
+      if (url.startsWith("/customers/")) {
         return Promise.resolve({
           data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
         });
       }
-      if (url === "/vehicles/") {
+      if (url.startsWith("/vehicles/")) {
         return Promise.resolve({
           data: [
             {
@@ -105,30 +105,39 @@ describe("bootstrap application", () => {
       }
       if (url === "/purchases/") {
         return Promise.resolve({
-          data: [
-            {
-              id: 2,
-              order_date: "2025-04-05",
-              approximate_delivery_date: null,
-              supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
-              part_name: "Brake Pad Set",
-              quantity: 2,
-              purchase_price: "85.00",
-              sale_price: "120.00",
-              repair_code: "",
-              vehicle: null,
-              invoice_name: "",
-              invoice_url: "",
-              created_at: "2025-04-05T10:00:00Z",
-              updated_at: "2025-04-05T10:00:00Z",
-            },
-          ],
+          data: {
+            results: [
+              {
+                id: 2,
+                order_date: "2025-04-05",
+                approximate_delivery_date: null,
+                supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
+                vehicle_license_plate: "",
+                part_name: "Brake Pad Set",
+                quantity: 2,
+                purchase_price: "85.00",
+                sale_price: "120.00",
+                repair_code: "",
+                vehicle: null,
+                invoice_name: "",
+                invoice_url: "",
+                created_at: "2025-04-05T10:00:00Z",
+                updated_at: "2025-04-05T10:00:00Z",
+              },
+            ],
+            count: 1,
+          },
         });
       }
       return Promise.resolve({ data: [] });
     });
-    mockApi.post.mockResolvedValue({
-      data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+    mockApi.post.mockImplementation((url: string) => {
+      if (url === "/uploads/invoice/") {
+        return Promise.resolve({ data: { url: "blob:test-invoice", name: "invoice.pdf" } });
+      }
+      return Promise.resolve({
+        data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+      });
     });
     mockApi.patch.mockResolvedValue({ data: {} });
     mockApi.delete.mockResolvedValue({ data: {} });
@@ -145,13 +154,13 @@ describe("bootstrap application", () => {
     expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
-    expect(await screen.findByRole("heading", { name: "WB 1234K", level: 4 })).toBeInTheDocument();
+    expect((await screen.findAllByText("WB 1234K"))[0]).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     expect(await screen.findByRole("heading", { name: "Kanban Board", level: 2 })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Purchases" }));
-    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 3 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Users" })).toBeInTheDocument();
   });
@@ -171,7 +180,7 @@ describe("bootstrap application", () => {
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
-    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 3 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
   });
 
   it("opens detail dialogs for customer and vehicle cards", async () => {
@@ -181,7 +190,7 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
 
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
-    await user.click(await screen.findByRole("heading", { name: "WB 1234K", level: 4 }));
+    await user.click((await screen.findAllByText("WB 1234K"))[0]);
     expect(await screen.findByRole("button", { name: "Edit Vehicle" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
     expect(screen.getByText("Date Added: 04-11-2024")).toBeInTheDocument();
@@ -193,7 +202,7 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
-    await user.click(await screen.findByRole("button", { name: "Add New Vehicle" }));
+    await user.click(await screen.findByRole("button", { name: "+ Add Vehicle" }));
 
     const expectedDate = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
     expect(await screen.findByDisplayValue(expectedDate)).toBeInTheDocument();
