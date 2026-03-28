@@ -128,6 +128,17 @@ p  { margin: 0.4em 0 0; }
 
 .button:disabled { cursor: wait; opacity: 0.45; }
 
+.button-sm {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+.kanban-topbar .button,
+.workspace-topbar .button {
+  padding: 0.5rem 0.95rem;
+  font-size: 0.82rem;
+}
+
 .button-secondary {
   display: inline-flex;
   align-items: center;
