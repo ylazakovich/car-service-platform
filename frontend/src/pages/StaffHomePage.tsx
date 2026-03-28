@@ -1029,9 +1029,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   ];
 
   function formatCurrency(value: number) {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("pl-PL", {
       style: "currency",
-      currency: "USD",
+      currency: "PLN",
       maximumFractionDigits: 2,
     }).format(value);
   }
