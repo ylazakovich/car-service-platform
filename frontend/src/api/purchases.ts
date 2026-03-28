@@ -85,3 +85,10 @@ export async function uploadInvoiceFile(file: File): Promise<{ url: string; name
   });
   return response.data;
 }
+
+export async function fetchSuppliers(q?: string): Promise<SupplierItem[]> {
+  const params: Record<string, string> = {};
+  if (q) params.q = q;
+  const response = await api.get<SupplierItem[]>("/purchases/suppliers/", { params });
+  return response.data;
+}

@@ -52,6 +52,18 @@ class SupplierApiTests(TestCase):
         self.assertEqual(response.json()["name"], "Detail Supplier")
         self.assertEqual(response.json()["nip"], "9876543210")
 
+    def test_search_suppliers_by_name(self):
+        self.client.force_authenticate(self.user)
+        Supplier.objects.create(name="AutoParts Ltd")
+        Supplier.objects.create(name="SpeedSupply Co")
+
+        response = self.client.get("/api/purchases/suppliers/", {"q": "auto"})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["name"], "AutoParts Ltd")
+
 
 class PurchaseApiTests(TestCase):
     def setUp(self):
