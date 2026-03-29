@@ -5,4 +5,4 @@ django-cors-headers>=4.8,<5.0
 gunicorn>=25.3,<25.4
 psycopg[binary]>=3.3,<3.4
 whitenoise>=6.9,<7.0
-python-json-logger>=4,<4.1
+python-json-logger>=4,<4.2
