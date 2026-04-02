@@ -658,6 +658,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleColumnDragOver,
     handleColumnDragLeave,
     handleColumnDrop,
+    dragOverCardId,
+    handleCardDragOver,
+    handleCardDrop,
     handleCopyTrackingCode,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
@@ -1219,17 +1222,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   const visiblePurchases = purchases;
 
-  const visibleRepairs = useMemo(
-    () =>
-      repairs.filter((repair) => {
-        const haystack =
-          `${repair.created_at} ${repair.vehicle_label} ${repair.owner_name} ${repair.master_name} ${repair.service_name} ${repair.status} ${repair.tracking_code} ${repair.issue_notes} ${repair.repair_notes
-            .map((note) => `${note.author_name} ${note.text}`)
-            .join(" ")}`.toLowerCase();
-        return haystack.includes(repairSearch.trim().toLowerCase());
-      }),
-    [repairSearch, repairs]
-  );
+  const [repairDateFilter, setRepairDateFilter] = useState<"7d" | "30d" | "90d" | "all">("all");
+
+  const visibleRepairs = useMemo(() => {
+    const cutoffDays: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };
+    const cutoff = repairDateFilter !== "all"
+      ? new Date(Date.now() - cutoffDays[repairDateFilter] * 86_400_000)
+      : null;
+
+    return repairs.filter((repair) => {
+      if (cutoff && new Date(repair.created_at) < cutoff) return false;
+      const haystack =
+        `${repair.created_at} ${repair.vehicle_label} ${repair.owner_name} ${repair.master_name} ${repair.service_name} ${repair.status} ${repair.tracking_code} ${repair.issue_notes} ${repair.repair_notes
+          .map((note) => `${note.author_name} ${note.text}`)
+          .join(" ")}`.toLowerCase();
+      return haystack.includes(repairSearch.trim().toLowerCase());
+    });
+  }, [repairSearch, repairs, repairDateFilter]);
 
   const selectedRepairVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id) ?? null;
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
@@ -1355,7 +1364,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () =>
       staffUsers.map((master) => {
         const masterLabel = getStaffUserLabel(master);
-        const assignedRepairs = filteredServiceBoardRepairs.filter((repair) => repair.master_name === masterLabel);
+        const assignedRepairs = filteredServiceBoardRepairs.filter((repair) => Number(repair.master_id) === master.id);
         const liveRepairs = assignedRepairs.filter((repair) => repair.status !== "completed");
         return {
           id: master.id,
@@ -2033,6 +2042,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 />
 
                 <StaffVehicleDetailPanel
+                  vehicleId={selectedVehicle.id}
                   vehicle={selectedVehicle}
                   vehicleDetails={getVehicleDetails(selectedVehicle)}
                   owner={selectedVehicleOwner}
@@ -2341,6 +2351,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             <h2>Kanban Board</h2>
           </div>
           <div className="workspace-top-actions">
+            <div className="kanban-date-filter">
+              {(["7d", "30d", "90d", "all"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`kanban-date-chip${repairDateFilter === opt ? " active" : ""}`}
+                  onClick={() => setRepairDateFilter(opt)}
+                >
+                  {opt === "7d" ? "7 days" : opt === "30d" ? "30 days" : opt === "90d" ? "90 days" : "All time"}
+                </button>
+              ))}
+            </div>
             <label className="kanban-search">
               <input
                 value={repairSearch}
@@ -2374,6 +2396,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onColumnDragOver={handleColumnDragOver}
             onColumnDragLeave={handleColumnDragLeave}
             onColumnDrop={handleColumnDrop}
+            dragOverCardId={dragOverCardId}
+            onCardDragOver={handleCardDragOver}
+            onCardDrop={handleCardDrop}
             onOpenRepair={openRepairModal}
             onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
             repairPartSummaries={repairPartSummaries}

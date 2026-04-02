@@ -28,6 +28,7 @@ export type RepairEntry = {
   before_photos: string[];
   during_photos: string[];
   after_photos: string[];
+  position: number | null;
 };
 
 export type RepairPartsSummary = {

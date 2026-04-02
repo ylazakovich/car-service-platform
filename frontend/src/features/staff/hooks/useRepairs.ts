@@ -7,6 +7,7 @@ import {
   deleteRepair as deleteRepairApi,
   deleteRepairNote,
   fetchRepairs,
+  reorderRepairs,
   updateRepair,
   type RepairItem,
   type RepairWritePayload,
@@ -66,6 +67,7 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
     before_photos: item.before_photos,
     during_photos: item.during_photos,
     after_photos: item.after_photos,
+    position: item.position ?? null,
   };
 }
 
@@ -109,6 +111,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [repairAfterPhotos, setRepairAfterPhotos] = useState<string[]>([]);
   const [draggingRepairId, setDraggingRepairId] = useState<number | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<RepairStatus | null>(null);
+  const [dragOverCardId, setDragOverCardId] = useState<number | null>(null);
   const [copyToast, setCopyToast] = useState("");
 
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
@@ -340,6 +343,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   function handleCardDragEnd() {
     setDraggingRepairId(null);
     setDragOverColumn(null);
+    setDragOverCardId(null);
   }
 
   function handleColumnDragOver(status: RepairStatus, event: React.DragEvent) {
@@ -352,6 +356,62 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     if (!event.currentTarget.contains(event.relatedTarget as Node)) {
       setDragOverColumn(null);
     }
+  }
+
+  function handleCardDragOver(repairId: number, event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverCardId(repairId);
+  }
+
+  function handleCardDrop(targetRepairId: number, targetStatus: RepairStatus, event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    const draggedId = Number(event.dataTransfer.getData("repair-id"));
+    if (!draggedId || draggedId === targetRepairId) {
+      setDraggingRepairId(null);
+      setDragOverColumn(null);
+      setDragOverCardId(null);
+      return;
+    }
+
+    const dragged = repairs.find((r) => r.id === draggedId);
+    if (!dragged) return;
+
+    if (dragged.status === targetStatus) {
+      setRepairs((current) => {
+        const col = current.filter((r) => r.status === targetStatus);
+        const rest = current.filter((r) => r.status !== targetStatus);
+        const without = col.filter((r) => r.id !== draggedId);
+        const targetIdx = without.findIndex((r) => r.id === targetRepairId);
+        const insertIdx = targetIdx === -1 ? without.length : targetIdx;
+        const reordered = [...without.slice(0, insertIdx), col.find((r) => r.id === draggedId)!, ...without.slice(insertIdx)];
+        const withPositions = reordered.map((r, i) => ({ ...r, position: i }));
+        reorderRepairs(withPositions.map((r) => ({ id: r.id, position: r.position! }))).catch(() => {});
+        return [...rest, ...withPositions];
+      });
+    } else {
+      const fallbackCompletedAt = targetStatus === "completed" ? getLocalTodayDate() : "";
+      setRepairs((current) =>
+        current.map((r) =>
+          r.id === draggedId
+            ? { ...r, status: targetStatus, completed_at: targetStatus === "completed" ? r.completed_at || fallbackCompletedAt : "" }
+            : r
+        )
+      );
+      updateRepair(draggedId, { status: targetStatus, completed_at: targetStatus === "completed" ? fallbackCompletedAt : null })
+        .then((updated) => {
+          setRepairs((current) => current.map((r) => (r.id === draggedId ? mapApiRepairToEntry(updated) : r)));
+        })
+        .catch(() => {
+          fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry)));
+        });
+    }
+
+    setDraggingRepairId(null);
+    setDragOverColumn(null);
+    setDragOverCardId(null);
   }
 
   function handleColumnDrop(status: RepairStatus, event: React.DragEvent) {
@@ -411,6 +471,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     repairAfterPhotos,
     draggingRepairId,
     dragOverColumn,
+    dragOverCardId,
     copyToast,
     resetRepairForm,
     closeRepairModal,
@@ -428,6 +489,8 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     handleRepairAfterPhotosChange,
     handleCardDragStart,
     handleCardDragEnd,
+    handleCardDragOver,
+    handleCardDrop,
     handleColumnDragOver,
     handleColumnDragLeave,
     handleColumnDrop,

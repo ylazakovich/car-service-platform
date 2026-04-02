@@ -1,6 +1,7 @@
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -64,3 +65,18 @@ class RepairNoteDeleteView(APIView):
             raise PermissionDenied
         note.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RepairReorderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        items = request.data
+        if not isinstance(items, list):
+            return Response({"error": "Expected a list"}, status=400)
+        for item in items:
+            repair_id = item.get("id")
+            position = item.get("position")
+            if repair_id is not None and position is not None:
+                Repair.objects.filter(id=repair_id).update(position=position)
+        return Response({"status": "ok"})

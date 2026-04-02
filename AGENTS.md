@@ -11,6 +11,7 @@
 - `.agents/domain-reviewer/SKILL.md` — проверка доменной корректности и бизнес-инвариантов.
 - `.agents/backend-developer/SKILL.md` — реализация серверной части.
 - `.agents/frontend-developer/SKILL.md` — реализация клиентской части.
+- `.agents/e2e-validator/SKILL.md` — E2E-валидация через Playwright; при провале — фикс кода + unit-тесты.
 - `.agents/plan-reviewer/SKILL.md` — финальная сверка плана и результата.
 
 ## Обязательные Источники Контекста
@@ -29,8 +30,9 @@
 5. Если задача затрагивает бизнес-правила, статусы, доменные ограничения или расчеты, прогнать план через `domain-reviewer`.
 6. Реализовать изменения через `backend-developer` и/или `frontend-developer`.
 7. Если доменная логика менялась, прогнать итог через `domain-reviewer`.
-8. Прогнать итог через `plan-reviewer`.
-9. Вернуть результат с кратким changelog и остаточными рисками.
+8. Запустить `e2e-validator`: прогнать E2E-сценарии через Playwright. При `fail` — `e2e-validator` исправляет код и добавляет unit-тесты, затем повторяет прогон до `pass`.
+9. Прогнать итог через `plan-reviewer`.
+10. Вернуть результат с кратким changelog и остаточными рисками.
 
 Примечание по совместимости:
 - `DOMAIN_RULES.md` мог ранее ссылаться на роль `domain-rules-reviewer`; в текущем workflow это имя заменено на `domain-reviewer`.
@@ -52,6 +54,7 @@
 - `domain-review-final.md` (если был post-implementation domain review)
 - `backend-developer.md` (если роль участвовала)
 - `frontend-developer.md` (если роль участвовала)
+- `e2e-validator.md` (если роль участвовала)
 - `plan-review-report.md`
 - `final-summary.md`
 
@@ -88,10 +91,16 @@
 - новые поля/статусы приходят с backend и отображаются на frontend
 - доменные статусы или правила проходят через backend и отображаются на frontend
 
+5. `e2e-validator`, если задача:
+- затрагивает пользовательский интерфейс или критичные пользовательские потоки
+- изменяет поведение кнопок, форм, списков, навигации
+- исправляет баг (регрессионная проверка)
+
 При конфликте приоритета:
 - сначала `backend-developer`
 - затем `domain-reviewer`
 - затем `frontend-developer`
+- затем `e2e-validator`
 - затем `plan-reviewer`
 
 Важно:
