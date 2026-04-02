@@ -86,6 +86,32 @@ function createPreviewUrls(files: File[]) {
   return files.map((file) => URL.createObjectURL(file));
 }
 
+export function sanitizeImageUrl(url: string): string {
+  // Allow blob: URLs created via URL.createObjectURL
+  if (url.startsWith("blob:")) {
+    return url;
+  }
+
+  // Allow well-formed absolute http(s) URLs
+  if (url.startsWith("https://") || url.startsWith("http://")) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+        return url;
+      }
+    } catch {
+      // fall through to return ""
+    }
+  }
+
+  // Allow simple root-relative paths without whitespace
+  if (url.startsWith("/") && !/\s/.test(url)) {
+    return url;
+  }
+
+  return "";
+}
+
 function revokePreviewUrls(urls: string[]) {
   urls.forEach((url) => {
     if (url.startsWith("blob:")) {

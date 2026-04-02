@@ -8,7 +8,7 @@ import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteRespo
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases } from "../features/staff/hooks/usePurchases";
-import { useRepairs, customRepairServiceOption } from "../features/staff/hooks/useRepairs";
+import { useRepairs, customRepairServiceOption, sanitizeImageUrl } from "../features/staff/hooks/useRepairs";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
 import { StaffVehiclesMobileList } from "../features/staff/mobile/StaffVehiclesMobileList";
@@ -2541,7 +2541,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairPhotoPreviews.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairPhotoPreviews.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="Before repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); blob: URLs are browser-generated via URL.createObjectURL
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
                     ))}
                   </div>
                 ) : null}
@@ -2797,7 +2798,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairBeforePhotos.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairBeforePhotos.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="Before repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
                     ))}
                   </div>
                 ) : null}
@@ -2809,7 +2811,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairDuringPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairDuringPhotos.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="During repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="During repair preview" />
                     ))}
                   </div>
                 ) : null}
@@ -2821,7 +2824,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairAfterPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairAfterPhotos.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="After repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="After repair preview" />
                     ))}
                   </div>
                 ) : null}
