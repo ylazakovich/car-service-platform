@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { BrandMark } from "../components/BrandMark";
 import { useAuth } from "../context/AuthContext";
 
 export function LoginPage() {
@@ -30,11 +31,7 @@ export function LoginPage() {
   return (
     <div className="login-shell">
       <div className="login-card">
-
-        {/* Logo mark */}
-        <div className="login-logo">
-          <span>CS</span>
-        </div>
+        <BrandMark variant="auth" />
 
         {/* Header */}
         <div className="login-header">

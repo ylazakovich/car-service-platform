@@ -89,7 +89,7 @@ function revokePreviewUrls(urls: string[]) {
   });
 }
 
-export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[]) {
+export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterId?: number) {
   const { user } = useAuth();
   const [repairs, setRepairs] = useState<RepairEntry[]>([]);
   const [repairSearch, setRepairSearch] = useState("");
@@ -114,8 +114,8 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[]) {
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
 
   useEffect(() => {
-    fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry))).catch(() => {});
-  }, []);
+    fetchRepairs(undefined, masterId).then((data) => setRepairs(data.map(mapApiRepairToEntry))).catch(() => {});
+  }, [masterId]);
 
   useEffect(() => {
     return () => {
