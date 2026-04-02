@@ -753,6 +753,180 @@ describe("bootstrap application", () => {
     });
   });
 
+  it("shows date filter chips on the Repairs kanban board", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
+
+    expect(screen.getByRole("button", { name: "7 days" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "30 days" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "90 days" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All time" })).toBeInTheDocument();
+  });
+
+  it("filters repairs by date when a date chip is clicked", async () => {
+    const recentDate = new Date(Date.now() - 2 * 86_400_000).toISOString();
+    const oldDate = new Date(Date.now() - 60 * 86_400_000).toISOString();
+
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/customers/")) {
+        return Promise.resolve({ data: [] });
+      }
+      if (url.startsWith("/vehicles/")) {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 201,
+              vehicle_id: 1,
+              vehicle_label: "WB XXXX • Make Model",
+              owner_name: "Name",
+              master_id: null,
+              master_name: "",
+              service_name: "Recent Oil Change",
+              issue_notes: "",
+              status: "new",
+              tracking_code: "TOR-0201",
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: recentDate,
+              updated_at: recentDate,
+            },
+            {
+              id: 202,
+              vehicle_id: 1,
+              vehicle_label: "WB XXXX • Make Model",
+              owner_name: "Name",
+              master_id: null,
+              master_name: "",
+              service_name: "Old Brake Job",
+              issue_notes: "",
+              status: "new",
+              tracking_code: "TOR-0202",
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: oldDate,
+              updated_at: oldDate,
+            },
+          ],
+        });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
+
+    expect((await screen.findAllByText("Recent Oil Change")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Old Brake Job").length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "7 days" }));
+
+    expect(screen.getAllByText("Recent Oil Change").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Old Brake Job")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "All time" }));
+
+    expect((await screen.findAllByText("Old Brake Job")).length).toBeGreaterThan(0);
+  });
+
+  it("caps Completed column at 15 and expands on Show more click", async () => {
+    const repairs = Array.from({ length: 20 }, (_, i) => ({
+      id: 300 + i,
+      vehicle_id: 1,
+      vehicle_label: "WB XXXX • Make Model",
+      owner_name: "Name",
+      master_id: null,
+      master_name: "",
+      service_name: `Job ${i + 1}`,
+      issue_notes: "",
+      status: "completed",
+      tracking_code: `TOR-03${String(i).padStart(2, "0")}`,
+      completed_at: "2025-01-10",
+      repair_notes: [],
+      before_photos: [],
+      during_photos: [],
+      after_photos: [],
+      created_at: "2025-01-10T10:00:00Z",
+      updated_at: "2025-01-10T10:00:00Z",
+    }));
+
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/customers/")) {
+        return Promise.resolve({ data: [] });
+      }
+      if (url.startsWith("/vehicles/")) {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({ data: repairs });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
+
+    const kanban = await screen.findByLabelText("Desktop repairs board");
+
+    expect(await screen.findByRole("button", { name: "Show 5 more" })).toBeInTheDocument();
+    expect(within(kanban).getAllByText("Job 1").length).toBeGreaterThan(0);
+    expect(within(kanban).getAllByText("Job 15").length).toBeGreaterThan(0);
+    expect(within(kanban).queryByText("Job 16")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show 5 more" }));
+
+    expect(await within(kanban).findByText("Job 16")).toBeInTheDocument();
+    expect(within(kanban).getByText("Job 20")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show less" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show less" }));
+
+    expect(within(kanban).queryByText("Job 16")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show 5 more" })).toBeInTheDocument();
+  });
+
   it("keeps the workspace accessible on refresh when a cached user exists and auth check has a transient failure", async () => {
     window.localStorage.setItem(
       "auth-user",

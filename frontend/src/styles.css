@@ -2486,6 +2486,84 @@ textarea { resize: vertical; }
   text-align: right;
 }
 
+.kanban-date-filter {
+  display: flex;
+  gap: var(--s1);
+  align-items: center;
+}
+
+.kanban-date-chip {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s, background 0.14s;
+  white-space: nowrap;
+}
+
+.kanban-date-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-mid);
+}
+
+.kanban-date-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.kanban-show-more {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  padding: var(--s2) var(--s3);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: border-color 0.14s, color 0.14s;
+}
+
+.kanban-show-more:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.kanban-col-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.kanban-col-collapse {
+  background: none;
+  border: none;
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.kanban-col-collapse:hover {
+  color: var(--text-mid);
+  background: var(--surface-mid);
+}
+
+.kanban-card-label {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .kanban-cards {
   display: flex;
   flex-direction: column;
@@ -2598,6 +2676,15 @@ textarea { resize: vertical; }
   display: flex;
   flex-direction: column;
   padding-bottom: 0;
+  height: 100%;
+}
+
+/* Intermediate .workspace grid must be a flex item that fills shell-main */
+.shell:has(.kanban-workspace) .shell-main > .workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: 1fr;
 }
 
 /* The kanban workspace fills the remaining column height */
@@ -2608,15 +2695,33 @@ textarea { resize: vertical; }
   flex-direction: column;
 }
 
+/* repairs-surface-stack fills remaining space below topbar */
+.kanban-workspace .repairs-surface-stack {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: 1fr;
+}
+
+/* repairs-web-surface fills its grid cell */
+.kanban-workspace .repairs-web-surface {
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Board grows to fill everything below the topbar */
 .kanban-workspace .kanban-board {
   flex: 1;
   min-height: 0;
   align-items: stretch;
+  grid-template-rows: 1fr;
 }
 
 /* Each column is a tall flex column */
 .kanban-workspace .kanban-col {
+  flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2648,6 +2753,11 @@ textarea { resize: vertical; }
   opacity: 0.38;
   transform: scale(0.97);
   box-shadow: none;
+}
+
+.kanban-card-drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 -3px 0 0 var(--accent);
 }
 
 /* column drop target highlight */
@@ -3415,4 +3525,102 @@ textarea { resize: vertical; }
   color: var(--text-soft, #888);
   font-size: 0.78rem;
   flex-shrink: 0;
+}
+
+.vehicle-detail-tabs {
+  display: flex;
+  gap: var(--s2, 8px);
+  margin-bottom: var(--s4, 16px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: var(--s2, 8px);
+}
+
+.vehicle-detail-tab {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: var(--s1, 4px) var(--s3, 12px);
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.vehicle-detail-tab:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.07);
+}
+
+.vehicle-detail-tab.active {
+  color: #cdd83a;
+  background: rgba(205,216,58,0.1);
+}
+
+.vehicle-history-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3, 12px);
+}
+
+.vehicle-history-loading,
+.vehicle-history-empty {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: var(--s6, 24px) 0;
+}
+
+.vehicle-history-card {
+  background: var(--surface-mid);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2, 8px);
+}
+
+.vehicle-history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s2, 8px);
+}
+
+.vehicle-history-service {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.9375rem;
+}
+
+.vehicle-history-date {
+  font-size: 0.8125rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.vehicle-history-card-meta {
+  display: flex;
+  gap: var(--s4, 16px);
+  flex-wrap: wrap;
+}
+
+.vehicle-history-master,
+.vehicle-history-mileage {
+  font-size: 0.8125rem;
+  color: #cdd83a;
+}
+
+.vehicle-history-notes {
+  font-size: 0.84rem;
+  color: var(--text-mid);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.vehicle-history-tracking {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  font-family: monospace;
 }

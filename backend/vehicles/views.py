@@ -1,10 +1,14 @@
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from foundation.pagination import StandardPagination
 from customers.models import Customer
+from repairs.models import Repair
+from repairs.serializers import VehicleRepairHistorySerializer
 from .models import Vehicle
 from .serializers import VehicleSerializer
 
@@ -58,3 +62,16 @@ class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
                 status=status.HTTP_409_CONFLICT,
             )
         return super().destroy(request, *args, **kwargs)
+
+
+class VehicleRepairHistoryView(generics.ListAPIView):
+    serializer_class = VehicleRepairHistorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        get_object_or_404(Vehicle, pk=self.kwargs["pk"])
+        return (
+            Repair.objects.select_related("master")
+            .filter(vehicle_id=self.kwargs["pk"])
+            .order_by("-created_at")
+        )
