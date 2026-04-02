@@ -117,6 +117,8 @@ describe("bootstrap application", () => {
               issue_notes: "Customer reported vibration while braking.",
               status: "in_progress",
               tracking_code: "TOR-1011",
+              portal_token: "test-portal-token-1011",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
@@ -255,6 +257,8 @@ describe("bootstrap application", () => {
               issue_notes: "Scheduled maintenance.",
               status: "completed",
               tracking_code: "TOR-1011",
+              portal_token: "test-portal-token-1011",
+              estimated_date: null,
               completed_at: "2025-02-05",
               repair_notes: [],
               before_photos: [],
@@ -274,6 +278,8 @@ describe("bootstrap application", () => {
               issue_notes: "March service one.",
               status: "completed",
               tracking_code: "TOR-1012",
+              portal_token: "test-portal-token-1012",
+              estimated_date: null,
               completed_at: "2025-03-05",
               repair_notes: [],
               before_photos: [],
@@ -293,6 +299,8 @@ describe("bootstrap application", () => {
               issue_notes: "March service two.",
               status: "completed",
               tracking_code: "TOR-1013",
+              portal_token: "test-portal-token-1013",
+              estimated_date: null,
               completed_at: "2025-03-20",
               repair_notes: [],
               before_photos: [],
@@ -312,6 +320,8 @@ describe("bootstrap application", () => {
               issue_notes: "April service.",
               status: "in_progress",
               tracking_code: "TOR-1014",
+              portal_token: "test-portal-token-1014",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
@@ -460,7 +470,6 @@ describe("bootstrap application", () => {
     expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
     expect(screen.getByText("Date Added: 04-11-2024")).toBeInTheDocument();
     expect(screen.getAllByText("Brake Inspection")).toHaveLength(2);
-    expect(screen.getAllByText("Tracking: TOR-1011")).toHaveLength(2);
   });
 
   it("shows the ordered parts linked to the selected repair", async () => {
@@ -713,10 +722,29 @@ describe("bootstrap application", () => {
   });
 
   it("renders a public client portal route", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/portal/ABC-123/") {
+        return Promise.resolve({
+          data: {
+            tracking_code: "TOR-0001",
+            service_name: "Brake Inspection",
+            status: "in_progress",
+            status_display: "In Progress",
+            vehicle_info: { label: "Toyota Corolla", year: 2020, license_plate: "WA 12345" },
+            estimated_date: null,
+            mileage_at_service: null,
+            completed_at: null,
+            created_at: "2025-01-01T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
     renderApp("/portal/ABC-123");
 
-    expect(await screen.findByText("Track Your Repair")).toBeInTheDocument();
-    expect(screen.getByText(/Access code: ABC-123/)).toBeInTheDocument();
+    expect(await screen.findByText("Repair Status")).toBeInTheDocument();
+    expect(screen.getByText("Brake Inspection")).toBeInTheDocument();
   });
 
   it("allows staff login from the login page", async () => {
@@ -800,6 +828,8 @@ describe("bootstrap application", () => {
               issue_notes: "",
               status: "new",
               tracking_code: "TOR-0201",
+              portal_token: "test-portal-token-0201",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
@@ -819,6 +849,8 @@ describe("bootstrap application", () => {
               issue_notes: "",
               status: "new",
               tracking_code: "TOR-0202",
+              portal_token: "test-portal-token-0202",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
@@ -986,5 +1018,147 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
+  });
+
+  it("client portal does not show tracking code", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/portal/ABC-123/") {
+        return Promise.resolve({
+          data: {
+            tracking_code: "TOR-0001",
+            service_name: "Brake Inspection",
+            status: "completed",
+            status_display: "Completed",
+            vehicle_info: { label: "Toyota Corolla", year: 2020, license_plate: "WA 12345" },
+            estimated_date: null,
+            mileage_at_service: null,
+            completed_at: "2025-01-15",
+            created_at: "2025-01-01T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderApp("/portal/ABC-123");
+
+    expect(await screen.findByText("Repair Status")).toBeInTheDocument();
+    expect(screen.queryByText("Order TOR-0001")).not.toBeInTheDocument();
+  });
+
+  it("kanban cards do not show tracking code chip", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findAllByText("Brake Inspection");
+
+    expect(screen.queryByText("#TOR-1011")).not.toBeInTheDocument();
+  });
+
+  it("shows regenerate portal link button to admin", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await user.click(screen.getAllByText("Brake Inspection")[1]);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("button", { name: "Regenerate client portal link" })).toBeInTheDocument();
+  });
+
+  it("hides regenerate portal link button from staff", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 2, email: "staff@test.local", first_name: "Staff", last_name: "User", role: "staff", is_staff: false },
+        });
+      }
+      if (url.startsWith("/customers/")) {
+        return Promise.resolve({ data: [] });
+      }
+      if (url.startsWith("/vehicles/")) {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 11,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Brake Inspection",
+              issue_notes: "Customer reported vibration while braking.",
+              status: "in_progress",
+              tracking_code: "TOR-1011",
+              portal_token: "test-portal-token-1011",
+              estimated_date: null,
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-04-05T10:00:00Z",
+              updated_at: "2025-04-05T10:00:00Z",
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getAllByRole("button", { name: "Repairs" })[0]);
+    await user.click(screen.getAllByText("Brake Inspection")[1]);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).queryByRole("button", { name: "Regenerate client portal link" })).not.toBeInTheDocument();
+  });
+
+  it("regenerate portal link does not call API when confirmation is cancelled", async () => {
+    mockConfirm.mockReturnValue(false);
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await user.click(screen.getAllByText("Brake Inspection")[1]);
+
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Regenerate client portal link" }));
+
+    expect(mockApi.post).not.toHaveBeenCalledWith(
+      expect.stringContaining("regenerate-portal-token"),
+      expect.anything()
+    );
+  });
+
+  it("regenerate portal link calls API when confirmed", async () => {
+    mockConfirm.mockReturnValue(true);
+    mockApi.post.mockResolvedValue({ data: { portal_token: "new-token-abc123" } });
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await user.click(screen.getAllByText("Brake Inspection")[1]);
+
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Regenerate client portal link" }));
+
+    await waitFor(() => {
+      expect(mockApi.post).toHaveBeenCalledWith("/repairs/11/regenerate-portal-token/");
+    });
   });
 });

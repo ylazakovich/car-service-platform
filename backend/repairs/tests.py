@@ -20,6 +20,7 @@ class RepairApiTests(TestCase):
             email="admin@test.local",
             password="admin12345",
             role="admin",
+            is_staff=True,
         )
         self.customer = Customer.objects.create(
             full_name="Anna Nowak",
@@ -348,6 +349,185 @@ class RepairApiTests(TestCase):
         data = response.json()
         self.assertEqual(data["master_id"], self.staff_user.id)
         self.assertEqual(data["master_name"], self.staff_user.email)
+
+    def test_portal_token_auto_generated_on_create(self):
+        response = self._create_repair(service_name="Turbo Replacement")
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertIn("portal_token", data)
+        self.assertTrue(len(data["portal_token"]) >= 20)
+
+    def test_portal_tokens_are_unique(self):
+        first = self._create_repair(service_name="Brake Pads")
+        second = self._create_repair(service_name="Clutch Kit")
+
+        self.assertNotEqual(
+            first.json()["portal_token"],
+            second.json()["portal_token"],
+        )
+
+    def test_portal_token_is_readonly(self):
+        self.client.force_authenticate(self.staff_user)
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Wheel Bearing",
+            status="new",
+        )
+        original_token = repair.portal_token
+
+        self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"portal_token": "manipulated-token"},
+            format="json",
+        )
+
+        repair.refresh_from_db()
+        self.assertEqual(repair.portal_token, original_token)
+
+    def test_portal_lookup_returns_repair_for_valid_token(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="AC Recharge",
+            status="in_progress",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["service_name"], "AC Recharge")
+        self.assertEqual(data["status"], "in_progress")
+
+    def test_portal_lookup_returns_404_for_invalid_token(self):
+        response = self.client.get("/api/portal/this-token-does-not-exist/")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_portal_lookup_requires_no_authentication(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Fuel Filter",
+            status="new",
+        )
+        self.client.force_authenticate(None)
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_portal_lookup_does_not_expose_internal_fields(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Injector Clean",
+            status="new",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        data = response.json()
+        self.assertNotIn("portal_token", data)
+        self.assertNotIn("issue_notes", data)
+        self.assertNotIn("repair_notes", data)
+        self.assertNotIn("master_id", data)
+
+    def test_portal_lookup_includes_vehicle_info(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Suspension",
+            status="new",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        data = response.json()
+        self.assertIn("vehicle_info", data)
+        self.assertEqual(data["vehicle_info"]["license_plate"], self.vehicle.license_plate)
+
+    def test_regenerate_portal_token_requires_authentication(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Coolant Flush",
+            status="new",
+        )
+        self.client.force_authenticate(None)
+
+        response = self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_regenerate_portal_token_generates_new_token(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Power Steering",
+            status="new",
+        )
+        original_token = repair.portal_token
+        self.client.force_authenticate(self.admin_user)
+
+        response = self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+
+        self.assertEqual(response.status_code, 200)
+        new_token = response.json()["portal_token"]
+        self.assertNotEqual(new_token, original_token)
+        self.assertTrue(len(new_token) >= 20)
+
+    def test_regenerate_portal_token_old_token_becomes_invalid(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="ABS Module",
+            status="new",
+        )
+        old_token = repair.portal_token
+        self.client.force_authenticate(self.admin_user)
+        self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+        self.client.force_authenticate(None)
+
+        response = self.client.get(f"/api/portal/{old_token}/")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_regenerate_portal_token_staff_forbidden(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Fuel Filter",
+            status="new",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_estimated_date_can_be_set_and_returned(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Transmission",
+            status="in_progress",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"estimated_date": "2025-12-31"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["estimated_date"], "2025-12-31")
+
+    def test_estimated_date_visible_on_portal(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Camshaft",
+            status="in_progress",
+            estimated_date="2025-12-31",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["estimated_date"], "2025-12-31")
 
 
 class RepairPdfViewTests(TestCase):

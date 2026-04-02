@@ -39,7 +39,6 @@ type StaffVehicleDetailPanelProps = {
   formatCurrency: (value: number) => string;
   getRepairStatusClass: (status: RepairEntry["status"]) => string;
   repairStatusLabels: Record<RepairEntry["status"], string>;
-  onCopyTrackingCode: (trackingCode: string) => void;
 };
 
 export function StaffVehicleDetailPanel({
@@ -52,7 +51,6 @@ export function StaffVehicleDetailPanel({
   formatCurrency,
   getRepairStatusClass,
   repairStatusLabels,
-  onCopyTrackingCode,
 }: StaffVehicleDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<"info" | "history">("info");
   const [history, setHistory] = useState<VehicleRepairHistoryItem[]>([]);
@@ -124,17 +122,7 @@ export function StaffVehicleDetailPanel({
                     <div className="tracking-chip-row">
                       <span className={getRepairStatusClass(repair.status)}>{repairStatusLabels[repair.status]}</span>
                     </div>
-                    <div className="tracking-chip-row">
-                      <span className="tracking-chip">Tracking: {repair.tracking_code}</span>
-                      <button
-                        type="button"
-                        className="copy-chip"
-                        aria-label={`Copy tracking code ${repair.tracking_code}`}
-                        onClick={() => onCopyTrackingCode(repair.tracking_code)}
-                      >
-                        ⧉
-                      </button>
-                    </div>
+
                   </article>
                 ))}
               </div>

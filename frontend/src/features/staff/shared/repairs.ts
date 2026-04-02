@@ -25,6 +25,8 @@ export type RepairEntry = {
   repair_notes: RepairNote[];
   status: RepairStatus;
   tracking_code: string;
+  portal_token: string;
+  estimated_date: string;
   before_photos: string[];
   during_photos: string[];
   after_photos: string[];
