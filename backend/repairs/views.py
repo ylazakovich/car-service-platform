@@ -85,6 +85,37 @@ class RepairNoteDeleteView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class RepairPdfView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        repair = generics.get_object_or_404(
+            Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
+            pk=pk,
+        )
+        if repair.status != "completed":
+            return Response(
+                {"detail": "PDF is only available for completed repairs."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        from purchases.models import Purchase
+        from services.models import Service
+
+        purchases = Purchase.objects.filter(repair_code=repair.tracking_code).select_related("supplier")
+        service = Service.objects.filter(name=repair.service_name).first()
+        service_price = service.price if service and service.price is not None else None
+
+        from django.http import HttpResponse
+
+        from .pdf_generator import generate_completion_act_pdf
+
+        pdf_bytes = generate_completion_act_pdf(repair, purchases, service_price)
+        filename = f"act_{repair.tracking_code}.pdf"
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 class RepairRegeneratePortalTokenView(APIView):
     permission_classes = [IsAdminUser]
 

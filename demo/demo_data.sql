@@ -24,20 +24,71 @@ WHERE phone IN (
     '+380504445566','+380675556677','+380936667788','+380507778899'
 );
 
--- Services
-INSERT INTO services (name, description, is_active, created_at, updated_at)
+-- Users (demo accounts — passwords match seed_admin defaults)
+INSERT INTO users (email, first_name, last_name, role, is_active, is_staff, is_superuser, password, created_at)
 VALUES
-    ('Oil change',                    'Engine oil replacement with filter swap and top-up of all fluids.', true, NOW(), NOW()),
-    ('Full vehicle diagnostics',      'Computer diagnostics of all ECU modules with fault code report.', true, NOW(), NOW()),
-    ('Tire service',                  'Tire mounting, balancing, and nitrogen inflation on all four wheels.', true, NOW(), NOW()),
-    ('Brake system service',          'Inspection, pad replacement, disc resurfacing or replacement.', true, NOW(), NOW()),
-    ('Suspension & steering',         'Inspection and replacement of ball joints, tie rods, shock absorbers.', true, NOW(), NOW()),
-    ('Timing belt / chain replacement','Complete kit replacement including water pump and tensioners.', true, NOW(), NOW()),
-    ('AC service',                    'Refrigerant re-gas, leak check, condenser and evaporator inspection.', true, NOW(), NOW()),
-    ('Engine repair',                 'Cylinder head gasket, valve adjustment, engine overhaul.', true, NOW(), NOW()),
-    ('Transmission service',          'Fluid change, clutch replacement, gearbox inspection.', true, NOW(), NOW()),
-    ('Electrical diagnostics',        'Battery, alternator, starter, ECU and wiring fault diagnosis.', true, NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
+    ('admin@autoservice.local', 'Admin', 'User',   'admin', true, true,  true,  'pbkdf2_sha256$1200000$u59JIdO8SIfCD2jcIJinCQ$iwA7WRvB8+8dK9fqq81N8UsE34wU16CrNI9R/LdIxEE=', NOW()),
+    ('staff@autoservice.local', 'Ivan',  'Master', 'staff', true, false, false, 'pbkdf2_sha256$1200000$q3nNHvqF73d16myDP3QMXM$/Vp/W0UOSiKcFLyODMQMF6pjlmlHk2wgxvt7I4nsdCE=', NOW())
+ON CONFLICT (email) DO NOTHING;
+
+-- Services (with demo prices in PLN)
+INSERT INTO services (name, description, price, is_active, created_at, updated_at)
+VALUES
+    ('Oil change',                          'Engine oil replacement with filter swap and top-up of all fluids.',               90.00,   true, NOW(), NOW()),
+    ('Oil change + filter replacement',     'Oil change with air, cabin, and oil filter set.',                                115.00,   true, NOW(), NOW()),
+    ('Oil change + air filter',             'Oil change plus air filter replacement.',                                        110.00,   true, NOW(), NOW()),
+    ('Oil change + cabin filter',           'Oil change plus cabin pollen filter replacement.',                               120.00,   true, NOW(), NOW()),
+    ('Oil change + all filters',            'Oil change with full filter set: air, cabin, fuel, oil.',                       140.00,   true, NOW(), NOW()),
+    ('Oil change + spark plugs',            'Oil change combined with iridium spark plug replacement.',                       180.00,   true, NOW(), NOW()),
+    ('Oil change — 5W-30',                  'Scheduled oil change using 5W-30 synthetic.',                                    95.00,   true, NOW(), NOW()),
+    ('Oil change — 5W-30 commercial',       'Commercial vehicle oil change using 5W-30.',                                    100.00,   true, NOW(), NOW()),
+    ('Oil change — BMW LL-04',              'BMW Longlife-04 spec oil change.',                                              130.00,   true, NOW(), NOW()),
+    ('Oil change — Motul 8100 0W-40',       'Oil change using Motul 8100 X-cess 0W-40.',                                    140.00,   true, NOW(), NOW()),
+    ('Oil change — Shell Helix Ultra 0W-20','Oil change using Shell Helix Ultra Professional 0W-20.',                        120.00,   true, NOW(), NOW()),
+    ('Oil change — Toyota Genuine 0W-20',   'Oil change with genuine Toyota 0W-20 and OEM filter.',                         110.00,   true, NOW(), NOW()),
+    ('Oil change — Hyundai Genuine 5W-30',  'Oil change with Hyundai genuine oil and OEM filter.',                          110.00,   true, NOW(), NOW()),
+    ('Oil change — Subaru 0W-20',           'Oil change using Subaru genuine 0W-20.',                                        115.00,   true, NOW(), NOW()),
+    ('Oil change — post track day',         'Post-track oil and filter change, drain inspection.',                           105.00,   true, NOW(), NOW()),
+    ('Oil change + CVT fluid',              'Oil change combined with CVT transmission fluid flush.',                        220.00,   true, NOW(), NOW()),
+    ('Tire service',                        'Tire mounting, balancing, and nitrogen inflation on all four wheels.',           80.00,   true, NOW(), NOW()),
+    ('Tire rotation and balancing',         'Rotate and balance all four tires.',                                            100.00,   true, NOW(), NOW()),
+    ('Tire service — summer set',           'Seasonal swap to summer tires with balancing.',                                 120.00,   true, NOW(), NOW()),
+    ('Tire service — winter set',           'Seasonal swap to winter tires with balancing.',                                 120.00,   true, NOW(), NOW()),
+    ('Full vehicle diagnostics',            'Computer diagnostics of all ECU modules with fault code report.',               120.00,   true, NOW(), NOW()),
+    ('Full vehicle diagnostics + software update', 'Full diagnostics plus ECU software update.',                            180.00,   true, NOW(), NOW()),
+    ('Full vehicle diagnostics — import inspection', 'Import pre-registration inspection with full diagnostics.',            160.00,   true, NOW(), NOW()),
+    ('Engine diagnostics',                  'Engine ECU scan and live data analysis.',                                       130.00,   true, NOW(), NOW()),
+    ('Electrical diagnostics',              'Battery, alternator, starter, ECU and wiring fault diagnosis.',                150.00,   true, NOW(), NOW()),
+    ('Engine repair',                       'Cylinder head gasket, valve adjustment, engine overhaul.',                    1200.00,   true, NOW(), NOW()),
+    ('Timing belt / chain replacement',     'Complete kit replacement including water pump and tensioners.',                 650.00,   true, NOW(), NOW()),
+    ('Timing belt + water pump replacement','Timing belt kit with water pump and all tensioners.',                           700.00,   true, NOW(), NOW()),
+    ('Timing belt kit',                     'Timing belt, tensioner, and idler replacement.',                               650.00,   true, NOW(), NOW()),
+    ('Clutch replacement',                  'Full clutch kit replacement including pressure plate and flywheel.',            850.00,   true, NOW(), NOW()),
+    ('Transmission service',                'Fluid change, clutch replacement, gearbox inspection.',                        900.00,   true, NOW(), NOW()),
+    ('Transmission fluid change',           'Gearbox fluid drain and refill.',                                              200.00,   true, NOW(), NOW()),
+    ('Front differential fluid change',     'Front diff fluid drain and refill.',                                           160.00,   true, NOW(), NOW()),
+    ('Brake system service',                'Inspection, pad replacement, disc resurfacing or replacement.',                280.00,   true, NOW(), NOW()),
+    ('Brake system inspection',             'Visual and measurement check of all brake components.',                          80.00,   true, NOW(), NOW()),
+    ('Brake fluid replacement',             'DOT 4 brake fluid flush and refill.',                                           90.00,   true, NOW(), NOW()),
+    ('Brake fluid flush — Motul RBF 660',   'High-performance brake fluid flush using Motul RBF 660.',                      120.00,   true, NOW(), NOW()),
+    ('Brake pad replacement — front axle',  'Front axle brake pad replacement.',                                            220.00,   true, NOW(), NOW()),
+    ('Brake pads — full axle replacement',  'Front and rear brake pads replaced.',                                          380.00,   true, NOW(), NOW()),
+    ('Brake discs + pads — rear axle',      'Rear brake discs and pads full replacement.',                                  480.00,   true, NOW(), NOW()),
+    ('Brake service — rear axle',           'Rear brake caliper service, pads, and disc check.',                            260.00,   true, NOW(), NOW()),
+    ('Front brake discs + pads',            'Front brake disc and pad replacement.',                                        440.00,   true, NOW(), NOW()),
+    ('Suspension & steering',               'Inspection and replacement of ball joints, tie rods, shock absorbers.',        400.00,   true, NOW(), NOW()),
+    ('Suspension inspection',               'Full suspension geometry and component inspection.',                             90.00,   true, NOW(), NOW()),
+    ('Front suspension — ball joints',      'Replacement of front lower ball joints.',                                      320.00,   true, NOW(), NOW()),
+    ('Rear shock absorber replacement',     'Both rear shock absorbers replaced.',                                          420.00,   true, NOW(), NOW()),
+    ('Coilover installation + alignment',   'Coilover kit installation with four-wheel alignment.',                         600.00,   true, NOW(), NOW()),
+    ('Alignment check — track setup',       'Four-wheel alignment to track specification.',                                  150.00,   true, NOW(), NOW()),
+    ('Spark plug replacement',              'Full set of spark plugs replaced.',                                            180.00,   true, NOW(), NOW()),
+    ('Coolant system flush',                'Cooling system drain, flush, and refill with fresh coolant.',                  140.00,   true, NOW(), NOW()),
+    ('EGR valve cleaning',                  'EGR valve removed, cleaned, and refitted.',                                    200.00,   true, NOW(), NOW()),
+    ('EGR valve + DPF cleaning',            'EGR valve and DPF combined cleaning service.',                                 350.00,   true, NOW(), NOW()),
+    ('AC service',                          'Refrigerant re-gas, leak check, condenser and evaporator inspection.',         350.00,   true, NOW(), NOW()),
+    ('AC system diagnostics and re-gas',    'Full AC system diagnostics with refrigerant recharge.',                        320.00,   true, NOW(), NOW())
+ON CONFLICT (name) DO UPDATE SET price = EXCLUDED.price, updated_at = NOW();
 
 -- Customers
 INSERT INTO customers (full_name, phone, email, notes, assigned_to_id, created_at, updated_at)
@@ -663,7 +714,13 @@ VALUES
         2, 178.00, 260.00, 'TOR-2039', 'FV/2024/07/0291', '', NOW(), NOW()
     );
 
+-- Assign staff master to all repairs where master is NULL
+UPDATE repairs
+SET master_id = (SELECT id FROM users WHERE email = 'staff@autoservice.local')
+WHERE master_id IS NULL;
+
 -- Sequence resets
+SELECT setval(pg_get_serial_sequence('users',     'id'), MAX(id)) FROM users;
 SELECT setval(pg_get_serial_sequence('services',  'id'), MAX(id)) FROM services;
 SELECT setval(pg_get_serial_sequence('customers', 'id'), MAX(id)) FROM customers;
 SELECT setval(pg_get_serial_sequence('vehicles',  'id'), MAX(id)) FROM vehicles;

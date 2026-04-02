@@ -348,6 +348,7 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["master_id"], self.staff_user.id)
+        self.assertEqual(data["master_name"], self.staff_user.email)
 
     def test_portal_token_auto_generated_on_create(self):
         response = self._create_repair(service_name="Turbo Replacement")
@@ -527,3 +528,97 @@ class RepairApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["estimated_date"], "2025-12-31")
+
+
+class RepairPdfViewTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.staff_user = get_user_model().objects.create_user(
+            email="staff@test.local",
+            password="staff12345",
+            role="staff",
+        )
+        self.admin_user = get_user_model().objects.create_user(
+            email="admin@test.local",
+            password="admin12345",
+            role="admin",
+        )
+        self.customer = Customer.objects.create(
+            full_name="Anna Nowak",
+            phone="+48 600 200 300",
+            assigned_to=self.staff_user,
+        )
+        self.vehicle = Vehicle.objects.create(
+            customer=self.customer,
+            license_plate="WA 99999",
+            make="Toyota",
+            model="Yaris",
+        )
+
+    def _create_completed_repair(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Full Service",
+            status="new",
+        )
+        repair.status = "completed"
+        repair.save()
+        return repair
+
+    def test_pdf_requires_authentication(self):
+        repair = self._create_completed_repair()
+
+        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_pdf_returns_400_for_non_completed_repair(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Oil Change",
+            status="new",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_pdf_returns_400_for_in_progress_repair(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Brake Check",
+            status="in_progress",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_pdf_returns_pdf_for_completed_repair(self):
+        repair = self._create_completed_repair()
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertGreater(len(response.content), 0)
+
+    def test_pdf_returns_404_for_unknown_repair(self):
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.get("/api/repairs/99999/pdf/")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_pdf_accessible_by_staff(self):
+        repair = self._create_completed_repair()
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertGreater(len(response.content), 0)
