@@ -23,6 +23,7 @@ class Repair(models.Model):
     service_name = models.CharField(max_length=255)
     issue_notes = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    mileage_at_service = models.PositiveIntegerField(null=True, blank=True)
     tracking_code = models.CharField(max_length=20, unique=True, blank=True)
     completed_at = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)

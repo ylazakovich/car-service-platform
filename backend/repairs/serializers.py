@@ -43,6 +43,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "service_name",
             "issue_notes",
             "status",
+            "mileage_at_service",
             "tracking_code",
             "completed_at",
             "repair_notes",
@@ -75,3 +76,28 @@ class RepairSerializer(serializers.ModelSerializer):
 
     def get_after_photos(self, obj):
         return []
+
+
+class VehicleRepairHistorySerializer(serializers.ModelSerializer):
+    master_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Repair
+        fields = (
+            "id",
+            "tracking_code",
+            "service_name",
+            "issue_notes",
+            "status",
+            "mileage_at_service",
+            "completed_at",
+            "created_at",
+            "master_name",
+        )
+        read_only_fields = fields
+
+    def get_master_name(self, obj):
+        if not obj.master:
+            return ""
+        parts = [obj.master.first_name, obj.master.last_name]
+        return " ".join(p for p in parts if p).strip()
