@@ -74,6 +74,14 @@ type DashboardDateRange = {
   start_date: string;
   end_date: string;
 };
+type MoneyflowSeriesKey = "purchase_spend" | "service_sales" | "parts_sales";
+type MoneyflowSeriesVisibility = Record<MoneyflowSeriesKey, boolean>;
+type MoneyflowChartPoint = {
+  date: string;
+  purchase_spend: number;
+  service_sales: number;
+  parts_sales: number;
+};
 
 const emptyCustomerForm: CustomerFormState = {
   full_name: "",
@@ -110,10 +118,50 @@ const repairServiceSaleCatalog: Record<string, number> = {
   [customRepairServiceOption]: 320,
 };
 
+const moneyflowSeriesMeta: Record<MoneyflowSeriesKey, { label: string; color: string }> = {
+  purchase_spend: {
+    label: "Purchase Spend",
+    color: "var(--warning)",
+  },
+  service_sales: {
+    label: "Service Sales",
+    color: "var(--info)",
+  },
+  parts_sales: {
+    label: "Parts Sales",
+    color: "var(--accent)",
+  },
+};
+
+const defaultMoneyflowSeriesVisibility: MoneyflowSeriesVisibility = {
+  purchase_spend: true,
+  service_sales: true,
+  parts_sales: true,
+};
+
+function formatIsoLocalDate(value: Date): string {
+  const year = String(value.getFullYear());
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getLocalDateWithOffset(days: number): string {
+  const base = new Date();
+  const localDate = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  localDate.setDate(localDate.getDate() + days);
+  return formatIsoLocalDate(localDate);
+}
+
 function getLocalTodayDate(): string {
-  const now = new Date();
-  const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return localTime.toISOString().slice(0, 10);
+  return getLocalDateWithOffset(0);
+}
+
+function getMoneyflowDefaultDateRange(): DashboardDateRange {
+  return {
+    start_date: getLocalDateWithOffset(-30),
+    end_date: getLocalTodayDate(),
+  };
 }
 
 function getApproximateDeliveryDate(orderDate: string): string {
@@ -128,6 +176,10 @@ function getApproximateDeliveryDate(orderDate: string): string {
 
   parsed.setDate(parsed.getDate() + 4);
   return parsed.toISOString().slice(0, 10);
+}
+
+function toIsoDateKey(value: string): string {
+  return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : "";
 }
 
 function formatDisplayDate(value: string): string {
@@ -150,6 +202,75 @@ function getDateBounds(values: string[]) {
     start_date: normalized[0] ?? "",
     end_date: normalized[normalized.length - 1] ?? "",
   };
+}
+
+function createIsoDateRange(startDate: string, endDate: string): string[] {
+  const start = parseIsoDate(startDate);
+  const end = parseIsoDate(endDate);
+
+  if (!start || !end || start > end) {
+    return [];
+  }
+
+  const next: string[] = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    next.push(formatIsoLocalDate(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return next;
+}
+
+function sumByIsoDate(target: Map<string, number>, date: string, amount: number) {
+  const key = toIsoDateKey(date);
+  if (!key) {
+    return;
+  }
+
+  target.set(key, (target.get(key) ?? 0) + amount);
+}
+
+function buildSvgLinePath(points: Array<{ x: number; y: number }>): string {
+  return points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+}
+
+function getChartTickIndexes(length: number): number[] {
+  if (length <= 1) {
+    return [0];
+  }
+
+  const indexes = [0, Math.floor((length - 1) / 3), Math.floor(((length - 1) * 2) / 3), length - 1];
+  return [...new Set(indexes)];
+}
+
+function formatChartAxisCurrency(value: number): string {
+  if (value <= 0) {
+    return "0 zł";
+  }
+
+  if (value >= 1000) {
+    return `${new Intl.NumberFormat("pl-PL", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value)} zł`;
+  }
+
+  return `${Math.round(value)} zł`;
+}
+
+function formatChartDateLabel(value: string): string {
+  const parsed = parseIsoDate(value);
+  if (!parsed) {
+    return value;
+  }
+
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  return `${day}-${month}`;
 }
 
 function isDateWithinRange(value: string, startDate: string, endDate: string) {
@@ -195,6 +316,7 @@ function parseIsoDate(value: string): Date | null {
 
   return parsed;
 }
+
 
 function formatDateInputValue(value: string): string {
   const parsed = parseIsoDate(value);
@@ -538,7 +660,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [isSavingVehicle, setIsSavingVehicle] = useState(false);
   const [activeUserTab, setActiveUserTab] = useState<UserAccessTab>("owner");
   const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>("moneyflow");
-  const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
+  const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>(() => getMoneyflowDefaultDateRange());
+  const [moneyflowSeriesVisibility, setMoneyflowSeriesVisibility] = useState<MoneyflowSeriesVisibility>(
+    defaultMoneyflowSeriesVisibility
+  );
   const [serviceBoardDateRange, setServiceBoardDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
   const [apiServices, setApiServices] = useState<ServiceItem[]>([]);
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
@@ -672,14 +797,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () => [...apiServices.map((s) => s.name), customRepairServiceOption],
     [apiServices]
   );
-  const moneyflowDateBounds = useMemo(
-    () =>
-      getDateBounds([
-        ...purchases.map((entry) => entry.order_date),
-        ...repairs.map((repair) => repair.completed_at).filter(Boolean),
-      ]),
-    [purchases, repairs]
-  );
   const serviceBoardDateBounds = useMemo(
     () => getDateBounds(repairs.map((repair) => repair.created_at)),
     [repairs]
@@ -698,10 +815,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }, []);
 
   useEffect(() => {
-    if (!moneyflowDateRange.start_date && !moneyflowDateRange.end_date && moneyflowDateBounds.start_date && moneyflowDateBounds.end_date) {
-      setMoneyflowDateRange(moneyflowDateBounds);
+    if (activeSection === "dashboard" && activeDashboardTab === "moneyflow") {
+      setMoneyflowDateRange(getMoneyflowDefaultDateRange());
     }
-  }, [moneyflowDateBounds, moneyflowDateRange.end_date, moneyflowDateRange.start_date]);
+  }, [activeDashboardTab, activeSection]);
 
   useEffect(() => {
     if (
@@ -1349,6 +1466,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () => new Set(completedRepairsForServiceSales.map((repair) => repair.tracking_code)),
     [completedRepairsForServiceSales]
   );
+  const completedRepairsByMoneyflowCode = useMemo(
+    () => new Map(completedRepairsForServiceSales.map((repair) => [repair.tracking_code, repair])),
+    [completedRepairsForServiceSales]
+  );
   const filteredServiceBoardRepairs = useMemo(
     () =>
       repairs.filter((repair) =>
@@ -1384,6 +1505,124 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [completedRepairsForServiceSales]
   );
   const projectedMargin = totalPartsSales - totalPurchaseCost;
+  const moneyflowChartData = useMemo<MoneyflowChartPoint[]>(() => {
+    const dateRange = createIsoDateRange(moneyflowDateRange.start_date, moneyflowDateRange.end_date);
+    if (dateRange.length === 0) {
+      return [];
+    }
+
+    const purchaseSpendByDate = new Map<string, number>();
+    filteredMoneyflowPurchases.forEach((entry) => {
+      sumByIsoDate(purchaseSpendByDate, entry.order_date, entry.purchase_price * entry.quantity);
+    });
+
+    const serviceSalesByDate = new Map<string, number>();
+    completedRepairsForServiceSales.forEach((repair) => {
+      sumByIsoDate(serviceSalesByDate, repair.completed_at, getRepairServiceSaleValue(repair.service_name));
+    });
+
+    const partsSalesByDate = new Map<string, number>();
+    purchases.forEach((entry) => {
+      const relatedRepair = entry.repair_code ? completedRepairsByMoneyflowCode.get(entry.repair_code) : undefined;
+      if (!relatedRepair?.completed_at) {
+        return;
+      }
+
+      sumByIsoDate(partsSalesByDate, relatedRepair.completed_at, entry.sale_price * entry.quantity);
+    });
+
+    return dateRange.map((date) => ({
+      date,
+      purchase_spend: purchaseSpendByDate.get(date) ?? 0,
+      service_sales: serviceSalesByDate.get(date) ?? 0,
+      parts_sales: partsSalesByDate.get(date) ?? 0,
+    }));
+  }, [
+    completedRepairsByMoneyflowCode,
+    completedRepairsForServiceSales,
+    filteredMoneyflowPurchases,
+    moneyflowDateRange.end_date,
+    moneyflowDateRange.start_date,
+    purchases,
+  ]);
+  const visibleMoneyflowSeriesKeys = useMemo(
+    () => (Object.keys(moneyflowSeriesMeta) as MoneyflowSeriesKey[]).filter((key) => moneyflowSeriesVisibility[key]),
+    [moneyflowSeriesVisibility]
+  );
+  const moneyflowChartModel = useMemo(() => {
+    const chartWidth = 720;
+    const chartHeight = 280;
+    const paddingLeft = 56;
+    const paddingRight = 18;
+    const paddingTop = 16;
+    const paddingBottom = 36;
+    const innerWidth = chartWidth - paddingLeft - paddingRight;
+    const innerHeight = chartHeight - paddingTop - paddingBottom;
+    const xStep = moneyflowChartData.length > 1 ? innerWidth / (moneyflowChartData.length - 1) : 0;
+    const maxValue = visibleMoneyflowSeriesKeys.reduce((currentMax, key) => {
+      const seriesMax = Math.max(...moneyflowChartData.map((point) => point[key]), 0);
+      return Math.max(currentMax, seriesMax);
+    }, 0);
+    const visibleSeries = visibleMoneyflowSeriesKeys.map((key) => {
+      const points = moneyflowChartData.map((point, index) => {
+        const x = paddingLeft + xStep * index;
+        const y =
+          maxValue <= 0
+            ? chartHeight - paddingBottom
+            : chartHeight - paddingBottom - (point[key] / maxValue) * innerHeight;
+
+        return {
+          x,
+          y,
+          value: point[key],
+          date: point.date,
+        };
+      });
+
+      return {
+        key,
+        label: moneyflowSeriesMeta[key].label,
+        color: moneyflowSeriesMeta[key].color,
+        points,
+        path: buildSvgLinePath(points),
+      };
+    });
+    const tickIndexes = getChartTickIndexes(moneyflowChartData.length);
+    const xTicks = tickIndexes
+      .map((index) => moneyflowChartData[index])
+      .filter((point): point is MoneyflowChartPoint => Boolean(point))
+      .map((point) => ({
+        date: point.date,
+        label: formatChartDateLabel(point.date),
+        x:
+          moneyflowChartData.length <= 1
+            ? paddingLeft + innerWidth / 2
+            : paddingLeft + xStep * moneyflowChartData.findIndex((entry) => entry.date === point.date),
+      }));
+    const yAxisValues = maxValue <= 0 ? [0] : [maxValue, maxValue / 2, 0];
+    const yTicks = [...new Set(yAxisValues)].map((value) => ({
+      value,
+      label: formatChartAxisCurrency(value),
+      y:
+        maxValue <= 0
+          ? chartHeight - paddingBottom
+          : chartHeight - paddingBottom - (value / maxValue) * innerHeight,
+    }));
+    const hasVisibleValues = visibleSeries.some((series) => series.points.some((point) => point.value > 0));
+
+    return {
+      chartWidth,
+      chartHeight,
+      paddingLeft,
+      paddingRight,
+      paddingTop,
+      paddingBottom,
+      hasVisibleValues,
+      visibleSeries,
+      xTicks,
+      yTicks,
+    };
+  }, [moneyflowChartData, visibleMoneyflowSeriesKeys]);
   const dashboardWorkerLoad = useMemo(
     () =>
       staffUsers.map((master) => {
@@ -1523,6 +1762,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         };
       });
     };
+    const toggleMoneyflowSeries = (key: MoneyflowSeriesKey) => {
+      setMoneyflowSeriesVisibility((current) => ({
+        ...current,
+        [key]: !current[key],
+      }));
+    };
 
     return (
       <div className="workspace-stack dashboard-workspace">
@@ -1613,6 +1858,113 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <p>Difference between parts purchase spend and parts sales.</p>
                     </article>
                   </div>
+                </section>
+
+                <section className="panel dashboard-moneyflow-chart-panel">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">MoneyFlow Chart</p>
+                      <h3>Flow Timeline</h3>
+                    </div>
+                  </div>
+
+                  <p className="workspace-copy dashboard-chart-copy">
+                    Compare spend on parts against sold services and parts across the selected date range.
+                  </p>
+
+                  <div className="moneyflow-series-toggle-row" role="group" aria-label="Moneyflow chart series">
+                    {(Object.keys(moneyflowSeriesMeta) as MoneyflowSeriesKey[]).map((key) => {
+                      const meta = moneyflowSeriesMeta[key];
+                      const isVisible = moneyflowSeriesVisibility[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`moneyflow-series-toggle ${isVisible ? "moneyflow-series-toggle-active" : ""}`}
+                          aria-pressed={isVisible}
+                          aria-label={`${meta.label} trend`}
+                          onClick={() => toggleMoneyflowSeries(key)}
+                        >
+                          <span className="moneyflow-series-swatch" style={{ backgroundColor: meta.color }} />
+                          <span>{meta.label}</span>
+                          <span className="moneyflow-series-state">{isVisible ? "On" : "Off"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {visibleMoneyflowSeriesKeys.length === 0 ? (
+                    <p className="workspace-note">Turn on at least one line to display the chart.</p>
+                  ) : null}
+
+                  {visibleMoneyflowSeriesKeys.length > 0 && !moneyflowChartModel.hasVisibleValues ? (
+                    <p className="workspace-note">No money movement inside the selected period yet.</p>
+                  ) : null}
+
+                  {visibleMoneyflowSeriesKeys.length > 0 && moneyflowChartModel.hasVisibleValues ? (
+                    <div className="moneyflow-chart-shell">
+                      <svg
+                        className="moneyflow-chart-svg"
+                        viewBox={`0 0 ${moneyflowChartModel.chartWidth} ${moneyflowChartModel.chartHeight}`}
+                        role="img"
+                        aria-label="Moneyflow trend chart"
+                      >
+                        {moneyflowChartModel.yTicks.map((tick) => (
+                          <g key={tick.label}>
+                            <line
+                              x1={moneyflowChartModel.paddingLeft}
+                              y1={tick.y}
+                              x2={moneyflowChartModel.chartWidth - moneyflowChartModel.paddingRight}
+                              y2={tick.y}
+                              className="moneyflow-chart-gridline"
+                            />
+                            <text x={14} y={tick.y + 4} className="moneyflow-chart-axis-label">
+                              {tick.label}
+                            </text>
+                          </g>
+                        ))}
+
+                        {moneyflowChartModel.xTicks.map((tick) => (
+                          <g key={tick.date}>
+                            <line
+                              x1={tick.x}
+                              y1={moneyflowChartModel.paddingTop}
+                              x2={tick.x}
+                              y2={moneyflowChartModel.chartHeight - moneyflowChartModel.paddingBottom}
+                              className="moneyflow-chart-gridline moneyflow-chart-gridline-vertical"
+                            />
+                            <text
+                              x={tick.x}
+                              y={moneyflowChartModel.chartHeight - 10}
+                              textAnchor="middle"
+                              className="moneyflow-chart-axis-label"
+                            >
+                              {tick.label}
+                            </text>
+                          </g>
+                        ))}
+
+                        {moneyflowChartModel.visibleSeries.map((series) => (
+                          <g key={series.key}>
+                            <path d={series.path} fill="none" stroke={series.color} strokeWidth="3" strokeLinecap="round" />
+                            {series.points.length <= 45
+                              ? series.points.map((point) => (
+                                  <circle
+                                    key={`${series.key}-${point.date}`}
+                                    cx={point.x}
+                                    cy={point.y}
+                                    r="3.6"
+                                    fill={series.color}
+                                    stroke="rgba(18, 20, 29, 0.96)"
+                                    strokeWidth="1.6"
+                                  />
+                                ))
+                              : null}
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+                  ) : null}
                 </section>
               </div>
             ) : null}
