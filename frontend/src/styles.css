@@ -2598,12 +2598,37 @@ textarea { resize: vertical; }
   display: flex;
   flex-direction: column;
   padding-bottom: 0;
+  height: 100%;
+}
+
+/* Intermediate .workspace grid must be a flex item that fills shell-main */
+.shell:has(.kanban-workspace) .shell-main > .workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: 1fr;
 }
 
 /* The kanban workspace fills the remaining column height */
 .kanban-workspace {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* repairs-surface-stack fills remaining space below topbar */
+.kanban-workspace .repairs-surface-stack {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: 1fr;
+}
+
+/* repairs-web-surface fills its grid cell */
+.kanban-workspace .repairs-web-surface {
+  overflow: hidden;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
