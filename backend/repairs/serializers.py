@@ -44,6 +44,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "issue_notes",
             "status",
             "mileage_at_service",
+            "position",
             "tracking_code",
             "completed_at",
             "repair_notes",

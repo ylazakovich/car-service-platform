@@ -27,6 +27,7 @@ export interface RepairItem {
   after_photos: string[];
   created_at: string;
   updated_at: string;
+  position?: number | null;
 }
 
 export interface StaffUser {
@@ -82,4 +83,8 @@ export async function deleteRepairNote(repairId: number, noteId: number): Promis
 export async function fetchStaffUsers(): Promise<StaffUser[]> {
   const response = await api.get<StaffUser[]>("/auth/staff/");
   return response.data;
+}
+
+export async function reorderRepairs(items: { id: number; position: number }[]): Promise<void> {
+  await api.post("/repairs/reorder/", items);
 }

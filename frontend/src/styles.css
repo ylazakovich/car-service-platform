@@ -2486,6 +2486,84 @@ textarea { resize: vertical; }
   text-align: right;
 }
 
+.kanban-date-filter {
+  display: flex;
+  gap: var(--s1);
+  align-items: center;
+}
+
+.kanban-date-chip {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s, background 0.14s;
+  white-space: nowrap;
+}
+
+.kanban-date-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-mid);
+}
+
+.kanban-date-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.kanban-show-more {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  padding: var(--s2) var(--s3);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: border-color 0.14s, color 0.14s;
+}
+
+.kanban-show-more:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.kanban-col-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.kanban-col-collapse {
+  background: none;
+  border: none;
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.kanban-col-collapse:hover {
+  color: var(--text-mid);
+  background: var(--surface-mid);
+}
+
+.kanban-card-label {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .kanban-cards {
   display: flex;
   flex-direction: column;
@@ -2675,6 +2753,11 @@ textarea { resize: vertical; }
   opacity: 0.38;
   transform: scale(0.97);
   box-shadow: none;
+}
+
+.kanban-card-drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 -3px 0 0 var(--accent);
 }
 
 /* column drop target highlight */
@@ -3489,10 +3572,10 @@ textarea { resize: vertical; }
 }
 
 .vehicle-history-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  padding: var(--s3, 12px) var(--s4, 16px);
+  background: var(--surface-mid);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: var(--s4);
   display: flex;
   flex-direction: column;
   gap: var(--s2, 8px);
@@ -3513,7 +3596,7 @@ textarea { resize: vertical; }
 
 .vehicle-history-date {
   font-size: 0.8125rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-soft);
   white-space: nowrap;
 }
 
@@ -3530,8 +3613,8 @@ textarea { resize: vertical; }
 }
 
 .vehicle-history-notes {
-  font-size: 0.8125rem;
-  color: rgba(255,255,255,0.6);
+  font-size: 0.84rem;
+  color: var(--text-mid);
   margin: 0;
   line-height: 1.4;
 }
