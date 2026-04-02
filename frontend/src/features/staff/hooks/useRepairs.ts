@@ -7,6 +7,7 @@ import {
   deleteRepair as deleteRepairApi,
   deleteRepairNote,
   fetchRepairs,
+  regeneratePortalToken,
   reorderRepairs,
   updateRepair,
   type RepairItem,
@@ -461,6 +462,19 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     }, 1600);
   }
 
+  async function handleRegeneratePortalLink(repairId: number) {
+    const { portal_token } = await regeneratePortalToken(repairId);
+    setRepairs((current) =>
+      current.map((r) => (r.id === repairId ? { ...r, portal_token } : r))
+    );
+    const url = `${window.location.origin}/portal/${portal_token}`;
+    await navigator.clipboard.writeText(url);
+    setCopyToast("New portal link generated & copied");
+    window.setTimeout(() => {
+      setCopyToast((current) => (current === "New portal link generated & copied" ? "" : current));
+    }, 2400);
+  }
+
   return {
     repairs,
     repairSearch,
@@ -514,5 +528,6 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     handleColumnDrop,
     handleCopyTrackingCode,
     handleCopyPortalLink,
+    handleRegeneratePortalLink,
   };
 }

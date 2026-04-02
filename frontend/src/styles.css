@@ -2264,6 +2264,16 @@ textarea { resize: vertical; }
   gap: 0.3em;
 }
 
+.portal-link-regenerate {
+  color: var(--text-soft);
+  border-color: var(--border);
+}
+
+.portal-link-regenerate:hover {
+  color: var(--warning);
+  border-color: rgba(240, 168, 74, 0.4);
+}
+
 .repair-info-date-input {
   border: 1px solid var(--border);
   border-radius: 8px;

@@ -74,6 +74,11 @@ export async function deleteRepair(id: number): Promise<void> {
   await api.delete(`/repairs/${id}`);
 }
 
+export async function regeneratePortalToken(id: number): Promise<{ portal_token: string }> {
+  const response = await api.post<{ portal_token: string }>(`/repairs/${id}/regenerate-portal-token/`);
+  return response.data;
+}
+
 export async function addRepairNote(repairId: number, text: string): Promise<RepairNoteItem> {
   const response = await api.post<RepairNoteItem>(`/repairs/${repairId}/notes/`, { text });
   return response.data;

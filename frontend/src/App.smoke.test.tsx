@@ -117,6 +117,8 @@ describe("bootstrap application", () => {
               issue_notes: "Customer reported vibration while braking.",
               status: "in_progress",
               tracking_code: "TOR-1011",
+              portal_token: "test-portal-token-1011",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
@@ -255,6 +257,8 @@ describe("bootstrap application", () => {
               issue_notes: "Scheduled maintenance.",
               status: "completed",
               tracking_code: "TOR-1011",
+              portal_token: "test-portal-token-1011",
+              estimated_date: null,
               completed_at: "2025-02-05",
               repair_notes: [],
               before_photos: [],
@@ -274,6 +278,8 @@ describe("bootstrap application", () => {
               issue_notes: "March service one.",
               status: "completed",
               tracking_code: "TOR-1012",
+              portal_token: "test-portal-token-1012",
+              estimated_date: null,
               completed_at: "2025-03-05",
               repair_notes: [],
               before_photos: [],
@@ -293,6 +299,8 @@ describe("bootstrap application", () => {
               issue_notes: "March service two.",
               status: "completed",
               tracking_code: "TOR-1013",
+              portal_token: "test-portal-token-1013",
+              estimated_date: null,
               completed_at: "2025-03-20",
               repair_notes: [],
               before_photos: [],
@@ -312,6 +320,8 @@ describe("bootstrap application", () => {
               issue_notes: "April service.",
               status: "in_progress",
               tracking_code: "TOR-1014",
+              portal_token: "test-portal-token-1014",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
@@ -713,10 +723,29 @@ describe("bootstrap application", () => {
   });
 
   it("renders a public client portal route", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/portal/ABC-123/") {
+        return Promise.resolve({
+          data: {
+            tracking_code: "TOR-0001",
+            service_name: "Brake Inspection",
+            status: "in_progress",
+            status_display: "In Progress",
+            vehicle_info: { label: "Toyota Corolla", year: 2020, license_plate: "WA 12345" },
+            estimated_date: null,
+            mileage_at_service: null,
+            completed_at: null,
+            created_at: "2025-01-01T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
     renderApp("/portal/ABC-123");
 
-    expect(await screen.findByText("Track Your Repair")).toBeInTheDocument();
-    expect(screen.getByText(/Access code: ABC-123/)).toBeInTheDocument();
+    expect(await screen.findByText("Repair Status")).toBeInTheDocument();
+    expect(screen.getByText("Brake Inspection")).toBeInTheDocument();
   });
 
   it("allows staff login from the login page", async () => {
@@ -800,6 +829,8 @@ describe("bootstrap application", () => {
               issue_notes: "",
               status: "new",
               tracking_code: "TOR-0201",
+              portal_token: "test-portal-token-0201",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
@@ -819,6 +850,8 @@ describe("bootstrap application", () => {
               issue_notes: "",
               status: "new",
               tracking_code: "TOR-0202",
+              portal_token: "test-portal-token-0202",
+              estimated_date: null,
               completed_at: null,
               repair_notes: [],
               before_photos: [],
