@@ -2613,6 +2613,7 @@ textarea { resize: vertical; }
   flex: 1;
   min-height: 0;
   align-items: stretch;
+  grid-template-rows: 1fr;
 }
 
 /* Each column is a tall flex column */
