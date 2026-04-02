@@ -2252,6 +2252,35 @@ textarea { resize: vertical; }
   color: var(--accent);
 }
 
+.portal-link-chip {
+  width: auto;
+  height: auto;
+  padding: 0.32rem 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  color: var(--accent);
+  border-color: var(--border-accent);
+  gap: 0.3em;
+}
+
+.repair-info-date-input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.82rem;
+  width: 100%;
+  max-width: 160px;
+}
+
+.repair-info-date-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
 /* ═══════════════════════════════════════════════
    MODAL
    ═══════════════════════════════════════════════ */

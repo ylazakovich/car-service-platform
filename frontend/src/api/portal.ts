@@ -12,7 +12,7 @@ export interface PortalRepair {
   status: "new" | "in_progress" | "waiting_parts" | "completed";
   status_display: string;
   vehicle_info: PortalVehicleInfo;
-  master_display: string | null;
+  estimated_date: string | null;
   mileage_at_service: number | null;
   completed_at: string | null;
   created_at: string;

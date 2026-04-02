@@ -64,6 +64,8 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
     })),
     status: item.status,
     tracking_code: item.tracking_code,
+    portal_token: item.portal_token,
+    estimated_date: item.estimated_date ?? "",
     before_photos: item.before_photos,
     during_photos: item.during_photos,
     after_photos: item.after_photos,
@@ -105,6 +107,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [repairModalStatus, setRepairModalStatus] = useState<RepairStatus>("new");
   const [repairModalMasterId, setRepairModalMasterId] = useState("");
   const [repairModalCompletedAt, setRepairModalCompletedAt] = useState("");
+  const [repairModalEstimatedDate, setRepairModalEstimatedDate] = useState("");
   const [repairModalNewNote, setRepairModalNewNote] = useState("");
   const [repairBeforePhotos, setRepairBeforePhotos] = useState<string[]>([]);
   const [repairDuringPhotos, setRepairDuringPhotos] = useState<string[]>([]);
@@ -140,6 +143,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalStatus("new");
     setRepairModalMasterId("");
     setRepairModalCompletedAt("");
+    setRepairModalEstimatedDate("");
     setRepairModalNewNote("");
     setRepairBeforePhotos([]);
     setRepairDuringPhotos([]);
@@ -161,6 +165,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalStatus(repair.status);
     setRepairModalMasterId(repair.master_id);
     setRepairModalCompletedAt(repair.completed_at);
+    setRepairModalEstimatedDate(repair.estimated_date);
     setRepairModalNewNote("");
     setRepairBeforePhotos(repair.before_photos);
     setRepairDuringPhotos(repair.during_photos);
@@ -281,6 +286,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       status: repairModalStatus,
       master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
       completed_at: repairModalStatus === "completed" ? repairModalCompletedAt || null : null,
+      estimated_date: repairModalEstimatedDate || null,
     });
 
     setRepairs((current) =>
@@ -445,6 +451,16 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     }, 1600);
   }
 
+  async function handleCopyPortalLink(portalToken: string, event?: { stopPropagation?: () => void }) {
+    event?.stopPropagation?.();
+    const url = `${window.location.origin}/portal/${portalToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopyToast("Portal link copied");
+    window.setTimeout(() => {
+      setCopyToast((current) => (current === "Portal link copied" ? "" : current));
+    }, 1600);
+  }
+
   return {
     repairs,
     repairSearch,
@@ -464,6 +480,8 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalMasterId,
     repairModalCompletedAt,
     setRepairModalCompletedAt,
+    repairModalEstimatedDate,
+    setRepairModalEstimatedDate,
     repairModalNewNote,
     setRepairModalNewNote,
     repairBeforePhotos,
@@ -495,5 +513,6 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     handleColumnDragLeave,
     handleColumnDrop,
     handleCopyTrackingCode,
+    handleCopyPortalLink,
   };
 }
