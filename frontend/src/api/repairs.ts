@@ -96,3 +96,8 @@ export async function fetchStaffUsers(): Promise<StaffUser[]> {
 export async function reorderRepairs(items: { id: number; position: number }[]): Promise<void> {
   await api.post("/repairs/reorder/", items);
 }
+
+export async function downloadRepairPdf(id: number): Promise<Blob> {
+  const response = await api.get(`/repairs/${id}/pdf/`, { responseType: "blob" });
+  return response.data as Blob;
+}

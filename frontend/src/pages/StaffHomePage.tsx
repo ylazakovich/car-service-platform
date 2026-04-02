@@ -2,7 +2,8 @@ import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "r
 import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
-import { fetchStaffUsers, type StaffUser } from "../api/repairs";
+import { fetchStaffUsers, downloadRepairPdf, type StaffUser } from "../api/repairs";
+import { PdfPreviewModal } from "../components/PdfPreviewModal";
 import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
@@ -562,6 +563,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [resetLinkResult, setResetLinkResult] = useState<{ userId: number; url: string } | null>(null);
+  const [repairPdfBlob, setRepairPdfBlob] = useState<Blob | null>(null);
+  const [repairPdfLoading, setRepairPdfLoading] = useState(false);
+
   const deferredVehicleSearch = useDeferredValue(vehicleSearch);
 
   const customers = useMemo(() => [...serverCustomers, ...demoCustomers], [serverCustomers, demoCustomers]);
@@ -736,6 +740,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
   }
 
+  async function handleDownloadRepairPdf(repairId: number) {
+    setRepairPdfLoading(true);
+    try {
+      const blob = await downloadRepairPdf(repairId);
+      setRepairPdfBlob(blob);
+    } catch {
+      // silently ignore
+    } finally {
+      setRepairPdfLoading(false);
+    }
+  }
+
+  function handleCloseRepairModal() {
+    setRepairPdfBlob(null);
+    setRepairPdfLoading(false);
+    closeRepairModal();
+  }
+
   useEffect(() => {
     let ignore = false;
 
@@ -770,6 +792,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       } else if (isRepairFormOpen) {
         closeRepairCreateModal();
       } else if (selectedRepairId !== null) {
+        setRepairPdfBlob(null);
+        setRepairPdfLoading(false);
         closeRepairModal();
       }
     }
@@ -2547,7 +2571,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         ) : null}
 
         {selectedRepair ? (
-          <div className="modal-overlay" role="presentation" onClick={closeRepairModal}>
+          <div className="modal-overlay" role="presentation" onClick={handleCloseRepairModal}>
             <section
               className="modal-card repair-update-modal"
               role="dialog"
@@ -2561,6 +2585,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <h3 id="repair-modal-title">{selectedRepair.vehicle_label}</h3>
                 </div>
                 <div className="inline-actions">
+                  {selectedRepair.status === "completed" && (
+                    <button
+                      type="button"
+                      className="button button-primary"
+                      disabled={repairPdfLoading}
+                      onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
+                    >
+                      {repairPdfLoading ? "Generating..." : "Download PDF"}
+                    </button>
+                  )}
                   {!isStaff && (
                     <button
                       type="button"
@@ -2570,7 +2604,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       Delete Repair
                     </button>
                   )}
-                  <button type="button" className="button button-secondary" onClick={closeRepairModal}>
+                  <button type="button" className="button button-secondary" onClick={handleCloseRepairModal}>
                     Close
                   </button>
                 </div>
@@ -2796,13 +2830,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <button type="button" className="button" onClick={() => void handleRepairModalSave()}>
                     Save Repair Update
                   </button>
-                  <button type="button" className="button button-secondary" onClick={closeRepairModal}>
+                  <button type="button" className="button button-secondary" onClick={handleCloseRepairModal}>
                     Cancel
                   </button>
                 </div>
               </div>
             </section>
           </div>
+        ) : null}
+
+        {repairPdfBlob ? (
+          <PdfPreviewModal
+            blob={repairPdfBlob}
+            filename={`act_${selectedRepair?.tracking_code ?? "repair"}.pdf`}
+            onClose={() => setRepairPdfBlob(null)}
+          />
         ) : null}
       </div>
     );
