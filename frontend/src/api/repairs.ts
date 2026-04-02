@@ -46,8 +46,13 @@ export interface RepairWritePayload {
   completed_at?: string | null;
 }
 
-export async function fetchRepairs(q?: string): Promise<RepairItem[]> {
-  const response = await api.get<RepairItem[]>("/repairs/", { params: q ? { q } : undefined });
+export async function fetchRepairs(q?: string, masterId?: number): Promise<RepairItem[]> {
+  const params: Record<string, string | number> = {};
+  if (q) params.q = q;
+  if (masterId !== undefined) params.master_id = masterId;
+  const response = await api.get<RepairItem[]>("/repairs/", {
+    params: Object.keys(params).length ? params : undefined,
+  });
   return response.data;
 }
 

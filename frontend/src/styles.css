@@ -128,6 +128,17 @@ p  { margin: 0.4em 0 0; }
 
 .button:disabled { cursor: wait; opacity: 0.45; }
 
+.button-sm {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+.kanban-topbar .button,
+.workspace-topbar .button {
+  padding: 0.5rem 0.95rem;
+  font-size: 0.82rem;
+}
+
 .button-secondary {
   display: inline-flex;
   align-items: center;
@@ -210,24 +221,51 @@ p  { margin: 0.4em 0 0; }
   padding: var(--s8) var(--s8) calc(var(--s8) + var(--s3));
 }
 
-/* Logo mark shared between login and sidebar */
-.login-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: var(--accent);
+/* Brand mark shared between login and sidebar */
+.brand-mark {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  color: #0d0d11;
+  background: linear-gradient(180deg, #d9e34e 0%, var(--accent) 100%);
+  border: 1px solid rgba(13, 13, 17, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.brand-mark svg,
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.brand-mark__text {
+  color: #0d0d11;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.brand-mark--auth {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   margin-bottom: var(--s5);
 }
 
-.login-logo span {
-  color: #0d0d11;
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+.brand-mark--auth .brand-mark__text { font-size: 1.1rem; }
+
+.brand-mark--compact {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
 }
+
+.brand-mark--compact .brand-mark__text { font-size: 0.75rem; }
 
 .login-header { display: grid; gap: var(--s1); }
 .login-card h1 { font-size: 1.5rem; margin-top: var(--s1); }
@@ -596,24 +634,6 @@ textarea { resize: vertical; }
 .shell-sidebar-top { display: grid; gap: var(--s5); }
 
 .brand-block { display: flex; flex-direction: column; gap: var(--s2); }
-
-.brand-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.brand-logo span {
-  color: #0d0d11;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
 
 .brand-block h1 { font-size: 0.98rem; font-weight: 700; line-height: 1.3; margin: 0; }
 .shell-copy {
