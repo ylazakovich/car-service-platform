@@ -3,6 +3,7 @@
 .DS_Store
 backups/
 tmp/
+.claude/
 
 # Local agent run artifacts
 .agents/runs/*
