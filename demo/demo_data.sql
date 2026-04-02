@@ -1,5 +1,29 @@
 BEGIN;
 
+-- Clean up existing demo data (idempotent re-run support)
+DELETE FROM purchases
+WHERE repair_code LIKE 'TOR-%';
+
+DELETE FROM repair_notes
+WHERE repair_id IN (SELECT id FROM repairs WHERE tracking_code LIKE 'TOR-%');
+
+DELETE FROM repairs
+WHERE tracking_code LIKE 'TOR-%';
+
+DELETE FROM vehicles
+WHERE license_plate IN (
+    'AA 1234 BB','AA 9876 CC','KA 4321 EE','BH 5566 FF','BH 7788 GG',
+    'AA 2233 HH','AA 4455 KK','KA 8899 MM','BH 1122 PP','BH 3344 RR',
+    'AA 6677 SS','KA 9900 TT','KA 1357 UU','AA 2468 VV','BH 9876 WW','BH 1111 XX'
+);
+
+DELETE FROM customers
+WHERE phone IN (
+    '+380501234567','+380672345678','+380933456789',
+    '+380501112233','+380672223344','+380933334455',
+    '+380504445566','+380675556677','+380936667788','+380507778899'
+);
+
 -- Services
 INSERT INTO services (name, description, is_active, created_at, updated_at)
 VALUES
@@ -28,7 +52,7 @@ VALUES
     ('Andrii Shevchenko',    '+380675556677', 'a.shevchenko@meta.ua',       'Knowledgeable about cars, prefers technical explanations.', NULL, NOW(), NOW()),
     ('Larysa Tkachenko',     '+380936667788', 'l.tkachenko@ukr.net',        'Elderly client, needs simple explanations. Call before visit.', NULL, NOW(), NOW()),
     ('Serhii Melnychenko',   '+380507778899', 's.melnychenko@gmail.com',    'Sports car enthusiast. Uses premium fluids only.', NULL, NOW(), NOW())
-ON CONFLICT DO NOTHING;
+;
 
 -- Vehicles
 INSERT INTO vehicles (customer_id, license_plate, make, model, year, vin, color, notes, mileage, last_service_date, added_date, created_at, updated_at)
