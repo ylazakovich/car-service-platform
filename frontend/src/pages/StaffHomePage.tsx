@@ -663,6 +663,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleCardDrop,
     handleCopyTrackingCode,
     handleCopyPortalLink,
+    handleRegeneratePortalLink,
     repairModalEstimatedDate,
     setRepairModalEstimatedDate,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
@@ -2663,14 +2664,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                     <div className="repair-info-row">
                       <span className="repair-info-label">Client Link</span>
-                      <button
-                        type="button"
-                        className="copy-chip portal-link-chip"
-                        aria-label="Copy client portal link"
-                        onClick={() => void handleCopyPortalLink(selectedRepair.portal_token)}
-                      >
-                        Copy link ⧉
-                      </button>
+                      <div className="tracking-chip-row">
+                        <button
+                          type="button"
+                          className="copy-chip portal-link-chip"
+                          aria-label="Copy client portal link"
+                          onClick={() => void handleCopyPortalLink(selectedRepair.portal_token)}
+                        >
+                          Copy ⧉
+                        </button>
+                        <button
+                          type="button"
+                          className="copy-chip portal-link-chip portal-link-regenerate"
+                          aria-label="Regenerate client portal link"
+                          onClick={() => void handleRegeneratePortalLink(selectedRepair.id)}
+                        >
+                          Regenerate ↺
+                        </button>
+                      </div>
                     </div>
                     <div className="repair-info-row">
                       <span className="repair-info-label">Est. Completion</span>

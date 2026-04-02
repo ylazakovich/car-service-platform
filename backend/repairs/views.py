@@ -1,4 +1,6 @@
 from django.db.models import Q
+import secrets
+
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -81,6 +83,16 @@ class RepairNoteDeleteView(APIView):
             raise PermissionDenied
         note.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RepairRegeneratePortalTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        repair = generics.get_object_or_404(Repair, pk=pk)
+        repair.portal_token = secrets.token_urlsafe(20)
+        repair.save(update_fields=["portal_token"])
+        return Response({"portal_token": repair.portal_token})
 
 
 class RepairReorderView(APIView):
