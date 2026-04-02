@@ -37,5 +37,10 @@ docker compose exec -T db psql \
 
 echo ""
 echo "Demo data loaded. The database now contains:"
-echo "  3 customers, 5 vehicles, 6 repairs (TOR-1001–TOR-1006)"
-echo "  4 purchases, 2 suppliers, 3 services"
+echo "  2 users   (admin@autoservice.local / staff@autoservice.local)"
+echo "  54 services with PLN prices"
+echo "  10 customers"
+echo "  16 vehicles"
+echo "  ~50 repairs across all statuses (new / in_progress / waiting_parts / completed)"
+echo "  ~60 purchases linked to repairs"
+echo "  10 suppliers"
