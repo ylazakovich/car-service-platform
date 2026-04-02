@@ -661,7 +661,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     dragOverCardId,
     handleCardDragOver,
     handleCardDrop,
-    handleCopyTrackingCode,
     handleCopyPortalLink,
     handleRegeneratePortalLink,
     repairModalEstimatedDate,
@@ -1895,17 +1894,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           <div className="tracking-chip-row">
                             <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>
                           </div>
-                          <div className="tracking-chip-row">
-                            <span className="tracking-chip">Tracking: {repair.tracking_code}</span>
-                            <button
-                              type="button"
-                              className="copy-chip"
-                              aria-label={`Copy tracking code ${repair.tracking_code}`}
-                              onClick={() => void handleCopyTrackingCode(repair.tracking_code)}
-                            >
-                              ⧉
-                            </button>
-                          </div>
                         </article>
                       ))}
                     </div>
@@ -2037,7 +2025,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   formatCurrency={formatCurrency}
                   getRepairStatusClass={getRepairStatusClass}
                   repairStatusLabels={REPAIR_STATUS_LABELS}
-                  onCopyTrackingCode={(trackingCode) => void handleCopyTrackingCode(trackingCode)}
                   onOpenRepairs={() => {
                     closeVehicleDetailModal();
                     onSelectSection("repairs");
@@ -2055,7 +2042,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   formatCurrency={formatCurrency}
                   getRepairStatusClass={getRepairStatusClass}
                   repairStatusLabels={REPAIR_STATUS_LABELS}
-                  onCopyTrackingCode={(trackingCode) => void handleCopyTrackingCode(trackingCode)}
                 />
               </div>
             </section>
@@ -2387,7 +2373,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             activeFilter={mobileRepairStatusFilter}
             onFilterChange={setMobileRepairStatusFilter}
             onOpenRepair={openRepairModal}
-            onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
             repairPartSummaries={repairPartSummaries}
           />
 
@@ -2404,7 +2389,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onCardDragOver={handleCardDragOver}
             onCardDrop={handleCardDrop}
             onOpenRepair={openRepairModal}
-            onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
             repairPartSummaries={repairPartSummaries}
           />
         </div>
@@ -2649,20 +2633,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <p>{selectedRepair.service_name}</p>
                     </div>
                     <div className="repair-info-row">
-                      <span className="repair-info-label">Tracking</span>
-                      <div className="tracking-chip-row">
-                        <span className="tracking-chip">{selectedRepair.tracking_code}</span>
-                        <button
-                          type="button"
-                          className="copy-chip"
-                          aria-label={`Copy tracking code ${selectedRepair.tracking_code}`}
-                          onClick={() => void handleCopyTrackingCode(selectedRepair.tracking_code)}
-                        >
-                          ⧉
-                        </button>
-                      </div>
-                    </div>
-                    <div className="repair-info-row">
                       <span className="repair-info-label">Client Link</span>
                       <div className="tracking-chip-row">
                         <button
@@ -2673,14 +2643,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         >
                           Copy ⧉
                         </button>
-                        <button
-                          type="button"
-                          className="copy-chip portal-link-chip portal-link-regenerate"
-                          aria-label="Regenerate client portal link"
-                          onClick={() => void handleRegeneratePortalLink(selectedRepair.id)}
-                        >
-                          Regenerate ↺
-                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            className="copy-chip portal-link-chip portal-link-regenerate"
+                            aria-label="Regenerate client portal link"
+                            onClick={() => {
+                              if (window.confirm("Regenerate portal link? The current link will stop working immediately.")) {
+                                void handleRegeneratePortalLink(selectedRepair.id);
+                              }
+                            }}
+                          >
+                            Regenerate ↺
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="repair-info-row">

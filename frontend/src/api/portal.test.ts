@@ -28,9 +28,9 @@ describe("fetchPortalRepair", () => {
       },
     });
 
-    await fetchPortalRepair(token);
+    await fetchPortalRepair(portalCode);
 
-    expect(mockApi.get).toHaveBeenCalledWith(`/portal/${encodeURIComponent(token)}/`);
+    expect(mockApi.get).toHaveBeenCalledWith(`/portal/${encodeURIComponent(portalCode)}/`);
   });
 
   it("returns the repair data from the response", async () => {

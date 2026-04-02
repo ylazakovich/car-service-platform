@@ -149,7 +149,9 @@ VALUES
     )
 ON CONFLICT (license_plate) DO NOTHING;
 
--- Repairs
+-- Repairs (portal_token generated after insert)
+ALTER TABLE repairs ALTER COLUMN portal_token DROP NOT NULL;
+
 INSERT INTO repairs (vehicle_id, master_id, service_name, issue_notes, status, tracking_code, completed_at, mileage_at_service, created_at, updated_at)
 VALUES
     -- AA 1234 BB — Toyota Camry (Kovalenko)
@@ -547,6 +549,8 @@ VALUES
         '2024-02-14 10:00:00+00', NOW()
     )
 ON CONFLICT (tracking_code) DO NOTHING;
+
+UPDATE repairs SET portal_token = 'demo-' || tracking_code WHERE portal_token IS NULL;
 
 -- Suppliers
 INSERT INTO suppliers (name, nip, phone, email, notes, created_at, updated_at)

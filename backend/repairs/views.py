@@ -3,7 +3,7 @@ import secrets
 
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
@@ -86,7 +86,7 @@ class RepairNoteDeleteView(APIView):
 
 
 class RepairRegeneratePortalTokenView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, pk):
         repair = generics.get_object_or_404(Repair, pk=pk)
