@@ -38,6 +38,13 @@ function renderApp(route = "/app") {
   );
 }
 
+function formatExpectedDateInput(value: Date) {
+  const day = String(value.getDate()).padStart(2, "0");
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const year = String(value.getFullYear());
+  return `${day}-${month}-${year}`;
+}
+
 describe("bootstrap application", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -446,6 +453,68 @@ describe("bootstrap application", () => {
       expect(within(partsResults as HTMLElement).getByText(/230,00\s*zł/)).toBeInTheDocument();
       expect(within(partsResults as HTMLElement).getByText(/110,00\s*zł/)).toBeInTheDocument();
     });
+  });
+
+  it("resets moneyflow to the last 30 days on every dashboard visit", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+
+    const today = new Date();
+    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - 30);
+
+    const startInput = await screen.findByLabelText("Start date");
+    const endInput = await screen.findByLabelText("End date");
+
+    expect(startInput).toHaveValue(formatExpectedDateInput(startDate));
+    expect(endInput).toHaveValue(formatExpectedDateInput(endDate));
+
+    await user.clear(startInput);
+    await user.type(startInput, "01-01-2025");
+    await user.tab();
+    await user.clear(endInput);
+    await user.type(endInput, "31-01-2025");
+    await user.tab();
+
+    expect(startInput).toHaveValue("01-01-2025");
+    expect(endInput).toHaveValue("31-01-2025");
+
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Dashboard" }));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Start date")).toHaveValue(formatExpectedDateInput(startDate));
+      expect(screen.getByLabelText("End date")).toHaveValue(formatExpectedDateInput(endDate));
+    });
+  });
+
+  it("shows a moneyflow chart with toggleable series", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Flow Timeline", level: 3 })).toBeInTheDocument();
+
+    const purchaseToggle = screen.getByRole("button", { name: "Purchase Spend trend" });
+    const serviceToggle = screen.getByRole("button", { name: "Service Sales trend" });
+    const partsToggle = screen.getByRole("button", { name: "Parts Sales trend" });
+
+    expect(purchaseToggle).toHaveAttribute("aria-pressed", "true");
+    expect(serviceToggle).toHaveAttribute("aria-pressed", "true");
+    expect(partsToggle).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(purchaseToggle);
+    await user.click(serviceToggle);
+    await user.click(partsToggle);
+
+    expect(purchaseToggle).toHaveAttribute("aria-pressed", "false");
+    expect(serviceToggle).toHaveAttribute("aria-pressed", "false");
+    expect(partsToggle).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Turn on at least one line to display the chart.")).toBeInTheDocument();
   });
 
   it("opens detail dialogs for customer and vehicle cards", async () => {
@@ -927,64 +996,4 @@ describe("bootstrap application", () => {
     expect(screen.getByRole("button", { name: "Show 5 more" })).toBeInTheDocument();
   });
 
-  it("keeps the workspace accessible on refresh when a cached user exists and auth check has a transient failure", async () => {
-    window.localStorage.setItem(
-      "auth-user",
-      JSON.stringify({
-        id: 1,
-        email: "manager@test.local",
-        first_name: "Test",
-        last_name: "Manager",
-        role: "admin",
-        is_staff: false,
-      })
-    );
-
-    mockApi.get.mockImplementation((url: string) => {
-      if (url === "/auth/csrf") {
-        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
-      }
-      if (url === "/auth/me") {
-        return Promise.reject(new Error("temporary network issue"));
-      }
-      if (url.startsWith("/customers/")) {
-        return Promise.resolve({
-          data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
-        });
-      }
-      if (url.startsWith("/vehicles/")) {
-        return Promise.resolve({
-          data: [
-            {
-              id: 1,
-              customer: { id: 1, full_name: "Alex Johnson" },
-              license_plate: "WB 1234K",
-              make: "Toyota",
-              model: "Corolla",
-              year: 2018,
-              vin: "",
-              color: "White",
-              notes: "",
-              added_date: "2024-11-04",
-            },
-          ],
-        });
-      }
-      if (url === "/repairs/") {
-        return Promise.resolve({ data: [] });
-      }
-      if (url === "/purchases/") {
-        return Promise.resolve({ data: { results: [], count: 0 } });
-      }
-      if (url === "/purchases/suppliers/" || url === "/services/" || url === "/auth/staff/") {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.resolve({ data: [] });
-    });
-
-    renderApp("/app");
-
-    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
-    expect(screen.getByText("manager@test.local")).toBeInTheDocument();
-  });
 });

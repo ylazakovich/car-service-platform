@@ -596,6 +596,63 @@ VALUES
         'Premium synthetic as per owner request. K&N high-flow oil filter.',
         'completed', 'TOR-2045', '2024-02-14', 35600,
         '2024-02-14 10:00:00+00', NOW()
+    ),
+    -- March 2026 moneyflow showcase data
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'), NULL,
+        'Brake system service',
+        'March 2026 demo case: front discs scored, full brake service completed with same-week parts arrival.',
+        'completed', 'TOR-3001', '2026-03-04', 93120,
+        '2026-03-03 08:30:00+00', NOW()
+    ),
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'KA 4321 EE'), NULL,
+        'AC service',
+        'March 2026 demo case: AC performance dropped before spring season, condenser leak repaired and re-gassed.',
+        'completed', 'TOR-3002', '2026-03-07', 35640,
+        '2026-03-06 09:20:00+00', NOW()
+    ),
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 5566 FF'), NULL,
+        'Timing belt + water pump replacement',
+        'March 2026 demo case: fleet Passat scheduled before regional delivery route starts.',
+        'completed', 'TOR-3003', '2026-03-10', 119800,
+        '2026-03-08 07:45:00+00', NOW()
+    ),
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'), NULL,
+        'Suspension & steering',
+        'March 2026 demo case: vibration at motorway speed traced to worn tie rod ends and front links.',
+        'completed', 'TOR-3004', '2026-03-14', 82600,
+        '2026-03-12 10:15:00+00', NOW()
+    ),
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'KA 8899 MM'), NULL,
+        'Oil change + all filters',
+        'March 2026 demo case: post-winter maintenance with a full filter set and fluids top-up.',
+        'completed', 'TOR-3005', '2026-03-18', 24100,
+        '2026-03-17 11:00:00+00', NOW()
+    ),
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'), NULL,
+        'Brake pads — full axle replacement',
+        'March 2026 demo case: van brake overhaul completed ahead of fleet inspection.',
+        'completed', 'TOR-3006', '2026-03-22', 208450,
+        '2026-03-20 07:10:00+00', NOW()
+    ),
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 9876 WW'), NULL,
+        'Alignment check — track setup',
+        'March 2026 demo case: suspension dial-in before the first circuit session of the season.',
+        'completed', 'TOR-3007', '2026-03-26', 27440,
+        '2026-03-25 09:50:00+00', NOW()
+    ),
+    (
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 1111 XX'), NULL,
+        'Coilover installation + alignment',
+        'March 2026 demo case: spring setup refresh with new camber plates and alignment session.',
+        'completed', 'TOR-3008', '2026-03-30', 42120,
+        '2026-03-28 08:10:00+00', NOW()
     )
 ON CONFLICT (tracking_code) DO NOTHING;
 
@@ -708,6 +765,111 @@ VALUES
         (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'),
         'Sachs Rear Shock Absorber — 316 508',
         2, 178.00, 260.00, 'TOR-2039', 'FV/2024/07/0291', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-03', '2026-03-04',
+        (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'),
+        'ATE Front Brake Disc Set — 24.0125-0154.1',
+        1, 210.00, 320.00, 'TOR-3001', 'FV/2026/03/0601', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-03', '2026-03-04',
+        (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'),
+        'ATE Ceramic Front Brake Pad Set — 13.0470-5717.2',
+        1, 118.00, 180.00, 'TOR-3001', 'FV/2026/03/0602', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-06', '2026-03-07',
+        (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
+        (SELECT id FROM vehicles WHERE license_plate = 'KA 4321 EE'),
+        'Nissens AC Condenser — 940192',
+        1, 265.00, 390.00, 'TOR-3002', 'FV/2026/03/0610', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-06', '2026-03-07',
+        (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'KA 4321 EE'),
+        'R1234yf Refrigerant Charge Pack',
+        1, 95.00, 150.00, 'TOR-3002', 'FV/2026/03/0611', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-08', '2026-03-09',
+        (SELECT id FROM suppliers WHERE name = 'Gates Distribution'),
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 5566 FF'),
+        'Gates Timing Belt + Water Pump Kit — KP15633XS',
+        1, 430.00, 620.00, 'TOR-3003', 'FV/2026/03/0625', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-09', '2026-03-10',
+        (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 5566 FF'),
+        'SKF Auxiliary Belt Tensioner Kit — VKMA 31018',
+        1, 145.00, 215.00, 'TOR-3003', 'FV/2026/03/0626', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-12', '2026-03-13',
+        (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'),
+        'Lemforder Tie Rod End Kit — Mazda 6',
+        1, 176.00, 260.00, 'TOR-3004', 'FV/2026/03/0639', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-12', '2026-03-13',
+        (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
+        (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'),
+        'Febi Front Stabiliser Link Pair — Mazda 6',
+        1, 92.00, 145.00, 'TOR-3004', 'FV/2026/03/0640', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-17', '2026-03-18',
+        (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'KA 8899 MM'),
+        'Hyundai Genuine 5W-30 Service Pack',
+        1, 124.00, 185.00, 'TOR-3005', 'FV/2026/03/0652', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-17', '2026-03-18',
+        (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'KA 8899 MM'),
+        'OEM Filter Set — Tucson 2.0 CRDi',
+        1, 84.00, 130.00, 'TOR-3005', 'FV/2026/03/0653', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-20', '2026-03-21',
+        (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'),
+        'Brembo Brake Pad Kit — Front + Rear Van Set',
+        1, 248.00, 365.00, 'TOR-3006', 'FV/2026/03/0668', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-20', '2026-03-21',
+        (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'),
+        'ATE Brake Wear Sensor Set — Transporter',
+        1, 36.00, 60.00, 'TOR-3006', 'FV/2026/03/0669', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-25', '2026-03-25',
+        (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 9876 WW'),
+        'Liqui Moly Alignment Hardware Pack',
+        1, 58.00, 95.00, 'TOR-3007', 'FV/2026/03/0684', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-28', '2026-03-29',
+        (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 1111 XX'),
+        'BC Racing Camber Plate Upgrade Kit',
+        1, 420.00, 620.00, 'TOR-3008', 'FV/2026/03/0699', '', NOW(), NOW()
+    ),
+    (
+        '2026-03-28', '2026-03-29',
+        (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
+        (SELECT id FROM vehicles WHERE license_plate = 'BH 1111 XX'),
+        'Rear Toe Arm Adjustment Kit — Nissan Z Platform',
+        1, 188.00, 285.00, 'TOR-3008', 'FV/2026/03/0700', '', NOW(), NOW()
     );
 
 -- Assign staff master to all repairs where master is NULL

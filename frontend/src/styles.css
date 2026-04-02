@@ -1044,6 +1044,99 @@ textarea { resize: vertical; }
     var(--surface-mid);
 }
 
+.dashboard-moneyflow-chart-panel {
+  display: grid;
+  gap: var(--s4);
+  background:
+    radial-gradient(circle at top right, rgba(91, 156, 246, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    var(--surface-mid);
+}
+
+.dashboard-chart-copy {
+  margin: calc(var(--s2) * -1) 0 0;
+}
+
+.moneyflow-series-toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.moneyflow-series-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-mid);
+  padding: 0.58rem 0.8rem;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.moneyflow-series-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.moneyflow-series-toggle-active {
+  border-color: rgba(205, 216, 58, 0.24);
+  background:
+    radial-gradient(circle at top left, rgba(205, 216, 58, 0.1), transparent 58%),
+    rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.moneyflow-series-swatch {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.moneyflow-series-state {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.moneyflow-chart-shell {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    rgba(9, 10, 16, 0.42);
+  padding: 0.9rem;
+  overflow-x: auto;
+}
+
+.moneyflow-chart-svg {
+  display: block;
+  width: 100%;
+  min-width: 620px;
+  height: auto;
+}
+
+.moneyflow-chart-gridline {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.moneyflow-chart-gridline-vertical {
+  stroke-dasharray: 4 8;
+}
+
+.moneyflow-chart-axis-label {
+  fill: var(--text-soft);
+  font-size: 12px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
 .dashboard-inline-list {
   display: grid;
   gap: var(--s3);
@@ -1159,7 +1252,7 @@ textarea { resize: vertical; }
   padding: var(--s5);
 }
 
-.metric-card p      { color: var(--text-mid); font-size: 0.82rem; margin: 0; }
+.metric-card p      { color: var(--text-mid); font-size: 0.82rem; margin: var(--s3) 0 0; }
 
 .metric-card strong {
   display: block;
