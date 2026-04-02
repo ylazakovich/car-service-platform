@@ -1,4 +1,4 @@
-import type { DragEvent } from "react";
+import { useState, type DragEvent } from "react";
 import {
   formatRepairCardDateRow,
   getRepairStatusClass,
@@ -17,6 +17,9 @@ type StaffRepairsKanbanProps = {
   onColumnDragOver: (status: RepairStatus, event: DragEvent<HTMLDivElement>) => void;
   onColumnDragLeave: (event: DragEvent<HTMLDivElement>) => void;
   onColumnDrop: (status: RepairStatus, event: DragEvent<HTMLDivElement>) => void;
+  dragOverCardId: number | null;
+  onCardDragOver: (repairId: number, event: DragEvent<HTMLElement>) => void;
+  onCardDrop: (repairId: number, status: RepairStatus, event: DragEvent<HTMLElement>) => void;
   onOpenRepair: (repair: RepairEntry) => void;
   onCopyTrackingCode: (trackingCode: string, event?: { stopPropagation?: () => void }) => void;
   repairPartSummaries: Record<string, RepairPartsSummary>;
@@ -31,16 +34,46 @@ export function StaffRepairsKanban({
   onColumnDragOver,
   onColumnDragLeave,
   onColumnDrop,
+  dragOverCardId,
+  onCardDragOver,
+  onCardDrop,
   onOpenRepair,
   onCopyTrackingCode,
   repairPartSummaries,
 }: StaffRepairsKanbanProps) {
+  const DONE_CAP = 15;
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<RepairStatus>>(new Set());
+  const [showAllCompleted, setShowAllCompleted] = useState(false);
+
+  function toggleColumn(status: RepairStatus) {
+    setCollapsedColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return next;
+    });
+  }
+
   return (
     <div className="repairs-web-surface" aria-label="Desktop repairs board">
       <div className="kanban-board">
         {REPAIR_KANBAN_COLUMNS.map(({ status, label }) => {
-          const columnRepairs = repairs.filter((repair) => repair.status === status);
+          const columnRepairs = repairs
+            .filter((repair) => repair.status === status)
+            .sort((a, b) => {
+              if (a.position != null && b.position != null) return a.position - b.position;
+              if (a.position != null) return -1;
+              if (b.position != null) return 1;
+              return 0;
+            });
           const isDropTarget = dragOverColumn === status;
+          const isCollapsed = collapsedColumns.has(status);
+          const isDone = status === "completed";
+          const displayedRepairs = isDone && !showAllCompleted ? columnRepairs.slice(0, DONE_CAP) : columnRepairs;
+          const hiddenCount = isDone ? columnRepairs.length - DONE_CAP : 0;
 
           return (
             <div
@@ -52,20 +85,32 @@ export function StaffRepairsKanban({
             >
               <div className="kanban-col-header">
                 <span className={getRepairStatusClass(status)}>{label}</span>
-                <span className="kanban-count">{columnRepairs.length}</span>
+                <div className="kanban-col-header-right">
+                  <span className="kanban-count">{columnRepairs.length}</span>
+                  <button
+                    type="button"
+                    className="kanban-col-collapse"
+                    onClick={() => toggleColumn(status)}
+                    title={isCollapsed ? "Expand column" : "Collapse column"}
+                  >
+                    {isCollapsed ? "▶" : "▼"}
+                  </button>
+                </div>
               </div>
 
-              <div className="kanban-cards">
-                {columnRepairs.map((repair) => (
+              {isCollapsed ? null : <div className="kanban-cards">
+                {displayedRepairs.map((repair) => (
                   (() => {
                     const partsSummary = repairPartSummaries[repair.tracking_code];
                     return (
                   <article
                     key={repair.id}
-                    className={`kanban-card ${draggingRepairId === repair.id ? "kanban-card-dragging" : ""}`}
+                    className={`kanban-card ${draggingRepairId === repair.id ? "kanban-card-dragging" : ""} ${dragOverCardId === repair.id && draggingRepairId !== repair.id ? "kanban-card-drop-target" : ""}`}
                     draggable
                     onDragStart={(event) => onCardDragStart(repair.id, event)}
                     onDragEnd={onCardDragEnd}
+                    onDragOver={(event) => onCardDragOver(repair.id, event)}
+                    onDrop={(event) => onCardDrop(repair.id, status, event)}
                     onClick={() => onOpenRepair(repair)}
                   >
                     <div className="kanban-card-top">
@@ -75,7 +120,9 @@ export function StaffRepairsKanban({
                       </span>
                     </div>
 
-                    <p className="kanban-card-owner">{repair.owner_name}</p>
+                    <p className="kanban-card-owner">
+                      <span className="kanban-card-label">Client:</span> {repair.owner_name}
+                    </p>
                     <p className="kanban-card-service">{repair.service_name}</p>
 
                     {repair.issue_notes ? <p className="kanban-card-issue">{repair.issue_notes}</p> : null}
@@ -102,7 +149,10 @@ export function StaffRepairsKanban({
                     </div>
 
                     <div className="kanban-card-meta">
-                      <span>{repair.master_name}</span>
+                      <span>
+                        <span className="kanban-card-label">Master:</span>{" "}
+                        {repair.master_name || "Unassigned"}
+                      </span>
                       <div className="repair-card-date-stack">
                         {formatRepairCardDateRow(repair).map((label) => (
                           <span key={label}>{label}</span>
@@ -119,7 +169,27 @@ export function StaffRepairsKanban({
                     <span>{isDropTarget ? "Drop here" : "No repairs"}</span>
                   </div>
                 ) : null}
-              </div>
+
+                {isDone && hiddenCount > 0 && !showAllCompleted ? (
+                  <button
+                    type="button"
+                    className="kanban-show-more"
+                    onClick={() => setShowAllCompleted(true)}
+                  >
+                    Show {hiddenCount} more
+                  </button>
+                ) : null}
+
+                {isDone && showAllCompleted && columnRepairs.length > DONE_CAP ? (
+                  <button
+                    type="button"
+                    className="kanban-show-more"
+                    onClick={() => setShowAllCompleted(false)}
+                  >
+                    Show less
+                  </button>
+                ) : null}
+              </div>}
             </div>
           );
         })}

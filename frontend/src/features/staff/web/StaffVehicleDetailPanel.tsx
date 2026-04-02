@@ -74,13 +74,13 @@ export function StaffVehicleDetailPanel({
           className={`vehicle-detail-tab${activeTab === "info" ? " active" : ""}`}
           onClick={() => setActiveTab("info")}
         >
-          Информация
+          Info
         </button>
         <button
           className={`vehicle-detail-tab${activeTab === "history" ? " active" : ""}`}
           onClick={() => setActiveTab("history")}
         >
-          История
+          History
         </button>
       </div>
 
@@ -174,16 +174,16 @@ export function StaffVehicleDetailPanel({
                 <span className="vehicle-history-service">{item.service_name}</span>
                 <span className="vehicle-history-date">
                   {item.completed_at
-                    ? new Date(item.completed_at).toLocaleDateString("ru-RU")
-                    : new Date(item.created_at).toLocaleDateString("ru-RU")}
+                    ? new Date(item.completed_at).toLocaleDateString("en-GB")
+                    : new Date(item.created_at).toLocaleDateString("en-GB")}
                 </span>
               </div>
               <div className="vehicle-history-card-meta">
                 {item.master_name && (
-                  <span className="vehicle-history-master">Мастер: {item.master_name}</span>
+                  <span className="vehicle-history-master">Master: {item.master_name}</span>
                 )}
                 {item.mileage_at_service != null && (
-                  <span className="vehicle-history-mileage">Пробег: {item.mileage_at_service.toLocaleString("ru-RU")} км</span>
+                  <span className="vehicle-history-mileage">Mileage: {item.mileage_at_service.toLocaleString("en-US")} km</span>
                 )}
               </div>
               {item.issue_notes && (
