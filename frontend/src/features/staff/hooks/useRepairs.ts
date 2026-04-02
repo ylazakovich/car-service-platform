@@ -86,6 +86,18 @@ function createPreviewUrls(files: File[]) {
   return files.map((file) => URL.createObjectURL(file));
 }
 
+export function sanitizeImageUrl(url: string): string {
+  if (
+    url.startsWith("blob:") ||
+    url.startsWith("https://") ||
+    url.startsWith("http://") ||
+    url.startsWith("/")
+  ) {
+    return url;
+  }
+  return "";
+}
+
 function revokePreviewUrls(urls: string[]) {
   urls.forEach((url) => {
     if (url.startsWith("blob:")) {
