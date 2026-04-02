@@ -1,9 +1,10 @@
 import type { DragEvent } from "react";
 import {
-  formatRepairDisplayDate,
+  formatRepairCardDateRow,
   getRepairStatusClass,
   REPAIR_KANBAN_COLUMNS,
   type RepairEntry,
+  type RepairPartsSummary,
   type RepairStatus,
 } from "../shared/repairs";
 
@@ -18,6 +19,7 @@ type StaffRepairsKanbanProps = {
   onColumnDrop: (status: RepairStatus, event: DragEvent<HTMLDivElement>) => void;
   onOpenRepair: (repair: RepairEntry) => void;
   onCopyTrackingCode: (trackingCode: string, event?: { stopPropagation?: () => void }) => void;
+  repairPartSummaries: Record<string, RepairPartsSummary>;
 };
 
 export function StaffRepairsKanban({
@@ -31,6 +33,7 @@ export function StaffRepairsKanban({
   onColumnDrop,
   onOpenRepair,
   onCopyTrackingCode,
+  repairPartSummaries,
 }: StaffRepairsKanbanProps) {
   return (
     <div className="repairs-web-surface" aria-label="Desktop repairs board">
@@ -54,6 +57,9 @@ export function StaffRepairsKanban({
 
               <div className="kanban-cards">
                 {columnRepairs.map((repair) => (
+                  (() => {
+                    const partsSummary = repairPartSummaries[repair.tracking_code];
+                    return (
                   <article
                     key={repair.id}
                     className={`kanban-card ${draggingRepairId === repair.id ? "kanban-card-dragging" : ""}`}
@@ -74,6 +80,15 @@ export function StaffRepairsKanban({
 
                     {repair.issue_notes ? <p className="kanban-card-issue">{repair.issue_notes}</p> : null}
 
+                    {partsSummary ? (
+                      <div className="repair-parts-summary">
+                        <span className="repair-parts-badge">
+                          {partsSummary.lineCount} linked {partsSummary.lineCount === 1 ? "part" : "parts"}
+                        </span>
+                        <p className="repair-parts-preview">{partsSummary.preview.join(" • ")}</p>
+                      </div>
+                    ) : null}
+
                     <div className="kanban-card-footer">
                       <span className="tracking-chip">#{repair.tracking_code}</span>
                       <button
@@ -88,9 +103,15 @@ export function StaffRepairsKanban({
 
                     <div className="kanban-card-meta">
                       <span>{repair.master_name}</span>
-                      <span>{formatRepairDisplayDate(repair.created_at)}</span>
+                      <div className="repair-card-date-stack">
+                        {formatRepairCardDateRow(repair).map((label) => (
+                          <span key={label}>{label}</span>
+                        ))}
+                      </div>
                     </div>
                   </article>
+                    );
+                  })()
                 ))}
 
                 {columnRepairs.length === 0 ? (

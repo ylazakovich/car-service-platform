@@ -142,6 +142,62 @@ class RepairApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "in_progress")
+        self.assertIsNone(response.json()["completed_at"])
+
+    def test_completed_at_is_set_when_repair_is_completed(self):
+        self.client.force_authenticate(self.staff_user)
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Clutch Repair",
+            status="in_progress",
+        )
+
+        response = self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"status": "completed"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "completed")
+        self.assertIsNotNone(response.json()["completed_at"])
+
+    def test_completed_at_can_be_overridden_manually(self):
+        self.client.force_authenticate(self.staff_user)
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Alignment",
+            status="completed",
+            completed_at="2025-03-05",
+        )
+
+        response = self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"status": "completed", "completed_at": "2025-03-08"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["completed_at"], "2025-03-08")
+
+    def test_completed_at_is_cleared_when_repair_leaves_completed(self):
+        self.client.force_authenticate(self.staff_user)
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Alignment",
+            status="completed",
+            completed_at="2025-03-05",
+        )
+
+        response = self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"status": "in_progress"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "in_progress")
+        self.assertIsNone(response.json()["completed_at"])
 
     def test_delete_repair(self):
         self.client.force_authenticate(self.staff_user)

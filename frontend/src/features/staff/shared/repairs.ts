@@ -13,6 +13,8 @@ export type RepairNote = {
 export type RepairEntry = {
   id: number;
   created_at: string;
+  updated_at: string;
+  completed_at: string;
   vehicle_id: number;
   vehicle_label: string;
   owner_name: string;
@@ -26,6 +28,12 @@ export type RepairEntry = {
   before_photos: string[];
   during_photos: string[];
   after_photos: string[];
+};
+
+export type RepairPartsSummary = {
+  lineCount: number;
+  totalQuantity: number;
+  preview: string[];
 };
 
 export const REPAIR_STATUS_LABELS: Record<RepairStatus, string> = {
@@ -54,4 +62,13 @@ export function formatRepairDisplayDate(value: string) {
 
 export function getRepairStatusClass(status: RepairStatus) {
   return `repair-status-chip repair-status-${status}`;
+}
+
+export function formatRepairCardDateRow(repair: RepairEntry) {
+  const createdLabel = `Created ${formatRepairDisplayDate(repair.created_at)}`;
+  if (repair.status !== "completed" || !repair.completed_at) {
+    return [createdLabel];
+  }
+
+  return [createdLabel, `Completed ${formatRepairDisplayDate(repair.completed_at)}`];
 }

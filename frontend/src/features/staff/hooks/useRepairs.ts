@@ -45,6 +45,8 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
   return {
     id: item.id,
     created_at: item.created_at.slice(0, 10),
+    updated_at: item.updated_at.slice(0, 10),
+    completed_at: item.completed_at ?? "",
     vehicle_id: item.vehicle_id,
     vehicle_label: item.vehicle_label,
     owner_name: item.owner_name,
@@ -69,6 +71,10 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
 
 function getStaffUserLabel(staff: StaffUser): string {
   return [staff.first_name, staff.last_name].filter(Boolean).join(" ") || staff.email;
+}
+
+function getLocalTodayDate() {
+  return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
 
 function createPreviewUrls(files: File[]) {
@@ -96,6 +102,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [selectedRepairId, setSelectedRepairId] = useState<number | null>(null);
   const [repairModalStatus, setRepairModalStatus] = useState<RepairStatus>("new");
   const [repairModalMasterId, setRepairModalMasterId] = useState("");
+  const [repairModalCompletedAt, setRepairModalCompletedAt] = useState("");
   const [repairModalNewNote, setRepairModalNewNote] = useState("");
   const [repairBeforePhotos, setRepairBeforePhotos] = useState<string[]>([]);
   const [repairDuringPhotos, setRepairDuringPhotos] = useState<string[]>([]);
@@ -129,6 +136,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setSelectedRepairId(null);
     setRepairModalStatus("new");
     setRepairModalMasterId("");
+    setRepairModalCompletedAt("");
     setRepairModalNewNote("");
     setRepairBeforePhotos([]);
     setRepairDuringPhotos([]);
@@ -149,6 +157,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setSelectedRepairId(repair.id);
     setRepairModalStatus(repair.status);
     setRepairModalMasterId(repair.master_id);
+    setRepairModalCompletedAt(repair.completed_at);
     setRepairModalNewNote("");
     setRepairBeforePhotos(repair.before_photos);
     setRepairDuringPhotos(repair.during_photos);
@@ -265,20 +274,17 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       }
     }
 
-    await updateRepair(selectedRepairId, {
+    const updated = await updateRepair(selectedRepairId, {
       status: repairModalStatus,
       master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
+      completed_at: repairModalStatus === "completed" ? repairModalCompletedAt || null : null,
     });
 
-    const selectedMaster = staffUsers.find((master) => String(master.id) === repairModalMasterId);
     setRepairs((current) =>
       current.map((repair) =>
         repair.id === selectedRepairId
           ? {
-              ...repair,
-              status: repairModalStatus,
-              master_id: repairModalMasterId,
-              master_name: selectedMaster ? getStaffUserLabel(selectedMaster) : repair.master_name,
+              ...mapApiRepairToEntry(updated),
               before_photos: repairBeforePhotos,
               during_photos: repairDuringPhotos,
               after_photos: repairAfterPhotos,
@@ -352,12 +358,19 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     event.preventDefault();
     const repairId = Number(event.dataTransfer.getData("repair-id"));
     if (repairId) {
+      const fallbackCompletedAt = status === "completed" ? getLocalTodayDate() : "";
       setRepairs((current) =>
-        current.map((r) => (r.id === repairId ? { ...r, status } : r))
+        current.map((r) =>
+          r.id === repairId ? { ...r, status, completed_at: status === "completed" ? r.completed_at || fallbackCompletedAt : "" } : r
+        )
       );
-      updateRepair(repairId, { status }).catch(() => {
-        fetchRepairs(undefined, masterId).then((data) => setRepairs(data.map(mapApiRepairToEntry)));
-      });
+      updateRepair(repairId, { status, completed_at: status === "completed" ? fallbackCompletedAt : null })
+        .then((updated) => {
+          setRepairs((current) => current.map((r) => (r.id === repairId ? mapApiRepairToEntry(updated) : r)));
+        })
+        .catch(() => {
+          fetchRepairs().then((data) => setRepairs(data.map(mapApiRepairToEntry)));
+        });
     }
     setDraggingRepairId(null);
     setDragOverColumn(null);
@@ -389,6 +402,8 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalStatus,
     repairModalMasterId,
     setRepairModalMasterId,
+    repairModalCompletedAt,
+    setRepairModalCompletedAt,
     repairModalNewNote,
     setRepairModalNewNote,
     repairBeforePhotos,

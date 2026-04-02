@@ -56,7 +56,7 @@ VALUES
 ON CONFLICT (license_plate) DO NOTHING;
 
 -- Repairs
-INSERT INTO repairs (vehicle_id, master_id, service_name, issue_notes, status, tracking_code, created_at, updated_at)
+INSERT INTO repairs (vehicle_id, master_id, service_name, issue_notes, status, tracking_code, completed_at, created_at, updated_at)
 VALUES
     (
         (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'),
@@ -64,6 +64,7 @@ VALUES
         'Oil change + filter replacement',
         'Scheduled maintenance at 87 400 km. Customer requests synthetic 5W-40.',
         'completed', 'TOR-1001',
+        '2025-02-10',
         '2025-02-10 09:00:00+00', NOW()
     ),
     (
@@ -72,6 +73,7 @@ VALUES
         'Brake pad replacement — front axle',
         'Customer reports squealing on light braking. Front pads worn to 2 mm.',
         'completed', 'TOR-1002',
+        '2025-02-19',
         '2025-02-18 11:30:00+00', NOW()
     ),
     (
@@ -80,6 +82,7 @@ VALUES
         'Engine diagnostics',
         'Check engine light on. Fault codes P0171 and P0174 stored.',
         'in_progress', 'TOR-1003',
+        NULL,
         '2025-03-05 10:00:00+00', NOW()
     ),
     (
@@ -88,6 +91,7 @@ VALUES
         'Timing belt + water pump replacement',
         'Manufacturer interval exceeded. Belt shows visible cracking.',
         'waiting_parts', 'TOR-1004',
+        NULL,
         '2025-03-12 08:45:00+00', NOW()
     ),
     (
@@ -96,6 +100,7 @@ VALUES
         'AC system diagnostics and re-gas',
         'AC blows warm air. Suspected refrigerant leak at condenser.',
         'in_progress', 'TOR-1005',
+        NULL,
         '2025-03-20 14:00:00+00', NOW()
     ),
     (
@@ -104,6 +109,7 @@ VALUES
         'Tire rotation and balancing',
         'Routine rotation at customer request. Rear tires moved to front.',
         'new', 'TOR-1006',
+        NULL,
         '2025-03-25 09:15:00+00', NOW()
     )
 ON CONFLICT (tracking_code) DO NOTHING;

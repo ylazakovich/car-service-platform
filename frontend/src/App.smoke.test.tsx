@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
@@ -117,6 +117,7 @@ describe("bootstrap application", () => {
               issue_notes: "Customer reported vibration while braking.",
               status: "in_progress",
               tracking_code: "TOR-1011",
+              completed_at: null,
               repair_notes: [],
               before_photos: [],
               during_photos: [],
@@ -141,7 +142,7 @@ describe("bootstrap application", () => {
                 quantity: 2,
                 purchase_price: "85.00",
                 sale_price: "120.00",
-                repair_code: "TOR-2040",
+                repair_code: "TOR-1011",
                 vehicle: null,
                 invoice_name: "",
                 invoice_url: "",
@@ -207,6 +208,246 @@ describe("bootstrap application", () => {
     expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
   });
 
+  it("recalculates dashboard moneyflow totals for the selected date range", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/customers/")) {
+        return Promise.resolve({
+          data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
+        });
+      }
+      if (url.startsWith("/vehicles/")) {
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              customer: { id: 1, full_name: "Alex Johnson" },
+              license_plate: "WB 1234K",
+              make: "Toyota",
+              model: "Corolla",
+              year: 2018,
+              vin: "",
+              color: "White",
+              notes: "",
+              added_date: "2024-11-04",
+            },
+          ],
+        });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 11,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Oil Change",
+              issue_notes: "Scheduled maintenance.",
+              status: "completed",
+              tracking_code: "TOR-1011",
+              completed_at: "2025-02-05",
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-02-05T10:00:00Z",
+              updated_at: "2025-02-05T10:00:00Z",
+            },
+            {
+              id: 12,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Oil Change",
+              issue_notes: "March service one.",
+              status: "completed",
+              tracking_code: "TOR-1012",
+              completed_at: "2025-03-05",
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-03-05T10:00:00Z",
+              updated_at: "2025-03-05T10:00:00Z",
+            },
+            {
+              id: 13,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Brake Service",
+              issue_notes: "March service two.",
+              status: "completed",
+              tracking_code: "TOR-1013",
+              completed_at: "2025-03-20",
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-03-20T10:00:00Z",
+              updated_at: "2025-03-20T10:00:00Z",
+            },
+            {
+              id: 14,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Diagnostics",
+              issue_notes: "April service.",
+              status: "in_progress",
+              tracking_code: "TOR-1014",
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-04-08T10:00:00Z",
+              updated_at: "2025-04-08T10:00:00Z",
+            },
+          ],
+        });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({
+          data: {
+            results: [
+              {
+                id: 21,
+                order_date: "2025-02-10",
+                approximate_delivery_date: null,
+                supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
+                vehicle_license_plate: "",
+                part_name: "Oil Filter",
+                quantity: 1,
+                purchase_price: "90.00",
+                sale_price: "120.00",
+                repair_code: "TOR-1011",
+                vehicle: null,
+                invoice_name: "",
+                invoice_url: "",
+                created_at: "2025-02-10T10:00:00Z",
+                updated_at: "2025-02-10T10:00:00Z",
+              },
+              {
+                id: 22,
+                order_date: "2025-02-27",
+                approximate_delivery_date: null,
+                supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
+                vehicle_license_plate: "",
+                part_name: "Brake Fluid",
+                quantity: 1,
+                purchase_price: "100.00",
+                sale_price: "150.00",
+                repair_code: "TOR-1012",
+                vehicle: null,
+                invoice_name: "",
+                invoice_url: "",
+                created_at: "2025-03-10T10:00:00Z",
+                updated_at: "2025-03-10T10:00:00Z",
+              },
+              {
+                id: 23,
+                order_date: "2025-03-28",
+                approximate_delivery_date: null,
+                supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
+                vehicle_license_plate: "",
+                part_name: "Pads",
+                quantity: 1,
+                purchase_price: "50.00",
+                sale_price: "80.00",
+                repair_code: "TOR-1013",
+                vehicle: null,
+                invoice_name: "",
+                invoice_url: "",
+                created_at: "2025-03-28T10:00:00Z",
+                updated_at: "2025-03-28T10:00:00Z",
+              },
+              {
+                id: 24,
+                order_date: "2025-03-29",
+                approximate_delivery_date: null,
+                supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
+                vehicle_license_plate: "",
+                part_name: "Sensor",
+                quantity: 1,
+                purchase_price: "70.00",
+                sale_price: "110.00",
+                repair_code: "TOR-1014",
+                vehicle: null,
+                invoice_name: "",
+                invoice_url: "",
+                created_at: "2025-03-29T10:00:00Z",
+                updated_at: "2025-03-29T10:00:00Z",
+              },
+              {
+                id: 25,
+                order_date: "2025-04-15",
+                approximate_delivery_date: null,
+                supplier: { id: 1, name: "AutoParts Pro", nip: "", phone: "", email: "", notes: "" },
+                vehicle_license_plate: "",
+                part_name: "Sensor",
+                quantity: 1,
+                purchase_price: "200.00",
+                sale_price: "260.00",
+                repair_code: "TOR-1014",
+                vehicle: null,
+                invoice_name: "",
+                invoice_url: "",
+                created_at: "2025-04-15T10:00:00Z",
+                updated_at: "2025-04-15T10:00:00Z",
+              },
+            ],
+            count: 5,
+          },
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+
+    const [startInput, endInput] = await screen.findAllByPlaceholderText("dd-mm-yyyy");
+    await user.clear(startInput);
+    await user.type(startInput, "01-03-2025");
+    await user.tab();
+
+    await user.clear(endInput);
+    await user.type(endInput, "31-03-2025");
+    await user.tab();
+
+    const serviceResults = screen.getByRole("heading", { name: "Service Results", level: 3 }).closest("section");
+    const partsResults = screen.getByRole("heading", { name: "Parts Results", level: 3 }).closest("section");
+
+    expect(serviceResults).not.toBeNull();
+    expect(partsResults).not.toBeNull();
+
+    await waitFor(() => {
+      expect(within(serviceResults as HTMLElement).getByText(/610,00\s*zł/)).toBeInTheDocument();
+      expect(within(partsResults as HTMLElement).getByText(/120,00\s*zł/)).toBeInTheDocument();
+      expect(within(partsResults as HTMLElement).getByText(/230,00\s*zł/)).toBeInTheDocument();
+      expect(within(partsResults as HTMLElement).getByText(/110,00\s*zł/)).toBeInTheDocument();
+    });
+  });
+
   it("opens detail dialogs for customer and vehicle cards", async () => {
     const user = userEvent.setup();
     renderApp("/app");
@@ -222,6 +463,139 @@ describe("bootstrap application", () => {
     expect(screen.getAllByText("Tracking: TOR-1011")).toHaveLength(2);
   });
 
+  it("shows the ordered parts linked to the selected repair", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    expect((await screen.findAllByText("1 linked part")).length).toBeGreaterThan(0);
+
+    await user.click(screen.getAllByText("Brake Inspection")[1]);
+
+    const repairDialog = await screen.findByRole("dialog");
+    expect(within(repairDialog).getByText("Linked Parts")).toBeInTheDocument();
+    expect(within(repairDialog).getByText("Brake Pad Set")).toBeInTheDocument();
+    expect(within(repairDialog).getByText("AutoParts Pro")).toBeInTheDocument();
+    expect(within(repairDialog).getByText("Ordered 05-04-2025")).toBeInTheDocument();
+  });
+
+  it("allows editing the completed date for completed repairs", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/customers/")) {
+        return Promise.resolve({
+          data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
+        });
+      }
+      if (url.startsWith("/vehicles/")) {
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              customer: { id: 1, full_name: "Alex Johnson" },
+              license_plate: "WB 1234K",
+              make: "Toyota",
+              model: "Corolla",
+              year: 2018,
+              vin: "",
+              color: "White",
+              notes: "",
+              added_date: "2024-11-04",
+            },
+          ],
+        });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 15,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Wheel Alignment",
+              issue_notes: "Steering wheel is slightly off-centre.",
+              status: "completed",
+              tracking_code: "TOR-1015",
+              completed_at: "2025-03-08",
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-03-06T10:00:00Z",
+              updated_at: "2025-03-08T10:00:00Z",
+            },
+          ],
+        });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+    mockApi.patch.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/repairs/15") {
+        return Promise.resolve({
+          data: {
+            id: 15,
+            vehicle_id: 1,
+            vehicle_label: "WB 1234K • Toyota Corolla",
+            owner_name: "Alex Johnson",
+            master_id: null,
+            master_name: "",
+            service_name: "Wheel Alignment",
+            issue_notes: "Steering wheel is slightly off-centre.",
+            status: data?.status ?? "completed",
+            tracking_code: "TOR-1015",
+            completed_at: data?.completed_at ?? "2025-03-08",
+            repair_notes: [],
+            before_photos: [],
+            during_photos: [],
+            after_photos: [],
+            created_at: "2025-03-06T10:00:00Z",
+            updated_at: "2025-03-08T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await user.click(screen.getAllByText("Wheel Alignment")[1]);
+
+    const repairDialog = await screen.findByRole("dialog");
+    const completedDateInput = within(repairDialog).getByDisplayValue("08-03-2025");
+
+    await user.clear(completedDateInput);
+    await user.type(completedDateInput, "10-03-2025");
+    await user.tab();
+    await user.click(within(repairDialog).getByRole("button", { name: "Save Repair Update" }));
+
+    await waitFor(() => {
+      expect(mockApi.patch).toHaveBeenCalledWith(
+        "/repairs/15",
+        expect.objectContaining({
+          status: "completed",
+          completed_at: "2025-03-10",
+        })
+      );
+    });
+  });
+
   it("prefills the added date when creating a new vehicle", async () => {
     const user = userEvent.setup();
     renderApp("/app");
@@ -230,7 +604,9 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Vehicles" }));
     await user.click(await screen.findByRole("button", { name: "+ Add Vehicle" }));
 
-    const expectedDate = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+    const [year, month, day] = today.split("-");
+    const expectedDate = `${day}-${month}-${year}`;
     expect(await screen.findByDisplayValue(expectedDate)).toBeInTheDocument();
   });
 
@@ -269,6 +645,71 @@ describe("bootstrap application", () => {
     expect(mockConfirm).toHaveBeenCalledWith("Remove the attached invoice from this purchase?");
     expect(await screen.findByText("No invoice attached yet")).toBeInTheDocument();
     expect(screen.getByText("Empty")).toBeInTheDocument();
+  });
+
+  it("keeps purchase linkage to the selected repair even without manual vehicle selection", async () => {
+    const user = userEvent.setup();
+    mockApi.post.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/uploads/invoice/") {
+        return Promise.resolve({ data: { url: "blob:test-invoice", name: "invoice.pdf" } });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({
+          data: {
+            id: 99,
+            order_date: data?.order_date,
+            approximate_delivery_date: null,
+            supplier: { id: 1, name: data?.supplier_name, nip: "", phone: "", email: "", notes: "" },
+            part_name: data?.part_name,
+            quantity: data?.quantity,
+            purchase_price: String(data?.purchase_price),
+            sale_price: String(data?.sale_price ?? 0),
+            repair_code: data?.repair_code,
+            vehicle: data?.vehicle_id,
+            vehicle_license_plate: "WB 1234K",
+            invoice_name: "",
+            invoice_url: "",
+            created_at: "2025-04-05T10:00:00Z",
+            updated_at: "2025-04-05T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({
+        data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+      });
+    });
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    await user.click(await screen.findByRole("button", { name: "+ Add Purchase" }));
+
+    await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
+    await user.tab();
+    await user.type(screen.getByLabelText("Supplier"), "AutoParts Pro");
+    await user.type(screen.getByLabelText("Part"), "Brake Sensor");
+    await user.type(screen.getByLabelText("Purchase Price"), "85");
+    await user.selectOptions(
+      screen.getByLabelText("Linked Repair"),
+      "TOR-1011"
+    );
+
+    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+
+    await user.click(screen.getByRole("button", { name: "Add Purchase" }));
+
+    await waitFor(() => {
+      expect(mockApi.post).toHaveBeenCalledWith(
+        "/purchases/",
+        expect.objectContaining({
+          order_date: "2025-04-05",
+          supplier_name: "AutoParts Pro",
+          part_name: "Brake Sensor",
+          repair_code: "TOR-1011",
+          vehicle_id: 1,
+        })
+      );
+    });
   });
 
   it("renders a public client portal route", async () => {

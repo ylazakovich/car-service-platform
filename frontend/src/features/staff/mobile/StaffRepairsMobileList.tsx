@@ -1,9 +1,11 @@
 import {
+  formatRepairCardDateRow,
   formatRepairDisplayDate,
   getRepairStatusClass,
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
   type RepairEntry,
+  type RepairPartsSummary,
   type RepairStatus,
   type RepairStatusFilter,
 } from "../shared/repairs";
@@ -14,6 +16,7 @@ type StaffRepairsMobileListProps = {
   onFilterChange: (filter: RepairStatusFilter) => void;
   onOpenRepair: (repair: RepairEntry) => void;
   onCopyTrackingCode: (trackingCode: string, event?: { stopPropagation?: () => void }) => void;
+  repairPartSummaries: Record<string, RepairPartsSummary>;
 };
 
 function getRepairPhotoCount(repair: RepairEntry) {
@@ -41,6 +44,7 @@ export function StaffRepairsMobileList({
   onFilterChange,
   onOpenRepair,
   onCopyTrackingCode,
+  repairPartSummaries,
 }: StaffRepairsMobileListProps) {
   const filteredRepairs =
     activeFilter === "all" ? repairs : repairs.filter((repair) => repair.status === activeFilter);
@@ -83,45 +87,62 @@ export function StaffRepairsMobileList({
       ) : (
         <div className="repair-mobile-list">
           {filteredRepairs.map((repair) => (
-            <article key={repair.id} className="repair-mobile-card">
-              <button type="button" className="repair-mobile-open" onClick={() => onOpenRepair(repair)}>
-                <div className="repair-mobile-card-top">
-                  <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>
-                  <span className="repair-mobile-date">{formatRepairDisplayDate(repair.created_at)}</span>
-                </div>
+            (() => {
+              const partsSummary = repairPartSummaries[repair.tracking_code];
+              return (
+                <article key={repair.id} className="repair-mobile-card">
+                  <button type="button" className="repair-mobile-open" onClick={() => onOpenRepair(repair)}>
+                    <div className="repair-mobile-card-top">
+                      <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>
+                      <span className="repair-mobile-date">{formatRepairDisplayDate(repair.created_at)}</span>
+                    </div>
 
-                <div className="repair-mobile-main">
-                  <strong>{repair.vehicle_label}</strong>
-                  <p>{repair.owner_name}</p>
-                  <p>{repair.service_name}</p>
-                  {repair.issue_notes ? <p className="repair-mobile-issue">{repair.issue_notes}</p> : null}
-                </div>
+                    <div className="repair-mobile-main">
+                      <strong>{repair.vehicle_label}</strong>
+                      <p>{repair.owner_name}</p>
+                      <p>{repair.service_name}</p>
+                      {repair.issue_notes ? <p className="repair-mobile-issue">{repair.issue_notes}</p> : null}
+                    </div>
 
-                <div className="repair-mobile-meta">
-                  <span>{repair.master_name}</span>
-                  <span>{repair.repair_notes.length} notes</span>
-                  <span>{getRepairPhotoCount(repair)} photos</span>
-                </div>
-              </button>
+                    {partsSummary ? (
+                      <div className="repair-parts-summary">
+                        <span className="repair-parts-badge">
+                          {partsSummary.lineCount} linked {partsSummary.lineCount === 1 ? "part" : "parts"}
+                        </span>
+                        <p className="repair-parts-preview">{partsSummary.preview.join(" • ")}</p>
+                      </div>
+                    ) : null}
 
-              <div className="repair-mobile-card-footer">
-                <div className="repair-mobile-next-copy">
-                  <span className="repair-mobile-next-action">{getRepairNextAction(repair.status)}</span>
-                  <span className="tracking-chip">{repair.tracking_code}</span>
-                </div>
-                <div className="repair-mobile-card-actions">
-                  <span className="repair-mobile-open-hint">Continue</span>
-                  <button
-                    type="button"
-                    className="copy-chip"
-                    aria-label={`Copy tracking code ${repair.tracking_code}`}
-                    onClick={(event) => onCopyTrackingCode(repair.tracking_code, event)}
-                  >
-                    ⧉
+                    <div className="repair-mobile-meta">
+                      <span>{repair.master_name}</span>
+                      <span>{repair.repair_notes.length} notes</span>
+                      <span>{getRepairPhotoCount(repair)} photos</span>
+                      {formatRepairCardDateRow(repair).map((label) => (
+                        <span key={label}>{label}</span>
+                      ))}
+                    </div>
                   </button>
-                </div>
-              </div>
-            </article>
+
+                  <div className="repair-mobile-card-footer">
+                    <div className="repair-mobile-next-copy">
+                      <span className="repair-mobile-next-action">{getRepairNextAction(repair.status)}</span>
+                      <span className="tracking-chip">{repair.tracking_code}</span>
+                    </div>
+                    <div className="repair-mobile-card-actions">
+                      <span className="repair-mobile-open-hint">Continue</span>
+                      <button
+                        type="button"
+                        className="copy-chip"
+                        aria-label={`Copy tracking code ${repair.tracking_code}`}
+                        onClick={(event) => onCopyTrackingCode(repair.tracking_code, event)}
+                      >
+                        ⧉
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })()
           ))}
         </div>
       )}

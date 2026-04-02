@@ -349,9 +349,119 @@ input, select, textarea {
   color-scheme: dark;
 }
 
-input[type="date"] {
-  appearance: none; -webkit-appearance: none;
-  min-height: 48px; padding-right: var(--s4);
+.friendly-date {
+  position: relative;
+}
+
+.friendly-date-input-wrap {
+  display: block;
+}
+
+.friendly-date-input {
+  width: 100%;
+}
+
+.friendly-date-popover {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 25;
+  width: min(100%, 320px);
+  min-width: 280px;
+  border: 1px solid rgba(205, 216, 58, 0.2);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    rgba(18, 20, 29, 0.98);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+  padding: 0.9rem;
+}
+
+.friendly-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.friendly-date-header strong {
+  font-size: 0.98rem;
+}
+
+.friendly-date-nav {
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  padding: 0 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.friendly-date-nav:hover:not(:disabled) {
+  border-color: rgba(205, 216, 58, 0.28);
+  color: var(--accent);
+}
+
+.friendly-date-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.friendly-date-weekdays,
+.friendly-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.friendly-date-weekdays {
+  margin-bottom: 0.45rem;
+}
+
+.friendly-date-weekdays span {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.friendly-date-day {
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.friendly-date-day:hover:not(:disabled) {
+  border-color: rgba(205, 216, 58, 0.2);
+  background: rgba(205, 216, 58, 0.08);
+}
+
+.friendly-date-day-muted {
+  color: var(--text-soft);
+  opacity: 0.6;
+}
+
+.friendly-date-day-selected {
+  border-color: rgba(205, 216, 58, 0.34);
+  background: rgba(205, 216, 58, 0.16);
+  color: var(--accent);
+}
+
+.friendly-date-day:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
 }
 
 input:-webkit-autofill,
@@ -362,11 +472,6 @@ select:-webkit-autofill {
   -webkit-text-fill-color: var(--text);
   box-shadow: 0 0 0 1000px var(--surface-mid) inset;
   transition: background-color 9999s ease-in-out 0s;
-}
-
-input[type="date"]::-webkit-date-and-time-value { text-align: left; }
-input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer; opacity: 0.45; filter: invert(1);
 }
 
 select {
@@ -789,7 +894,7 @@ textarea { resize: vertical; }
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 0.65rem;
+  gap: 0.7rem;
   margin-bottom: -1px;
 }
 
@@ -840,44 +945,53 @@ textarea { resize: vertical; }
 .dashboard-folder-tab {
   display: grid;
   gap: 0.2rem;
-  min-width: 168px;
+  min-width: 184px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+  border-radius: 22px 22px 0 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
-    rgba(15, 16, 24, 0.82);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(29, 32, 43, 0.96), rgba(20, 22, 31, 0.96));
   color: var(--text-soft);
   cursor: pointer;
-  padding: 0.82rem 1rem 0.88rem;
+  padding: 0.92rem 1.35rem 0.8rem;
   text-align: left;
-  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
   position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
 .dashboard-folder-tab:hover {
-  border-color: rgba(205, 216, 58, 0.18);
+  border-color: rgba(205, 216, 58, 0.16);
   color: var(--text);
 }
 
 .dashboard-folder-label {
   color: var(--text);
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .dashboard-folder-tab-active {
+  margin-bottom: -1px;
   border-color: rgba(205, 216, 58, 0.24);
+  border-bottom-color: rgba(18, 20, 29, 0.96);
   background:
-    radial-gradient(circle at top right, rgba(205, 216, 58, 0.12), transparent 45%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
-    rgba(24, 26, 35, 0.96);
+    radial-gradient(circle at 22% 0%, rgba(205, 216, 58, 0.11), transparent 58%),
+    linear-gradient(180deg, rgba(33, 36, 34, 0.96), rgba(18, 20, 29, 0.98));
   color: var(--text);
-  border-bottom-color: transparent;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
   position: relative;
   z-index: 1;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 14px 30px rgba(0, 0, 0, 0.16);
 }
 
 .dashboard-folder-tab-active .dashboard-folder-label {
@@ -897,6 +1011,31 @@ textarea { resize: vertical; }
 
 .dashboard-metric-grid {
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.dashboard-metric-grid-single {
+  grid-template-columns: minmax(0, 360px);
+}
+
+.dashboard-metric-grid-triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-report-section {
+  display: grid;
+  gap: var(--s3);
+}
+
+.dashboard-report-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.dashboard-report-head h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1rem;
 }
 
 .dashboard-mini-panel {
@@ -1626,6 +1765,40 @@ textarea { resize: vertical; }
   font-size: 0.82rem;
 }
 
+.repair-parts-summary {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(205, 216, 58, 0.12);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at top left, rgba(205, 216, 58, 0.08), transparent 55%),
+    rgba(18, 20, 29, 0.62);
+}
+
+.repair-parts-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid rgba(205, 216, 58, 0.18);
+  background: rgba(205, 216, 58, 0.08);
+  color: var(--accent);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.55rem;
+}
+
+.repair-parts-preview {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .repair-mobile-issue {
   color: var(--text-soft);
   line-height: 1.45;
@@ -1636,6 +1809,13 @@ textarea { resize: vertical; }
   font-size: 0.74rem;
   padding-top: var(--s2);
   border-top: 1px solid var(--border);
+}
+
+.repair-card-date-stack {
+  display: grid;
+  gap: 0.18rem;
+  justify-items: end;
+  text-align: right;
 }
 
 .repair-mobile-date {
@@ -2368,6 +2548,10 @@ textarea { resize: vertical; }
   overflow: hidden;
 }
 
+.kanban-card .repair-parts-summary {
+  margin-top: var(--s1);
+}
+
 .kanban-card-footer {
   display: flex;
   align-items: center;
@@ -2575,6 +2759,8 @@ textarea { resize: vertical; }
   .shell { grid-template-columns: 1fr; }
 
   .metric-grid,
+  .dashboard-metric-grid-single,
+  .dashboard-metric-grid-triple,
   .dashboard-grid,
   .section-split,
   .customer-layout {
@@ -2693,6 +2879,7 @@ textarea { resize: vertical; }
 
   .workspace-topbar,
   .dashboard-shell-head,
+  .dashboard-report-head,
   .dashboard-hero,
   .compact-card,
   .registry-card,
