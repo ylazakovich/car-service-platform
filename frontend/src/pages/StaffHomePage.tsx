@@ -662,6 +662,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleCardDragOver,
     handleCardDrop,
     handleCopyTrackingCode,
+    handleCopyPortalLink,
+    repairModalEstimatedDate,
+    setRepairModalEstimatedDate,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
   const repairServiceOptions = useMemo(
@@ -2657,6 +2660,26 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           ⧉
                         </button>
                       </div>
+                    </div>
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Client Link</span>
+                      <button
+                        type="button"
+                        className="copy-chip portal-link-chip"
+                        aria-label="Copy client portal link"
+                        onClick={() => void handleCopyPortalLink(selectedRepair.portal_token)}
+                      >
+                        Copy link ⧉
+                      </button>
+                    </div>
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Est. Completion</span>
+                      <input
+                        type="date"
+                        className="repair-info-date-input"
+                        value={repairModalEstimatedDate}
+                        onChange={(e) => setRepairModalEstimatedDate(e.target.value)}
+                      />
                     </div>
                     <div className="repair-info-row repair-info-row-block">
                       <span className="repair-info-label">Issue</span>

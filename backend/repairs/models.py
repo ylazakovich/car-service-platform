@@ -29,6 +29,7 @@ class Repair(models.Model):
     position = models.PositiveIntegerField(null=True, blank=True)
     tracking_code = models.CharField(max_length=20, unique=True, blank=True)
     portal_token = models.CharField(max_length=40, unique=True, blank=True)
+    estimated_date = models.DateField(null=True, blank=True)
     completed_at = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)

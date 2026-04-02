@@ -120,10 +120,10 @@ export function ClientPortalPage() {
                 <span>Service</span>
                 <span>{repair.service_name}</span>
               </div>
-              {repair.master_display && (
+              {repair.estimated_date && !repair.completed_at && (
                 <div className="portal-meta-row">
-                  <span>Technician</span>
-                  <span>{repair.master_display}</span>
+                  <span>Est. Completion</span>
+                  <span>{new Date(repair.estimated_date).toLocaleDateString("en-GB")}</span>
                 </div>
               )}
               {repair.completed_at && (

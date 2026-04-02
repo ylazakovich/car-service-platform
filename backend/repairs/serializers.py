@@ -46,7 +46,9 @@ class RepairSerializer(serializers.ModelSerializer):
             "mileage_at_service",
             "position",
             "tracking_code",
+            "portal_token",
             "completed_at",
+            "estimated_date",
             "repair_notes",
             "before_photos",
             "during_photos",
@@ -54,7 +56,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "tracking_code", "created_at", "updated_at")
+        read_only_fields = ("id", "tracking_code", "portal_token", "created_at", "updated_at")
 
     def get_vehicle_label(self, obj):
         v = obj.vehicle
@@ -81,7 +83,6 @@ class RepairSerializer(serializers.ModelSerializer):
 
 class PortalRepairSerializer(serializers.ModelSerializer):
     vehicle_info = serializers.SerializerMethodField()
-    master_display = serializers.SerializerMethodField()
     status_display = serializers.SerializerMethodField()
 
     class Meta:
@@ -92,7 +93,7 @@ class PortalRepairSerializer(serializers.ModelSerializer):
             "status",
             "status_display",
             "vehicle_info",
-            "master_display",
+            "estimated_date",
             "mileage_at_service",
             "completed_at",
             "created_at",
@@ -106,11 +107,6 @@ class PortalRepairSerializer(serializers.ModelSerializer):
             "year": v.year,
             "license_plate": v.license_plate,
         }
-
-    def get_master_display(self, obj: Repair) -> str | None:
-        if not obj.master:
-            return None
-        return obj.master.first_name or obj.master.email.split("@")[0]
 
     def get_status_display(self, obj: Repair) -> str:
         return obj.get_status_display()
