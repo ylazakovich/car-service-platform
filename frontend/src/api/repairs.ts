@@ -20,7 +20,9 @@ export interface RepairItem {
   issue_notes: string;
   status: RepairStatus;
   tracking_code: string;
+  portal_token: string;
   completed_at: string | null;
+  estimated_date: string | null;
   repair_notes: RepairNoteItem[];
   before_photos: string[];
   during_photos: string[];
@@ -45,6 +47,7 @@ export interface RepairWritePayload {
   issue_notes: string;
   status: RepairStatus;
   completed_at?: string | null;
+  estimated_date?: string | null;
 }
 
 export async function fetchRepairs(q?: string, masterId?: number): Promise<RepairItem[]> {
@@ -69,6 +72,11 @@ export async function updateRepair(id: number, data: Partial<RepairWritePayload>
 
 export async function deleteRepair(id: number): Promise<void> {
   await api.delete(`/repairs/${id}`);
+}
+
+export async function regeneratePortalToken(id: number): Promise<{ portal_token: string }> {
+  const response = await api.post<{ portal_token: string }>(`/repairs/${id}/regenerate-portal-token/`);
+  return response.data;
 }
 
 export async function addRepairNote(repairId: number, text: string): Promise<RepairNoteItem> {

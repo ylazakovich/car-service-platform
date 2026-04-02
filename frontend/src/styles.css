@@ -285,6 +285,52 @@ p  { margin: 0.4em 0 0; }
 .portal-copy { color: var(--text-mid); margin-top: var(--s2); font-size: 0.88rem; }
 
 /* ═══════════════════════════════════════════════
+   LOGIN CARD 3-D FLIP
+   ═══════════════════════════════════════════════ */
+
+.login-card-scene {
+  width: min(100%, 480px);
+  perspective: 1400px;
+}
+
+.login-card-flipper {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-card-flipper.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.login-card-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.login-card-back {
+  transform: rotateY(180deg);
+}
+
+.client-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.15s;
+  width: 100%;
+  text-align: center;
+}
+
+.client-toggle-btn:hover { opacity: 0.7; }
+
+/* ═══════════════════════════════════════════════
    FORMS
    ═══════════════════════════════════════════════ */
 
@@ -528,6 +574,133 @@ textarea { resize: vertical; }
   font-weight: 700;
   font-size: 1.05rem;
   letter-spacing: 0.06em;
+}
+
+/* ── Portal page ────────────────────────────── */
+
+.portal-header { display: grid; gap: var(--s1); margin-bottom: var(--s6); }
+.portal-plate  { font-weight: 700; color: var(--text); }
+
+.portal-loading,
+.portal-state { margin-top: var(--s6); }
+
+/* Stepper */
+.portal-stepper {
+  display: grid;
+  gap: 0;
+  margin-bottom: var(--s6);
+}
+
+.portal-step {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 0 var(--s4);
+  color: var(--text-soft);
+}
+
+.portal-step-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.portal-step-indicator svg {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-mid);
+  border: 1px solid var(--border);
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.portal-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-mid);
+  display: block;
+  flex-shrink: 0;
+}
+
+.portal-step-line {
+  width: 2px;
+  flex: 1;
+  min-height: 24px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.portal-step-text {
+  display: grid;
+  gap: var(--s1);
+  padding: 4px 0 24px;
+}
+
+.portal-step-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.portal-step-sublabel {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+/* Done step */
+.portal-step.done { color: var(--success); }
+.portal-step.done .portal-step-indicator svg {
+  background: rgba(78, 201, 148, 0.1);
+  border-color: rgba(78, 201, 148, 0.3);
+  color: var(--success);
+}
+.portal-step.done .portal-step-line { background: var(--success); opacity: 0.4; }
+.portal-step.done .portal-step-label { color: var(--text-mid); }
+
+/* Active step */
+.portal-step.active { color: var(--text); }
+.portal-step.active .portal-step-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+.portal-step.active .portal-step-label {
+  color: var(--text);
+  font-size: 0.94rem;
+}
+.portal-step.active .portal-step-sublabel { color: var(--text-mid); }
+
+/* Meta table */
+.portal-meta {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s4) var(--s5);
+  border-radius: 12px;
+  background: var(--surface-mid);
+  border: 1px solid var(--border);
+  margin-bottom: var(--s5);
+}
+
+.portal-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s4);
+  font-size: 0.84rem;
+}
+
+.portal-meta-row span:first-child { color: var(--text-soft); }
+.portal-meta-row span:last-child  { color: var(--text); font-weight: 600; text-align: right; }
+
+.portal-ref {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  margin: 0;
 }
 
 /* ═══════════════════════════════════════════════
@@ -2077,6 +2250,45 @@ textarea { resize: vertical; }
 .copy-chip:hover {
   border-color: var(--border-accent);
   color: var(--accent);
+}
+
+.portal-link-chip {
+  width: auto;
+  height: auto;
+  padding: 0.32rem 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  color: var(--accent);
+  border-color: var(--border-accent);
+  gap: 0.3em;
+}
+
+.portal-link-regenerate {
+  color: var(--text-soft);
+  border-color: var(--border);
+}
+
+.portal-link-regenerate:hover {
+  color: var(--warning);
+  border-color: rgba(240, 168, 74, 0.4);
+}
+
+.repair-info-date-input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.82rem;
+  width: 100%;
+  max-width: 160px;
+}
+
+.repair-info-date-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 /* ═══════════════════════════════════════════════
