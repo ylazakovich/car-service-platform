@@ -79,6 +79,43 @@ class RepairSerializer(serializers.ModelSerializer):
         return []
 
 
+class PortalRepairSerializer(serializers.ModelSerializer):
+    vehicle_info = serializers.SerializerMethodField()
+    master_display = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Repair
+        fields = (
+            "tracking_code",
+            "service_name",
+            "status",
+            "status_display",
+            "vehicle_info",
+            "master_display",
+            "mileage_at_service",
+            "completed_at",
+            "created_at",
+        )
+        read_only_fields = fields
+
+    def get_vehicle_info(self, obj: Repair) -> dict:
+        v = obj.vehicle
+        return {
+            "label": f"{v.make} {v.model}",
+            "year": v.year,
+            "license_plate": v.license_plate,
+        }
+
+    def get_master_display(self, obj: Repair) -> str | None:
+        if not obj.master:
+            return None
+        return obj.master.first_name or obj.master.email.split("@")[0]
+
+    def get_status_display(self, obj: Repair) -> str:
+        return obj.get_status_display()
+
+
 class VehicleRepairHistorySerializer(serializers.ModelSerializer):
     master_name = serializers.SerializerMethodField()
 

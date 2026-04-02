@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -26,6 +28,7 @@ class Repair(models.Model):
     mileage_at_service = models.PositiveIntegerField(null=True, blank=True)
     position = models.PositiveIntegerField(null=True, blank=True)
     tracking_code = models.CharField(max_length=20, unique=True, blank=True)
+    portal_token = models.CharField(max_length=40, unique=True, blank=True)
     completed_at = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -51,9 +54,15 @@ class Repair(models.Model):
                 self.completed_at = timezone.localdate()
 
         super().save(*args, **kwargs)
+        updates: dict[str, str] = {}
         if not self.tracking_code:
             self.tracking_code = f"TOR-{self.pk:04d}"
-            Repair.objects.filter(pk=self.pk).update(tracking_code=self.tracking_code)
+            updates["tracking_code"] = self.tracking_code
+        if not self.portal_token:
+            self.portal_token = secrets.token_urlsafe(20)
+            updates["portal_token"] = self.portal_token
+        if updates:
+            Repair.objects.filter(pk=self.pk).update(**updates)
 
 
 class RepairNote(models.Model):

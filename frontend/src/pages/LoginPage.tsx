@@ -126,7 +126,7 @@ export function LoginPage() {
                   onChange={(e) => { setAccessCode(e.target.value); setCodeError(""); }}
                   type="text"
                   autoComplete="off"
-                  placeholder="e.g. ABC-1234"
+                  placeholder="Your unique access code"
                   tabIndex={isClientMode ? 0 : -1}
                 />
               </label>

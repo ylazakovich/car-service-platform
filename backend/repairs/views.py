@@ -1,12 +1,28 @@
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import Repair, RepairNote
-from .serializers import RepairNoteSerializer, RepairSerializer
+from .serializers import PortalRepairSerializer, RepairNoteSerializer, RepairSerializer
+
+
+class PortalLookupThrottle(AnonRateThrottle):
+    scope = "portal_lookup"
+
+
+class PortalRepairLookupView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [PortalLookupThrottle]
+    serializer_class = PortalRepairSerializer
+    lookup_field = "portal_token"
+    lookup_url_kwarg = "token"
+
+    def get_queryset(self):
+        return Repair.objects.select_related("vehicle", "master")
 
 
 class RepairListCreateView(generics.ListCreateAPIView):
