@@ -134,7 +134,6 @@ export function ClientPortalPage() {
               )}
             </div>
 
-            <p className="portal-ref">Order {repair.tracking_code}</p>
           </>
         )}
       </div>

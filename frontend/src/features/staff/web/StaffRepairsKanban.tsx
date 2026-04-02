@@ -21,7 +21,6 @@ type StaffRepairsKanbanProps = {
   onCardDragOver: (repairId: number, event: DragEvent<HTMLElement>) => void;
   onCardDrop: (repairId: number, status: RepairStatus, event: DragEvent<HTMLElement>) => void;
   onOpenRepair: (repair: RepairEntry) => void;
-  onCopyTrackingCode: (trackingCode: string, event?: { stopPropagation?: () => void }) => void;
   repairPartSummaries: Record<string, RepairPartsSummary>;
 };
 
@@ -38,7 +37,6 @@ export function StaffRepairsKanban({
   onCardDragOver,
   onCardDrop,
   onOpenRepair,
-  onCopyTrackingCode,
   repairPartSummaries,
 }: StaffRepairsKanbanProps) {
   const DONE_CAP = 15;
@@ -135,18 +133,6 @@ export function StaffRepairsKanban({
                         <p className="repair-parts-preview">{partsSummary.preview.join(" • ")}</p>
                       </div>
                     ) : null}
-
-                    <div className="kanban-card-footer">
-                      <span className="tracking-chip">#{repair.tracking_code}</span>
-                      <button
-                        type="button"
-                        className="copy-chip"
-                        aria-label={`Copy tracking code ${repair.tracking_code}`}
-                        onClick={(event) => onCopyTrackingCode(repair.tracking_code, event)}
-                      >
-                        ⧉
-                      </button>
-                    </div>
 
                     <div className="kanban-card-meta">
                       <span>
