@@ -2033,6 +2033,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 />
 
                 <StaffVehicleDetailPanel
+                  vehicleId={selectedVehicle.id}
                   vehicle={selectedVehicle}
                   vehicleDetails={getVehicleDetails(selectedVehicle)}
                   owner={selectedVehicleOwner}
