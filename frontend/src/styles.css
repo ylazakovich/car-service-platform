@@ -1230,6 +1230,24 @@ textarea { resize: vertical; }
   margin: calc(var(--s2) * -1) 0 0;
 }
 
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-table th {
+  color: var(--text-mid);
+  font-weight: 600;
+}
+
 .moneyflow-series-toggle-row {
   display: flex;
   flex-wrap: wrap;

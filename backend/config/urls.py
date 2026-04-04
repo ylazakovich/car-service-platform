@@ -21,6 +21,7 @@ urlpatterns = [
     path("api/services/", include("services.urls")),
     path("api/purchases/", include("purchases.urls")),
     path("api/repairs/", include("repairs.urls")),
+    path("api/analytics/", include("analytics.urls")),
     path("api/portal/<str:token>/", PortalRepairLookupView.as_view(), name="portal-repair"),
     path("api/uploads/", include("uploads.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

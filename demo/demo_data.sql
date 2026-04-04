@@ -1,10 +1,19 @@
 BEGIN;
 
+-- Must run before other DML: PostgreSQL rejects ALTER while the same txn has pending trigger events from inserts.
+ALTER TABLE repairs ALTER COLUMN portal_token DROP NOT NULL;
+
 -- Clean up existing demo data (idempotent re-run support)
 DELETE FROM purchases
 WHERE repair_code LIKE 'TOR-%';
 
 DELETE FROM repair_notes
+WHERE repair_id IN (SELECT id FROM repairs WHERE tracking_code LIKE 'TOR-%');
+
+DELETE FROM repair_financial_snapshots
+WHERE repair_id IN (SELECT id FROM repairs WHERE tracking_code LIKE 'TOR-%');
+
+DELETE FROM repair_documents
 WHERE repair_id IN (SELECT id FROM repairs WHERE tracking_code LIKE 'TOR-%');
 
 DELETE FROM repairs
@@ -201,8 +210,6 @@ VALUES
 ON CONFLICT (license_plate) DO NOTHING;
 
 -- Repairs (portal_token generated after insert)
-ALTER TABLE repairs ALTER COLUMN portal_token DROP NOT NULL;
-
 INSERT INTO repairs (vehicle_id, master_id, service_name, issue_notes, status, tracking_code, completed_at, mileage_at_service, created_at, updated_at)
 VALUES
     -- AA 1234 BB — Toyota Camry (Kovalenko)

@@ -4,6 +4,7 @@ export interface ServiceItem {
   id: number;
   name: string;
   description: string;
+  price: string | null;
   is_active: boolean;
 }
 
