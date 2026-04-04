@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
 
 
+def get_latest_repair_document(repair: Repair) -> RepairDocument | None:
+    return RepairDocument.objects.filter(repair_id=repair.pk).order_by("-version", "-id").first()
+
+
 @transaction.atomic
 def export_repair_pdf_and_snapshot(repair: Repair, user: AbstractBaseUser) -> tuple[bytes, RepairDocument]:
     """
