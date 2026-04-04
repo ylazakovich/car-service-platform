@@ -22,9 +22,11 @@ if docker compose ps db | grep -q "Up"; then
   bash "${ROOT_DIR}/scripts/db-backup.sh" || true
 fi
 
-docker compose build --build-arg GIT_COMMIT="${GIT_COMMIT}" backend
-docker compose build frontend
-docker compose up -d
+# Match CI (.github/actions/compose-up): BuildKit + Compose uses `docker build` with the current buildx builder (default on Docker Desktop).
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+
+docker compose up -d --build
 
 echo ""
 echo "${COMPOSE_PROJECT_NAME:-car-service-platform} is up:"
