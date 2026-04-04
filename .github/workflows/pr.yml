@@ -8,13 +8,15 @@ on:
       - "docs/**"
       - "LICENSE"
 
-# Same PR = same group → new commits cancel an in-progress PR Pipeline for that PR.
+# Same PR = one group. Do not cancel in-progress runs: E2E is last and slow; canceling leaves
+# only Frontend+Backend artifacts → merged Allure shows unit+api but 0 end-to-end (misleading).
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
+  actions: write # upload-artifact (Allure, JUnit, Playwright HTML)
 
 jobs:
   frontend:

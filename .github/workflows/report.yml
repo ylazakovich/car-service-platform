@@ -22,7 +22,10 @@ permissions:
 jobs:
   test-report:
     name: Test Report
-    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    # Cancelled PR Pipeline often has no E2E artifacts → partial Allure (e.g. 144 = unit+api only).
+    if: >-
+      ${{ github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -66,6 +69,18 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
+
+      - name: Debug — Allure artifact layout
+        run: |
+          echo "workflow_run conclusion=${{ github.event.workflow_run.conclusion }}"
+          for d in allure-results-frontend allure-results-backend allure-results-e2e; do
+            if [ -d "artifacts/$d" ]; then
+              n=$(find "artifacts/$d" -maxdepth 3 -name '*-result.json' 2>/dev/null | wc -l | tr -d ' ')
+              echo "$d: *-result.json count=$n"
+            else
+              echo "$d: (missing dir)"
+            fi
+          done
 
       # dorny/test-reporter: reporter "java-junit" = JUnit XML (Vitest, pytest, xmlrunner, etc.), not a Java stack.
       - name: Frontend Test Report
