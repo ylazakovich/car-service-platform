@@ -17,6 +17,12 @@ export type Vehicle = {
   is_demo?: boolean;
 };
 
+export type VehicleListGroup = {
+  key: string;
+  label: string;
+  vehicles: Vehicle[];
+};
+
 export type VehicleUiDetails = {
   mileage: string;
   last_service_date: string;
