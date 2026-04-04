@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { e2eBehaviors } from "./allure-helpers";
+
+const STAFF_EMAIL = process.env.E2E_STAFF_EMAIL ?? "staff@autoservice.local";
+const STAFF_PASSWORD = process.env.E2E_STAFF_PASSWORD ?? "demo-staff-change-me";
 
 /**
  * Expects Docker Compose with seeded staff user (see backend seed_staff) and at least one completed repair on the board.
@@ -6,8 +10,8 @@ import { test, expect } from "@playwright/test";
 test.describe("Repair PDF: view without new export", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
-    await page.getByRole("textbox", { name: "Email" }).fill("staff@autoservice.local");
-    await page.getByRole("textbox", { name: "Password" }).fill("demo-staff-change-me");
+    await page.getByRole("textbox", { name: "Email" }).fill(STAFF_EMAIL);
+    await page.getByRole("textbox", { name: "Password" }).fill(STAFF_PASSWORD);
     await page.getByRole("button", { name: "Sign In" }).click();
     await expect(page).toHaveURL(/\/app/);
   });
@@ -15,6 +19,7 @@ test.describe("Repair PDF: view without new export", () => {
   test("two View PDF opens only call POST export once (first time) or zero times (if already exported)", async ({
     page,
   }) => {
+    await e2eBehaviors("staff", "repair · pdf · view idempotent");
     const exportPostUrls: string[] = [];
     page.on("request", (req) => {
       if (
@@ -54,6 +59,7 @@ test.describe("Repair PDF: view without new export", () => {
   });
 
   test("Export new version triggers a second POST", async ({ page }) => {
+    await e2eBehaviors("staff", "repair · pdf · export new version");
     const exportPostUrls: string[] = [];
     page.on("request", (req) => {
       if (

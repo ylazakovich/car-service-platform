@@ -18,6 +18,11 @@ write_kv() {
 
 : > "${OUT}"
 
+# Prefixed job-level snapshots (PR test runners), merged by scripts/ci/merge-allure-result-dirs.sh
+if [[ -n "${ALLURE_MERGED_CI_ENV:-}" && -f "${ALLURE_MERGED_CI_ENV}" ]]; then
+  cat "${ALLURE_MERGED_CI_ENV}" >> "${OUT}"
+fi
+
 write_kv "CI" "${CI:-false}"
 
 if [[ -n "${RUNNER_OS:-}" ]]; then

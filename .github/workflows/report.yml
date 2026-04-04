@@ -84,17 +84,16 @@ jobs:
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
 
-      # PR Pipeline uploads allure-results-frontend and/or allure-results-backend; merge into one tree for Allure CLI.
+      # PR Pipeline uploads allure-results-frontend, allure-results-backend, allure-results-e2e; merge without clobbering environment fragments.
       - name: Merge Allure results
         id: allure
         run: |
-          mkdir -p artifacts/allure-results
-          if [ -d artifacts/allure-results-frontend ]; then
-            cp -f artifacts/allure-results-frontend/* artifacts/allure-results/ 2>/dev/null || true
-          fi
-          if [ -d artifacts/allure-results-backend ]; then
-            cp -f artifacts/allure-results-backend/* artifacts/allure-results/ 2>/dev/null || true
-          fi
+          bash scripts/ci/merge-allure-result-dirs.sh \
+            "${{ github.workspace }}/artifacts/allure-results" \
+            "${{ github.workspace }}/artifacts/_merged_ci_env.properties" \
+            "${{ github.workspace }}/artifacts/allure-results-frontend" \
+            "${{ github.workspace }}/artifacts/allure-results-backend" \
+            "${{ github.workspace }}/artifacts/allure-results-e2e"
           if compgen -G 'artifacts/allure-results/*-result.json' > /dev/null; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
@@ -112,6 +111,7 @@ jobs:
         env:
           ALLURE_RESULTS_DIR: ${{ github.workspace }}/artifacts/allure-results
           ALLURE_VARIABLES_JSON: ${{ github.workspace }}/artifacts/allure-variables.json
+          ALLURE_MERGED_CI_ENV: ${{ github.workspace }}/artifacts/_merged_ci_env.properties
           REPO_ROOT: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           GITHUB_REF_NAME: ${{ github.event.workflow_run.head_branch }}
