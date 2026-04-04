@@ -84,6 +84,14 @@ jobs:
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
 
+      - name: E2E (Playwright) Test Report
+        if: ${{ hashFiles('artifacts/e2e-test-results/e2e-junit.xml') != '' }}
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
+        with:
+          name: E2E (Playwright)
+          path: artifacts/e2e-test-results/e2e-junit.xml
+          reporter: java-junit
+
       # PR Pipeline uploads allure-results-frontend, allure-results-backend, allure-results-e2e; merge without clobbering environment fragments.
       - name: Merge Allure results
         id: allure
