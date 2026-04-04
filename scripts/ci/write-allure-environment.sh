@@ -93,7 +93,7 @@ if [[ -f "${req}" ]] && command -v sha256sum >/dev/null 2>&1; then
   write_kv "Backend.Requirements.SHA" "$(sha256sum "${req}" | cut -c1-12)"
 fi
 
-# Allure Report 3 shows build metadata via config `variables` (awesome plugin), not environment.properties in the UI.
+# Allure Report 3: глобальные variables в allurerc.mjs (JSON); environment.properties — legacy Metadata в результатах.
 # JSON must NOT live inside ALLURE_RESULTS_DIR — the CLI treats unknown *.json there as result files.
 ALLURE_VARIABLES_JSON="${ALLURE_VARIABLES_JSON:-${REPO_ROOT}/artifacts/allure-variables.json}"
 if command -v python3 >/dev/null 2>&1; then

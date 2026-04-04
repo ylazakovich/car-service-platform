@@ -34,5 +34,6 @@ def _allure_feature_from_backend_path(path: str) -> str:
 
 @pytest.fixture(autouse=True)
 def _allure_backend_labels(request: pytest.FixtureRequest):
+    allure.dynamic.label("component", "backend")
     allure.dynamic.epic("api")
     allure.dynamic.feature(_allure_feature_from_backend_path(_pytest_file_path(request)))
