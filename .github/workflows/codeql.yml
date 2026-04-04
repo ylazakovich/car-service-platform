@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: "0 0 * * 6"
 
+# PR number or branch ref (push/schedule) — new commit cancels in-progress CodeQL for the same target.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

@@ -5,6 +5,14 @@ on:
     workflows: ["PR Pipeline"]
     types: [completed]
 
+# Same head branch (and fork identity) → newer PR Pipeline completion cancels an in-progress Test Report.
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{
+      github.event.workflow_run.head_repository.full_name || github.repository
+    }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 permissions:
   contents: write # peaceiris pushes the gh-pages branch
   checks: write
@@ -101,6 +109,7 @@ jobs:
           PR_NUMBER: ${{ steps.pr_ctx.outputs.number }}
           FORK_PR: ${{ steps.fork.outputs.fork }}
         run: |
+          cp -f .github/allure/categories.json artifacts/allure-results/categories.json
           npx --yes allure generate artifacts/allure-results -o allure-report
           node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
           OWNER="${{ github.repository_owner }}"
