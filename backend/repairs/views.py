@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 import secrets
 
 from django.http import FileResponse, HttpResponse
@@ -9,8 +9,17 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from .models import Repair, RepairNote
+from .models import Repair, RepairDocument, RepairNote
 from .serializers import PortalRepairSerializer, RepairNoteSerializer, RepairSerializer
+
+
+def build_repair_queryset():
+    has_pdf_subquery = RepairDocument.objects.filter(repair_id=OuterRef("pk"))
+    return (
+        Repair.objects.select_related("vehicle", "vehicle__customer", "master")
+        .prefetch_related("notes")
+        .annotate(has_pdf=Exists(has_pdf_subquery))
+    )
 
 
 class PortalLookupThrottle(AnonRateThrottle):
@@ -32,9 +41,7 @@ class RepairListCreateView(generics.ListCreateAPIView):
     serializer_class = RepairSerializer
 
     def get_queryset(self):
-        qs = Repair.objects.select_related(
-            "vehicle", "vehicle__customer", "master"
-        ).prefetch_related("notes")
+        qs = build_repair_queryset()
         q = self.request.query_params.get("q", "").strip()
         if q:
             qs = qs.filter(
@@ -53,9 +60,7 @@ class RepairDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RepairSerializer
 
     def get_queryset(self):
-        return Repair.objects.select_related(
-            "vehicle", "vehicle__customer", "master"
-        ).prefetch_related("notes")
+        return build_repair_queryset()
 
 
 class RepairNoteCreateView(APIView):

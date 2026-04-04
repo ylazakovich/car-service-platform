@@ -1199,6 +1199,47 @@ textarea { resize: vertical; }
   gap: var(--s3);
 }
 
+.dashboard-report-stack {
+  display: grid;
+  gap: var(--s3);
+}
+
+.dashboard-report-section-plan,
+.dashboard-report-section-fact,
+.dashboard-report-section-warehouse {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: var(--s4);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    rgba(255, 255, 255, 0.01);
+  overflow: hidden;
+}
+
+.dashboard-report-section-plan::before,
+.dashboard-report-section-fact::before,
+.dashboard-report-section-warehouse::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 2px;
+  opacity: 0.7;
+}
+
+.dashboard-report-section-plan::before {
+  background: linear-gradient(90deg, rgba(205, 216, 58, 0.55), rgba(205, 216, 58, 0.08));
+}
+
+.dashboard-report-section-fact::before {
+  background: linear-gradient(90deg, rgba(91, 156, 246, 0.55), rgba(91, 156, 246, 0.08));
+}
+
+.dashboard-report-section-warehouse::before {
+  background: linear-gradient(90deg, rgba(255, 155, 92, 0.5), rgba(255, 155, 92, 0.08));
+}
+
 .dashboard-report-head {
   display: flex;
   align-items: end;
@@ -1221,13 +1262,325 @@ textarea { resize: vertical; }
   display: grid;
   gap: var(--s4);
   background:
-    radial-gradient(circle at top right, rgba(91, 156, 246, 0.08), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    var(--surface-mid);
+    radial-gradient(circle at top right, rgba(91, 156, 246, 0.1), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    rgba(14, 17, 26, 0.78);
+}
+
+.dashboard-calendar-panel {
+  display: grid;
+  gap: var(--s4);
+  background:
+    radial-gradient(circle at top right, rgba(91, 156, 246, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    rgba(10, 13, 20, 0.82);
 }
 
 .dashboard-chart-copy {
   margin: calc(var(--s2) * -1) 0 0;
+}
+
+.dashboard-metric-comparison {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-metric-comparison-label {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-metric-comparison-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-mid);
+  font-size: 0.83rem;
+}
+
+.dashboard-fact-summary {
+  display: grid;
+  gap: var(--s3);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-fact-pill {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid rgba(91, 156, 246, 0.12);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(91, 156, 246, 0.08), rgba(255, 255, 255, 0)),
+    rgba(11, 15, 24, 0.62);
+  padding: 0.95rem 1rem;
+}
+
+.dashboard-fact-pill strong {
+  font-size: 1.05rem;
+}
+
+.dashboard-fact-pill p {
+  margin: 0;
+  color: var(--text-mid);
+  font-size: 0.82rem;
+}
+
+.dashboard-fact-pill-label {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dashboard-metric-delta {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.73rem;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-metric-delta-positive {
+  background: rgba(91, 156, 246, 0.12);
+  color: #a9c4ff;
+}
+
+.dashboard-metric-delta-negative {
+  background: rgba(255, 155, 92, 0.14);
+  color: #ffc6a6;
+}
+
+.dashboard-metric-delta-neutral {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-soft);
+}
+
+.dashboard-calendar-shell {
+  display: grid;
+  gap: var(--s3);
+  border: 1px solid rgba(91, 156, 246, 0.1);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(91, 156, 246, 0.06), rgba(255, 255, 255, 0)),
+    rgba(7, 10, 17, 0.58);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.dashboard-calendar-header,
+.dashboard-calendar-row {
+  display: grid;
+  grid-template-columns: minmax(210px, 240px) minmax(720px, 1fr);
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.dashboard-calendar-label-spacer,
+.dashboard-calendar-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.dashboard-calendar-label-spacer {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(9, 11, 17, 0.92);
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dashboard-calendar-day-grid,
+.dashboard-calendar-lane-grid {
+  display: grid;
+  min-width: max-content;
+}
+
+.dashboard-calendar-day-cell {
+  display: grid;
+  gap: 0.2rem;
+  align-content: center;
+  justify-items: center;
+  min-height: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+}
+
+.dashboard-calendar-day-cell strong {
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.dashboard-calendar-day-cell-weekend,
+.dashboard-calendar-lane-cell-weekend {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-calendar-day-cell-today,
+.dashboard-calendar-lane-cell-today {
+  box-shadow: inset 0 0 0 1px rgba(205, 216, 58, 0.45);
+}
+
+.dashboard-calendar-rows {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.dashboard-calendar-row-label {
+  display: grid;
+  gap: 0.28rem;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(9, 11, 17, 0.94);
+  color: var(--text);
+  padding: 0.85rem 0.95rem;
+  text-align: left;
+}
+
+.dashboard-calendar-row-label:hover {
+  border-color: rgba(91, 156, 246, 0.24);
+}
+
+.dashboard-calendar-row-label-active {
+  border-color: rgba(91, 156, 246, 0.34);
+  box-shadow: 0 0 0 1px rgba(91, 156, 246, 0.18);
+}
+
+.dashboard-calendar-row-label strong {
+  font-size: 0.88rem;
+}
+
+.dashboard-calendar-row-label span {
+  color: var(--text-mid);
+  font-size: 0.81rem;
+}
+
+.dashboard-calendar-row-meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-calendar-lane-grid {
+  position: relative;
+  align-items: center;
+}
+
+.dashboard-calendar-lane-cell {
+  min-height: 3.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.dashboard-calendar-bar {
+  z-index: 1;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 0.7rem;
+  color: #091017;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dashboard-calendar-bar-in_progress {
+  background: linear-gradient(90deg, #78b2ff, #9bc4ff);
+}
+
+.dashboard-calendar-bar-waiting_parts {
+  background: linear-gradient(90deg, #ffb071, #ffd0ae);
+}
+
+.dashboard-calendar-bar-active {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.dashboard-calendar-bar-overdue {
+  border-color: rgba(123, 26, 26, 0.44);
+}
+
+.dashboard-calendar-detail {
+  display: grid;
+  gap: var(--s3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    rgba(7, 10, 17, 0.62);
+  padding: 1rem 1.05rem;
+}
+
+.dashboard-calendar-detail h4 {
+  margin: 0.2rem 0 0;
+  font-size: 1rem;
+}
+
+.dashboard-calendar-detail-copy p {
+  margin: 0.28rem 0 0;
+}
+
+.dashboard-calendar-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.dashboard-calendar-swatch-in-progress {
+  background: #9bc4ff;
+}
+
+.dashboard-calendar-swatch-waiting {
+  background: #ffba84;
+}
+
+.metric-card-plan {
+  background:
+    linear-gradient(180deg, rgba(205, 216, 58, 0.05), rgba(255, 255, 255, 0)),
+    var(--surface);
+}
+
+.metric-card-fact {
+  background:
+    linear-gradient(180deg, rgba(91, 156, 246, 0.07), rgba(255, 255, 255, 0)),
+    var(--surface);
+}
+
+.metric-card-warehouse {
+  background:
+    linear-gradient(180deg, rgba(255, 155, 92, 0.06), rgba(255, 255, 255, 0)),
+    var(--surface);
 }
 
 .dashboard-table {
@@ -1246,6 +1599,26 @@ textarea { resize: vertical; }
 .dashboard-table th {
   color: var(--text-mid);
   font-weight: 600;
+}
+
+.moneyflow-series-groups {
+  display: grid;
+  gap: var(--s3);
+}
+
+.moneyflow-series-group {
+  display: grid;
+  gap: var(--s2);
+}
+
+.moneyflow-series-group-label {
+  margin: 0;
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .moneyflow-series-toggle-row {
@@ -1298,33 +1671,34 @@ textarea { resize: vertical; }
 
 .moneyflow-chart-shell {
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
+  border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    rgba(9, 10, 16, 0.42);
-  padding: 0.9rem;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    rgba(8, 10, 15, 0.55);
+  padding: 1rem 1rem 0.85rem;
   overflow-x: auto;
 }
 
 .moneyflow-chart-svg {
   display: block;
   width: 100%;
-  min-width: 620px;
+  min-width: 680px;
   height: auto;
 }
 
 .moneyflow-chart-gridline {
-  stroke: rgba(255, 255, 255, 0.08);
+  stroke: rgba(255, 255, 255, 0.1);
   stroke-width: 1;
 }
 
 .moneyflow-chart-gridline-vertical {
-  stroke-dasharray: 4 8;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-dasharray: 3 10;
 }
 
 .moneyflow-chart-axis-label {
   fill: var(--text-soft);
-  font-size: 12px;
+  font-size: 11px;
   font-family: "IBM Plex Mono", monospace;
 }
 

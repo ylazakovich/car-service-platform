@@ -72,27 +72,18 @@ type StaffHomePageProps = {
 };
 
 type UserAccessTab = "owner" | "admins" | "masters";
-type DashboardTab = "moneyflow" | "service_board" | "procurement";
+type DashboardTab = "moneyflow" | "service_board" | "warehouse";
 type DashboardDateRange = {
   start_date: string;
   end_date: string;
 };
-type MoneyflowSeriesKey =
-  | "purchase_spend"
-  | "service_sales"
-  | "parts_sales"
-  | "pdf_document_total"
-  | "pdf_labor_export_day"
-  | "pdf_parts_client_export_day";
-type MoneyflowSeriesVisibility = Record<MoneyflowSeriesKey, boolean>;
-type MoneyflowChartPoint = {
-  date: string;
-  purchase_spend: number;
-  service_sales: number;
-  parts_sales: number;
-  pdf_document_total: number;
-  pdf_labor_export_day: number;
-  pdf_parts_client_export_day: number;
+type DashboardCalendarLane = {
+  repair: RepairEntry;
+  visibleStartDate: string;
+  visibleEndDate: string;
+  startColumn: number;
+  span: number;
+  isOverdue: boolean;
 };
 
 const emptyCustomerForm: CustomerFormState = {
@@ -120,42 +111,6 @@ const emptyVehicleForm: VehicleFormState = {
 function getStaffUserLabel(staff: StaffUser): string {
   return [staff.first_name, staff.last_name].filter(Boolean).join(" ") || staff.email;
 }
-
-const moneyflowSeriesMeta: Record<MoneyflowSeriesKey, { label: string; color: string }> = {
-  purchase_spend: {
-    label: "Purchase Spend",
-    color: "var(--warning)",
-  },
-  service_sales: {
-    label: "Service Sales (live)",
-    color: "var(--info)",
-  },
-  parts_sales: {
-    label: "Parts Sales (live)",
-    color: "var(--accent)",
-  },
-  pdf_document_total: {
-    label: "Act document total (export day)",
-    color: "var(--success)",
-  },
-  pdf_labor_export_day: {
-    label: "Act labor (export day)",
-    color: "#7c9cff",
-  },
-  pdf_parts_client_export_day: {
-    label: "Act parts to client (export day)",
-    color: "#c49cff",
-  },
-};
-
-const defaultMoneyflowSeriesVisibility: MoneyflowSeriesVisibility = {
-  purchase_spend: true,
-  service_sales: true,
-  parts_sales: true,
-  pdf_document_total: false,
-  pdf_labor_export_day: false,
-  pdf_parts_client_export_day: false,
-};
 
 function formatIsoLocalDate(value: Date): string {
   const year = String(value.getFullYear());
@@ -239,56 +194,6 @@ function createIsoDateRange(startDate: string, endDate: string): string[] {
   }
 
   return next;
-}
-
-function sumByIsoDate(target: Map<string, number>, date: string, amount: number) {
-  const key = toIsoDateKey(date);
-  if (!key) {
-    return;
-  }
-
-  target.set(key, (target.get(key) ?? 0) + amount);
-}
-
-function buildSvgLinePath(points: Array<{ x: number; y: number }>): string {
-  return points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
-    .join(" ");
-}
-
-function getChartTickIndexes(length: number): number[] {
-  if (length <= 1) {
-    return [0];
-  }
-
-  const indexes = [0, Math.floor((length - 1) / 3), Math.floor(((length - 1) * 2) / 3), length - 1];
-  return [...new Set(indexes)];
-}
-
-function formatChartAxisCurrency(value: number): string {
-  if (value <= 0) {
-    return "0 zł";
-  }
-
-  if (value >= 1000) {
-    return `${new Intl.NumberFormat("pl-PL", {
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(value)} zł`;
-  }
-
-  return `${Math.round(value)} zł`;
-}
-
-function formatChartDateLabel(value: string): string {
-  const parsed = parseIsoDate(value);
-  if (!parsed) {
-    return value;
-  }
-
-  const day = String(parsed.getDate()).padStart(2, "0");
-  const month = String(parsed.getMonth() + 1).padStart(2, "0");
-  return `${day}-${month}`;
 }
 
 function isDateWithinRange(value: string, startDate: string, endDate: string) {
@@ -720,9 +625,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [activeUserTab, setActiveUserTab] = useState<UserAccessTab>("owner");
   const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>("moneyflow");
   const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>(() => getMoneyflowDefaultDateRange());
-  const [moneyflowSeriesVisibility, setMoneyflowSeriesVisibility] = useState<MoneyflowSeriesVisibility>(
-    defaultMoneyflowSeriesVisibility
-  );
+  const [activeMoneyflowCalendarRepairId, setActiveMoneyflowCalendarRepairId] = useState<number | null>(null);
   const [serviceBoardDateRange, setServiceBoardDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
   const [apiServices, setApiServices] = useState<ServiceItem[]>([]);
   const [dashboardAnalytics, setDashboardAnalytics] = useState<DashboardAnalyticsResponse | null>(null);
@@ -881,6 +784,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleCardDrop,
     handleCopyPortalLink,
     handleRegeneratePortalLink,
+    markRepairPdfAvailable,
     repairModalEstimatedDate,
     setRepairModalEstimatedDate,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
@@ -1012,6 +916,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     try {
       const blob = await openRepairPdfForPreview(repairId);
       setRepairPdfBlob(blob);
+      markRepairPdfAvailable(repairId);
     } catch {
       // silently ignore
     } finally {
@@ -1024,6 +929,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     try {
       const blob = await exportRepairPdf(repairId);
       setRepairPdfBlob(blob);
+      markRepairPdfAvailable(repairId);
     } catch {
       // silently ignore
     } finally {
@@ -1760,10 +1666,72 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () => new Set(completedRepairsForServiceSales.map((repair) => repair.tracking_code)),
     [completedRepairsForServiceSales]
   );
-  const completedRepairsByMoneyflowCode = useMemo(
-    () => new Map(completedRepairsForServiceSales.map((repair) => [repair.tracking_code, repair])),
-    [completedRepairsForServiceSales]
-  );
+  const moneyflowCalendarDays = useMemo(() => {
+    const todayKey = getLocalTodayDate();
+    return createIsoDateRange(moneyflowDateRange.start_date, moneyflowDateRange.end_date).map((date) => {
+      const parsed = parseIsoDate(date);
+      const weekdayIndex = parsed ? (parsed.getDay() + 6) % 7 : 0;
+      return {
+        date,
+        dayNumber: parsed ? String(parsed.getDate()) : date.slice(-2),
+        weekdayLabel: calendarWeekdayLabels[weekdayIndex] ?? "",
+        isWeekend: weekdayIndex >= 5,
+        isToday: date === todayKey,
+      };
+    });
+  }, [moneyflowDateRange.end_date, moneyflowDateRange.start_date]);
+  const moneyflowCalendarLanes = useMemo<DashboardCalendarLane[]>(() => {
+    const rangeStart = moneyflowDateRange.start_date;
+    const rangeEnd = moneyflowDateRange.end_date;
+    if (!rangeStart || !rangeEnd || moneyflowCalendarDays.length === 0) {
+      return [];
+    }
+
+    const dayIndexByDate = new Map(moneyflowCalendarDays.map((day, index) => [day.date, index]));
+    const todayKey = getLocalTodayDate();
+    const statusPriority: Record<RepairStatus, number> = {
+      waiting_parts: 0,
+      in_progress: 1,
+      new: 2,
+      completed: 3,
+    };
+
+    return repairs
+      .filter((repair) => repair.status === "in_progress" || repair.status === "waiting_parts")
+      .map((repair) => {
+        const createdKey = toIsoDateKey(repair.created_at);
+        if (!createdKey || createdKey > rangeEnd) {
+          return null;
+        }
+
+        const visibleStartDate = createdKey < rangeStart ? rangeStart : createdKey;
+        const visibleEndDate = rangeEnd;
+        const startColumn = dayIndexByDate.get(visibleStartDate);
+        const endColumn = dayIndexByDate.get(visibleEndDate);
+
+        if (startColumn == null || endColumn == null || endColumn < startColumn) {
+          return null;
+        }
+
+        const estimatedKey = toIsoDateKey(repair.estimated_date ?? "");
+        return {
+          repair,
+          visibleStartDate,
+          visibleEndDate,
+          startColumn,
+          span: endColumn - startColumn + 1,
+          isOverdue: Boolean(estimatedKey && estimatedKey < todayKey),
+        };
+      })
+      .filter((lane): lane is DashboardCalendarLane => lane !== null)
+      .sort((left, right) => {
+        const byStatus = statusPriority[left.repair.status] - statusPriority[right.repair.status];
+        if (byStatus !== 0) {
+          return byStatus;
+        }
+        return right.repair.updated_at.localeCompare(left.repair.updated_at);
+      });
+  }, [moneyflowCalendarDays, moneyflowDateRange.end_date, moneyflowDateRange.start_date, repairs]);
   const filteredServiceBoardRepairs = useMemo(
     () =>
       repairs.filter((repair) =>
@@ -1803,144 +1771,22 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [completedRepairsForServiceSales, servicePriceByName]
   );
   const projectedMargin = totalPartsSales - totalPurchaseCost;
-  const pdfSeriesByExportDay = useMemo(() => {
-    const documentTotal = new Map<string, number>();
-    const laborTotal = new Map<string, number>();
-    const partsClientTotal = new Map<string, number>();
-    for (const row of dashboardAnalytics?.pdf?.series_by_export_day ?? []) {
-      documentTotal.set(row.date, row.document_total);
-      laborTotal.set(row.date, row.labor_total);
-      partsClientTotal.set(row.date, row.parts_client_total);
-    }
-    return { documentTotal, laborTotal, partsClientTotal };
-  }, [dashboardAnalytics]);
-  const moneyflowChartData = useMemo<MoneyflowChartPoint[]>(() => {
-    const dateRange = createIsoDateRange(moneyflowDateRange.start_date, moneyflowDateRange.end_date);
-    if (dateRange.length === 0) {
-      return [];
+  const activeMoneyflowCalendarLane =
+    moneyflowCalendarLanes.find((lane) => lane.repair.id === activeMoneyflowCalendarRepairId) ??
+    moneyflowCalendarLanes[0] ??
+    null;
+  useEffect(() => {
+    if (moneyflowCalendarLanes.length === 0) {
+      setActiveMoneyflowCalendarRepairId(null);
+      return;
     }
 
-    const purchaseSpendByDate = new Map<string, number>();
-    filteredMoneyflowPurchases.forEach((entry) => {
-      sumByIsoDate(purchaseSpendByDate, entry.order_date, entry.purchase_price * entry.quantity);
-    });
-
-    const serviceSalesByDate = new Map<string, number>();
-    completedRepairsForServiceSales.forEach((repair) => {
-      sumByIsoDate(
-        serviceSalesByDate,
-        repair.completed_at,
-        getRepairServiceSaleValue(repair.service_name, servicePriceByName)
-      );
-    });
-
-    const partsSalesByDate = new Map<string, number>();
-    purchases.forEach((entry) => {
-      const relatedRepair = entry.repair_code ? completedRepairsByMoneyflowCode.get(entry.repair_code) : undefined;
-      if (!relatedRepair?.completed_at) {
-        return;
-      }
-
-      sumByIsoDate(partsSalesByDate, relatedRepair.completed_at, entry.sale_price * entry.quantity);
-    });
-
-    return dateRange.map((date) => ({
-      date,
-      purchase_spend: purchaseSpendByDate.get(date) ?? 0,
-      service_sales: serviceSalesByDate.get(date) ?? 0,
-      parts_sales: partsSalesByDate.get(date) ?? 0,
-      pdf_document_total: pdfSeriesByExportDay.documentTotal.get(date) ?? 0,
-      pdf_labor_export_day: pdfSeriesByExportDay.laborTotal.get(date) ?? 0,
-      pdf_parts_client_export_day: pdfSeriesByExportDay.partsClientTotal.get(date) ?? 0,
-    }));
-  }, [
-    completedRepairsByMoneyflowCode,
-    completedRepairsForServiceSales,
-    filteredMoneyflowPurchases,
-    moneyflowDateRange.end_date,
-    moneyflowDateRange.start_date,
-    pdfSeriesByExportDay,
-    purchases,
-    servicePriceByName,
-  ]);
-  const visibleMoneyflowSeriesKeys = useMemo(
-    () => (Object.keys(moneyflowSeriesMeta) as MoneyflowSeriesKey[]).filter((key) => moneyflowSeriesVisibility[key]),
-    [moneyflowSeriesVisibility]
-  );
-  const moneyflowChartModel = useMemo(() => {
-    const chartWidth = 720;
-    const chartHeight = 280;
-    const paddingLeft = 56;
-    const paddingRight = 18;
-    const paddingTop = 16;
-    const paddingBottom = 36;
-    const innerWidth = chartWidth - paddingLeft - paddingRight;
-    const innerHeight = chartHeight - paddingTop - paddingBottom;
-    const xStep = moneyflowChartData.length > 1 ? innerWidth / (moneyflowChartData.length - 1) : 0;
-    const maxValue = visibleMoneyflowSeriesKeys.reduce((currentMax, key) => {
-      const seriesMax = Math.max(...moneyflowChartData.map((point) => point[key]), 0);
-      return Math.max(currentMax, seriesMax);
-    }, 0);
-    const visibleSeries = visibleMoneyflowSeriesKeys.map((key) => {
-      const points = moneyflowChartData.map((point, index) => {
-        const x = paddingLeft + xStep * index;
-        const y =
-          maxValue <= 0
-            ? chartHeight - paddingBottom
-            : chartHeight - paddingBottom - (point[key] / maxValue) * innerHeight;
-
-        return {
-          x,
-          y,
-          value: point[key],
-          date: point.date,
-        };
-      });
-
-      return {
-        key,
-        label: moneyflowSeriesMeta[key].label,
-        color: moneyflowSeriesMeta[key].color,
-        points,
-        path: buildSvgLinePath(points),
-      };
-    });
-    const tickIndexes = getChartTickIndexes(moneyflowChartData.length);
-    const xTicks = tickIndexes
-      .map((index) => moneyflowChartData[index])
-      .filter((point): point is MoneyflowChartPoint => Boolean(point))
-      .map((point) => ({
-        date: point.date,
-        label: formatChartDateLabel(point.date),
-        x:
-          moneyflowChartData.length <= 1
-            ? paddingLeft + innerWidth / 2
-            : paddingLeft + xStep * moneyflowChartData.findIndex((entry) => entry.date === point.date),
-      }));
-    const yAxisValues = maxValue <= 0 ? [0] : [maxValue, maxValue / 2, 0];
-    const yTicks = [...new Set(yAxisValues)].map((value) => ({
-      value,
-      label: formatChartAxisCurrency(value),
-      y:
-        maxValue <= 0
-          ? chartHeight - paddingBottom
-          : chartHeight - paddingBottom - (value / maxValue) * innerHeight,
-    }));
-    const hasVisibleValues = visibleSeries.some((series) => series.points.some((point) => point.value > 0));
-
-    return {
-      chartWidth,
-      chartHeight,
-      paddingLeft,
-      paddingRight,
-      paddingTop,
-      paddingBottom,
-      hasVisibleValues,
-      visibleSeries,
-      xTicks,
-      yTicks,
-    };
-  }, [moneyflowChartData, visibleMoneyflowSeriesKeys]);
+    setActiveMoneyflowCalendarRepairId((current) =>
+      current && moneyflowCalendarLanes.some((lane) => lane.repair.id === current)
+        ? current
+        : moneyflowCalendarLanes[0].repair.id
+    );
+  }, [moneyflowCalendarLanes]);
   const dashboardWorkerLoad = useMemo(
     () =>
       staffUsers.map((master) => {
@@ -1964,8 +1810,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       label: "MoneyFlow",
     },
     {
-      id: "procurement",
-      label: "Procurement",
+      id: "warehouse",
+      label: "Warehouse",
     },
     {
       id: "service_board",
@@ -1979,6 +1825,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       currency: "PLN",
       maximumFractionDigits: 2,
     }).format(value);
+  }
+
+  function formatSignedCurrency(value: number) {
+    return `${value > 0 ? "+" : ""}${formatCurrency(value)}`;
   }
 
   function renderStaffMobileTaskRail({
@@ -2059,6 +1909,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     const activeWorkloadRepairsFallback = [...activeRepairs].sort((left, right) =>
       right.updated_at.localeCompare(left.updated_at)
     );
+    const pdfTotals = dashboardAnalytics?.pdf?.latest_act_totals;
+    const serviceToActDelta = pdfTotals ? pdfTotals.labor_total - totalServiceSales : null;
+    const partsToActDelta = pdfTotals ? pdfTotals.parts_client_total - totalPartsSales : null;
+    const combinedLiveTotal = totalServiceSales + totalPartsSales;
+    const combinedToActDelta = pdfTotals ? pdfTotals.document_total - combinedLiveTotal : null;
+    const pdfLag = dashboardAnalytics?.pdf?.completed_to_first_export_lag_days ?? null;
     const activeDateRange =
       activeDashboardTab === "service_board" ? serviceBoardDateRange : moneyflowDateRange;
     const updateActiveDateRange = (field: keyof DashboardDateRange, value: string) => {
@@ -2092,11 +1948,30 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         };
       });
     };
-    const toggleMoneyflowSeries = (key: MoneyflowSeriesKey) => {
-      setMoneyflowSeriesVisibility((current) => ({
-        ...current,
-        [key]: !current[key],
-      }));
+    const renderMetricComparison = (label: string, comparisonValue: number | null, deltaValue: number | null) => {
+      if (comparisonValue == null || deltaValue == null) {
+        return null;
+      }
+
+      return (
+        <div className="dashboard-metric-comparison">
+          <span className="dashboard-metric-comparison-label">{label}</span>
+          <div className="dashboard-metric-comparison-values">
+            <span>{formatCurrency(comparisonValue)}</span>
+            <span
+              className={`dashboard-metric-delta ${
+                deltaValue > 0
+                  ? "dashboard-metric-delta-positive"
+                  : deltaValue < 0
+                    ? "dashboard-metric-delta-negative"
+                    : "dashboard-metric-delta-neutral"
+              }`}
+            >
+              Δ {formatSignedCurrency(deltaValue)}
+            </span>
+          </div>
+        </div>
+      );
     };
 
     return (
@@ -2156,91 +2031,75 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             ) : null}
             {activeDashboardTab === "moneyflow" ? (
               <div className="workspace-stack">
-                <section className="dashboard-report-section">
+                <section className="dashboard-report-section dashboard-report-section-plan">
                   <div className="dashboard-report-head">
                     <div>
-                      <p className="eyebrow">Service Sales</p>
-                      <h3>Service Results</h3>
+                      <p className="eyebrow">Planned movement</p>
+                      <h3>Sales Plan</h3>
                     </div>
                   </div>
+                  <p className="workspace-copy">
+                    Live estimate from the current service catalog and current purchase lines for repairs completed in
+                    the selected period.
+                  </p>
 
                   <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                    <article className="metric-card">
+                    <article className="metric-card metric-card-plan">
                       <span className="metric-label">Service sales (live)</span>
                       <strong>{formatCurrency(totalServiceSales)}</strong>
+                      {renderMetricComparison("Acts", pdfTotals?.labor_total ?? null, serviceToActDelta)}
                       <p>From the service catalog API for the selected period.</p>
                     </article>
-                    <article className="metric-card">
-                      <span className="metric-label">Combined live (services + parts)</span>
-                      <strong>{formatCurrency(totalServiceSales + totalPartsSales)}</strong>
-                      <p>Live estimate: services plus parts resale for completed jobs in range.</p>
-                    </article>
-                    <article className="metric-card metric-card-accent">
+                    <article className="metric-card metric-card-plan">
                       <span className="metric-label">Parts sales (live)</span>
                       <strong>{formatCurrency(totalPartsSales)}</strong>
-                      <p>Also shown below; use for comparison with the act snapshot.</p>
+                      {renderMetricComparison("Acts", pdfTotals?.parts_client_total ?? null, partsToActDelta)}
+                      <p>Purchase lines tied to repairs completed in the selected range.</p>
+                    </article>
+                    <article className="metric-card metric-card-accent">
+                      <span className="metric-label">Combined live (services + parts)</span>
+                      <strong>{formatCurrency(combinedLiveTotal)}</strong>
+                      {renderMetricComparison("Acts", pdfTotals?.document_total ?? null, combinedToActDelta)}
+                      <p>Live estimate: services plus parts resale for completed jobs in range.</p>
                     </article>
                   </div>
                 </section>
 
-                <section className="dashboard-report-section">
+                <section className="dashboard-report-section dashboard-report-section-fact">
                   <div className="dashboard-report-head">
                     <div>
-                      <p className="eyebrow">Parts Sales</p>
-                      <h3>Parts Results</h3>
+                      <p className="eyebrow">Stored completion acts</p>
+                      <h3>Actuals from Acts</h3>
                     </div>
                   </div>
+                  <p className="workspace-copy">
+                    Fixed values from the latest stored act per qualifying repair.
+                  </p>
 
-                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                    <article className="metric-card">
-                      <span className="metric-label">Purchase spend</span>
-                      <strong>{formatCurrency(totalPurchaseCost)}</strong>
-                      <p>Sum of purchase orders by order date in the period.</p>
-                    </article>
-                    <article className="metric-card">
-                      <span className="metric-label">Parts sales to client</span>
-                      <strong>{formatCurrency(totalPartsSales)}</strong>
-                      <p>Purchase lines tied to completed repairs in range.</p>
-                    </article>
-                    <article className="metric-card">
-                      <span className="metric-label">Parts margin</span>
-                      <strong>{formatCurrency(projectedMargin)}</strong>
-                      <p>Parts sales minus purchase spend in the period.</p>
-                    </article>
-                  </div>
-                </section>
-
-                {dashboardAnalytics?.pdf ? (
-                  <>
-                    <section className="dashboard-report-section">
-                      <div className="dashboard-report-head">
-                        <div>
-                          <p className="eyebrow">Stored completion acts</p>
-                          <h3>Latest PDF snapshot per job</h3>
-                        </div>
+                  {dashboardAnalytics?.pdf ? (
+                    <div className="dashboard-report-stack">
+                      <div className="dashboard-fact-summary">
+                        <article className="dashboard-fact-pill">
+                          <span className="dashboard-fact-pill-label">Coverage</span>
+                          <strong>
+                            {dashboardAnalytics.pdf.latest_act_totals.repairs_with_latest_act} /{" "}
+                            {dashboardAnalytics.pdf.coverage.completed_in_range}
+                          </strong>
+                          <p>Completed repairs in range that already have a latest stored act.</p>
+                        </article>
+                        <article className="dashboard-fact-pill">
+                          <span className="dashboard-fact-pill-label">Median first export</span>
+                          <strong>{pdfLag?.median != null ? `${pdfLag.median} d` : "—"}</strong>
+                          <p>
+                            {pdfLag?.sample_size
+                              ? `Completed -> first PDF export across ${pdfLag.sample_size} repairs.`
+                              : "No completed repairs with exports yet."}
+                          </p>
+                        </article>
                       </div>
-                      <p className="workspace-copy">
-                        Totals use the <strong>latest</strong> export for each repair whose{" "}
-                        <strong>completed date</strong> falls in the selected range. Each PDF export is also counted on
-                        the chart on its export day (the &quot;Act … (export day)&quot; series).
-                      </p>
+
                       <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                        <article className="metric-card">
-                          <span className="metric-label">Labor (acts)</span>
-                          <strong>{formatCurrency(dashboardAnalytics.pdf.latest_act_totals.labor_total)}</strong>
-                          <p>From the latest act per qualifying repair.</p>
-                        </article>
-                        <article className="metric-card">
-                          <span className="metric-label">Parts to client (acts)</span>
-                          <strong>{formatCurrency(dashboardAnalytics.pdf.latest_act_totals.parts_client_total)}</strong>
-                          <p>Snapshot at the last export.</p>
-                        </article>
-                        <article className="metric-card">
-                          <span className="metric-label">Document total (acts)</span>
-                          <strong>{formatCurrency(dashboardAnalytics.pdf.latest_act_totals.document_total)}</strong>
-                          <p>Full document total from the latest snapshot.</p>
-                        </article>
-                        <article className="metric-card">
+                        <article className="metric-card metric-card-fact">
                           <span className="metric-label">Completed without act</span>
                           <strong>{dashboardAnalytics.pdf.coverage.completed_without_pdf}</strong>
                           <p>
@@ -2248,174 +2107,237 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             PDF export.
                           </p>
                         </article>
-                        <article className="metric-card">
+                        <article className="metric-card metric-card-fact">
                           <span className="metric-label">Exports in period</span>
                           <strong>{dashboardAnalytics.pdf.exports_in_period}</strong>
                           <p>All PDF versions created in this date range.</p>
                         </article>
-                        <article className="metric-card">
+                        <article className="metric-card metric-card-fact">
                           <span className="metric-label">Multi-export jobs</span>
                           <strong>{dashboardAnalytics.pdf.completed_repairs_with_multiple_exports}</strong>
                           <p>Completed in range with more than one stored act version.</p>
                         </article>
                       </div>
-                    </section>
+                    </div>
+                  ) : (
+                    <p className="workspace-note">Billing analytics unavailable (check connection or sign-in).</p>
+                  )}
+                </section>
 
-                    <section className="dashboard-report-section">
-                      <div className="dashboard-report-head">
-                        <div>
-                          <p className="eyebrow">Reconciliation</p>
-                          <h3>Live estimate vs latest act</h3>
-                        </div>
-                      </div>
-                      <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                        <article className="metric-card">
-                          <span className="metric-label">Service / labor</span>
-                          <strong>
-                            {formatCurrency(totalServiceSales)} →{" "}
-                            {formatCurrency(dashboardAnalytics.pdf.latest_act_totals.labor_total)}
-                          </strong>
-                          <p>Live uses the current catalog; acts use values frozen at export.</p>
-                        </article>
-                        <article className="metric-card">
-                          <span className="metric-label">Parts to client</span>
-                          <strong>
-                            {formatCurrency(totalPartsSales)} →{" "}
-                            {formatCurrency(dashboardAnalytics.pdf.latest_act_totals.parts_client_total)}
-                          </strong>
-                          <p>Live from purchase lines; acts from snapshot at export.</p>
-                        </article>
-                        <article className="metric-card">
-                          <span className="metric-label">First export lag (median days)</span>
-                          <strong>
-                            {dashboardAnalytics.pdf.completed_to_first_export_lag_days.median != null
-                              ? `${dashboardAnalytics.pdf.completed_to_first_export_lag_days.median} d`
-                              : "—"}
-                          </strong>
-                          <p>
-                            From completed date to first PDF (sample{" "}
-                            {dashboardAnalytics.pdf.completed_to_first_export_lag_days.sample_size}).
-                          </p>
-                        </article>
-                      </div>
-                    </section>
-                  </>
-                ) : (
-                  <p className="workspace-note">Billing analytics unavailable (check connection or sign-in).</p>
-                )}
-
-                <section className="panel dashboard-moneyflow-chart-panel">
+                <section className="panel dashboard-calendar-panel">
                   <div className="dashboard-report-head">
                     <div>
-                      <p className="eyebrow">MoneyFlow Chart</p>
-                      <h3>Flow Timeline</h3>
+                      <p className="eyebrow">Operational Window</p>
+                      <h3>Repair Calendar</h3>
+                    </div>
+                    <div className="hero-actions">
+                      <button type="button" className="button button-secondary" onClick={() => onSelectSection("repairs")}>
+                        Open Repairs
+                      </button>
                     </div>
                   </div>
-
-                  <p className="workspace-copy dashboard-chart-copy">
-                    Compare purchase spend with live service and parts estimates. Turn on the &quot;Act … (export
-                    day)&quot; series to overlay sums from stored PDFs by export day (each export counts separately).
+                  <p className="workspace-copy">
+                    Live jobs from the selected date window. Bars start at repair creation and continue through the
+                    visible range while the repair stays open. Hover, focus, or click a lane to inspect details fast.
                   </p>
-
-                  <div className="moneyflow-series-toggle-row" role="group" aria-label="MoneyFlow chart series">
-                    {(Object.keys(moneyflowSeriesMeta) as MoneyflowSeriesKey[]).map((key) => {
-                      const meta = moneyflowSeriesMeta[key];
-                      const isVisible = moneyflowSeriesVisibility[key];
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          className={`moneyflow-series-toggle ${isVisible ? "moneyflow-series-toggle-active" : ""}`}
-                          aria-pressed={isVisible}
-                          aria-label={`${meta.label} trend`}
-                          onClick={() => toggleMoneyflowSeries(key)}
-                        >
-                          <span className="moneyflow-series-swatch" style={{ backgroundColor: meta.color }} />
-                          <span>{meta.label}</span>
-                          <span className="moneyflow-series-state">{isVisible ? "On" : "Off"}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="moneyflow-series-toggle-row" role="list" aria-label="Repair calendar legend">
+                    <span className="moneyflow-series-toggle moneyflow-series-toggle-active" role="listitem">
+                      <span className="moneyflow-series-swatch dashboard-calendar-swatch-in-progress" />
+                      <span>{REPAIR_STATUS_LABELS.in_progress}</span>
+                    </span>
+                    <span className="moneyflow-series-toggle moneyflow-series-toggle-active" role="listitem">
+                      <span className="moneyflow-series-swatch dashboard-calendar-swatch-waiting" />
+                      <span>{REPAIR_STATUS_LABELS.waiting_parts}</span>
+                    </span>
                   </div>
 
-                  {visibleMoneyflowSeriesKeys.length === 0 ? (
-                    <p className="workspace-note">Turn on at least one line to display the chart.</p>
+                  {moneyflowCalendarDays.length === 0 ? (
+                    <p className="workspace-note">Choose a valid dashboard date range to render the calendar.</p>
                   ) : null}
 
-                  {visibleMoneyflowSeriesKeys.length > 0 && !moneyflowChartModel.hasVisibleValues ? (
-                    <p className="workspace-note">No movement for the selected series in this period yet.</p>
+                  {moneyflowCalendarDays.length > 0 && moneyflowCalendarLanes.length === 0 ? (
+                    <p className="workspace-note">
+                      No repairs currently in progress or waiting for parts inside this date window.
+                    </p>
                   ) : null}
 
-                  {visibleMoneyflowSeriesKeys.length > 0 && moneyflowChartModel.hasVisibleValues ? (
-                    <div className="moneyflow-chart-shell">
-                      <svg
-                        className="moneyflow-chart-svg"
-                        viewBox={`0 0 ${moneyflowChartModel.chartWidth} ${moneyflowChartModel.chartHeight}`}
-                        role="img"
-                        aria-label="MoneyFlow trend chart"
-                      >
-                        {moneyflowChartModel.yTicks.map((tick) => (
-                          <g key={tick.label}>
-                            <line
-                              x1={moneyflowChartModel.paddingLeft}
-                              y1={tick.y}
-                              x2={moneyflowChartModel.chartWidth - moneyflowChartModel.paddingRight}
-                              y2={tick.y}
-                              className="moneyflow-chart-gridline"
-                            />
-                            <text x={14} y={tick.y + 4} className="moneyflow-chart-axis-label">
-                              {tick.label}
-                            </text>
-                          </g>
-                        ))}
+                  {moneyflowCalendarDays.length > 0 && moneyflowCalendarLanes.length > 0 ? (
+                    <>
+                      <div className="dashboard-calendar-shell">
+                        <div className="dashboard-calendar-header">
+                          <div className="dashboard-calendar-label-spacer">Repair</div>
+                          <div
+                            className="dashboard-calendar-day-grid"
+                            style={{
+                              gridTemplateColumns: `repeat(${moneyflowCalendarDays.length}, minmax(2.75rem, 1fr))`,
+                            }}
+                          >
+                            {moneyflowCalendarDays.map((day) => (
+                              <div
+                                key={`calendar-head-${day.date}`}
+                                className={`dashboard-calendar-day-cell ${
+                                  day.isWeekend ? "dashboard-calendar-day-cell-weekend" : ""
+                                } ${day.isToday ? "dashboard-calendar-day-cell-today" : ""}`}
+                              >
+                                <span>{day.weekdayLabel}</span>
+                                <strong>{day.dayNumber}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
 
-                        {moneyflowChartModel.xTicks.map((tick) => (
-                          <g key={tick.date}>
-                            <line
-                              x1={tick.x}
-                              y1={moneyflowChartModel.paddingTop}
-                              x2={tick.x}
-                              y2={moneyflowChartModel.chartHeight - moneyflowChartModel.paddingBottom}
-                              className="moneyflow-chart-gridline moneyflow-chart-gridline-vertical"
-                            />
-                            <text
-                              x={tick.x}
-                              y={moneyflowChartModel.chartHeight - 10}
-                              textAnchor="middle"
-                              className="moneyflow-chart-axis-label"
-                            >
-                              {tick.label}
-                            </text>
-                          </g>
-                        ))}
+                        <div className="dashboard-calendar-rows">
+                          {moneyflowCalendarLanes.map((lane) => {
+                            const isActive = activeMoneyflowCalendarLane?.repair.id === lane.repair.id;
+                            const masterLabel = lane.repair.master_name || "Unassigned";
 
-                        {moneyflowChartModel.visibleSeries.map((series) => (
-                          <g key={series.key}>
-                            <path d={series.path} fill="none" stroke={series.color} strokeWidth="3" strokeLinecap="round" />
-                            {series.points.length <= 45
-                              ? series.points.map((point) => (
-                                  <circle
-                                    key={`${series.key}-${point.date}`}
-                                    cx={point.x}
-                                    cy={point.y}
-                                    r="3.6"
-                                    fill={series.color}
-                                    stroke="rgba(18, 20, 29, 0.96)"
-                                    strokeWidth="1.6"
-                                  />
-                                ))
-                              : null}
-                          </g>
-                        ))}
-                      </svg>
-                    </div>
+                            return (
+                              <div className="dashboard-calendar-row" key={`moneyflow-calendar-${lane.repair.id}`}>
+                                <button
+                                  type="button"
+                                  className={`dashboard-calendar-row-label ${isActive ? "dashboard-calendar-row-label-active" : ""}`}
+                                  aria-label={`Open repair ${lane.repair.tracking_code}`}
+                                  onMouseEnter={() => setActiveMoneyflowCalendarRepairId(lane.repair.id)}
+                                  onFocus={() => setActiveMoneyflowCalendarRepairId(lane.repair.id)}
+                                  onClick={() => openRepairModal(lane.repair)}
+                                >
+                                  <strong>{lane.repair.tracking_code}</strong>
+                                  <span>{lane.repair.vehicle_label}</span>
+                                  <span className="dashboard-calendar-row-meta">
+                                    {REPAIR_STATUS_LABELS[lane.repair.status]} • {masterLabel}
+                                  </span>
+                                </button>
+
+                                <div
+                                  className="dashboard-calendar-lane-grid"
+                                  style={{
+                                    gridTemplateColumns: `repeat(${moneyflowCalendarDays.length}, minmax(2.75rem, 1fr))`,
+                                  }}
+                                >
+                                  {moneyflowCalendarDays.map((day) => (
+                                    <span
+                                      key={`calendar-cell-${lane.repair.id}-${day.date}`}
+                                      className={`dashboard-calendar-lane-cell ${
+                                        day.isWeekend ? "dashboard-calendar-lane-cell-weekend" : ""
+                                      } ${day.isToday ? "dashboard-calendar-lane-cell-today" : ""}`}
+                                    />
+                                  ))}
+                                  <button
+                                    type="button"
+                                    className={`dashboard-calendar-bar dashboard-calendar-bar-${lane.repair.status} ${
+                                      lane.isOverdue ? "dashboard-calendar-bar-overdue" : ""
+                                    } ${isActive ? "dashboard-calendar-bar-active" : ""}`}
+                                    style={{ gridColumn: `${lane.startColumn + 1} / span ${lane.span}`, gridRow: 1 }}
+                                    aria-label={`Open repair ${lane.repair.tracking_code}`}
+                                    onMouseEnter={() => setActiveMoneyflowCalendarRepairId(lane.repair.id)}
+                                    onFocus={() => setActiveMoneyflowCalendarRepairId(lane.repair.id)}
+                                    onClick={() => openRepairModal(lane.repair)}
+                                  >
+                                    <span>{lane.repair.tracking_code}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <section className="dashboard-calendar-detail" aria-live="polite">
+                        {activeMoneyflowCalendarLane ? (
+                          <>
+                            <div className="dashboard-calendar-detail-copy">
+                              <p className="eyebrow">Selected repair</p>
+                              <h4>
+                                {activeMoneyflowCalendarLane.repair.tracking_code} •{" "}
+                                {activeMoneyflowCalendarLane.repair.vehicle_label}
+                              </h4>
+                              <p>{activeMoneyflowCalendarLane.repair.service_name}</p>
+                              <p className="meta-line">
+                                {activeMoneyflowCalendarLane.repair.issue_notes || "No issue notes provided."}
+                              </p>
+                            </div>
+                            <div className="dashboard-calendar-detail-meta">
+                              <span className={getRepairStatusClass(activeMoneyflowCalendarLane.repair.status)}>
+                                {REPAIR_STATUS_LABELS[activeMoneyflowCalendarLane.repair.status]}
+                              </span>
+                              {activeMoneyflowCalendarLane.isOverdue ? <span className="tag">ETA overdue</span> : null}
+                              <span className="tag">
+                                Visible {formatDisplayDate(activeMoneyflowCalendarLane.visibleStartDate)} -&gt;{" "}
+                                {formatDisplayDate(activeMoneyflowCalendarLane.visibleEndDate)}
+                              </span>
+                              <span className="tag">
+                                Master {activeMoneyflowCalendarLane.repair.master_name || "Unassigned"}
+                              </span>
+                              <span className="tag">
+                                Created {formatDisplayDate(activeMoneyflowCalendarLane.repair.created_at)}
+                              </span>
+                              {activeMoneyflowCalendarLane.repair.estimated_date ? (
+                                <span className="tag">
+                                  ETA {formatDisplayDate(activeMoneyflowCalendarLane.repair.estimated_date)}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="hero-actions">
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => openRepairModal(activeMoneyflowCalendarLane.repair)}
+                              >
+                                Open Repair
+                              </button>
+                              <button
+                                type="button"
+                                className="button button-secondary"
+                                onClick={() => onSelectSection("repairs")}
+                              >
+                                Go To Repairs Tab
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="workspace-note">Hover or focus a repair lane to inspect the job details.</p>
+                        )}
+                      </section>
+                    </>
                   ) : null}
                 </section>
               </div>
             ) : null}
 
-            {activeDashboardTab === "procurement" ? (
+            {activeDashboardTab === "warehouse" ? (
               <div className="workspace-stack">
+                <section className="dashboard-report-section dashboard-report-section-warehouse">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">Mini stock</p>
+                      <h3>Parts Results</h3>
+                    </div>
+                  </div>
+
+                  <p className="workspace-copy">
+                    Purchase movement and resale view for the same date range as MoneyFlow, grouped as a lightweight
+                    warehouse workspace.
+                  </p>
+
+                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
+                    <article className="metric-card metric-card-warehouse">
+                      <span className="metric-label">Purchase spend</span>
+                      <strong>{formatCurrency(totalPurchaseCost)}</strong>
+                      <p>Sum of purchase orders by order date in the period.</p>
+                    </article>
+                    <article className="metric-card metric-card-warehouse">
+                      <span className="metric-label">Parts sales to client</span>
+                      <strong>{formatCurrency(totalPartsSales)}</strong>
+                      <p>Purchase lines tied to completed repairs in range.</p>
+                    </article>
+                    <article className="metric-card metric-card-warehouse">
+                      <span className="metric-label">Parts margin</span>
+                      <strong>{formatCurrency(projectedMargin)}</strong>
+                      <p>Parts sales minus purchase spend in the period.</p>
+                    </article>
+                  </div>
+                </section>
+
                 <section className="dashboard-report-section">
                   <div className="dashboard-report-head">
                     <div>
@@ -2474,43 +2396,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <p>Same date range as MoneyFlow.</p>
                     </article>
                   </div>
-                </section>
-
-                <section className="dashboard-report-section">
-                  <div className="dashboard-report-head">
-                    <div>
-                      <p className="eyebrow">PDF</p>
-                      <h3>Exports by staff</h3>
-                    </div>
-                  </div>
-                  <p className="workspace-copy">
-                    Count of <code>RepairDocument</code> rows created in range (<code>created_at</code>), grouped by{" "}
-                    <code>exported_by</code>.
-                  </p>
-                  {dashboardAnalytics?.moneyflow?.exports_by_exporter?.length ? (
-                    <table className="dashboard-table">
-                      <thead>
-                        <tr>
-                          <th>User</th>
-                          <th>Exports</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboardAnalytics.moneyflow.exports_by_exporter.map((row, idx) => (
-                          <tr key={`${row.user_id ?? "none"}-${idx}`}>
-                            <td>
-                              {row.user_id == null
-                                ? "Not set"
-                                : row.display_name || row.email || `ID ${row.user_id}`}
-                            </td>
-                            <td>{row.export_count}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p className="workspace-note">No PDF exports in this period.</p>
-                  )}
                 </section>
               </div>
             ) : null}
@@ -3678,7 +3563,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       disabled={repairPdfLoading}
                       onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
                     >
-                      {repairPdfLoading ? "Loading…" : "View PDF"}
+                      {repairPdfLoading ? "Loading…" : selectedRepair.has_pdf ? "View PDF" : "Make Act"}
                     </button>
                   )}
                   {!isStaff && (

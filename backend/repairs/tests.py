@@ -688,3 +688,16 @@ class RepairPdfViewTests(TestCase):
         )
         self.assertEqual(versions, [1, 2])
         self.assertEqual(RepairFinancialSnapshot.objects.filter(repair=repair).count(), 2)
+
+    def test_repairs_list_includes_has_pdf_flag(self):
+        without_pdf = self._create_completed_repair()
+        with_pdf = self._create_completed_repair()
+        self.client.force_authenticate(self.staff_user)
+        self.client.post(f"/api/repairs/{with_pdf.id}/pdf/export/")
+
+        response = self.client.get("/api/repairs/")
+
+        self.assertEqual(response.status_code, 200)
+        by_id = {row["id"]: row for row in response.json()}
+        self.assertIs(by_id[without_pdf.id]["has_pdf"], False)
+        self.assertIs(by_id[with_pdf.id]["has_pdf"], True)
