@@ -6,7 +6,7 @@
 - Active plan owner: `planner` + `architect`
 - Last updated: `2026-04-04`
 - Archive: `docs/planning/archive/`
-- Status: `m2 completed | m3 in progress — PDF persist + snapshot on branch; dashboard/historical UI отдельным PR/веткой`
+- Status: `m2 completed | m3 in progress — PDF persist + versioned snapshot + client portal done; dashboard/historical snapshot analytics next (отдельный PR/ветка при необходимости)`
 
 ## 1) Product Goal
 Собрать устойчивую `car-service-platform`, которая закрывает не только операционный цикл автосервиса, но и аналитический контур после завершения ремонта: итоговые документы, финансовые срезы и историческую отчётность.
