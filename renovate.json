@@ -14,6 +14,17 @@
       "datasourceTemplate": "node-version",
       "depNameTemplate": "node",
       "versioningTemplate": "node"
+    },
+    {
+      "customType": "regex",
+      "description": "Default Python major.minor in composite .github/actions/setup-python (inputs.python-version)",
+      "managerFilePatterns": ["/^\\.github\\/actions\\/setup-python\\/action\\.ya?ml$/"],
+      "matchStrings": [
+        "(?m)python-version:[\\s\\S]*?default:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)\""
+      ],
+      "datasourceTemplate": "python-version",
+      "depNameTemplate": "python",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [

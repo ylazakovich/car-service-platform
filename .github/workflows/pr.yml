@@ -8,13 +8,15 @@ on:
       - "docs/**"
       - "LICENSE"
 
-# Same PR = same group → new commits cancel an in-progress PR Pipeline for that PR.
+# Same PR = one group. Do not cancel in-progress runs: E2E is last and slow; canceling leaves
+# only Frontend+Backend artifacts → merged Allure shows unit+api but 0 end-to-end (misleading).
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
+  actions: write # upload-artifact (Allure, JUnit, Playwright HTML)
 
 jobs:
   frontend:
@@ -34,6 +36,11 @@ jobs:
 
       - name: Run tests
         run: npx vitest run
+
+      - name: Allure CI env fragment (frontend)
+        if: always()
+        run: bash ../scripts/ci/write-allure-ci-env-fragment.sh Frontend allure-results
+        working-directory: frontend
 
       - name: Test summary
         if: always()
@@ -97,6 +104,11 @@ jobs:
           mkdir -p allure-results test-results
           pytest --alluredir=allure-results --junitxml=test-results/junit.xml -v
 
+      - name: Allure CI env fragment (backend)
+        if: always()
+        run: bash ../scripts/ci/write-allure-ci-env-fragment.sh Backend allure-results
+        working-directory: backend
+
       - name: Test summary
         if: always()
         run: |
@@ -139,6 +151,105 @@ jobs:
           path: backend/allure-results/
           if-no-files-found: ignore
           retention-days: 30
+
+  e2e:
+    name: "E2E: Playwright + Allure"
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    env:
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+      E2E_ADMIN_EMAIL: admin@autoservice.local
+      E2E_ADMIN_PASSWORD: change-me-in-production
+      E2E_STAFF_EMAIL: staff@autoservice.local
+      E2E_STAFF_PASSWORD: change-me-in-production
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: ./.github/actions/setup-node
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - name: Prepare .env
+        run: |
+          if [ -f .env.example ]; then cp .env.example .env; fi
+
+      - name: Build and start stack
+        run: docker compose up -d --build
+
+      - name: Wait for frontend
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:4173/ >/dev/null; then
+              echo "frontend healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs --tail=120 || true
+          exit 1
+
+      - name: Run Playwright
+        working-directory: frontend
+        run: |
+          mkdir -p allure-results test-results
+          npx playwright test
+
+      - name: E2E test summary (JUnit)
+        if: always()
+        working-directory: frontend
+        run: |
+          if [ -f test-results/e2e-junit.xml ]; then
+            tests=$(grep -o 'tests="[0-9]*"' test-results/e2e-junit.xml | head -1 | grep -o '[0-9]*')
+            failures=$(grep -o 'failures="[0-9]*"' test-results/e2e-junit.xml | head -1 | grep -o '[0-9]*')
+            skipped=$(grep -o 'skipped="[0-9]*"' test-results/e2e-junit.xml | head -1 | grep -o '[0-9]*')
+            time=$(grep -o 'time="[0-9.]*"' test-results/e2e-junit.xml | head -1 | grep -o '[0-9.]*')
+            passed=$((${tests:-0} - ${failures:-0} - ${skipped:-0}))
+            if [ "${failures:-0}" = "0" ]; then
+              echo "### E2E (Playwright)" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "### E2E (Playwright) (failures)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            echo "| Tests | Passed | Failed | Skipped | Duration |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|-------|--------|--------|---------|----------|" >> "$GITHUB_STEP_SUMMARY"
+            echo "| ${tests:-0} | ${passed} | ${failures:-0} | ${skipped:-0} | ${time:-?}s |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Allure CI env fragment (E2E)
+        if: always()
+        run: bash scripts/ci/write-allure-ci-env-fragment.sh E2E frontend/allure-results
+
+      - name: Upload Allure results (E2E)
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: allure-results-e2e
+          path: frontend/allure-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload E2E JUnit (Playwright)
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: e2e-test-results
+          path: frontend/test-results/e2e-junit.xml
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
 
   docker:
     name: "Docker: Build & Logs"

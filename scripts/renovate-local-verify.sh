@@ -44,5 +44,18 @@ else
   echo "WARN: did not grep '20' / currentValue — open log and search for setup-node + node-version"
 fi
 
+if grep -E 'Matched [0-9]+ file\(s\) for manager regex:.*setup-python/action\.yml' "$LOG" >/dev/null; then
+  echo "OK: regex manager matched .github/actions/setup-python/action.yml"
+else
+  echo "FAIL: no 'Matched … manager regex' line for setup-python/action.yml (check renovate.json customManagers python-version regex)."
+  exit 1
+fi
+
+if grep -E '"datasource":\s*"python-version"' "$LOG" >/dev/null || grep -E 'datasource.*python-version' "$LOG" >/dev/null; then
+  echo "OK: python-version datasource referenced in extraction"
+else
+  echo "WARN: could not find python-version datasource string in log (inspect $LOG)"
+fi
+
 echo ""
 echo "Full log: $LOG"

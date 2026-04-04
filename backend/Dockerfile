@@ -25,4 +25,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && python manage.py seed_admin && gunicorn config.wsgi:application -c gunicorn.conf.py"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && python manage.py seed_admin && python manage.py seed_staff && python manage.py seed_e2e_data && gunicorn config.wsgi:application -c gunicorn.conf.py"]
