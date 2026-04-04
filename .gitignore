@@ -8,3 +8,20 @@ tmp/
 # Local agent run artifacts
 .agents/runs/*
 !.agents/runs/README.md
+
+# Test outputs, Allure, coverage (do not push local/CI artifacts)
+**/test-results/
+**/allure-results/
+**/allure-report/
+.allure/
+**/.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+**/playwright-report/
+
+# Editor / OS (optional local noise)
+.idea/
+*.swp
+*.swo

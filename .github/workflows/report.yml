@@ -9,7 +9,7 @@ permissions:
   contents: read
   checks: write
   pull-requests: write
-  actions: read
+  actions: write
 
 jobs:
   test-report:
@@ -45,3 +45,69 @@ jobs:
           name: Backend Tests
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
+
+  allure-report:
+    name: Allure Report
+    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download Allure results from PR Pipeline
+        id: download_allure
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: "*-allure-results"
+          merge-multiple: true
+          path: allure-results
+
+      - name: Check for Allure result files
+        id: allure
+        run: |
+          mkdir -p allure-results
+          n=$(find allure-results -type f \( -name "*-result.json" -o -name "*result.json" \) 2>/dev/null | wc -l | tr -d " ")
+          echo "count=${n}" >> "$GITHUB_OUTPUT"
+          if [ "${n:-0}" -eq 0 ]; then
+            echo "has=false" >> "$GITHUB_OUTPUT"
+            echo "No Allure result files; skip HTML report."
+          else
+            echo "has=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: ./.github/actions/setup-node
+        if: steps.allure.outputs.has == 'true'
+
+      - uses: ./.github/actions/setup-python
+        if: steps.allure.outputs.has == 'true'
+        with:
+          requirements: requirements-test.txt
+
+      - name: Write Allure environment.properties
+        if: steps.allure.outputs.has == 'true'
+        env:
+          ALLURE_RESULTS_DIR: ${{ github.workspace }}/allure-results
+          REPO_ROOT: ${{ github.workspace }}
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+          GITHUB_REF_NAME: ${{ github.event.workflow_run.head_branch }}
+          ALLURE_GITHUB_WORKFLOW: ${{ github.event.workflow_run.name }}
+          ALLURE_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: bash scripts/ci/write-allure-environment.sh
+
+      - name: Generate Allure HTML
+        if: steps.allure.outputs.has == 'true'
+        run: npx --yes allure-commandline@2.30.0 generate allure-results -o allure-report --clean
+
+      - name: Upload Allure HTML report
+        if: steps.allure.outputs.has == 'true'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: allure-report
+          path: allure-report/
+          retention-days: 30
