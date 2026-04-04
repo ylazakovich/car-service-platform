@@ -157,7 +157,7 @@ jobs:
           retention-days: 30
 
   e2e:
-    name: "E2E: Playwright + Allure"
+    name: "End-to-end"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
