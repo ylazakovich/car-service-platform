@@ -2,18 +2,19 @@
 
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
-- Last updated: `2026-04-02`
-- Status: `m3 in progress — pdf export done, snapshot analytics next`
+- Last updated: `2026-04-04`
+- Status: `m3 pdf persist + snapshot done on branch; dashboard/historical next`
 
 ## NOW
 
 ### PDF + Financial Snapshot
-- [ ] Спроектировать и реализовать backend-модель(и) для versioned хранения `PDF`-документа и нормализованного `financial snapshot`, чтобы analytics не зависела только от текущего mutable-состояния ремонта.
-- [ ] Зафиксировать состав snapshot-данных: работы, цены услуг, запчасти, цены продажи клиенту, закупочные цены, прочие расходы/позиции, итоговые суммы, версия и timestamp выгрузки.
+- [x] Завершенный `Repair`: просмотр PDF и новая выгрузка только при `completed` (UI: **View PDF**; первая выгрузка при отсутствии файла; **Export new version** в превью). API: `GET …/pdf/` (последняя версия, без новой записи) и `POST …/pdf/export/` (новая версия).
+- [x] Backend: `RepairDocument` + `RepairFinancialSnapshot`, versioned persist в media и БД; суммы из одного расчёта (`financial_totals`).
+- [x] Состав snapshot: labor, parts client/purchase, other (0), document total, связь с документом и timestamp/author export.
 - [ ] Привязать созданный PDF и snapshot к главному аналитическому dashboard, чтобы агрегаты считались по сохраненным значениям из выгрузки.
 - [ ] Спроектировать сценарий исторического просмотра аналитики: как выбирать период, активную версию snapshot и как отображать архивные данные без пересчета задним числом.
 - [ ] Согласовать source of truth для supplier/monthly analytics с новым snapshot-слоем, чтобы отчеты не расходились между собой.
-- [ ] Подготовить тестовый контур для полного потока: `completed repair -> export PDF -> persist snapshot -> dashboard totals -> historical lookup`.
+- [ ] Полный контур: `… -> dashboard totals -> historical lookup` (частично: backend persist + Playwright `frontend/e2e/repair-pdf-view.spec.ts` для просмотра без лишнего POST export).
 
 ### QuickFocus / VPR Creation Flow
 - [ ] Исправить `QuickFocus` / создание нового VPR: если нужный `Vehicle` не найден, дать inline-создание нового `Vehicle` прямо из repair flow.
@@ -46,7 +47,7 @@
 - [ ] Довести completion act до финального документа и определить, это тот же PDF-поток или отдельный документный сценарий.
 - [ ] Подготовить карточку автомобиля с реальной историей ремонтов и документами по завершенным работам.
 - [ ] Подготовить карточку клиента с реальной историей обращений и завершенных ремонтов.
-- [ ] Добавить e2e-сценарий для документного и аналитического flow.
+- [ ] Добавить e2e-сценарий для документного и **аналитического** flow (PDF e2e уже есть; дождаться dashboard-ветки).
 - [ ] Добавить e2e-сценарий для QuickFocus/VPR flow: `поиск vehicle -> create vehicle -> create customer if needed -> create repair`.
 - [ ] Добавить тесты и e2e-сценарий для admin user revocation flow.
 - [ ] Добавить тесты и e2e-сценарии для service board calendar: текущий день, waiting parts, легенда, переключение периода.
@@ -62,12 +63,13 @@
 
 ## Notes
 - Этот файл намеренно короткий.
-- Первый приоритет M3: snapshot analytics backend — PDF export кнопка уже есть, нужен слой хранения.
-- Второй приоритет M3: QuickFocus VPR inline create Vehicle/Customer.
-- Третий приоритет M3: admin user revocation flow.
-- Четвертый приоритет M3: service board calendar.
-- Пятый приоритет M3: moneyflow rolling default range.
-- Шестой приоритет M3: staff vehicle-only access без customer PII.
+- **PR `feature/m3-pdf-snapshot-persist`:** закрывает первый вертикальный срез M3 (persist + snapshot + разделение просмотра/новой выгрузки). Дашборд и историческая аналитика — следующий шаг (может быть отдельная ветка).
+- Первый приоритет M3: PDF + snapshot — **выполнен на уровне API/БД/UI repair**; интеграция с dashboard остаётся открытой.
+- Второй приоритет M3: убрать блокер создания VPR, когда нужный `Vehicle` или `Customer` еще не заведены.
+- Третий приоритет M3: дать админу управляемый способ закрывать доступ staff после увольнения.
+- Четвертый приоритет M3: превратить service board в календарный operational dashboard с фокусом на текущий день.
+- Пятый приоритет M3: зафиксировать moneyflow на стабильном дефолтном диапазоне `today - 30 days` -> `today`.
+- Шестой приоритет M3: перевести staff на vehicle-only access model без доступа к customer PII.
 
 ## Completed (M3 partial)
 - [x] PDF export кнопка на `completed` repair + preview modal (`PdfPreviewModal`, `pdf_generator.py`) — `2026-04-02`
