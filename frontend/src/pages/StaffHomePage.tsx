@@ -3918,18 +3918,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             <span className="purchases-compact-cell purchases-compact-part">
                               <span className="purchases-compact-part-text">{entry.part_name}</span>
                             </span>
-                            <span
-                              className="purchases-compact-cell purchases-compact-qty-cell"
-                              title={`Quantity ${entry.quantity}`}
-                            >
-                              ×{entry.quantity}
-                            </span>
                             <span className="purchases-compact-cell purchases-compact-supplier">{entry.supplier_name}</span>
                             <span className="purchases-compact-cell purchases-compact-narrow">
                               {formatDisplayDate(entry.order_date)}
                             </span>
                             <span className="purchases-compact-cell purchases-compact-narrow">
                               {entry.approximate_delivery_date ? formatDisplayDate(entry.approximate_delivery_date) : "—"}
+                            </span>
+                            <span
+                              className="purchases-compact-cell purchases-compact-qty-cell"
+                              title={`Quantity ${entry.quantity}`}
+                            >
+                              ×{entry.quantity}
                             </span>
                             <span className="purchases-compact-cell purchases-compact-money">{formatCurrency(saleTotal)}</span>
                             <span
