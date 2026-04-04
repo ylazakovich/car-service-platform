@@ -92,3 +92,26 @@ req="${REPO_ROOT}/backend/requirements-test.txt"
 if [[ -f "${req}" ]] && command -v sha256sum >/dev/null 2>&1; then
   write_kv "Backend.Requirements.SHA" "$(sha256sum "${req}" | cut -c1-12)"
 fi
+
+# Allure Report 3 shows build metadata via config `variables` (awesome plugin), not environment.properties in the UI.
+# JSON must NOT live inside ALLURE_RESULTS_DIR — the CLI treats unknown *.json there as result files.
+ALLURE_VARIABLES_JSON="${ALLURE_VARIABLES_JSON:-${REPO_ROOT}/artifacts/allure-variables.json}"
+if command -v python3 >/dev/null 2>&1; then
+  mkdir -p "$(dirname "${ALLURE_VARIABLES_JSON}")"
+  python3 - "${ALLURE_RESULTS_DIR}" "${ALLURE_VARIABLES_JSON}" <<'PY'
+import json, pathlib, sys
+
+results_dir = pathlib.Path(sys.argv[1])
+out_path = pathlib.Path(sys.argv[2])
+prop = results_dir / "environment.properties"
+data = {}
+if prop.exists():
+    for line in prop.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        data[k.strip()] = v.strip()
+out_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+PY
+fi

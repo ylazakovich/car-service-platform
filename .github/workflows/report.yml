@@ -107,6 +107,7 @@ jobs:
         if: steps.allure.outputs.present == 'true'
         env:
           ALLURE_RESULTS_DIR: ${{ github.workspace }}/artifacts/allure-results
+          ALLURE_VARIABLES_JSON: ${{ github.workspace }}/artifacts/allure-variables.json
           REPO_ROOT: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           GITHUB_REF_NAME: ${{ github.event.workflow_run.head_branch }}
