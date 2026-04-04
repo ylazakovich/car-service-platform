@@ -133,6 +133,34 @@ Milestone включает:
 - расширенные финансовые сценарии: оплаты, скидки, налоги, inventory
 - current status: `later`
 
+### LATER (lowest priority): Allure, END-TO-END и структура отчёта
+
+Не блокирует M3–M4; делается после стабилизации сценариев из `NEXT_STEPS.md`.
+
+**Цель:** один Allure Report 3 с читаемым деревом Behaviors, понятным окружением прогона и возможностью «раскопать» E2E (trace / вложения).
+
+1. **Окружение в отчёте**  
+   - В отчёт попадают только переменные из **allowlist** (влияние на интерпретацию прогона): `CI`, `GITHUB_REF_NAME`, `PLAYWRIGHT_BASE_URL`, `NODE_ENV`, версии Node/Python/Django, признак что E2E запускался, и т.п.  
+   - **Учётки и секреты не пишем в env отчёта:** не логируем `E2E_*_EMAIL`, `E2E_*_PASSWORD`, `DJANGO_SECRET_KEY`, токены и аналоги — только инфраструктурный контекст (URL, CI, версии, suite).  
+   - Снимок `environment.properties` на шаге **Test Report** описывает раннер генерации HTML; для картины «где крутились тесты» — **фрагменты env с джоб PR Pipeline** (`Frontend.*`, `Backend.*`, `E2E.*`), склеиваемые перед финальной записью `environment.properties`.
+
+2. **Дерево тестов (Behaviors)**  
+   Согласовано с `groupBy: ["epic", "feature", "story"]` в `allure.config.mjs`:
+
+   | Слой | Allure `epic` | `feature` | `story` |
+   |------|---------------|-----------|---------|
+   | UI (Playwright) | **END-TO-END** | роль: `admin` / `staff` | вкладка/экран: `dashboard · moneyflow`, `dashboard · procurement`, `dashboard · service_board`, `repair · pdf`, … |
+   | HTTP API (pytest) | **api** | ресурс/модуль (`repairs`, `analytics`, `users`, …) | при необходимости сценарий / класс / marker |
+   | Frontend unit (Vitest) | **unit** | зона кода (`API clients`, `Components`, …) | при росте дерева — компонент / хук |
+
+   E2E в первую очередь покрывает admin-поверхности из §11 (dashboard, repairs, PDF); сценарии `staff` — без customer PII, фокус на vehicles/repairs.
+
+3. **Отладка E2E в отчёте**  
+   - **Playwright Trace** (zip) как вложение к кейсу в Allure + локальный просмотр `npx playwright show-trace <trace.zip>`.  
+   - Политика trace в CI: `retain-on-failure` (или шире для выбранных спеков при необходимости).  
+   - Опционально: artifact **Playwright HTML report** в GitHub Actions для полноэкранного viewer.  
+   - Интеграция результатов Playwright в общий merge Allure (`report.yml`) вместе с Vitest и pytest.
+
 ## 6) Acceptance Criteria
 Milestone `M3` считается завершённым, если:
 1. На странице завершенного ремонта есть действие просмотра PDF и выгрузки новой версии, недоступные для незавершенных ремонтов (**частично закрыто:** View PDF / Export new version).

@@ -18,6 +18,11 @@ write_kv() {
 
 : > "${OUT}"
 
+# Prefixed job-level snapshots (PR test runners), merged by scripts/ci/merge-allure-result-dirs.sh
+if [[ -n "${ALLURE_MERGED_CI_ENV:-}" && -f "${ALLURE_MERGED_CI_ENV}" ]]; then
+  cat "${ALLURE_MERGED_CI_ENV}" >> "${OUT}"
+fi
+
 write_kv "CI" "${CI:-false}"
 
 if [[ -n "${RUNNER_OS:-}" ]]; then
@@ -93,7 +98,8 @@ if [[ -f "${req}" ]] && command -v sha256sum >/dev/null 2>&1; then
   write_kv "Backend.Requirements.SHA" "$(sha256sum "${req}" | cut -c1-12)"
 fi
 
-# Allure Report 3 shows build metadata via config `variables` (awesome plugin), not environment.properties in the UI.
+# Allure Report 3: снимок env пишем во временный environment.properties, копируем в allure-variables.json
+# для allurerc.mjs (блок Variables). Файл .properties из results удаляем — иначе дублируется Metadata.
 # JSON must NOT live inside ALLURE_RESULTS_DIR — the CLI treats unknown *.json there as result files.
 ALLURE_VARIABLES_JSON="${ALLURE_VARIABLES_JSON:-${REPO_ROOT}/artifacts/allure-variables.json}"
 if command -v python3 >/dev/null 2>&1; then
@@ -115,3 +121,7 @@ if prop.exists():
 out_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 PY
 fi
+
+# Allure Report 3 Awesome: environment.properties в results даёт блок «Metadata», а те же пары
+# из allure-variables.json попадают в «Variables» через allurerc.mjs — дубликат. Оставляем только Variables.
+rm -f "${OUT}"

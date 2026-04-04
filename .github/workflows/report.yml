@@ -5,7 +5,7 @@ on:
     workflows: ["PR Pipeline"]
     types: [completed]
 
-# Same head branch (and fork identity) → newer PR Pipeline completion cancels an in-progress Test Report.
+# Same head branch → newer PR Pipeline completion cancels an in-progress Test Report (one deploy at a time per branch).
 concurrency:
   group: >-
     ${{ github.workflow }}-${{
@@ -22,7 +22,10 @@ permissions:
 jobs:
   test-report:
     name: Test Report
-    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    # Cancelled PR Pipeline often has no E2E artifacts → partial Allure (e.g. 144 = unit+api only).
+    if: >-
+      ${{ github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -35,18 +38,22 @@ jobs:
         with:
           install-dependencies: "false"
 
+      # workflow_run.pull_requests is often empty (forks, timing). Fall back: commit → PR (gh api).
       - name: Resolve PR number (GitHub Pages path)
         id: pr_ctx
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
-          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          if [ -n "$PR_NUMBER" ]; then
-            echo "has_pr=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_pr=false" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number??''))")"
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER="$(gh api "repos/$REPO/commits/$HEAD_SHA/pulls" -q '.[0].number // empty' 2>/dev/null || true)"
           fi
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          if [ -n "$PR_NUMBER" ]; then echo "has_pr=true" >> "$GITHUB_OUTPUT"; else echo "has_pr=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Detect fork PR (no Pages preview for cross-repo)
         id: fork
@@ -67,9 +74,39 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
 
+      - name: Debug — Allure artifact layout
+        run: |
+          echo "workflow_run conclusion=${{ github.event.workflow_run.conclusion }}"
+          for d in allure-results-frontend allure-results-backend allure-results-e2e; do
+            if [ -d "artifacts/$d" ]; then
+              n=$(find "artifacts/$d" -maxdepth 3 -name '*-result.json' 2>/dev/null | wc -l | tr -d ' ')
+              echo "$d: *-result.json count=$n"
+            else
+              echo "$d: (missing dir)"
+            fi
+          done
+
+      # hashFiles() follows .gitignore; repo root ignores artifacts/ → conditions were always false on GitHub.
+      - name: Probe downloaded JUnit paths
+        id: junit_paths
+        run: |
+          fr="false"
+          be="false"
+          e2e="false"
+          [ -f artifacts/frontend-test-results/junit.xml ] && fr="true"
+          shopt -s nullglob
+          be_xml=(artifacts/backend-test-results/*.xml)
+          ((${#be_xml[@]})) && be="true"
+          shopt -u nullglob
+          [ -f artifacts/e2e-test-results/e2e-junit.xml ] && e2e="true"
+          echo "frontend=$fr" >> "$GITHUB_OUTPUT"
+          echo "backend=$be" >> "$GITHUB_OUTPUT"
+          echo "e2e=$e2e" >> "$GITHUB_OUTPUT"
+          echo "Probe: frontend=$fr backend=$be e2e=$e2e"
+
       # dorny/test-reporter: reporter "java-junit" = JUnit XML (Vitest, pytest, xmlrunner, etc.), not a Java stack.
       - name: Frontend Test Report
-        if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
+        if: steps.junit_paths.outputs.frontend == 'true'
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: Frontend Tests
@@ -77,24 +114,31 @@ jobs:
           reporter: java-junit
 
       - name: Backend Test Report
-        if: ${{ hashFiles('artifacts/backend-test-results/*.xml') != '' }}
+        if: steps.junit_paths.outputs.backend == 'true'
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: Backend Tests
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
 
-      # PR Pipeline uploads allure-results-frontend and/or allure-results-backend; merge into one tree for Allure CLI.
+      - name: E2E (Playwright) Test Report
+        if: steps.junit_paths.outputs.e2e == 'true'
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
+        with:
+          name: E2E (Playwright)
+          path: artifacts/e2e-test-results/e2e-junit.xml
+          reporter: java-junit
+
+      # PR Pipeline uploads allure-results-frontend, allure-results-backend, allure-results-e2e; merge without clobbering environment fragments.
       - name: Merge Allure results
         id: allure
         run: |
-          mkdir -p artifacts/allure-results
-          if [ -d artifacts/allure-results-frontend ]; then
-            cp -f artifacts/allure-results-frontend/* artifacts/allure-results/ 2>/dev/null || true
-          fi
-          if [ -d artifacts/allure-results-backend ]; then
-            cp -f artifacts/allure-results-backend/* artifacts/allure-results/ 2>/dev/null || true
-          fi
+          bash scripts/ci/merge-allure-result-dirs.sh \
+            "${{ github.workspace }}/artifacts/allure-results" \
+            "${{ github.workspace }}/artifacts/_merged_ci_env.properties" \
+            "${{ github.workspace }}/artifacts/allure-results-frontend" \
+            "${{ github.workspace }}/artifacts/allure-results-backend" \
+            "${{ github.workspace }}/artifacts/allure-results-e2e"
           if compgen -G 'artifacts/allure-results/*-result.json' > /dev/null; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
@@ -112,6 +156,7 @@ jobs:
         env:
           ALLURE_RESULTS_DIR: ${{ github.workspace }}/artifacts/allure-results
           ALLURE_VARIABLES_JSON: ${{ github.workspace }}/artifacts/allure-variables.json
+          ALLURE_MERGED_CI_ENV: ${{ github.workspace }}/artifacts/_merged_ci_env.properties
           REPO_ROOT: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           GITHUB_REF_NAME: ${{ github.event.workflow_run.head_branch }}
@@ -124,22 +169,25 @@ jobs:
         env:
           PR_NUMBER: ${{ steps.pr_ctx.outputs.number }}
           FORK_PR: ${{ steps.fork.outputs.fork }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           cp -f .github/allure/categories.json artifacts/allure-results/categories.json
-          npx --yes allure generate artifacts/allure-results -o allure-report
+          npx --yes allure generate artifacts/allure-results -o allure-report --config ./allurerc.mjs
           node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
           PAGES_URL=""
           if [ -n "$PR_NUMBER" ]; then
-            PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/"
+            # Query string busts browser/CDN cache for GitHub Pages (same path per PR otherwise looks "stale").
+            PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/?run=${SOURCE_RUN_ID}"
           fi
           node .github/scripts/allure-ci.mjs pr-body \
             --results artifacts/allure-results \
             --report allure-report \
             --output allure-pr-comment.md \
             --pages-url "$PAGES_URL" \
-            --fork-pr "$FORK_PR"
+            --fork-pr "$FORK_PR" \
+            --source-run-id "${SOURCE_RUN_ID}"
 
       # Per-PR folder on gh-pages: allure/pr-<N>/ — rsync --delete only that subdir; other PR folders stay intact.
       - name: Deploy Allure HTML to GitHub Pages
@@ -152,17 +200,17 @@ jobs:
 
       - name: Post or update Allure comment on PR
         if: steps.allure.outputs.present == 'true'
+        env:
+          PR_NUMBER_RESOLVED: ${{ steps.pr_ctx.outputs.number }}
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const fs = require('fs');
-            const run = context.payload.workflow_run;
-            const prs = run.pull_requests || [];
-            if (prs.length === 0) {
-              core.info('workflow_run has no pull_requests; skip Allure PR comment (fork PRs may be empty).');
+            const issue_number = parseInt(process.env.PR_NUMBER_RESOLVED || '', 10);
+            if (!issue_number) {
+              core.info('No PR number (workflow_run.pull_requests empty and no commit→PR match); skip Allure PR comment.');
               return;
             }
-            const issue_number = prs[0].number;
             const marker = '<!-- csp-allure-ci -->';
             const body = fs.readFileSync('allure-pr-comment.md', 'utf8');
             const { data: comments } = await github.rest.issues.listComments({
