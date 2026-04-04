@@ -13,7 +13,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    setupFiles: "./vitest.setup.ts",
+    setupFiles: ["allure-vitest/setup", "./vitest.setup.ts"],
+    reporters: ["default", "allure-vitest/reporter"],
     css: true,
     exclude: ["**/node_modules/**", "**/e2e/**"],
   },
