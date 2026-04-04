@@ -58,6 +58,12 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set up Node.js (Allure CLI + allure-ci.mjs)
+        if: steps.allure.outputs.present == 'true'
+        uses: ./.github/actions/setup-node
+        with:
+          install-dependencies: "false"
+
       - name: Allure Pages — PR number and same-repo check (skip fork PR previews)
         id: allure_pages
         if: steps.allure.outputs.present == 'true'
@@ -74,12 +80,6 @@ jobs:
           else
             echo "same_repo=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Set up Node.js (Allure CLI + allure-ci.mjs)
-        if: steps.allure.outputs.present == 'true'
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
-        with:
-          node-version: "20"
 
       - name: Generate Allure HTML, badges, PR comment markdown
         if: steps.allure.outputs.present == 'true'
