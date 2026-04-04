@@ -1,5 +1,32 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const isCi = !!process.env.CI;
+
+const allureReporter = [
+  "allure-playwright",
+  {
+    detail: true,
+    suiteTitle: true,
+    resultsDir: "allure-results",
+    globalLabels: { epic: "end-to-end" },
+  },
+] as const;
+
+const htmlReporter = [
+  "html",
+  { open: "never" as const, outputFolder: "playwright-report" },
+] as const;
+
+const junitReporter = [
+  "junit",
+  { outputFile: "test-results/e2e-junit.xml" },
+] as const;
+
+/** Локально — параллельно; в CI — github + list и один воркер для читаемого лога шага */
+const reporters = isCi
+  ? [["github"], ["list"], allureReporter, htmlReporter, junitReporter]
+  : [["list"], allureReporter, htmlReporter, junitReporter];
+
 /**
  * E2E against local Docker stack: `docker compose up` (frontend :4173, API via /api proxy).
  * Install browsers: `cd frontend && npx playwright install chromium`
@@ -8,31 +35,15 @@ import { defineConfig, devices } from "@playwright/test";
  * - desktop-chrome — полная ширина; пропускает тесты с `@mobile-only` в имени/describe.
  * - mobile-chrome — Pixel 5 (viewport < 820px CSS breakpoint); пропускает `@desktop`.
  *
- * Общие сценарии (repair PDF и т.д.) гоняются в обоих проектах параллельно с остальными воркерами.
+ * В CI тесты идут последовательно (workers=1, fullyParallel=false) — лог ближе к Vitest.
  */
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : undefined,
-  reporter: [
-    ["list"],
-    [
-      "allure-playwright",
-      {
-        detail: true,
-        suiteTitle: true,
-        /** Явная папка: совпадает с upload в pr.yml (`frontend/allure-results`). */
-        resultsDir: "allure-results",
-        /** Всегда в эпике end-to-end в merged Allure + allure-ci.mjs (дополняет e2eBehaviors). */
-        globalLabels: { epic: "end-to-end" },
-      },
-    ],
-    ["html", { open: "never", outputFolder: "playwright-report" }],
-    /** JUnit для dorny/test-reporter в report.yml (артефакт e2e-test-results). */
-    ["junit", { outputFile: "test-results/e2e-junit.xml" }],
-  ],
+  fullyParallel: !isCi,
+  forbidOnly: isCi,
+  retries: isCi ? 1 : 0,
+  workers: isCi ? 1 : undefined,
+  reporter: reporters,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173",
     trace: process.env.CI ? "retain-on-failure" : "on-first-retry",

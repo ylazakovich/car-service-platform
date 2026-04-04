@@ -1,0 +1,16 @@
+# GitHub Actions only: GHA BuildKit cache (type=gha) for service images.
+# Use: docker compose -f docker-compose.yml -f docker-compose.ci.cache.yml up -d --build
+# Requires DOCKER_BUILDKIT=1, COMPOSE_DOCKER_CLI_BUILD=1, and actions: write.
+services:
+  backend:
+    build:
+      cache_from:
+        - type=gha,scope=csp-backend
+      cache_to:
+        - type=gha,mode=max,scope=csp-backend
+  frontend:
+    build:
+      cache_from:
+        - type=gha,scope=csp-frontend
+      cache_to:
+        - type=gha,mode=max,scope=csp-frontend

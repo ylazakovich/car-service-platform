@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Merge multiple Allure result directories into DEST. Concatenates ci-env-fragment.properties into MERGED_ENV_OUT.
+#
+# Allure CLI (allure generate) consumes a single results directory; there is no built-in command to merge
+# parallel CI jobs. This script is the supported aggregation path before generate (see report.yml).
+#
 # Usage: merge-allure-result-dirs.sh <dest_dir> <merged_env_out_file> <src_dir> [<src_dir> ...]
 set -euo pipefail
 

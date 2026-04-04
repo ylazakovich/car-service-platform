@@ -13,6 +13,15 @@ import path from "node:path";
 
 const EPICS = ["unit", "api", "ui", "end-to-end"];
 
+/** PR comment: human-readable layer names (Allure `epic` label values). */
+const EPIC_DISPLAY = {
+  unit: "Unit",
+  api: "API",
+  ui: "UI",
+  "end-to-end": "E2E",
+  other: "Other",
+};
+
 function readJsonSafe(file) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -140,44 +149,83 @@ function readWidgetSummary(reportDir) {
   return readJsonSafe(path.join(reportDir, "widgets", "summary.json"));
 }
 
+/** @param {{ passed: number, total: number }} s */
+function passRatePercent(s) {
+  if (!s.total) return "—";
+  const pct = (100 * s.passed) / s.total;
+  const rounded = Math.round(pct * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}%` : `${rounded}%`;
+}
+
 function cmdPrBody(resultsDir, reportDir, outputFile, pagesUrl, forkPr, sourceRunId) {
   const agg = aggregateResults(resultsDir);
   const summary = readWidgetSummary(reportDir);
   const stat = summary && summary.statistic ? summary.statistic : agg.total;
+  const total = stat.total ?? agg.total.total;
+  const passed = stat.passed ?? 0;
+  const failed = stat.failed ?? 0;
+  const broken = stat.broken ?? 0;
+  const skipped = stat.skipped ?? 0;
+  const unknown = stat.unknown ?? agg.total.unknown ?? 0;
 
   const lines = [];
   lines.push("## Allure report summary");
   lines.push("");
-  lines.push("| Status | Count |");
-  lines.push("| --- | ---: |");
-  lines.push(`| Passed | ${stat.passed ?? 0} |`);
-  lines.push(`| Failed | ${stat.failed ?? 0} |`);
-  lines.push(`| Broken | ${stat.broken ?? 0} |`);
-  lines.push(`| Skipped | ${stat.skipped ?? 0} |`);
-  lines.push(`| **Total** | **${stat.total ?? agg.total.total}** |`);
+  if (total > 0) {
+    const rate = passRatePercent({ passed, total });
+    const problems = failed + broken;
+    const parts = [`**${total}** tests`, `**${passed}** passed`, `${rate} pass rate`];
+    if (problems > 0) parts.push(`**${problems}** failed/broken`);
+    if (skipped > 0) parts.push(`**${skipped}** skipped`);
+    if (unknown > 0) parts.push(`**${unknown}** unknown`);
+    lines.push(parts.join(" · "));
+    lines.push("");
+  }
+
+  lines.push("### Outcomes (all suites)");
   lines.push("");
-  lines.push("### By epic (Allure `epic` label)");
+  lines.push("| Outcome | Count |");
+  lines.push("| --- | --: |");
+  lines.push(`| Passed | ${passed} |`);
+  lines.push(`| Failed | ${failed} |`);
+  lines.push(`| Broken | ${broken} |`);
+  lines.push(`| Skipped | ${skipped} |`);
+  if (unknown > 0) {
+    lines.push(`| Unknown | ${unknown} |`);
+  }
+  lines.push(`| **Total** | **${total}** |`);
+  if (total > 0) {
+    lines.push(`| Pass rate (passed / total) | **${passRatePercent({ passed, total })}** |`);
+  }
   lines.push("");
-  lines.push("| Epic | Total | Passed | Failed | Broken | Skipped |");
-  lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
+
+  lines.push("<details>");
+  lines.push("<summary><strong>By layer</strong> (Allure <code>epic</code> label)</summary>");
+  lines.push("");
+  lines.push("| Layer | Tests | Passed | Failed | Broken | Skipped | Pass rate |");
+  lines.push("| --- | --: | --: | --: | --: | --: | --: |");
+
+  const empty = { total: 0, passed: 0, failed: 0, broken: 0, skipped: 0 };
   for (const epic of EPICS) {
-    const s = agg.byEpic[epic] || {
-      total: 0,
-      passed: 0,
-      failed: 0,
-      broken: 0,
-      skipped: 0,
-    };
+    const s = agg.byEpic[epic] || empty;
+    if (s.total === 0) continue;
+    const label = EPIC_DISPLAY[epic] || epic;
     lines.push(
-      `| **${epic}** | ${s.total} | ${s.passed} | ${s.failed} | ${s.broken} | ${s.skipped} |`,
+      `| ${label} | ${s.total} | ${s.passed} | ${s.failed} | ${s.broken} | ${s.skipped} | ${passRatePercent(s)} |`,
     );
   }
   const other = agg.byEpic.other;
   if (other && other.total > 0) {
     lines.push(
-      `| other | ${other.total} | ${other.passed} | ${other.failed} | ${other.broken} | ${other.skipped} |`,
+      `| ${EPIC_DISPLAY.other} | ${other.total} | ${other.passed} | ${other.failed} | ${other.broken} | ${other.skipped} | ${passRatePercent(other)} |`,
     );
   }
+  const t = agg.total;
+  lines.push(
+    `| **All layers** | **${t.total}** | **${t.passed}** | **${t.failed}** | **${t.broken}** | **${t.skipped}** | ${passRatePercent(t)} |`,
+  );
+  lines.push("");
+  lines.push("</details>");
   lines.push("");
   if (pagesUrl && forkPr !== "true") {
     lines.push(`**[View full report on GitHub Pages](${pagesUrl})**`);
