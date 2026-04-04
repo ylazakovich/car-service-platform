@@ -46,7 +46,9 @@ class RepairSerializer(serializers.ModelSerializer):
             "mileage_at_service",
             "position",
             "tracking_code",
+            "portal_token",
             "completed_at",
+            "estimated_date",
             "repair_notes",
             "before_photos",
             "during_photos",
@@ -54,7 +56,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "tracking_code", "created_at", "updated_at")
+        read_only_fields = ("id", "tracking_code", "portal_token", "created_at", "updated_at")
 
     def get_vehicle_label(self, obj):
         v = obj.vehicle
@@ -77,6 +79,37 @@ class RepairSerializer(serializers.ModelSerializer):
 
     def get_after_photos(self, obj):
         return []
+
+
+class PortalRepairSerializer(serializers.ModelSerializer):
+    vehicle_info = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Repair
+        fields = (
+            "tracking_code",
+            "service_name",
+            "status",
+            "status_display",
+            "vehicle_info",
+            "estimated_date",
+            "mileage_at_service",
+            "completed_at",
+            "created_at",
+        )
+        read_only_fields = fields
+
+    def get_vehicle_info(self, obj: Repair) -> dict:
+        v = obj.vehicle
+        return {
+            "label": f"{v.make} {v.model}",
+            "year": v.year,
+            "license_plate": v.license_plate,
+        }
+
+    def get_status_display(self, obj: Repair) -> str:
+        return obj.get_status_display()
 
 
 class VehicleRepairHistorySerializer(serializers.ModelSerializer):

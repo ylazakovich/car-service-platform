@@ -13,13 +13,14 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    setupFiles: ["./vitest.setup.ts", "allure-vitest/setup"],
-    css: true,
+    setupFiles: ["allure-vitest/setup", "./vitest.setup.ts"],
     reporters: [
       "default",
       "github-actions",
       ["junit", { outputFile: "test-results/junit.xml" }],
       "allure-vitest/reporter",
     ],
+    css: true,
+    exclude: ["**/node_modules/**", "**/e2e/**"],
   },
 });

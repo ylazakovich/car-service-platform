@@ -19,6 +19,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from .financial_totals import compute_completion_financial_totals
+
 BLACK = colors.HexColor("#111111")
 DARK_GRAY = colors.HexColor("#333333")
 MID_GRAY = colors.HexColor("#888888")
@@ -182,18 +184,19 @@ def _items_table(
     headers = [th("Description"), th("Qty"), th("Price"), th("Total")]
     data = [headers]
 
-    grand_total = Decimal("0")
+    purchase_list = list(purchases)
+    totals = compute_completion_financial_totals(service_price, purchase_list)
+    grand_total = totals.document_total
+
     if service_price is not None:
         svc_price_str = _fmt(service_price)
         svc_total_str = _fmt(service_price)
-        grand_total += service_price
     else:
         svc_price_str = "—"
         svc_total_str = "—"
     data.append([td(service_name or "—"), td_r("1"), td_r(svc_price_str), td_r(svc_total_str)])
-    for p in purchases:
+    for p in purchase_list:
         line_total = p.quantity * p.sale_price
-        grand_total += line_total
         data.append([
             td(p.part_name),
             td_r(str(p.quantity)),

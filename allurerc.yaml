@@ -1,0 +1,15 @@
+# Allure Report 3 — picked up by `npx allure generate` from repo root (see report.yml).
+# https://allurereport.org/docs/v3/configure/
+name: car-service-platform
+output: ./allure-report
+plugins:
+  awesome:
+    options:
+      reportName: car-service-platform
+      singleFile: false
+      reportLanguage: en
+      # Behaviors / tree: epic (unit|api|ui) → feature (area) → tests
+      groupBy:
+        - epic
+        - feature
+        - story

@@ -1,11 +1,16 @@
+import tempfile
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from customers.models import Customer
+from purchases.models import Purchase, Supplier
+from services.models import Service
 from vehicles.models import Vehicle
 
-from .models import Repair, RepairNote
+from .models import Repair, RepairDocument, RepairFinancialSnapshot, RepairNote
 
 
 class RepairApiTests(TestCase):
@@ -20,6 +25,7 @@ class RepairApiTests(TestCase):
             email="admin@test.local",
             password="admin12345",
             role="admin",
+            is_staff=True,
         )
         self.customer = Customer.objects.create(
             full_name="Anna Nowak",
@@ -349,7 +355,187 @@ class RepairApiTests(TestCase):
         self.assertEqual(data["master_id"], self.staff_user.id)
         self.assertEqual(data["master_name"], self.staff_user.email)
 
+    def test_portal_token_auto_generated_on_create(self):
+        response = self._create_repair(service_name="Turbo Replacement")
 
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertIn("portal_token", data)
+        self.assertTrue(len(data["portal_token"]) >= 20)
+
+    def test_portal_tokens_are_unique(self):
+        first = self._create_repair(service_name="Brake Pads")
+        second = self._create_repair(service_name="Clutch Kit")
+
+        self.assertNotEqual(
+            first.json()["portal_token"],
+            second.json()["portal_token"],
+        )
+
+    def test_portal_token_is_readonly(self):
+        self.client.force_authenticate(self.staff_user)
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Wheel Bearing",
+            status="new",
+        )
+        original_token = repair.portal_token
+
+        self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"portal_token": "manipulated-token"},
+            format="json",
+        )
+
+        repair.refresh_from_db()
+        self.assertEqual(repair.portal_token, original_token)
+
+    def test_portal_lookup_returns_repair_for_valid_token(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="AC Recharge",
+            status="in_progress",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["service_name"], "AC Recharge")
+        self.assertEqual(data["status"], "in_progress")
+
+    def test_portal_lookup_returns_404_for_invalid_token(self):
+        response = self.client.get("/api/portal/this-token-does-not-exist/")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_portal_lookup_requires_no_authentication(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Fuel Filter",
+            status="new",
+        )
+        self.client.force_authenticate(None)
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_portal_lookup_does_not_expose_internal_fields(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Injector Clean",
+            status="new",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        data = response.json()
+        self.assertNotIn("portal_token", data)
+        self.assertNotIn("issue_notes", data)
+        self.assertNotIn("repair_notes", data)
+        self.assertNotIn("master_id", data)
+
+    def test_portal_lookup_includes_vehicle_info(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Suspension",
+            status="new",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        data = response.json()
+        self.assertIn("vehicle_info", data)
+        self.assertEqual(data["vehicle_info"]["license_plate"], self.vehicle.license_plate)
+
+    def test_regenerate_portal_token_requires_authentication(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Coolant Flush",
+            status="new",
+        )
+        self.client.force_authenticate(None)
+
+        response = self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_regenerate_portal_token_generates_new_token(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Power Steering",
+            status="new",
+        )
+        original_token = repair.portal_token
+        self.client.force_authenticate(self.admin_user)
+
+        response = self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+
+        self.assertEqual(response.status_code, 200)
+        new_token = response.json()["portal_token"]
+        self.assertNotEqual(new_token, original_token)
+        self.assertTrue(len(new_token) >= 20)
+
+    def test_regenerate_portal_token_old_token_becomes_invalid(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="ABS Module",
+            status="new",
+        )
+        old_token = repair.portal_token
+        self.client.force_authenticate(self.admin_user)
+        self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+        self.client.force_authenticate(None)
+
+        response = self.client.get(f"/api/portal/{old_token}/")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_regenerate_portal_token_staff_forbidden(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Fuel Filter",
+            status="new",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_estimated_date_can_be_set_and_returned(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Transmission",
+            status="in_progress",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"estimated_date": "2025-12-31"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["estimated_date"], "2025-12-31")
+
+    def test_estimated_date_visible_on_portal(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Camshaft",
+            status="in_progress",
+            estimated_date="2025-12-31",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["estimated_date"], "2025-12-31")
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class RepairPdfViewTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -388,9 +574,8 @@ class RepairPdfViewTests(TestCase):
     def test_pdf_requires_authentication(self):
         repair = self._create_completed_repair()
 
-        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
-
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.client.get(f"/api/repairs/{repair.id}/pdf/").status_code, 403)
+        self.assertEqual(self.client.post(f"/api/repairs/{repair.id}/pdf/export/").status_code, 403)
 
     def test_pdf_returns_400_for_non_completed_repair(self):
         repair = Repair.objects.create(
@@ -416,15 +601,27 @@ class RepairPdfViewTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    def test_pdf_returns_pdf_for_completed_repair(self):
+    def test_pdf_get_404_when_no_export_yet(self):
         repair = self._create_completed_repair()
         self.client.force_authenticate(self.staff_user)
 
         response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "application/pdf")
-        self.assertGreater(len(response.content), 0)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("detail", response.json())
+
+    def test_pdf_get_returns_latest_after_post_export(self):
+        repair = self._create_completed_repair()
+        self.client.force_authenticate(self.staff_user)
+        post_r = self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
+        self.assertEqual(post_r.status_code, 200)
+        self.assertEqual(post_r["Content-Type"], "application/pdf")
+
+        get_r = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+        self.assertEqual(get_r.status_code, 200)
+        self.assertEqual(get_r["Content-Type"], "application/pdf")
+        get_body = b"".join(get_r.streaming_content)
+        self.assertEqual(len(get_body), len(post_r.content))
 
     def test_pdf_returns_404_for_unknown_repair(self):
         self.client.force_authenticate(self.staff_user)
@@ -433,12 +630,61 @@ class RepairPdfViewTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_pdf_accessible_by_staff(self):
+    def test_pdf_get_twice_does_not_create_second_document(self):
         repair = self._create_completed_repair()
         self.client.force_authenticate(self.staff_user)
+        self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
+        self.client.get(f"/api/repairs/{repair.id}/pdf/")
+        self.client.get(f"/api/repairs/{repair.id}/pdf/")
+        self.assertEqual(RepairDocument.objects.filter(repair=repair).count(), 1)
 
-        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+    def test_pdf_export_post_400_for_non_completed(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Oil",
+            status="new",
+        )
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
+        self.assertEqual(response.status_code, 400)
 
+    def test_pdf_export_persists_document_and_snapshot(self):
+        repair = self._create_completed_repair()
+        supplier = Supplier.objects.create(name="Parts Co")
+        Purchase.objects.create(
+            order_date="2026-01-10",
+            supplier=supplier,
+            vehicle=self.vehicle,
+            part_name="Brake pad",
+            quantity=2,
+            purchase_price=Decimal("40.00"),
+            sale_price=Decimal("99.50"),
+            repair_code=repair.tracking_code,
+        )
+        Service.objects.create(name="Full Service", price=Decimal("150.00"))
+
+        self.assertEqual(RepairDocument.objects.filter(repair=repair).count(), 0)
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "application/pdf")
-        self.assertGreater(len(response.content), 0)
+
+        doc = RepairDocument.objects.get(repair=repair)
+        self.assertEqual(doc.version, 1)
+        self.assertEqual(doc.exported_by_id, self.staff_user.id)
+        self.assertTrue(doc.file.name)
+        snap = RepairFinancialSnapshot.objects.get(document=doc)
+        self.assertEqual(snap.labor_total, Decimal("150.00"))
+        self.assertEqual(snap.parts_client_total, Decimal("199.00"))
+        self.assertEqual(snap.parts_purchase_total, Decimal("80.00"))
+        self.assertEqual(snap.document_total, Decimal("349.00"))
+
+    def test_pdf_second_post_export_increments_version(self):
+        repair = self._create_completed_repair()
+        self.client.force_authenticate(self.staff_user)
+        self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
+        self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
+        versions = list(
+            RepairDocument.objects.filter(repair=repair).order_by("version").values_list("version", flat=True)
+        )
+        self.assertEqual(versions, [1, 2])
+        self.assertEqual(RepairFinancialSnapshot.objects.filter(repair=repair).count(), 2)

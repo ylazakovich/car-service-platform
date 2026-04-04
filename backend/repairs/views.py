@@ -1,12 +1,31 @@
 from django.db.models import Q
+import secrets
+
+from django.http import FileResponse, HttpResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import Repair, RepairNote
-from .serializers import RepairNoteSerializer, RepairSerializer
+from .serializers import PortalRepairSerializer, RepairNoteSerializer, RepairSerializer
+
+
+class PortalLookupThrottle(AnonRateThrottle):
+    scope = "portal_lookup"
+
+
+class PortalRepairLookupView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [PortalLookupThrottle]
+    serializer_class = PortalRepairSerializer
+    lookup_field = "portal_token"
+    lookup_url_kwarg = "token"
+
+    def get_queryset(self):
+        return Repair.objects.select_related("vehicle", "master")
 
 
 class RepairListCreateView(generics.ListCreateAPIView):
@@ -68,6 +87,8 @@ class RepairNoteDeleteView(APIView):
 
 
 class RepairPdfView(APIView):
+    """GET latest exported PDF only — does not create a new version."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -75,27 +96,63 @@ class RepairPdfView(APIView):
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,
         )
-        if repair.status != "completed":
+        if repair.status != Repair.Status.COMPLETED:
             return Response(
                 {"detail": "PDF is only available for completed repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        from purchases.models import Purchase
-        from services.models import Service
+        from .pdf_export import get_latest_repair_document
 
-        purchases = Purchase.objects.filter(repair_code=repair.tracking_code).select_related("supplier")
-        service = Service.objects.filter(name=repair.service_name).first()
-        service_price = service.price if service and service.price is not None else None
+        doc = get_latest_repair_document(repair)
+        if doc is None:
+            return Response(
+                {
+                    "detail": (
+                        f"No PDF has been exported for this repair yet. "
+                        f"Use POST /api/repairs/{repair.pk}/pdf/export/ to create one."
+                    ),
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        filename = doc.original_filename or f"act_{repair.tracking_code}.pdf"
+        fh = doc.file.open("rb")
+        resp = FileResponse(fh, as_attachment=True, filename=filename)
+        resp["Content-Type"] = "application/pdf"
+        return resp
 
-        from django.http import HttpResponse
 
-        from .pdf_generator import generate_completion_act_pdf
+class RepairPdfExportView(APIView):
+    """POST generates PDF, persists a new document version + financial snapshot."""
 
-        pdf_bytes = generate_completion_act_pdf(repair, purchases, service_price)
-        filename = f"act_{repair.tracking_code}.pdf"
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        repair = generics.get_object_or_404(
+            Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
+            pk=pk,
+        )
+        if repair.status != Repair.Status.COMPLETED:
+            return Response(
+                {"detail": "PDF export is only available for completed repairs."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        from .pdf_export import export_repair_pdf_and_snapshot
+
+        pdf_bytes, doc = export_repair_pdf_and_snapshot(repair, request.user)
+        filename = doc.original_filename or f"act_{repair.tracking_code}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
+
+
+class RepairRegeneratePortalTokenView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        repair = generics.get_object_or_404(Repair, pk=pk)
+        repair.portal_token = secrets.token_urlsafe(20)
+        repair.save(update_fields=["portal_token"])
+        return Response({"portal_token": repair.portal_token})
 
 
 class RepairReorderView(APIView):

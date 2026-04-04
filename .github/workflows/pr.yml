@@ -8,8 +8,9 @@ on:
       - "docs/**"
       - "LICENSE"
 
+# Same PR = same group → new commits cancel an in-progress PR Pipeline for that PR.
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -64,7 +65,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
-          name: frontend-allure-results
+          name: allure-results-frontend
           path: frontend/allure-results/
           if-no-files-found: ignore
           retention-days: 30
@@ -94,7 +95,7 @@ jobs:
           TEST_OUTPUT_DIR: test-results
         run: |
           mkdir -p allure-results test-results
-          pytest --alluredir=allure-results --junitxml=test-results/junit.xml
+          pytest --alluredir=allure-results --junitxml=test-results/junit.xml -v
 
       - name: Test summary
         if: always()
@@ -134,7 +135,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
-          name: backend-allure-results
+          name: allure-results-backend
           path: backend/allure-results/
           if-no-files-found: ignore
           retention-days: 30

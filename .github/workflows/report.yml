@@ -5,8 +5,16 @@ on:
     workflows: ["PR Pipeline"]
     types: [completed]
 
+# Same head branch (and fork identity) → newer PR Pipeline completion cancels an in-progress Test Report.
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{
+      github.event.workflow_run.head_repository.full_name || github.repository
+    }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: write # peaceiris pushes the gh-pages branch
   checks: write
   pull-requests: write
   actions: write
@@ -23,6 +31,31 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      - name: Resolve PR number (GitHub Pages path)
+        id: pr_ctx
+        env:
+          PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: |
+          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          if [ -n "$PR_NUMBER" ]; then
+            echo "has_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect fork PR (no Pages preview for cross-repo)
+        id: fork
+        env:
+          HEAD_FULL: ${{ github.event.workflow_run.head_repository.full_name }}
+        run: |
+          REPO="${{ github.repository }}"
+          if [ -z "$HEAD_FULL" ] || [ "$HEAD_FULL" = "$REPO" ]; then
+            echo "fork=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "fork=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download artifacts from PR Pipeline
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -30,6 +63,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
 
+      # dorny/test-reporter: reporter "java-junit" = JUnit XML (Vitest, pytest, xmlrunner, etc.), not a Java stack.
       - name: Frontend Test Report
         if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
@@ -46,53 +80,33 @@ jobs:
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
 
-  allure-report:
-    name: Allure Report
-    if: ${{ github.event.workflow_run.event == 'pull_request' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Download Allure results from PR Pipeline
-        id: download_allure
-        continue-on-error: true
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: "*-allure-results"
-          merge-multiple: true
-          path: allure-results
-
-      - name: Check for Allure result files
+      # PR Pipeline uploads allure-results-frontend and/or allure-results-backend; merge into one tree for Allure CLI.
+      - name: Merge Allure results
         id: allure
         run: |
-          mkdir -p allure-results
-          n=$(find allure-results -type f \( -name "*-result.json" -o -name "*result.json" \) 2>/dev/null | wc -l | tr -d " ")
-          echo "count=${n}" >> "$GITHUB_OUTPUT"
-          if [ "${n:-0}" -eq 0 ]; then
-            echo "has=false" >> "$GITHUB_OUTPUT"
-            echo "No Allure result files; skip HTML report."
+          mkdir -p artifacts/allure-results
+          if [ -d artifacts/allure-results-frontend ]; then
+            cp -f artifacts/allure-results-frontend/* artifacts/allure-results/ 2>/dev/null || true
+          fi
+          if [ -d artifacts/allure-results-backend ]; then
+            cp -f artifacts/allure-results-backend/* artifacts/allure-results/ 2>/dev/null || true
+          fi
+          if compgen -G 'artifacts/allure-results/*-result.json' > /dev/null; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has=true" >> "$GITHUB_OUTPUT"
+            echo "present=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: ./.github/actions/setup-node
-        if: steps.allure.outputs.has == 'true'
-
-      - uses: ./.github/actions/setup-python
-        if: steps.allure.outputs.has == 'true'
+      - name: Set up Python (Django version for Allure environment.properties)
+        if: steps.allure.outputs.present == 'true'
+        uses: ./.github/actions/setup-python
         with:
           requirements: requirements-test.txt
 
       - name: Write Allure environment.properties
-        if: steps.allure.outputs.has == 'true'
+        if: steps.allure.outputs.present == 'true'
         env:
-          ALLURE_RESULTS_DIR: ${{ github.workspace }}/allure-results
+          ALLURE_RESULTS_DIR: ${{ github.workspace }}/artifacts/allure-results
           REPO_ROOT: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           GITHUB_REF_NAME: ${{ github.event.workflow_run.head_branch }}
@@ -100,14 +114,82 @@ jobs:
           ALLURE_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: bash scripts/ci/write-allure-environment.sh
 
-      - name: Generate Allure HTML
-        if: steps.allure.outputs.has == 'true'
-        run: npx --yes allure-commandline@2.30.0 generate allure-results -o allure-report --clean
-
-      - name: Upload Allure HTML report
-        if: steps.allure.outputs.has == 'true'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Set up Node.js (Allure CLI + allure-ci.mjs)
+        if: steps.allure.outputs.present == 'true'
+        uses: ./.github/actions/setup-node
         with:
-          name: allure-report
-          path: allure-report/
-          retention-days: 30
+          install-dependencies: "false"
+
+      - name: Generate Allure HTML, badges, PR comment markdown
+        if: steps.allure.outputs.present == 'true'
+        env:
+          PR_NUMBER: ${{ steps.pr_ctx.outputs.number }}
+          FORK_PR: ${{ steps.fork.outputs.fork }}
+        run: |
+          cp -f .github/allure/categories.json artifacts/allure-results/categories.json
+          npx --yes allure generate artifacts/allure-results -o allure-report
+          node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          PAGES_URL=""
+          if [ -n "$PR_NUMBER" ]; then
+            PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/"
+          fi
+          node .github/scripts/allure-ci.mjs pr-body \
+            --results artifacts/allure-results \
+            --report allure-report \
+            --output allure-pr-comment.md \
+            --pages-url "$PAGES_URL" \
+            --fork-pr "$FORK_PR"
+
+      # Per-PR folder on gh-pages: allure/pr-<N>/ — keep_files preserves other PRs; re-run overwrites this PR only.
+      - name: Deploy Allure HTML to GitHub Pages
+        if: ${{ steps.allure.outputs.present == 'true' && steps.pr_ctx.outputs.has_pr == 'true' && steps.fork.outputs.fork == 'false' }}
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: allure/pr-${{ steps.pr_ctx.outputs.number }}
+          keep_files: true
+
+      - name: Post or update Allure comment on PR
+        if: steps.allure.outputs.present == 'true'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const fs = require('fs');
+            const run = context.payload.workflow_run;
+            const prs = run.pull_requests || [];
+            if (prs.length === 0) {
+              core.info('workflow_run has no pull_requests; skip Allure PR comment (fork PRs may be empty).');
+              return;
+            }
+            const issue_number = prs[0].number;
+            const marker = '<!-- csp-allure-ci -->';
+            const body = fs.readFileSync('allure-pr-comment.md', 'utf8');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find(
+              (c) =>
+                c.user?.login === 'github-actions[bot]' &&
+                (c.body || '').includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body
+              });
+            }

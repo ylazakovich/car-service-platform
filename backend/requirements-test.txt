@@ -1,5 +1,5 @@
 -r requirements.txt
 unittest-xml-reporting>=4,<4.1
-pytest>=8,<9
-pytest-django>=4.11,<5
-allure-pytest>=2.15,<3
+pytest>=8,<10
+pytest-django>=4,<5
+allure-pytest>=2.13,<3
