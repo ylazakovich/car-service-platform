@@ -23,7 +23,9 @@ import {
   type RepairStatusFilter,
 } from "../features/staff/shared/repairs";
 import {
+  formatVehicleTitle,
   type Vehicle,
+  type VehicleListGroup,
   type VehicleOwnerDetails,
   type VehicleUiDetails,
 } from "../features/staff/shared/vehicles";
@@ -808,6 +810,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     "order_date_desc" | "order_date_asc" | "delivery_asc" | "delivery_desc" | "margin_desc" | "margin_asc"
   >("order_date_desc");
   const [purchaseDetailModalTab, setPurchaseDetailModalTab] = useState<"order" | "invoice">("order");
+
+  const [vehicleListView, setVehicleListView] = useState<"cards" | "compact">("cards");
+  const [vehicleGroupBy, setVehicleGroupBy] = useState<"none" | "owner">("none");
+  const [vehicleSort, setVehicleSort] = useState<
+    | "plate_asc"
+    | "plate_desc"
+    | "owner_asc"
+    | "make_asc"
+    | "added_desc"
+    | "added_asc"
+    | "service_desc"
+    | "service_asc"
+  >("plate_asc");
 
   useEffect(() => {
     if (selectedPurchaseId !== null) {
@@ -1605,6 +1620,60 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
     return groups;
   }, [purchases, purchaseSort, purchaseGroupBy]);
+
+  const vehicleDisplayGroups = useMemo((): VehicleListGroup[] => {
+    const rows = [...sectionVehicles];
+    const addedTs = (v: Vehicle) => {
+      const raw = (vehicleUiDetails[v.id]?.added_date ?? v.added_date ?? "").trim();
+      const parsed = parsePurchaseDayStart(raw);
+      return parsed ? parsed.getTime() : 0;
+    };
+    const serviceTs = (v: Vehicle) => {
+      const raw = (vehicleUiDetails[v.id]?.last_service_date ?? v.last_service_date ?? "").trim();
+      const parsed = parsePurchaseDayStart(raw);
+      return parsed ? parsed.getTime() : 0;
+    };
+
+    rows.sort((a, b) => {
+      switch (vehicleSort) {
+        case "plate_asc":
+          return a.license_plate.localeCompare(b.license_plate, undefined, { sensitivity: "base" });
+        case "plate_desc":
+          return b.license_plate.localeCompare(a.license_plate, undefined, { sensitivity: "base" });
+        case "owner_asc":
+          return a.customer.full_name.localeCompare(b.customer.full_name, undefined, { sensitivity: "base" });
+        case "make_asc":
+          return formatVehicleTitle(a).localeCompare(formatVehicleTitle(b), undefined, { sensitivity: "base" });
+        case "added_asc":
+          return addedTs(a) - addedTs(b);
+        case "added_desc":
+          return addedTs(b) - addedTs(a);
+        case "service_asc":
+          return serviceTs(a) - serviceTs(b);
+        case "service_desc":
+          return serviceTs(b) - serviceTs(a);
+        default:
+          return 0;
+      }
+    });
+
+    if (vehicleGroupBy === "none") {
+      return [{ key: "all", label: "", vehicles: rows }];
+    }
+
+    const map = new Map<string, Vehicle[]>();
+    for (const v of rows) {
+      const k = v.customer.full_name.trim() || "—";
+      if (!map.has(k)) {
+        map.set(k, []);
+      }
+      map.get(k)!.push(v);
+    }
+
+    return [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, grouped]) => ({ key, label: key, vehicles: grouped }));
+  }, [sectionVehicles, vehicleSort, vehicleGroupBy, vehicleUiDetails]);
 
   const selectedRepairVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id) ?? null;
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
@@ -2862,8 +2931,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderVehiclesSection() {
+    const meta = sectionMeta.vehicles;
+    const emptyServerList = sectionVehicles.length === 0;
+    const loadedRemaining = Math.max(0, sectionVehiclesCount - sectionVehicles.length);
+
     return (
-      <div className="workspace-stack vehicle-workspace">
+      <div className="workspace-stack vehicles-workspace">
         {renderStaffMobileTaskRail({
           title: "Vehicle flow",
           summary:
@@ -2877,15 +2950,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           onPrimaryAction: openVehicleCreateModal,
         })}
 
-        <div className="kanban-topbar section-desktop-topbar">
+        <div className="kanban-topbar purchases-section-topbar vehicles-section-topbar">
           <div>
-            <p className="eyebrow">Registry</p>
-            <h2>Vehicle List</h2>
+            <p className="eyebrow">{meta.eyebrow}</p>
+            <h2>{meta.title}</h2>
             {sectionVehiclesCount > 0 ? (
-              <span className="registry-count">{sectionVehiclesCount} total</span>
+              <span className="registry-count">
+                {sectionVehiclesCount} total
+                {sectionVehicles.length !== sectionVehiclesCount ? ` · ${sectionVehicles.length} loaded` : ""}
+              </span>
             ) : null}
           </div>
-          <div className="workspace-top-actions">
+          <div className="workspace-top-actions purchases-top-actions vehicles-top-actions">
             <label className="kanban-search">
               <input
                 value={vehicleSearch}
@@ -2894,42 +2970,121 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 type="search"
               />
             </label>
-            <button type="button" className="button button-sm" onClick={openVehicleCreateModal}>
+            <button type="button" className="button" onClick={openVehicleCreateModal}>
               + Add Vehicle
             </button>
           </div>
         </div>
 
-        <div className="vehicles-surface-stack">
-          <StaffVehiclesMobileList
-            vehicles={sectionVehicles}
-            getVehicleDetails={getVehicleDetails}
-            onOpenVehicle={openVehicleDetailModal}
-          />
-
-          <StaffVehiclesRegistry
-            vehicles={sectionVehicles}
-            getVehicleDetails={getVehicleDetails}
-            onOpenVehicle={openVehicleDetailModal}
-          />
-        </div>
-
-        {sectionVehiclesHasMore ? (
-          <div className="load-more-bar">
+        <div className="kanban-topbar purchases-controls-bar">
+          <div className="purchases-controls-cluster" role="group" aria-label="List layout">
             <button
               type="button"
-              className="button button-secondary"
-              onClick={() =>
-                void loadSectionVehicles(vehicleSearch, sectionVehiclesPage + 1, true)
-              }
-              disabled={sectionVehiclesLoading}
+              className={vehicleListView === "cards" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
+              onClick={() => setVehicleListView("cards")}
             >
-              {sectionVehiclesLoading
-                ? "Loading…"
-                : `Load more (${sectionVehiclesCount - sectionVehicles.length} remaining)`}
+              Cards
+            </button>
+            <button
+              type="button"
+              className={vehicleListView === "compact" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
+              onClick={() => setVehicleListView("compact")}
+            >
+              Compact
             </button>
           </div>
-        ) : null}
+          <div className="purchases-controls-selects">
+            <select
+              className="purchases-inline-select"
+              value={vehicleSort}
+              aria-label="Sort list"
+              onChange={(event) =>
+                setVehicleSort(
+                  event.target.value as
+                    | "plate_asc"
+                    | "plate_desc"
+                    | "owner_asc"
+                    | "make_asc"
+                    | "added_desc"
+                    | "added_asc"
+                    | "service_desc"
+                    | "service_asc"
+                )
+              }
+            >
+              <option value="plate_asc">License plate A–Z</option>
+              <option value="plate_desc">License plate Z–A</option>
+              <option value="owner_asc">Owner name A–Z</option>
+              <option value="make_asc">Make and model A–Z</option>
+              <option value="added_desc">Newest added</option>
+              <option value="added_asc">Oldest added</option>
+              <option value="service_desc">Latest service</option>
+              <option value="service_asc">Earliest service</option>
+            </select>
+            <select
+              className="purchases-inline-select"
+              value={vehicleGroupBy}
+              aria-label="Group list"
+              onChange={(event) => setVehicleGroupBy(event.target.value as "none" | "owner")}
+            >
+              <option value="none">No grouping</option>
+              <option value="owner">By owner</option>
+            </select>
+          </div>
+        </div>
+        <p className="purchases-controls-footnote">
+          Sort and grouping apply to loaded rows only — use search to change what the server returns.
+        </p>
+
+        <div className="purchases-list-outer">
+          {emptyServerList ? (
+            <div className="purchases-empty-panel">
+              <p className="workspace-note">
+                {vehicleSearch.trim() ? "No vehicles match your search." : "No vehicles yet."}
+              </p>
+              {!vehicleSearch.trim() ? (
+                <>
+                  <p className="workspace-note purchases-empty-copy">{meta.copy}</p>
+                  <button type="button" className="button" onClick={openVehicleCreateModal}>
+                    + Add Vehicle
+                  </button>
+                </>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <StaffVehiclesMobileList
+                groups={vehicleDisplayGroups}
+                layout={vehicleListView}
+                getVehicleDetails={getVehicleDetails}
+                onOpenVehicle={openVehicleDetailModal}
+              />
+
+              <StaffVehiclesRegistry
+                groups={vehicleDisplayGroups}
+                layout={vehicleListView}
+                getVehicleDetails={getVehicleDetails}
+                onOpenVehicle={openVehicleDetailModal}
+              />
+            </>
+          )}
+          {sectionVehiclesHasMore && !emptyServerList ? (
+            <div className="load-more-bar">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() =>
+                  void loadSectionVehicles(vehicleSearch, sectionVehiclesPage + 1, true)
+                }
+                disabled={sectionVehiclesLoading}
+              >
+                {sectionVehiclesLoading
+                  ? "Loading…"
+                  : `Load more (${loadedRemaining} remaining)`}
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         {selectedVehicle ? (
           <div className="modal-overlay" role="presentation" onClick={closeVehicleDetailModal}>
