@@ -17,6 +17,7 @@ class RepairSerializer(serializers.ModelSerializer):
     vehicle_label = serializers.SerializerMethodField()
     owner_name = serializers.SerializerMethodField()
     master_name = serializers.SerializerMethodField()
+    has_pdf = serializers.SerializerMethodField()
     repair_notes = RepairNoteSerializer(many=True, read_only=True, source="notes")
     before_photos = serializers.SerializerMethodField()
     during_photos = serializers.SerializerMethodField()
@@ -47,6 +48,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "position",
             "tracking_code",
             "portal_token",
+            "has_pdf",
             "completed_at",
             "estimated_date",
             "repair_notes",
@@ -70,6 +72,12 @@ class RepairSerializer(serializers.ModelSerializer):
             return ""
         parts = [obj.master.first_name, obj.master.last_name]
         return " ".join(p for p in parts if p).strip() or obj.master.email
+
+    def get_has_pdf(self, obj):
+        annotated = getattr(obj, "has_pdf", None)
+        if annotated is not None:
+            return bool(annotated)
+        return obj.documents.exists()
 
     def get_before_photos(self, obj):
         return []
