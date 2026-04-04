@@ -1,7 +1,7 @@
 /**
  * Allure Report 3 — подхватывается CLI как allurerc.* в корне репозитория.
  * https://allurereport.org/docs/v3/configure/
- * CI: variables из artifacts/allure-variables.json (scripts/ci/write-allure-environment.sh).
+ * CI: variables из artifacts/allure-variables.json (write-allure-environment.sh; .properties из results не кладём — иначе дубль Metadata/Variables).
  * Environments: лейбл component=frontend|backend (см. frontend/vitest.setup.ts, backend/conftest.py).
  */
 import fs from "node:fs";

@@ -24,6 +24,12 @@ htmlcov/
 coverage/
 **/playwright-report/
 
+# Downloaded CI merge dirs, allure-variables.json, merged env fragments, junit copies, etc.
+artifacts/
+
+# Generated when reproducing Allure PR comment locally
+allure-pr-comment.md
+
 # Editor / OS (optional local noise)
 .idea/
 *.swp
