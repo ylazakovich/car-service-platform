@@ -1,0 +1,22 @@
+name: JUnit → GitHub Step Summary
+description: Append a markdown test summary table from JUnit XML (Vitest, pytest, or Playwright).
+
+inputs:
+  cwd:
+    description: Working directory relative to repository root (e.g. frontend, backend)
+    required: true
+  variant:
+    description: frontend-single | backend-pytest | e2e-playwright
+    required: true
+  title:
+    description: Heading text (without ###); "(failures)" is appended when needed
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Write JUnit summary
+      if: always()
+      shell: bash
+      working-directory: ${{ github.workspace }}/${{ inputs.cwd }}
+      run: bash "${{ github.workspace }}/scripts/ci/junit-github-step-summary.sh" "${{ inputs.variant }}" "${{ inputs.title }}"
