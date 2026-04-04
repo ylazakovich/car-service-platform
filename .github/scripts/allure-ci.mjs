@@ -35,6 +35,16 @@ function epicFromLabels(labels) {
   return epic && epic.value ? String(epic.value).toLowerCase() : null;
 }
 
+/** Явный epic из labels, иначе Playwright → end-to-end (merged Allure без runtime epic). */
+function epicForResult(doc) {
+  const raw = epicFromLabels(doc.labels);
+  if (raw && EPICS.includes(raw)) return raw;
+  if (!Array.isArray(doc.labels)) return raw;
+  const fw = doc.labels.find((l) => l && l.name === "framework");
+  if (fw && String(fw.value).toLowerCase() === "playwright") return "end-to-end";
+  return raw;
+}
+
 function aggregateResults(resultsDir) {
   const files = listResultFiles(resultsDir);
   const byEpic = {};
@@ -47,8 +57,8 @@ function aggregateResults(resultsDir) {
     const doc = readJsonSafe(file);
     if (!doc || typeof doc.status !== "string") continue;
     const st = doc.status.toLowerCase();
-    const rawEpic = epicFromLabels(doc.labels);
-    const epic = EPICS.includes(rawEpic) ? rawEpic : "other";
+    const rawEpic = epicForResult(doc);
+    const epic = rawEpic && EPICS.includes(rawEpic) ? rawEpic : "other";
     if (!byEpic[epic]) {
       byEpic[epic] = { passed: 0, failed: 0, broken: 0, skipped: 0, unknown: 0, total: 0 };
     }

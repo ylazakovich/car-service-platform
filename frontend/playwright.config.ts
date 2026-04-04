@@ -18,8 +18,20 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   reporter: [
     ["list"],
-    ["allure-playwright", { detail: true, suiteTitle: true }],
+    [
+      "allure-playwright",
+      {
+        detail: true,
+        suiteTitle: true,
+        /** Явная папка: совпадает с upload в pr.yml (`frontend/allure-results`). */
+        resultsDir: "allure-results",
+        /** Всегда в эпике end-to-end в merged Allure + allure-ci.mjs (дополняет e2eBehaviors). */
+        globalLabels: { epic: "end-to-end" },
+      },
+    ],
     ["html", { open: "never", outputFolder: "playwright-report" }],
+    /** JUnit для dorny/test-reporter в report.yml (артефакт e2e-test-results). */
+    ["junit", { outputFile: "test-results/e2e-junit.xml" }],
   ],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173",
