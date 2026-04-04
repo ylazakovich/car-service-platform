@@ -8,8 +8,9 @@ on:
       - "docs/**"
       - "LICENSE"
 
+# Same ref = same group → new push to main cancels an in-progress run (sha-based groups never cancel).
 concurrency:
-  group: main-${{ github.sha }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
