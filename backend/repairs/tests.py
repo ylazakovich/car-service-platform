@@ -1,11 +1,16 @@
+import tempfile
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from customers.models import Customer
+from purchases.models import Purchase, Supplier
+from services.models import Service
 from vehicles.models import Vehicle
 
-from .models import Repair, RepairNote
+from .models import Repair, RepairDocument, RepairFinancialSnapshot, RepairNote
 
 
 class RepairApiTests(TestCase):
@@ -530,6 +535,7 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.json()["estimated_date"], "2025-12-31")
 
 
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class RepairPdfViewTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -622,3 +628,44 @@ class RepairPdfViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/pdf")
         self.assertGreater(len(response.content), 0)
+
+    def test_pdf_export_persists_document_and_snapshot(self):
+        repair = self._create_completed_repair()
+        supplier = Supplier.objects.create(name="Parts Co")
+        Purchase.objects.create(
+            order_date="2026-01-10",
+            supplier=supplier,
+            vehicle=self.vehicle,
+            part_name="Brake pad",
+            quantity=2,
+            purchase_price=Decimal("40.00"),
+            sale_price=Decimal("99.50"),
+            repair_code=repair.tracking_code,
+        )
+        Service.objects.create(name="Full Service", price=Decimal("150.00"))
+
+        self.assertEqual(RepairDocument.objects.filter(repair=repair).count(), 0)
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.get(f"/api/repairs/{repair.id}/pdf/")
+        self.assertEqual(response.status_code, 200)
+
+        doc = RepairDocument.objects.get(repair=repair)
+        self.assertEqual(doc.version, 1)
+        self.assertEqual(doc.exported_by_id, self.staff_user.id)
+        self.assertTrue(doc.file.name)
+        snap = RepairFinancialSnapshot.objects.get(document=doc)
+        self.assertEqual(snap.labor_total, Decimal("150.00"))
+        self.assertEqual(snap.parts_client_total, Decimal("199.00"))
+        self.assertEqual(snap.parts_purchase_total, Decimal("80.00"))
+        self.assertEqual(snap.document_total, Decimal("349.00"))
+
+    def test_pdf_second_export_increments_version(self):
+        repair = self._create_completed_repair()
+        self.client.force_authenticate(self.staff_user)
+        self.client.get(f"/api/repairs/{repair.id}/pdf/")
+        self.client.get(f"/api/repairs/{repair.id}/pdf/")
+        versions = list(
+            RepairDocument.objects.filter(repair=repair).order_by("version").values_list("version", flat=True)
+        )
+        self.assertEqual(versions, [1, 2])
+        self.assertEqual(RepairFinancialSnapshot.objects.filter(repair=repair).count(), 2)

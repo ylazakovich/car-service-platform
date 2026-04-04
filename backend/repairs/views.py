@@ -98,18 +98,11 @@ class RepairPdfView(APIView):
                 {"detail": "PDF is only available for completed repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        from purchases.models import Purchase
-        from services.models import Service
-
-        purchases = Purchase.objects.filter(repair_code=repair.tracking_code).select_related("supplier")
-        service = Service.objects.filter(name=repair.service_name).first()
-        service_price = service.price if service and service.price is not None else None
-
         from django.http import HttpResponse
 
-        from .pdf_generator import generate_completion_act_pdf
+        from .pdf_export import export_repair_pdf_and_snapshot
 
-        pdf_bytes = generate_completion_act_pdf(repair, purchases, service_price)
+        pdf_bytes, _doc = export_repair_pdf_and_snapshot(repair, request.user)
         filename = f"act_{repair.tracking_code}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
