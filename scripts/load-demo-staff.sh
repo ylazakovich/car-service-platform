@@ -21,7 +21,7 @@ DEMO_STAFF_PASSWORD="${DEMO_STAFF_PASSWORD:-demo-staff-change-me}"
 if ! docker compose ps backend --format json | grep -q '"State":"running"'; then
   echo "Error: backend container is not running." >&2
   echo "Start the application first:"
-  echo "  bash scripts/start.sh"
+  echo "  bash scripts/start-prod.sh"
   exit 1
 fi
 

@@ -28,6 +28,7 @@ export type PurchaseEntry = {
   vehicle_label: string;
   invoice_name: string;
   invoice_url: string;
+  delivered: boolean;
 };
 
 export type PurchaseFormState = {
@@ -41,6 +42,7 @@ export type PurchaseFormState = {
   sale_price: string;
   repair_code: string;
   vehicle_id: string;
+  delivered: boolean;
 };
 
 const emptyPurchaseForm: PurchaseFormState = {
@@ -54,6 +56,7 @@ const emptyPurchaseForm: PurchaseFormState = {
   sale_price: "",
   repair_code: "",
   vehicle_id: "",
+  delivered: false,
 };
 
 function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
@@ -72,6 +75,7 @@ function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry {
     vehicle_label: item.vehicle_license_plate ?? "",
     invoice_name: item.invoice_name,
     invoice_url: item.invoice_url,
+    delivered: Boolean(item.delivered),
   };
 }
 
@@ -181,6 +185,7 @@ export function usePurchases(vehicles: Vehicle[]) {
       sale_price: String(entry.sale_price),
       repair_code: entry.repair_code === "Unassigned" ? "" : entry.repair_code,
       vehicle_id: entry.vehicle_id ? String(entry.vehicle_id) : "",
+      delivered: entry.delivered,
     });
     setPurchaseModalInvoiceName(entry.invoice_name);
     setPurchaseModalInvoiceUrl(entry.invoice_url);
@@ -239,6 +244,7 @@ export function usePurchases(vehicles: Vehicle[]) {
       vehicle_id: selectedVehicle?.id ?? null,
       invoice_name: purchaseInvoiceName,
       invoice_url: purchaseInvoiceUrl,
+      delivered: purchaseForm.delivered,
     };
 
     try {
@@ -374,6 +380,7 @@ export function usePurchases(vehicles: Vehicle[]) {
       vehicle_id: selectedVehicle?.id ?? null,
       invoice_name: purchaseModalInvoiceName,
       invoice_url: purchaseModalInvoiceUrl,
+      delivered: purchaseModalForm.delivered,
     };
 
     try {

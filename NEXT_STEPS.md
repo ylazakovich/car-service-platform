@@ -3,7 +3,7 @@
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
 - Last updated: `2026-04-04`
-- Status: `m3 pdf + snapshot + staff dashboard analytics (API + MoneyFlow/Procurement/ServiceBoard UI) done on branch; historical UX / monthly / supplier next`
+- Status: `m3 pdf + snapshot + staff dashboard analytics (API + MoneyFlow/Procurement/ServiceBoard UI) done on branch; в плане: MoneyFlow сводка закупок + Dashboard No invoice/No vehicles; historical UX / monthly / supplier next`
 
 ## NOW
 
@@ -36,6 +36,16 @@
 - [ ] Явно зафиксировать в тестах e2e/unit сценарий «ушёл на другую вкладку → вернулся → снова rolling 30d» (smoke частично покрывает).
 - [ ] Добавить проверку timezone/date math для `moneyflow`, чтобы `today` и `-30 days` считались стабильно и без off-by-one ошибок.
 
+### Dashboard: MoneyFlow — сводка по закупкам
+- [ ] Добавить на вкладку **MoneyFlow** блок метрик по закупкам за **тот же** выбранный период, что и остальной MoneyFlow: число учтённых строк закупок (и/или явная подпись «все в периоде» vs «загруженный slice»), сумма закупки (buy), сумма продажи клиенту (sale), маржа — аналог удалённого с **Purchases** блока Displayed / Buy / Sale / Margin.
+- [ ] Реализовать расчёт на **backend** (endpoint или расширение `GET /api/analytics/dashboard/`) с фильтром по датам, согласованным с MoneyFlow; не привязывать итог к клиентской пагинации списка закупок.
+- [ ] Зафиксировать в `DOMAIN_RULES.md` или короткой заметке к API: какие поля закупки входят в buy/sale/margin, статусы/черновики, влияет ли флаг **delivered** на сводку (если нет — явно «нет»).
+
+### Dashboard: подвкладка No invoice / No vehicles
+- [ ] Добавить в **Dashboard** отдельную подвкладку (рядом с MoneyFlow / Procurement / ServiceBoard) для операционного контроля: список или две секции закупок **без прикреплённого инвойса** и закупок **без привязанного автомобиля** (эквивалент бывших фильтров на **Purchases**).
+- [ ] API: параметры фильтрации или отдельные лёгкие endpoints (с пагинацией), переиспользование сериализатора закупки; для **staff** — без customer PII в ответе.
+- [ ] UI: счётчики, таблица/карточки, переход к существующей модалке/странице закупки; e2e smoke: открытие подвкладки и отображение данных при фикстурах.
+
 ### Staff Vehicle-Only Access
 - [ ] Изменить access model для `staff`: он должен видеть весь `Vehicles` registry и историю работ по машинам, а не только автомобили назначенных клиентов.
 - [ ] Скрыть для `staff` customer PII на уровне API и UI: имя клиента, телефон, email и любые другие контактные данные не должны попадать в vehicle-centric workflow.
@@ -49,6 +59,7 @@
 - [ ] Подготовить карточку клиента с реальной историей обращений и завершенных ремонтов.
 - [x] Добавить e2e-сценарий для **дашборда** (минимум: `frontend/e2e/admin-dashboard-visit.spec.ts` — вход admin, вкладки MoneyFlow / Procurement / ServiceBoard).
 - [ ] Расширить e2e: проверка загрузки `/analytics/dashboard/` и ключевых KPI (после стабильных фикстур).
+- [ ] E2E дашборда: блок сводки закупок на **MoneyFlow** + подвкладка **No invoice / No vehicles** (открытие, базовые данные при фикстурах).
 - [ ] Добавить e2e-сценарий для QuickFocus/VPR flow: `поиск vehicle -> create vehicle -> create customer if needed -> create repair`.
 - [ ] Добавить тесты и e2e-сценарий для admin user revocation flow.
 - [ ] Добавить тесты и e2e-сценарии для service board calendar: текущий день, waiting parts, легенда, переключение периода.
@@ -71,6 +82,7 @@
 - Четвертый приоритет M3: превратить service board в календарный operational dashboard с фокусом на текущий день.
 - Пятый приоритет M3: зафиксировать moneyflow на стабильном дефолтном диапазоне `today - 30 days` -> `today`.
 - Шестой приоритет M3: перевести staff на vehicle-only access model без доступа к customer PII.
+- Сводка закупок на **MoneyFlow** и подвкладка **No invoice / No vehicles** в **Dashboard** — закрывают UX-разрыв после упрощения экрана **Purchases** (метрики и фильтры переносятся в аналитический/операционный контур дашборда).
 
 ## Completed (M3 partial)
 - [x] PDF export кнопка на `completed` repair + preview modal (`PdfPreviewModal`, `pdf_generator.py`) — `2026-04-02`

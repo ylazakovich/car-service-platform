@@ -1755,6 +1755,394 @@ textarea { resize: vertical; }
 .purchase-margin-pos { color: var(--success); font-weight: 600; }
 .purchase-margin-neg { color: #e07070; font-weight: 600; }
 
+/* ── Purchases workspace (controls bar, summary, compact list, modal drawer) ── */
+
+.purchases-section-topbar {
+  align-items: flex-end;
+}
+
+.purchases-controls-bar.kanban-topbar {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: var(--s3);
+  column-gap: var(--s4);
+  padding: var(--s3) var(--s4);
+}
+
+.purchases-controls-cluster {
+  display: inline-flex;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-mid);
+  padding: 2px;
+  gap: 2px;
+}
+
+.purchases-seg {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.purchases-seg:hover {
+  color: var(--text);
+}
+
+.purchases-seg-active {
+  background: var(--surface-high);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.purchases-controls-rule {
+  width: 1px;
+  height: 1.35rem;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.purchases-controls-selects {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.purchases-inline-select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.55rem var(--s3);
+  font-size: 0.88rem;
+  min-width: 10.5rem;
+  max-width: 100%;
+  cursor: pointer;
+  transition: border-color 0.14s;
+}
+
+.purchases-inline-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.purchases-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3) var(--s4);
+}
+
+.purchases-filter-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  cursor: pointer;
+  font-size: 0.84rem;
+  color: var(--text-mid);
+  user-select: none;
+}
+
+.purchases-filter-check input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.purchases-filter-check:hover span {
+  color: var(--text);
+}
+
+.purchases-filter-reset {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.purchases-filter-reset:hover {
+  opacity: 0.88;
+}
+
+.purchases-controls-footnote {
+  margin: calc(var(--s2) * -1) 0 0;
+  font-size: 0.76rem;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+.purchases-list-outer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.purchases-empty-panel {
+  display: grid;
+  gap: var(--s3);
+  justify-items: start;
+  padding: var(--s5);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: var(--surface-mid);
+}
+
+.purchases-empty-copy {
+  max-width: 36rem;
+}
+
+.purchases-group-heading {
+  margin: 0 0 var(--s2);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.purchases-group-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--s3);
+}
+
+.registry-card.purchase-card {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.registry-card.purchase-card:hover {
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
+}
+
+.purchase-chip-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.22rem 0.55rem;
+  line-height: 1;
+}
+
+.purchase-chip-status-warn {
+  border: 1px solid rgba(224, 180, 80, 0.45);
+  background: rgba(224, 180, 80, 0.12);
+  color: #e8c86a;
+}
+
+.purchase-chip-status-muted {
+  border: 1px solid var(--border);
+  background: var(--surface-high);
+  color: var(--text-mid);
+}
+
+.purchase-chip-status-danger {
+  border: 1px solid rgba(224, 112, 112, 0.45);
+  background: rgba(224, 112, 112, 0.12);
+  color: #e07070;
+}
+
+.purchase-chip-status-delivered {
+  border: 1px solid rgba(120, 200, 140, 0.45);
+  background: rgba(120, 200, 140, 0.14);
+  color: #8fd4a2;
+}
+
+.purchases-delivered-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: var(--s2);
+  font-size: 0.88rem;
+  color: var(--text-mid);
+  cursor: pointer;
+  user-select: none;
+}
+
+.purchases-delivered-field input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.purchase-delivery-overdue {
+  color: #e07070;
+  font-weight: 600;
+}
+
+.purchases-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.purchases-compact-row {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-mid);
+  padding: var(--s3) var(--s4);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.14s, box-shadow 0.14s;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.purchases-compact-row-main {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.5fr)
+    minmax(5rem, 1fr)
+    5.25rem
+    5.25rem
+    2.75rem
+    minmax(4.25rem, max-content)
+    minmax(4.25rem, max-content);
+  gap: var(--s2) var(--s3);
+  align-items: center;
+  min-width: 38rem;
+}
+
+.purchases-compact-row:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.purchases-compact-cell {
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.purchases-compact-part {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.purchases-compact-part-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchases-compact-qty-cell {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-mid);
+  text-align: right;
+  justify-self: end;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.purchases-compact-supplier {
+  color: var(--text-mid);
+}
+
+.purchases-compact-narrow {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.purchases-compact-money {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  justify-self: end;
+}
+
+.purchase-modal-tabs {
+  margin-bottom: var(--s3);
+}
+
+.purchase-modal-stack {
+  min-height: 12rem;
+}
+
+@media (min-width: 900px) {
+  .purchase-detail-overlay {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0;
+  }
+
+  .purchase-detail-modal.modal-card-large {
+    width: min(460px, 100vw);
+    max-height: 100vh;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 899px) {
+  .purchase-detail-modal .purchase-modal-tabs {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 820px) {
+  .purchases-section-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .purchases-section-topbar .purchases-top-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .purchases-section-topbar .kanban-search {
+    width: 100%;
+  }
+
+  .purchases-section-topbar .kanban-search input {
+    width: 100%;
+  }
+
+  .purchases-controls-selects {
+    width: 100%;
+  }
+
+  .purchases-inline-select {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .purchases-group-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 .customer-card        { cursor: pointer; }
 .customer-card-active {
   border-color: var(--border-accent);

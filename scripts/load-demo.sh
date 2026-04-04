@@ -31,6 +31,7 @@ fi
 echo "Loading demo data..."
 
 docker compose exec -T db psql \
+  -v ON_ERROR_STOP=1 \
   -U "${POSTGRES_USER:-car_service_platform}" \
   -d "${POSTGRES_DB:-car_service_platform}" \
   < "${DEMO_FILE}"

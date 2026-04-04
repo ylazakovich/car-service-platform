@@ -204,6 +204,27 @@ class PurchaseApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["part_name"], "New Part")
 
+    def test_update_purchase_delivered(self):
+        self.client.force_authenticate(self.user)
+        purchase = Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Windshield",
+            quantity=1,
+            purchase_price="120.00",
+            supplier=self.supplier,
+        )
+
+        response = self.client.patch(
+            f"/api/purchases/{purchase.id}",
+            {"delivered": True},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["delivered"])
+        purchase.refresh_from_db()
+        self.assertTrue(purchase.delivered)
+
     def test_delete_purchase(self):
         self.client.force_authenticate(self.user)
         purchase = Purchase.objects.create(
