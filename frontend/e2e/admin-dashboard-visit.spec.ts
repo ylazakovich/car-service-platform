@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { e2eBehaviors } from "./allure-helpers";
 
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@autoservice.local";
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "admin12345";
 
 test.describe("admin dashboard (Docker stack)", () => {
   test("signs in as admin and opens Dashboard tabs", async ({ page }) => {
+    await e2eBehaviors("admin", "dashboard · moneyflow, procurement, service_board");
     await page.goto("/login");
     await page.locator('input[type="email"]').fill(ADMIN_EMAIL);
     await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
