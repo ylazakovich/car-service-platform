@@ -5,6 +5,14 @@ on:
     workflows: ["PR Pipeline"]
     types: [completed]
 
+# Same head branch (and fork identity) → newer PR Pipeline completion cancels an in-progress Test Report.
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{
+      github.event.workflow_run.head_repository.full_name || github.repository
+    }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 permissions:
   contents: write # peaceiris pushes the gh-pages branch
   checks: write

@@ -8,8 +8,9 @@ on:
       - "docs/**"
       - "LICENSE"
 
+# Same PR = same group → new commits cancel an in-progress PR Pipeline for that PR.
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
