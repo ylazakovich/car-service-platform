@@ -39,6 +39,7 @@ class Purchase(models.Model):
     repair_code = models.CharField(max_length=32, blank=True)
     invoice_name = models.CharField(max_length=255, blank=True)
     invoice_url = models.CharField(max_length=500, blank=True)
+    delivered = models.BooleanField(default=False, db_default=False)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -23,6 +23,7 @@ export interface PurchaseItem {
   vehicle_license_plate?: string;
   invoice_name: string;
   invoice_url: string;
+  delivered: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +40,7 @@ export interface PurchaseWritePayload {
   vehicle_id?: number | null;
   invoice_name?: string;
   invoice_url?: string;
+  delivered?: boolean;
 }
 
 export interface PurchasePage {
