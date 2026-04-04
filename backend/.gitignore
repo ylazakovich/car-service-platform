@@ -3,5 +3,4 @@ __pycache__/
 *.pyo
 *.pyd
 .venv/
-test-results/
 staticfiles/

@@ -1,5 +1,5 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -13,7 +13,13 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    setupFiles: "./vitest.setup.ts",
+    setupFiles: ["./vitest.setup.ts", "allure-vitest/setup"],
     css: true,
+    reporters: [
+      "default",
+      "github-actions",
+      ["junit", { outputFile: "test-results/junit.xml" }],
+      "allure-vitest/reporter",
+    ],
   },
 });

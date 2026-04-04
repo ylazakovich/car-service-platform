@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npx vitest run --reporter=default --reporter=github-actions --reporter=junit --outputFile=test-results/junit.xml
+        run: npx vitest run
 
       - name: Test summary
         if: always()
@@ -60,6 +60,15 @@ jobs:
           path: frontend/test-results/
           retention-days: 30
 
+      - name: Upload Allure results (frontend)
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: frontend-allure-results
+          path: frontend/allure-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
   backend:
     name: "Backend: Build & Test"
     runs-on: ubuntu-latest
@@ -83,12 +92,9 @@ jobs:
         env:
           DJANGO_SECRET_KEY: ci-test-secret-key
           TEST_OUTPUT_DIR: test-results
-        run: >
-          python manage.py test
-          --settings=config.settings_test
-          --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner
-          --no-input
-          -v 2
+        run: |
+          mkdir -p allure-results test-results
+          pytest --alluredir=allure-results --junitxml=test-results/junit.xml
 
       - name: Test summary
         if: always()
@@ -122,6 +128,15 @@ jobs:
         with:
           name: backend-test-results
           path: backend/test-results/
+          retention-days: 30
+
+      - name: Upload Allure results (backend)
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: backend-allure-results
+          path: backend/allure-results/
+          if-no-files-found: ignore
           retention-days: 30
 
   docker:
