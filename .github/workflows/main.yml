@@ -59,16 +59,9 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Create .env if template exists
-        run: |
-          if [ -f .env.example ]; then
-            cp .env.example .env
-            sed -i 's/LOG_FORMAT=text/LOG_FORMAT=json/' .env || true
-            sed -i 's/LOG_LEVEL=DEBUG/LOG_LEVEL=INFO/' .env || true
-          fi
-
-      - name: Build and start containers
-        run: docker compose up -d --build
+      - uses: ./.github/actions/compose-up
+        with:
+          env-profile: json-info
 
       - name: Show container status
         run: docker compose ps
