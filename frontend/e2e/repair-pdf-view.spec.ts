@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
+import { navigateToStaffRepairs, openSeededRepairCard } from "./helpers/repair-board";
 
 const STAFF_EMAIL = process.env.E2E_STAFF_EMAIL ?? "staff@autoservice.local";
 /** Must match STAFF_PASSWORD passed into the backend container (see docker-compose + .env.example). */
@@ -32,11 +33,8 @@ test.describe("Repair PDF: view without new export", () => {
       }
     });
 
-    await page.getByRole("button", { name: "Repairs" }).click();
-
-    const repairCard = page.getByRole("heading", { name: /DEMO-|TOR-/ }).first();
-    await expect(repairCard).toBeVisible({ timeout: 25_000 });
-    await repairCard.click();
+    await navigateToStaffRepairs(page);
+    await openSeededRepairCard(page);
 
     await page.getByRole("button", { name: "View PDF" }).click();
     await expect(page.getByRole("dialog", { name: "Certificate of Completion" })).toBeVisible({
@@ -72,8 +70,8 @@ test.describe("Repair PDF: view without new export", () => {
       }
     });
 
-    await page.getByRole("button", { name: "Repairs" }).click();
-    await page.getByRole("heading", { name: /DEMO-|TOR-/ }).first().click();
+    await navigateToStaffRepairs(page);
+    await openSeededRepairCard(page);
 
     await page.getByRole("button", { name: "View PDF" }).click();
     await expect(page.getByRole("dialog", { name: "Certificate of Completion" })).toBeVisible({

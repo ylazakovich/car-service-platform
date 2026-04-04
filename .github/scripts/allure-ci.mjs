@@ -11,7 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const EPICS = ["unit", "api", "ui"];
+const EPICS = ["unit", "api", "ui", "end-to-end"];
 
 function readJsonSafe(file) {
   try {
