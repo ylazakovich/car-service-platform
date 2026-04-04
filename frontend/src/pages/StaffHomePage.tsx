@@ -2,13 +2,13 @@ import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "r
 import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
-import { fetchStaffUsers, downloadRepairPdf, type StaffUser } from "../api/repairs";
+import { exportRepairPdf, fetchStaffUsers, openRepairPdfForPreview, type StaffUser } from "../api/repairs";
 import { PdfPreviewModal } from "../components/PdfPreviewModal";
 import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases } from "../features/staff/hooks/usePurchases";
-import { useRepairs, customRepairServiceOption } from "../features/staff/hooks/useRepairs";
+import { useRepairs, customRepairServiceOption, sanitizeImageUrl } from "../features/staff/hooks/useRepairs";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
 import { StaffVehiclesMobileList } from "../features/staff/mobile/StaffVehiclesMobileList";
@@ -690,6 +690,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [resetLinkResult, setResetLinkResult] = useState<{ userId: number; url: string } | null>(null);
   const [repairPdfBlob, setRepairPdfBlob] = useState<Blob | null>(null);
   const [repairPdfLoading, setRepairPdfLoading] = useState(false);
+  const [repairPdfExportBusy, setRepairPdfExportBusy] = useState(false);
 
   const deferredVehicleSearch = useDeferredValue(vehicleSearch);
 
@@ -790,7 +791,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     dragOverCardId,
     handleCardDragOver,
     handleCardDrop,
-    handleCopyTrackingCode,
+    handleCopyPortalLink,
+    handleRegeneratePortalLink,
+    repairModalEstimatedDate,
+    setRepairModalEstimatedDate,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
   const repairServiceOptions = useMemo(
@@ -857,12 +861,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   async function handleDownloadRepairPdf(repairId: number) {
     setRepairPdfLoading(true);
     try {
-      const blob = await downloadRepairPdf(repairId);
+      const blob = await openRepairPdfForPreview(repairId);
       setRepairPdfBlob(blob);
     } catch {
       // silently ignore
     } finally {
       setRepairPdfLoading(false);
+    }
+  }
+
+  async function handleExportNewRepairPdfVersion(repairId: number) {
+    setRepairPdfExportBusy(true);
+    try {
+      const blob = await exportRepairPdf(repairId);
+      setRepairPdfBlob(blob);
+    } catch {
+      // silently ignore
+    } finally {
+      setRepairPdfExportBusy(false);
     }
   }
 
@@ -2267,17 +2283,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           <div className="tracking-chip-row">
                             <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>
                           </div>
-                          <div className="tracking-chip-row">
-                            <span className="tracking-chip">Tracking: {repair.tracking_code}</span>
-                            <button
-                              type="button"
-                              className="copy-chip"
-                              aria-label={`Copy tracking code ${repair.tracking_code}`}
-                              onClick={() => void handleCopyTrackingCode(repair.tracking_code)}
-                            >
-                              ⧉
-                            </button>
-                          </div>
                         </article>
                       ))}
                     </div>
@@ -2409,7 +2414,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   formatCurrency={formatCurrency}
                   getRepairStatusClass={getRepairStatusClass}
                   repairStatusLabels={REPAIR_STATUS_LABELS}
-                  onCopyTrackingCode={(trackingCode) => void handleCopyTrackingCode(trackingCode)}
                   onOpenRepairs={() => {
                     closeVehicleDetailModal();
                     onSelectSection("repairs");
@@ -2427,7 +2431,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   formatCurrency={formatCurrency}
                   getRepairStatusClass={getRepairStatusClass}
                   repairStatusLabels={REPAIR_STATUS_LABELS}
-                  onCopyTrackingCode={(trackingCode) => void handleCopyTrackingCode(trackingCode)}
                 />
               </div>
             </section>
@@ -2759,7 +2762,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             activeFilter={mobileRepairStatusFilter}
             onFilterChange={setMobileRepairStatusFilter}
             onOpenRepair={openRepairModal}
-            onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
             repairPartSummaries={repairPartSummaries}
           />
 
@@ -2776,7 +2778,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onCardDragOver={handleCardDragOver}
             onCardDrop={handleCardDrop}
             onOpenRepair={openRepairModal}
-            onCopyTrackingCode={(trackingCode, event) => void handleCopyTrackingCode(trackingCode, event)}
             repairPartSummaries={repairPartSummaries}
           />
         </div>
@@ -2905,7 +2906,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairPhotoPreviews.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairPhotoPreviews.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="Before repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); blob: URLs are browser-generated via URL.createObjectURL
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
                     ))}
                   </div>
                 ) : null}
@@ -2956,7 +2958,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       disabled={repairPdfLoading}
                       onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
                     >
-                      {repairPdfLoading ? "Generating..." : "Download PDF"}
+                      {repairPdfLoading ? "Loading…" : "View PDF"}
                     </button>
                   )}
                   {!isStaff && (
@@ -3031,18 +3033,40 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <p>{selectedRepair.service_name}</p>
                     </div>
                     <div className="repair-info-row">
-                      <span className="repair-info-label">Tracking</span>
+                      <span className="repair-info-label">Client Link</span>
                       <div className="tracking-chip-row">
-                        <span className="tracking-chip">{selectedRepair.tracking_code}</span>
                         <button
                           type="button"
-                          className="copy-chip"
-                          aria-label={`Copy tracking code ${selectedRepair.tracking_code}`}
-                          onClick={() => void handleCopyTrackingCode(selectedRepair.tracking_code)}
+                          className="copy-chip portal-link-chip"
+                          aria-label="Copy client portal link"
+                          onClick={() => void handleCopyPortalLink(selectedRepair.portal_token)}
                         >
-                          ⧉
+                          Copy ⧉
                         </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            className="copy-chip portal-link-chip portal-link-regenerate"
+                            aria-label="Regenerate client portal link"
+                            onClick={() => {
+                              if (window.confirm("Regenerate portal link? The current link will stop working immediately.")) {
+                                void handleRegeneratePortalLink(selectedRepair.id);
+                              }
+                            }}
+                          >
+                            Regenerate ↺
+                          </button>
+                        )}
                       </div>
+                    </div>
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Est. Completion</span>
+                      <input
+                        type="date"
+                        className="repair-info-date-input"
+                        value={repairModalEstimatedDate}
+                        onChange={(e) => setRepairModalEstimatedDate(e.target.value)}
+                      />
                     </div>
                     <div className="repair-info-row repair-info-row-block">
                       <span className="repair-info-label">Issue</span>
@@ -3139,7 +3163,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairBeforePhotos.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairBeforePhotos.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="Before repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
                     ))}
                   </div>
                 ) : null}
@@ -3151,7 +3176,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairDuringPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairDuringPhotos.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="During repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="During repair preview" />
                     ))}
                   </div>
                 ) : null}
@@ -3163,7 +3189,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {repairAfterPhotos.length > 0 ? (
                   <div className="photo-preview-grid">
                     {repairAfterPhotos.map((preview) => (
-                      <img className="photo-preview" key={preview} src={preview} alt="After repair preview" />
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="After repair preview" />
                     ))}
                   </div>
                 ) : null}
@@ -3186,6 +3213,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             blob={repairPdfBlob}
             filename={`act_${selectedRepair?.tracking_code ?? "repair"}.pdf`}
             onClose={() => setRepairPdfBlob(null)}
+            onExportNewVersion={
+              selectedRepair
+                ? () => void handleExportNewRepairPdfVersion(selectedRepair.id)
+                : undefined
+            }
+            exportNewVersionBusy={repairPdfExportBusy}
           />
         ) : null}
       </div>

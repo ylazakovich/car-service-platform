@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from foundation.views import HealthView, VersionView
+from repairs.views import PortalRepairLookupView
 
 admin.site.site_header = "Car Service Platform Admin"
 admin.site.site_title = "Car Service Platform"
@@ -20,5 +21,6 @@ urlpatterns = [
     path("api/services/", include("services.urls")),
     path("api/purchases/", include("purchases.urls")),
     path("api/repairs/", include("repairs.urls")),
+    path("api/portal/<str:token>/", PortalRepairLookupView.as_view(), name="portal-repair"),
     path("api/uploads/", include("uploads.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

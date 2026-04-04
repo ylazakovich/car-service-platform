@@ -25,7 +25,6 @@ type StaffVehicleMobileDetailProps = {
   formatCurrency: (value: number) => string;
   getRepairStatusClass: (status: RepairEntry["status"]) => string;
   repairStatusLabels: Record<RepairEntry["status"], string>;
-  onCopyTrackingCode: (trackingCode: string) => void;
   onOpenRepairs: () => void;
   onClose: () => void;
 };
@@ -39,7 +38,6 @@ export function StaffVehicleMobileDetail({
   formatCurrency,
   getRepairStatusClass,
   repairStatusLabels,
-  onCopyTrackingCode,
   onOpenRepairs,
   onClose,
 }: StaffVehicleMobileDetailProps) {
@@ -92,17 +90,7 @@ export function StaffVehicleMobileDetail({
                 <div className="tracking-chip-row">
                   <span className={getRepairStatusClass(repair.status)}>{repairStatusLabels[repair.status]}</span>
                 </div>
-                <div className="tracking-chip-row">
-                  <span className="tracking-chip">Tracking: {repair.tracking_code}</span>
-                  <button
-                    type="button"
-                    className="copy-chip"
-                    aria-label={`Copy tracking code ${repair.tracking_code}`}
-                    onClick={() => onCopyTrackingCode(repair.tracking_code)}
-                  >
-                    ⧉
-                  </button>
-                </div>
+
               </article>
             ))}
           </div>
