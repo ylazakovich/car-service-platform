@@ -1,58 +1,58 @@
 # renovate-verify
 
 ## Purpose
-Проверить, что `renovate.json` (в т.ч. `customManagers` / regex) реально находит зависимости при прогоне Renovate, **до** того как бот откроет PR на GitHub.
+Validate that `renovate.json` (including `customManagers` / regex rules) actually discovers dependencies when Renovate runs, **before** the bot opens PRs on GitHub.
 
-## Когда использовать
-- Меняли `renovate.json`, `customManagers`, `managerFilePatterns`, `matchStrings`.
-- Добавляли отслеживание версии Node (или других полей) в composite action `.github/actions/setup-node/action.yml`.
-- Renovate «молчит» или не предлагает ожидаемые обновления.
+## When to use
+- You changed `renovate.json`, `customManagers`, `managerFilePatterns`, or `matchStrings`.
+- You added tracking for Node (or other fields) in the composite action `.github/actions/setup-node/action.yml`.
+- Renovate stays silent or does not propose expected updates.
 
-## Как прогнать (канонично для этого репозитория)
+## How to run (canonical for this repo)
 
-Из корня `car-service-platform`:
+From the `car-service-platform` repository root:
 
 ```bash
-chmod +x scripts/renovate-local-verify.sh   # один раз, если нужно
+chmod +x scripts/renovate-local-verify.sh   # once, if needed
 ./scripts/renovate-local-verify.sh
 ```
 
-Скрипт:
-- монтирует репозиторий в контейнер `renovate/renovate`;
-- выполняет `renovate --platform=local` с `RENOVATE_DRY_RUN=lookup` (без записи в Git, без токена);
-- пишет полный лог в tempfile (путь в консоли);
-- проверяет, что **regex manager** сопоставил файл `.github/actions/setup-node/action.yml`.
+The script:
+- mounts the repo into the `renovate/renovate` container;
+- runs `renovate --platform=local` with `RENOVATE_DRY_RUN=lookup` (no Git writes, no token);
+- writes the full log to a tempfile (path printed at the end);
+- asserts that the **regex manager** matched `.github/actions/setup-node/action.yml`.
 
-Переменные окружения (опционально):
-- `RENOVATE_IMAGE` — образ (по умолчанию `renovate/renovate:latest`)
-- `RENOVATE_LOG_LEVEL` — по умолчанию `debug`
-- `RENOVATE_LOG` — явный путь к логу вместо tempfile
+Optional environment variables:
+- `RENOVATE_IMAGE` — image (default `renovate/renovate:latest`)
+- `RENOVATE_LOG_LEVEL` — default `debug`
+- `RENOVATE_LOG` — explicit log path instead of a tempfile
 
-## Как интерпретировать результат
+## How to read the result
 
-### Успех для composite Node (`customManagers` + `node-version`)
-В логе должна быть строка вида:
+### Success for composite Node (`customManagers` + `node-version`)
+The log should contain a line like:
 `Matched N file(s) for manager regex: ...setup-node/action.yml...`
 
-Если её нет, чаще всего ошибка в **`managerFilePatterns`**: в Renovate это **regex в слэшах** (как в доке: `"/^Dockerfile$/"`), а не «сырая» строка без разделителей. Для composite action используйте полный путь от корня репозитория:
+If it is missing, the usual mistake is **`managerFilePatterns`**: in Renovate this must be a **slash-delimited regex** (see docs: `"/^Dockerfile$/"`), not a raw string without delimiters. For this composite action, use the full path from the repo root:
 
 `"/^\\.github\\/actions\\/setup-node\\/action\\.ya?ml$/"`
 
-Без внешних `/` Renovate может не сопоставить файл (в логе останутся только совпадения preset’а вроде `tsconfig.json`).
+Without the outer slashes, Renovate may not associate the file with your rule (the log will only show preset matches such as `tsconfig.json`).
 
-### Ложные срабатывания
-Менеджер `github-actions` тоже разбирает `setup-node/action.yml` и может показывать `depName: node` с `currentValue: ${{ inputs.node-version }}` — это **не** подтверждение regex `customManager`; ориентируйтесь на строку **Matched … manager regex** для целевого файла.
+### False positives
+The `github-actions` manager also parses `setup-node/action.yml` and may show `depName: node` with `currentValue: ${{ inputs.node-version }}` — that is **not** proof your regex `customManager` ran. Rely on the **Matched … manager regex** line for the target file.
 
-### Ручной разбор
+### Manual inspection
 ```bash
 grep -E 'custom regex|manager regex|setup-node/action|node-version|currentValue' "$RENOVATE_LOG"
 ```
 
-## Output для отчёта агента
-- Команда и exit code скрипта.
-- Путь к сохранённому логу (или последние релевантные строки grep).
-- Если FAIL: предполагаемая причина (паттерн файла, опечатка в regex `matchStrings`, неверный `datasourceTemplate`).
+## Agent report output
+- Command run and script exit code.
+- Path to the saved log (or the last relevant grep lines).
+- On FAIL: likely cause (file pattern, typo in `matchStrings`, wrong `datasourceTemplate`).
 
 ## Risks
-- Первая загрузка образа требует сети и времени.
-- Версия образа `latest` может отличаться от GitHub App Renovate; при расхождении зафиксируйте digest в документации или передайте `RENOVATE_IMAGE`.
+- First image pull needs network and time.
+- `latest` may differ from the GitHub App Renovate version; pin a digest in docs or set `RENOVATE_IMAGE` if you need parity.
