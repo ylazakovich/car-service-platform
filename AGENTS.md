@@ -13,6 +13,7 @@
 - `.agents/frontend-developer/SKILL.md` — реализация клиентской части.
 - `.agents/e2e-validator/SKILL.md` — E2E-валидация через Playwright; при провале — фикс кода + unit-тесты.
 - `.agents/plan-reviewer/SKILL.md` — финальная сверка плана и результата.
+- `.agents/renovate-verify/SKILL.md` — локальная проверка `renovate.json` через Docker (`renovate --platform=local`); скрипт `scripts/renovate-local-verify.sh`.
 
 ## Обязательные Источники Контекста
 

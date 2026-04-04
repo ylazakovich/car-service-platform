@@ -7,7 +7,7 @@
     {
       "customType": "regex",
       "description": "Default Node.js major in composite .github/actions/setup-node (inputs.node-version)",
-      "managerFilePatterns": ["/.github/actions/setup-node/action.yml"],
+      "managerFilePatterns": ["/^\\.github\\/actions\\/setup-node\\/action\\.ya?ml$/"],
       "matchStrings": [
         "(?m)node-version:[\\s\\S]*?default:\\s*\"(?<currentValue>[0-9]+)\""
       ],
