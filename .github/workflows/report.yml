@@ -5,7 +5,7 @@ on:
     workflows: ["PR Pipeline"]
     types: [completed]
 
-# Same head branch (and fork identity) → newer PR Pipeline completion cancels an in-progress Test Report.
+# Same head branch → newer PR Pipeline completion cancels an in-progress Test Report (one deploy at a time per branch).
 concurrency:
   group: >-
     ${{ github.workflow }}-${{
@@ -124,6 +124,7 @@ jobs:
         env:
           PR_NUMBER: ${{ steps.pr_ctx.outputs.number }}
           FORK_PR: ${{ steps.fork.outputs.fork }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           cp -f .github/allure/categories.json artifacts/allure-results/categories.json
           npx --yes allure generate artifacts/allure-results -o allure-report --config ./allurerc.mjs
@@ -132,14 +133,16 @@ jobs:
           REPO="${{ github.event.repository.name }}"
           PAGES_URL=""
           if [ -n "$PR_NUMBER" ]; then
-            PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/"
+            # Query string busts browser/CDN cache for GitHub Pages (same path per PR otherwise looks "stale").
+            PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/?run=${SOURCE_RUN_ID}"
           fi
           node .github/scripts/allure-ci.mjs pr-body \
             --results artifacts/allure-results \
             --report allure-report \
             --output allure-pr-comment.md \
             --pages-url "$PAGES_URL" \
-            --fork-pr "$FORK_PR"
+            --fork-pr "$FORK_PR" \
+            --source-run-id "${SOURCE_RUN_ID}"
 
       # Per-PR folder on gh-pages: allure/pr-<N>/ — rsync --delete only that subdir; other PR folders stay intact.
       - name: Deploy Allure HTML to GitHub Pages

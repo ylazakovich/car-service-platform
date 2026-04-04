@@ -130,7 +130,7 @@ function readWidgetSummary(reportDir) {
   return readJsonSafe(path.join(reportDir, "widgets", "summary.json"));
 }
 
-function cmdPrBody(resultsDir, reportDir, outputFile, pagesUrl, forkPr) {
+function cmdPrBody(resultsDir, reportDir, outputFile, pagesUrl, forkPr, sourceRunId) {
   const agg = aggregateResults(resultsDir);
   const summary = readWidgetSummary(reportDir);
   const stat = summary && summary.statistic ? summary.statistic : agg.total;
@@ -171,6 +171,12 @@ function cmdPrBody(resultsDir, reportDir, outputFile, pagesUrl, forkPr) {
   lines.push("");
   if (pagesUrl && forkPr !== "true") {
     lines.push(`**[View full report on GitHub Pages](${pagesUrl})**`);
+    if (sourceRunId) {
+      lines.push("");
+      lines.push(
+        `_This link includes a cache-busting query (\`run=${sourceRunId}\`) so the browser loads the latest deploy for this PR Pipeline run._`,
+      );
+    }
   } else if (forkPr === "true") {
     lines.push(
       "_Preview on GitHub Pages is only published for PRs from the same repository. Download the `allure-report` artifact from this workflow run._",
@@ -200,19 +206,20 @@ function parseArgs(argv) {
     output: get("--output") || "allure-pr-comment.md",
     pagesUrl: get("--pages-url") || "",
     forkPr: get("--fork-pr") || "false",
+    sourceRunId: get("--source-run-id") || "",
   };
 }
 
-const { cmd, results, report, out, output, pagesUrl, forkPr } = parseArgs(process.argv);
+const { cmd, results, report, out, output, pagesUrl, forkPr, sourceRunId } = parseArgs(process.argv);
 
 if (cmd === "badges") {
   cmdBadges(results, out);
 } else if (cmd === "pr-body") {
-  cmdPrBody(results, report, output, pagesUrl, forkPr);
+  cmdPrBody(results, report, output, pagesUrl, forkPr, sourceRunId);
 } else {
   console.error(
     "Usage: node .github/scripts/allure-ci.mjs badges --results <dir> --out <reportDir>\n" +
-      "       node .github/scripts/allure-ci.mjs pr-body --results <dir> --report <reportDir> --output <file> [--pages-url <url>] [--fork-pr true|false]",
+      "       node .github/scripts/allure-ci.mjs pr-body --results <dir> --report <reportDir> --output <file> [--pages-url <url>] [--fork-pr true|false] [--source-run-id <id>]",
   );
   process.exit(1);
 }
