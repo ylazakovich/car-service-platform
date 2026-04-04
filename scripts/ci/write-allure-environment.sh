@@ -18,7 +18,7 @@ write_kv() {
 
 : > "${OUT}"
 
-# Prefixed job-level snapshots (PR test runners), merged by scripts/ci/merge-allure-result-dirs.sh
+# Job-level snapshots (only non-global keys), merged by scripts/ci/merge-allure-result-dirs.sh
 if [[ -n "${ALLURE_MERGED_CI_ENV:-}" && -f "${ALLURE_MERGED_CI_ENV}" ]]; then
   cat "${ALLURE_MERGED_CI_ENV}" >> "${OUT}"
 fi
@@ -117,7 +117,10 @@ if prop.exists():
         if not line or line.startswith("#") or "=" not in line:
             continue
         k, _, v = line.partition("=")
-        data[k.strip()] = v.strip()
+        k, v = k.strip(), v.strip()
+        if not v:
+            continue
+        data[k] = v
 out_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 PY
 fi

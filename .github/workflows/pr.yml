@@ -22,6 +22,8 @@ jobs:
   frontend:
     name: "Frontend: Build & Test"
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
     defaults:
       run:
         working-directory: frontend
@@ -80,6 +82,8 @@ jobs:
   backend:
     name: "Backend: Build & Test"
     runs-on: ubuntu-latest
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings_test
     defaults:
       run:
         working-directory: backend
@@ -155,6 +159,7 @@ jobs:
   e2e:
     name: "E2E: Playwright + Allure"
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       E2E_ADMIN_EMAIL: admin@autoservice.local
@@ -166,13 +171,24 @@ jobs:
 
       - uses: ./.github/actions/setup-node
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install Playwright Chromium
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
       - uses: ./.github/actions/compose-up
         with:
+          env-profile: json-info
           wait-for-frontend: "true"
+          # Fork PRs: token is read-only — GHA cache backend needs actions: write
+          github-actions-cache: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'true' || 'false' }}
 
       - name: Run Playwright
         working-directory: frontend
@@ -231,21 +247,6 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Stop stack
-        if: always()
-        run: docker compose down -v
-
-  docker:
-    name: "Docker: Build & Logs"
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - uses: ./.github/actions/compose-up
-        with:
-          env-profile: json-info
-
       - name: Collect Docker logs
         if: always()
         run: |
@@ -265,6 +266,6 @@ jobs:
           path: docker-logs/
           retention-days: 30
 
-      - name: Stop containers
+      - name: Stop stack
         if: always()
         run: docker compose down -v
