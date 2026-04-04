@@ -1,6 +1,7 @@
 from django.db.models import Q
 import secrets
 
+from django.http import FileResponse, HttpResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
@@ -86,6 +87,8 @@ class RepairNoteDeleteView(APIView):
 
 
 class RepairPdfView(APIView):
+    """GET latest exported PDF only — does not create a new version."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -93,17 +96,50 @@ class RepairPdfView(APIView):
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,
         )
-        if repair.status != "completed":
+        if repair.status != Repair.Status.COMPLETED:
             return Response(
                 {"detail": "PDF is only available for completed repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        from django.http import HttpResponse
+        from .pdf_export import get_latest_repair_document
 
+        doc = get_latest_repair_document(repair)
+        if doc is None:
+            return Response(
+                {
+                    "detail": (
+                        f"No PDF has been exported for this repair yet. "
+                        f"Use POST /api/repairs/{repair.pk}/pdf/export/ to create one."
+                    ),
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        filename = doc.original_filename or f"act_{repair.tracking_code}.pdf"
+        fh = doc.file.open("rb")
+        resp = FileResponse(fh, as_attachment=True, filename=filename)
+        resp["Content-Type"] = "application/pdf"
+        return resp
+
+
+class RepairPdfExportView(APIView):
+    """POST generates PDF, persists a new document version + financial snapshot."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        repair = generics.get_object_or_404(
+            Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
+            pk=pk,
+        )
+        if repair.status != Repair.Status.COMPLETED:
+            return Response(
+                {"detail": "PDF export is only available for completed repairs."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         from .pdf_export import export_repair_pdf_and_snapshot
 
-        pdf_bytes, _doc = export_repair_pdf_and_snapshot(repair, request.user)
-        filename = f"act_{repair.tracking_code}.pdf"
+        pdf_bytes, doc = export_repair_pdf_and_snapshot(repair, request.user)
+        filename = doc.original_filename or f"act_{repair.tracking_code}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response

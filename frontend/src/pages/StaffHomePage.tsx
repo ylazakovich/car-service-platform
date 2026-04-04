@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "r
 import type { FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
-import { fetchStaffUsers, downloadRepairPdf, type StaffUser } from "../api/repairs";
+import { exportRepairPdf, fetchStaffUsers, openRepairPdfForPreview, type StaffUser } from "../api/repairs";
 import { PdfPreviewModal } from "../components/PdfPreviewModal";
 import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
 import { fetchServices, type ServiceItem } from "../api/services";
@@ -565,6 +565,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [resetLinkResult, setResetLinkResult] = useState<{ userId: number; url: string } | null>(null);
   const [repairPdfBlob, setRepairPdfBlob] = useState<Blob | null>(null);
   const [repairPdfLoading, setRepairPdfLoading] = useState(false);
+  const [repairPdfExportBusy, setRepairPdfExportBusy] = useState(false);
 
   const deferredVehicleSearch = useDeferredValue(vehicleSearch);
 
@@ -743,12 +744,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   async function handleDownloadRepairPdf(repairId: number) {
     setRepairPdfLoading(true);
     try {
-      const blob = await downloadRepairPdf(repairId);
+      const blob = await openRepairPdfForPreview(repairId);
       setRepairPdfBlob(blob);
     } catch {
       // silently ignore
     } finally {
       setRepairPdfLoading(false);
+    }
+  }
+
+  async function handleExportNewRepairPdfVersion(repairId: number) {
+    setRepairPdfExportBusy(true);
+    try {
+      const blob = await exportRepairPdf(repairId);
+      setRepairPdfBlob(blob);
+    } catch {
+      // silently ignore
+    } finally {
+      setRepairPdfExportBusy(false);
     }
   }
 
@@ -2592,7 +2605,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       disabled={repairPdfLoading}
                       onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
                     >
-                      {repairPdfLoading ? "Generating..." : "Download PDF"}
+                      {repairPdfLoading ? "Loading…" : "View PDF"}
                     </button>
                   )}
                   {!isStaff && (
@@ -2844,6 +2857,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             blob={repairPdfBlob}
             filename={`act_${selectedRepair?.tracking_code ?? "repair"}.pdf`}
             onClose={() => setRepairPdfBlob(null)}
+            onExportNewVersion={
+              selectedRepair
+                ? () => void handleExportNewRepairPdfVersion(selectedRepair.id)
+                : undefined
+            }
+            exportNewVersionBusy={repairPdfExportBusy}
           />
         ) : null}
       </div>
