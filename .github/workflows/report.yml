@@ -23,6 +23,31 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      - name: Resolve PR number (GitHub Pages path)
+        id: pr_ctx
+        env:
+          PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: |
+          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          if [ -n "$PR_NUMBER" ]; then
+            echo "has_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect fork PR (no Pages preview for cross-repo)
+        id: fork
+        env:
+          HEAD_FULL: ${{ github.event.workflow_run.head_repository.full_name }}
+        run: |
+          REPO="${{ github.repository }}"
+          if [ -z "$HEAD_FULL" ] || [ "$HEAD_FULL" = "$REPO" ]; then
+            echo "fork=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "fork=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download artifacts from PR Pipeline
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -30,7 +55,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
 
-      # dorny/test-reporter: reporter "java-junit" means JUnit XML (Vitest, Django xmlrunner), not a Java stack.
+      # dorny/test-reporter: reporter "java-junit" = JUnit XML (Vitest, pytest, xmlrunner, etc.), not a Java stack.
       - name: Frontend Test Report
         if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
@@ -47,12 +72,18 @@ jobs:
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
 
-      # Allure: PR Pipeline must upload an artifact named "allure-results" → artifacts/allure-results/
-      # Script: .github/scripts/allure-ci.mjs (see pr.yml for when to upload).
-      - name: Detect Allure results (artifact allure-results)
+      # PR Pipeline uploads allure-results-frontend and/or allure-results-backend; merge into one tree for Allure CLI.
+      - name: Merge Allure results
         id: allure
         run: |
-          if [ -d artifacts/allure-results ] && compgen -G 'artifacts/allure-results/*-result.json' > /dev/null; then
+          mkdir -p artifacts/allure-results
+          if [ -d artifacts/allure-results-frontend ]; then
+            cp -f artifacts/allure-results-frontend/* artifacts/allure-results/ 2>/dev/null || true
+          fi
+          if [ -d artifacts/allure-results-backend ]; then
+            cp -f artifacts/allure-results-backend/* artifacts/allure-results/ 2>/dev/null || true
+          fi
+          if compgen -G 'artifacts/allure-results/*-result.json' > /dev/null; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
@@ -64,37 +95,18 @@ jobs:
         with:
           install-dependencies: "false"
 
-      - name: Allure Pages — PR number and same-repo check (skip fork PR previews)
-        id: allure_pages
-        if: steps.allure.outputs.present == 'true'
-        env:
-          PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
-        run: |
-          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
-          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-          HEAD_FULL="${{ github.event.workflow_run.head_repository.full_name }}"
-          REPO_FULL="${{ github.repository }}"
-          # If head_repository is missing, treat as same repo (GitHub sometimes omits it on same-repo PRs).
-          if [ -z "$HEAD_FULL" ] || [ "$HEAD_FULL" = "$REPO_FULL" ]; then
-            echo "same_repo=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "same_repo=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Generate Allure HTML, badges, PR comment markdown
         if: steps.allure.outputs.present == 'true'
         env:
-          PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+          PR_NUMBER: ${{ steps.pr_ctx.outputs.number }}
+          FORK_PR: ${{ steps.fork.outputs.fork }}
         run: |
           npx --yes allure generate artifacts/allure-results -o allure-report
           node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
-          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No PR number on workflow_run; Pages link omitted."
-            PAGES_URL=""
-          else
+          PAGES_URL=""
+          if [ -n "$PR_NUMBER" ]; then
             PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/"
           fi
           node .github/scripts/allure-ci.mjs pr-body \
@@ -102,15 +114,16 @@ jobs:
             --report allure-report \
             --output allure-pr-comment.md \
             --pages-url "$PAGES_URL" \
-            --fork-pr "false"
+            --fork-pr "$FORK_PR"
 
-      - name: Publish Allure preview to GitHub Pages (gh-pages branch)
-        if: steps.allure.outputs.present == 'true' && steps.allure_pages.outputs.same_repo == 'true' && steps.allure_pages.outputs.pr_number != ''
-        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4
+      # Per-PR folder on gh-pages: allure/pr-<N>/ — keep_files preserves other PRs; re-run overwrites this PR only.
+      - name: Deploy Allure HTML to GitHub Pages
+        if: ${{ steps.allure.outputs.present == 'true' && steps.pr_ctx.outputs.has_pr == 'true' && steps.fork.outputs.fork == 'false' }}
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
-          destination_dir: allure/pr-${{ steps.allure_pages.outputs.pr_number }}
+          destination_dir: allure/pr-${{ steps.pr_ctx.outputs.number }}
           keep_files: true
 
       - name: Post or update Allure comment on PR
