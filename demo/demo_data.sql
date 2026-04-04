@@ -677,210 +677,210 @@ VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- Purchases
-INSERT INTO purchases (order_date, approximate_delivery_date, supplier_id, vehicle_id, part_name, quantity, purchase_price, sale_price, repair_code, invoice_name, invoice_url, created_at, updated_at)
+INSERT INTO purchases (order_date, approximate_delivery_date, supplier_id, vehicle_id, part_name, quantity, purchase_price, sale_price, repair_code, invoice_name, invoice_url, delivered, created_at, updated_at)
 VALUES
     (
         '2025-02-08', '2025-02-09',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'),
         'Bosch Engine Oil Filter — 0 451 103 314',
-        1, 28.50, 45.00, 'TOR-1001', 'FV/2025/02/0081', '', NOW(), NOW()
+        1, 28.50, 45.00, 'TOR-1001', 'FV/2025/02/0081', '', false, NOW(), NOW()
     ),
     (
         '2025-02-08', '2025-02-09',
         (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'),
         'Castrol EDGE 5W-40 — 5L',
-        2, 89.00, 130.00, 'TOR-1001', 'FV/2025/02/0082', '', NOW(), NOW()
+        2, 89.00, 130.00, 'TOR-1001', 'FV/2025/02/0082', '', false, NOW(), NOW()
     ),
     (
         '2025-02-16', '2025-02-17',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 9876 CC'),
         'TRW Front Brake Pad Set — GDB1794',
-        1, 112.00, 165.00, 'TOR-1002', 'FV/2025/02/0095', '', NOW(), NOW()
+        1, 112.00, 165.00, 'TOR-1002', 'FV/2025/02/0095', '', false, NOW(), NOW()
     ),
     (
         '2025-03-13', '2025-03-18',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 5566 FF'),
         'Gates PowerGrip Timing Belt Kit — K015633XS',
-        1, 380.00, 540.00, 'TOR-1004', 'FV/2025/03/0134', '', NOW(), NOW()
+        1, 380.00, 540.00, 'TOR-1004', 'FV/2025/03/0134', '', false, NOW(), NOW()
     ),
     (
         '2025-02-27', '2025-02-28',
         (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 2233 HH'),
         'Toyota Genuine Engine Oil 0W-20 — 4L',
-        1, 72.00, 105.00, 'TOR-2012', 'FV/2025/02/0201', '', NOW(), NOW()
+        1, 72.00, 105.00, 'TOR-2012', 'FV/2025/02/0201', '', false, NOW(), NOW()
     ),
     (
         '2025-02-27', '2025-02-28',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 2233 HH'),
         'Toyota OEM Oil Filter — 90915-YZZF2',
-        1, 18.00, 28.00, 'TOR-2012', 'FV/2025/02/0202', '', NOW(), NOW()
+        1, 18.00, 28.00, 'TOR-2012', 'FV/2025/02/0202', '', false, NOW(), NOW()
     ),
     (
         '2024-12-17', '2024-12-18',
         (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'),
         'Castrol Vecton 5W-30 Long Drain — 5L',
-        2, 76.00, 115.00, 'TOR-2020', 'FV/2024/12/0445', '', NOW(), NOW()
+        2, 76.00, 115.00, 'TOR-2020', 'FV/2024/12/0445', '', false, NOW(), NOW()
     ),
     (
         '2024-07-20', '2024-07-22',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'),
         'Mazda Lower Ball Joint Front — B25D-34-350',
-        2, 145.00, 210.00, 'TOR-2018', 'FV/2024/07/0318', '', NOW(), NOW()
+        2, 145.00, 210.00, 'TOR-2018', 'FV/2024/07/0318', '', false, NOW(), NOW()
     ),
     (
         '2025-02-28', '2025-03-01',
         (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 9876 WW'),
         'Shell Helix Ultra ECT C2/C3 0W-30 — 4L',
-        1, 95.00, 145.00, 'TOR-2040', 'FV/2025/02/0290', '', NOW(), NOW()
+        1, 95.00, 145.00, 'TOR-2040', 'FV/2025/02/0290', '', false, NOW(), NOW()
     ),
     (
         '2025-02-28', '2025-03-01',
         (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 9876 WW'),
         'Motul RBF 660 Brake Fluid — 500ml',
-        2, 58.00, 85.00, 'TOR-2041', 'FV/2025/02/0291', '', NOW(), NOW()
+        2, 58.00, 85.00, 'TOR-2041', 'FV/2025/02/0291', '', false, NOW(), NOW()
     ),
     (
         '2024-07-16', '2024-07-18',
         (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1111 XX'),
         'BC Racing BR Series Coilover Kit — Nissan 370Z',
-        1, 1850.00, 2400.00, 'TOR-2044', 'FV/2024/07/0290', '', NOW(), NOW()
+        1, 1850.00, 2400.00, 'TOR-2044', 'FV/2024/07/0290', '', false, NOW(), NOW()
     ),
     (
         '2023-11-25', '2023-11-27',
         (SELECT id FROM suppliers WHERE name = 'Gates Distribution'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'),
         'Gates PowerGrip Timing Belt Kit — TCD1145',
-        1, 420.00, 590.00, 'TOR-2022', 'FV/2023/11/0511', '', NOW(), NOW()
+        1, 420.00, 590.00, 'TOR-2022', 'FV/2023/11/0511', '', false, NOW(), NOW()
     ),
     (
         '2024-08-12', '2024-08-14',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'),
         'Brembo Front Brake Pad Set — P 85 091',
-        2, 98.00, 145.00, 'TOR-2021', 'FV/2024/08/0380', '', NOW(), NOW()
+        2, 98.00, 145.00, 'TOR-2021', 'FV/2024/08/0380', '', false, NOW(), NOW()
     ),
     (
         '2024-07-20', '2024-07-21',
         (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'),
         'Sachs Rear Shock Absorber — 316 508',
-        2, 178.00, 260.00, 'TOR-2039', 'FV/2024/07/0291', '', NOW(), NOW()
+        2, 178.00, 260.00, 'TOR-2039', 'FV/2024/07/0291', '', false, NOW(), NOW()
     ),
     (
         '2026-03-03', '2026-03-04',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'),
         'ATE Front Brake Disc Set — 24.0125-0154.1',
-        1, 210.00, 320.00, 'TOR-3001', 'FV/2026/03/0601', '', NOW(), NOW()
+        1, 210.00, 320.00, 'TOR-3001', 'FV/2026/03/0601', '', false, NOW(), NOW()
     ),
     (
         '2026-03-03', '2026-03-04',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 1234 BB'),
         'ATE Ceramic Front Brake Pad Set — 13.0470-5717.2',
-        1, 118.00, 180.00, 'TOR-3001', 'FV/2026/03/0602', '', NOW(), NOW()
+        1, 118.00, 180.00, 'TOR-3001', 'FV/2026/03/0602', '', false, NOW(), NOW()
     ),
     (
         '2026-03-06', '2026-03-07',
         (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
         (SELECT id FROM vehicles WHERE license_plate = 'KA 4321 EE'),
         'Nissens AC Condenser — 940192',
-        1, 265.00, 390.00, 'TOR-3002', 'FV/2026/03/0610', '', NOW(), NOW()
+        1, 265.00, 390.00, 'TOR-3002', 'FV/2026/03/0610', '', false, NOW(), NOW()
     ),
     (
         '2026-03-06', '2026-03-07',
         (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
         (SELECT id FROM vehicles WHERE license_plate = 'KA 4321 EE'),
         'R1234yf Refrigerant Charge Pack',
-        1, 95.00, 150.00, 'TOR-3002', 'FV/2026/03/0611', '', NOW(), NOW()
+        1, 95.00, 150.00, 'TOR-3002', 'FV/2026/03/0611', '', false, NOW(), NOW()
     ),
     (
         '2026-03-08', '2026-03-09',
         (SELECT id FROM suppliers WHERE name = 'Gates Distribution'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 5566 FF'),
         'Gates Timing Belt + Water Pump Kit — KP15633XS',
-        1, 430.00, 620.00, 'TOR-3003', 'FV/2026/03/0625', '', NOW(), NOW()
+        1, 430.00, 620.00, 'TOR-3003', 'FV/2026/03/0625', '', false, NOW(), NOW()
     ),
     (
         '2026-03-09', '2026-03-10',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 5566 FF'),
         'SKF Auxiliary Belt Tensioner Kit — VKMA 31018',
-        1, 145.00, 215.00, 'TOR-3003', 'FV/2026/03/0626', '', NOW(), NOW()
+        1, 145.00, 215.00, 'TOR-3003', 'FV/2026/03/0626', '', false, NOW(), NOW()
     ),
     (
         '2026-03-12', '2026-03-13',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'),
         'Lemforder Tie Rod End Kit — Mazda 6',
-        1, 176.00, 260.00, 'TOR-3004', 'FV/2026/03/0639', '', NOW(), NOW()
+        1, 176.00, 260.00, 'TOR-3004', 'FV/2026/03/0639', '', false, NOW(), NOW()
     ),
     (
         '2026-03-12', '2026-03-13',
         (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
         (SELECT id FROM vehicles WHERE license_plate = 'AA 4455 KK'),
         'Febi Front Stabiliser Link Pair — Mazda 6',
-        1, 92.00, 145.00, 'TOR-3004', 'FV/2026/03/0640', '', NOW(), NOW()
+        1, 92.00, 145.00, 'TOR-3004', 'FV/2026/03/0640', '', false, NOW(), NOW()
     ),
     (
         '2026-03-17', '2026-03-18',
         (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
         (SELECT id FROM vehicles WHERE license_plate = 'KA 8899 MM'),
         'Hyundai Genuine 5W-30 Service Pack',
-        1, 124.00, 185.00, 'TOR-3005', 'FV/2026/03/0652', '', NOW(), NOW()
+        1, 124.00, 185.00, 'TOR-3005', 'FV/2026/03/0652', '', false, NOW(), NOW()
     ),
     (
         '2026-03-17', '2026-03-18',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'KA 8899 MM'),
         'OEM Filter Set — Tucson 2.0 CRDi',
-        1, 84.00, 130.00, 'TOR-3005', 'FV/2026/03/0653', '', NOW(), NOW()
+        1, 84.00, 130.00, 'TOR-3005', 'FV/2026/03/0653', '', false, NOW(), NOW()
     ),
     (
         '2026-03-20', '2026-03-21',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'),
         'Brembo Brake Pad Kit — Front + Rear Van Set',
-        1, 248.00, 365.00, 'TOR-3006', 'FV/2026/03/0668', '', NOW(), NOW()
+        1, 248.00, 365.00, 'TOR-3006', 'FV/2026/03/0668', '', false, NOW(), NOW()
     ),
     (
         '2026-03-20', '2026-03-21',
         (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1122 PP'),
         'ATE Brake Wear Sensor Set — Transporter',
-        1, 36.00, 60.00, 'TOR-3006', 'FV/2026/03/0669', '', NOW(), NOW()
+        1, 36.00, 60.00, 'TOR-3006', 'FV/2026/03/0669', '', false, NOW(), NOW()
     ),
     (
         '2026-03-25', '2026-03-25',
         (SELECT id FROM suppliers WHERE name = 'MotoTrade S.A.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 9876 WW'),
         'Liqui Moly Alignment Hardware Pack',
-        1, 58.00, 95.00, 'TOR-3007', 'FV/2026/03/0684', '', NOW(), NOW()
+        1, 58.00, 95.00, 'TOR-3007', 'FV/2026/03/0684', '', false, NOW(), NOW()
     ),
     (
         '2026-03-28', '2026-03-29',
         (SELECT id FROM suppliers WHERE name = 'LKQ Euro Car Parts'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1111 XX'),
         'BC Racing Camber Plate Upgrade Kit',
-        1, 420.00, 620.00, 'TOR-3008', 'FV/2026/03/0699', '', NOW(), NOW()
+        1, 420.00, 620.00, 'TOR-3008', 'FV/2026/03/0699', '', false, NOW(), NOW()
     ),
     (
         '2026-03-28', '2026-03-29',
         (SELECT id FROM suppliers WHERE name = 'AutoParts Sp. z o.o.'),
         (SELECT id FROM vehicles WHERE license_plate = 'BH 1111 XX'),
         'Rear Toe Arm Adjustment Kit — Nissan Z Platform',
-        1, 188.00, 285.00, 'TOR-3008', 'FV/2026/03/0700', '', NOW(), NOW()
+        1, 188.00, 285.00, 'TOR-3008', 'FV/2026/03/0700', '', false, NOW(), NOW()
     );
 
 -- Assign staff master to all repairs where master is NULL

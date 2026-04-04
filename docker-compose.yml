@@ -40,7 +40,8 @@ services:
       POSTGRES_PORT: "5432"
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      # Include `backend` so API calls proxied from the Vite dev container (Host: backend) pass Django's host check.
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
       # 127.0.0.1: required for Playwright/CI (see .env.example); CSRF_TRUSTED_ORIGINS is derived from this in Django settings.
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:${FRONTEND_PORT:-4173},http://127.0.0.1:${FRONTEND_PORT:-4173}}
       TIME_ZONE: ${TIME_ZONE:-UTC}

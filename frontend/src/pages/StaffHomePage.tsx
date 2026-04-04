@@ -8,7 +8,7 @@ import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteRespo
 import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from "../api/analytics";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
-import { usePurchases } from "../features/staff/hooks/usePurchases";
+import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
 import { useRepairs, customRepairServiceOption, sanitizeImageUrl } from "../features/staff/hooks/useRepairs";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
@@ -336,6 +336,43 @@ function parseIsoDate(value: string): Date | null {
   return parsed;
 }
 
+function parsePurchaseDayStart(value: string): Date | null {
+  const key = toIsoDateKey(value);
+  return key ? parseIsoDate(key) : null;
+}
+
+function purchaseWeekMondayKey(orderDate: string): string {
+  const d = parsePurchaseDayStart(orderDate);
+  if (!d) {
+    return "unknown";
+  }
+  const day = d.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + mondayOffset);
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth() + 1).padStart(2, "0");
+  const dayNum = String(monday.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dayNum}`;
+}
+
+function isPurchaseDeliveryOverdue(approximateDeliveryDate: string): boolean {
+  const d = parsePurchaseDayStart(approximateDeliveryDate);
+  if (!d) {
+    return false;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const delivery = new Date(d);
+  delivery.setHours(0, 0, 0, 0);
+  return delivery.getTime() < today.getTime();
+}
+
+function hasPurchaseInvoice(entry: Pick<PurchaseEntry, "invoice_name" | "invoice_url">): boolean {
+  return Boolean(entry.invoice_name?.trim() || entry.invoice_url?.trim());
+}
+
+type PurchaseDisplayGroup = { key: string; label: string; entries: PurchaseEntry[] };
 
 function formatDateInputValue(value: string): string {
   const parsed = parseIsoDate(value);
@@ -764,6 +801,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleModalSupplierInput,
     handleModalSupplierSelect,
   } = usePurchases(vehicles);
+
+  const [purchaseListView, setPurchaseListView] = useState<"cards" | "compact">("cards");
+  const [purchaseGroupBy, setPurchaseGroupBy] = useState<"none" | "week" | "supplier">("none");
+  const [purchaseSort, setPurchaseSort] = useState<
+    "order_date_desc" | "order_date_asc" | "delivery_asc" | "delivery_desc" | "margin_desc" | "margin_asc"
+  >("order_date_desc");
+  const [purchaseDetailModalTab, setPurchaseDetailModalTab] = useState<"order" | "invoice">("order");
+
+  useEffect(() => {
+    if (selectedPurchaseId !== null) {
+      setPurchaseDetailModalTab("order");
+    }
+  }, [selectedPurchaseId]);
 
   const {
     repairs,
@@ -1461,8 +1511,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [vehicleSearch, vehicles]
   );
 
-  const visiblePurchases = purchases;
-
   const [repairDateFilter, setRepairDateFilter] = useState<"7d" | "30d" | "90d" | "all">("all");
 
   const visibleRepairs = useMemo(() => {
@@ -1480,6 +1528,83 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return haystack.includes(repairSearch.trim().toLowerCase());
     });
   }, [repairSearch, repairs, repairDateFilter]);
+
+  const purchaseDisplayGroups = useMemo(() => {
+    const rows = [...purchases];
+
+    const margin = (e: PurchaseEntry) => e.quantity * (e.sale_price - e.purchase_price);
+    const deliveryTs = (e: PurchaseEntry) => {
+      const d = e.approximate_delivery_date?.trim();
+      if (!d) {
+        return Number.POSITIVE_INFINITY;
+      }
+      const parsed = parsePurchaseDayStart(d);
+      if (!parsed) {
+        return Number.POSITIVE_INFINITY;
+      }
+      return parsed.getTime();
+    };
+    const orderTs = (e: PurchaseEntry) => {
+      const parsed = parsePurchaseDayStart(e.order_date);
+      return parsed ? parsed.getTime() : 0;
+    };
+
+    rows.sort((a, b) => {
+      switch (purchaseSort) {
+        case "order_date_asc":
+          return orderTs(a) - orderTs(b);
+        case "order_date_desc":
+          return orderTs(b) - orderTs(a);
+        case "delivery_asc":
+          return deliveryTs(a) - deliveryTs(b);
+        case "delivery_desc":
+          return deliveryTs(b) - deliveryTs(a);
+        case "margin_asc":
+          return margin(a) - margin(b);
+        case "margin_desc":
+          return margin(b) - margin(a);
+        default:
+          return 0;
+      }
+    });
+
+    let groups: PurchaseDisplayGroup[];
+    if (purchaseGroupBy === "none") {
+      groups = [{ key: "all", label: "", entries: rows }];
+    } else if (purchaseGroupBy === "supplier") {
+      const map = new Map<string, PurchaseEntry[]>();
+      for (const e of rows) {
+        const k = e.supplier_name.trim() || "—";
+        if (!map.has(k)) {
+          map.set(k, []);
+        }
+        map.get(k)!.push(e);
+      }
+      groups = [...map.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, entries]) => ({ key, label: key, entries }));
+    } else {
+      const map = new Map<string, PurchaseEntry[]>();
+      for (const e of rows) {
+        const k = purchaseWeekMondayKey(e.order_date);
+        if (!map.has(k)) {
+          map.set(k, []);
+        }
+        map.get(k)!.push(e);
+      }
+      const keys = [...map.keys()].filter((k) => k !== "unknown").sort().reverse();
+      if (map.has("unknown")) {
+        keys.push("unknown");
+      }
+      groups = keys.map((key) => ({
+        key,
+        label: key === "unknown" ? "Unknown date" : `Week of ${formatDisplayDate(key)}`,
+        entries: map.get(key)!,
+      }));
+    }
+
+    return groups;
+  }, [purchases, purchaseSort, purchaseGroupBy]);
 
   const selectedRepairVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id) ?? null;
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
@@ -3666,15 +3791,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderPurchasesSection() {
+    const emptyServerList = purchases.length === 0;
+    const loadedRemaining = Math.max(0, purchaseCount - purchases.length);
+    const meta = sectionMeta.purchases;
+
     return (
       <div className="workspace-stack purchases-workspace">
-        <div className="kanban-topbar section-desktop-topbar">
+        <div className="kanban-topbar purchases-section-topbar">
           <div>
-            <p className="eyebrow">Ordered Parts</p>
-            <h2>Purchase Registry</h2>
-            {purchaseCount > 0 ? <span className="registry-count">{purchaseCount} total</span> : null}
+            <p className="eyebrow">{meta.eyebrow}</p>
+            <h2>{meta.title}</h2>
+            {purchaseCount > 0 ? (
+              <span className="registry-count">
+                {purchaseCount} total
+                {purchases.length !== purchaseCount ? ` · ${purchases.length} loaded` : ""}
+              </span>
+            ) : null}
           </div>
-          <div className="workspace-top-actions">
+          <div className="workspace-top-actions purchases-top-actions">
             <label className="kanban-search">
               <input
                 value={purchaseSearch}
@@ -3689,59 +3823,215 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           </div>
         </div>
 
-        <div className="registry-list">
-          {visiblePurchases.length === 0 ? (
-            <p className="workspace-note">No purchases match the current filter.</p>
+        <div className="kanban-topbar purchases-controls-bar">
+          <div className="purchases-controls-cluster" role="group" aria-label="List layout">
+            <button
+              type="button"
+              className={purchaseListView === "cards" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
+              onClick={() => setPurchaseListView("cards")}
+            >
+              Cards
+            </button>
+            <button
+              type="button"
+              className={purchaseListView === "compact" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
+              onClick={() => setPurchaseListView("compact")}
+            >
+              Compact
+            </button>
+          </div>
+          <div className="purchases-controls-selects">
+            <select
+              className="purchases-inline-select"
+              value={purchaseSort}
+              aria-label="Sort list"
+              onChange={(event) =>
+                setPurchaseSort(
+                  event.target.value as
+                    | "order_date_desc"
+                    | "order_date_asc"
+                    | "delivery_asc"
+                    | "delivery_desc"
+                    | "margin_desc"
+                    | "margin_asc"
+                )
+              }
+            >
+              <option value="order_date_desc">Newest order date</option>
+              <option value="order_date_asc">Oldest order date</option>
+              <option value="delivery_asc">Soonest delivery</option>
+              <option value="delivery_desc">Latest delivery</option>
+              <option value="margin_desc">Highest margin</option>
+              <option value="margin_asc">Lowest margin</option>
+            </select>
+            <select
+              className="purchases-inline-select"
+              value={purchaseGroupBy}
+              aria-label="Group list"
+              onChange={(event) =>
+                setPurchaseGroupBy(event.target.value as "none" | "week" | "supplier")
+              }
+            >
+              <option value="none">No grouping</option>
+              <option value="week">By week</option>
+              <option value="supplier">By supplier</option>
+            </select>
+          </div>
+        </div>
+        <p className="purchases-controls-footnote">
+          Sort and grouping apply to loaded rows only — use search to change what the server returns.
+        </p>
+
+        <div className="purchases-list-outer">
+          {emptyServerList ? (
+            <div className="purchases-empty-panel">
+              <p className="workspace-note">
+                {purchaseSearch.trim() ? "No purchases match your search." : "No purchases yet."}
+              </p>
+              {!purchaseSearch.trim() ? (
+                <>
+                  <p className="workspace-note purchases-empty-copy">{meta.copy}</p>
+                  <button type="button" className="button" onClick={openPurchaseCreateModal}>
+                    + Add Purchase
+                  </button>
+                </>
+              ) : null}
+            </div>
           ) : (
-            visiblePurchases.map((entry) => {
-              const purchaseTotal = entry.quantity * entry.purchase_price;
-              const saleTotal = entry.quantity * entry.sale_price;
-              return (
-                <article className="registry-card purchase-card purchase-card-clickable" key={entry.id} onClick={() => openPurchaseDetailModal(entry)}>
-                  <div className="purchase-card-body">
-                    <div className="purchase-card-info">
-                      <h4 className="purchase-card-name">{entry.part_name}</h4>
-                      <p className="purchase-card-supplier">{entry.supplier_name}</p>
-                      <div className="purchase-card-chips">
-                        {entry.vehicle_label ? <span className="purchase-chip-muted">{entry.vehicle_label}</span> : null}
-                        {entry.invoice_url ? (
-                          <button
-                            className="purchase-chip-muted purchase-chip-link"
-                            onClick={(e) => { e.stopPropagation(); handleOpenInvoice(entry.invoice_url); }}
-                            title="Open invoice"
-                          >
-                            {entry.invoice_name || "Invoice"}
-                          </button>
-                        ) : entry.invoice_name ? (
-                          <span className="purchase-chip-muted">{entry.invoice_name}</span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="purchase-card-financials">
-                      <div className="purchase-financials-header">
-                        <span className="tag">{formatDisplayDate(entry.order_date)}</span>
-                        {entry.approximate_delivery_date ? (
-                          <span className="purchase-delivery-date">→ {formatDisplayDate(entry.approximate_delivery_date)}</span>
-                        ) : null}
-                      </div>
-                      <div className="purchase-financials-total">{formatCurrency(saleTotal)}</div>
-                      <div className="purchase-financials-grid">
-                        <span className="purchase-financials-label">Buy</span>
-                        <span>{formatCurrency(purchaseTotal)}</span>
-                        <span className="purchase-financials-label">Qty</span>
-                        <span>×{entry.quantity}</span>
-                        <span className="purchase-financials-label">Margin</span>
-                        <span className={saleTotal - purchaseTotal >= 0 ? "purchase-margin-pos" : "purchase-margin-neg"}>
-                          {saleTotal - purchaseTotal >= 0 ? "+" : ""}{formatCurrency(saleTotal - purchaseTotal)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              );
-            })
+            purchaseDisplayGroups.map((group) => (
+              <div className="purchases-group" key={group.key}>
+                {group.label ? <h3 className="purchases-group-heading">{group.label}</h3> : null}
+                <div className={purchaseListView === "compact" ? "purchases-compact-list" : "purchases-group-cards"}>
+                  {group.entries.map((entry) => {
+                    const saleTotal = entry.quantity * entry.sale_price;
+                    const purchaseTotal = entry.quantity * entry.purchase_price;
+                    const marginVal = saleTotal - purchaseTotal;
+                    if (purchaseListView === "compact") {
+                      return (
+                        <button
+                          type="button"
+                          className="purchases-compact-row"
+                          key={entry.id}
+                          onClick={() => openPurchaseDetailModal(entry)}
+                        >
+                          <div className="purchases-compact-row-main">
+                            <span className="purchases-compact-cell purchases-compact-part">
+                              <span className="purchases-compact-part-text">{entry.part_name}</span>
+                            </span>
+                            <span className="purchases-compact-cell purchases-compact-supplier">{entry.supplier_name}</span>
+                            <span className="purchases-compact-cell purchases-compact-narrow">
+                              {formatDisplayDate(entry.order_date)}
+                            </span>
+                            <span className="purchases-compact-cell purchases-compact-narrow">
+                              {entry.approximate_delivery_date ? formatDisplayDate(entry.approximate_delivery_date) : "—"}
+                            </span>
+                            <span
+                              className="purchases-compact-cell purchases-compact-qty-cell"
+                              title={`Quantity ${entry.quantity}`}
+                            >
+                              ×{entry.quantity}
+                            </span>
+                            <span className="purchases-compact-cell purchases-compact-money">{formatCurrency(saleTotal)}</span>
+                            <span
+                              className={`purchases-compact-cell purchases-compact-money${marginVal >= 0 ? " purchase-margin-pos" : " purchase-margin-neg"}`}
+                            >
+                              {marginVal >= 0 ? "+" : ""}
+                              {formatCurrency(marginVal)}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    }
+                    const overdue =
+                      !entry.delivered && isPurchaseDeliveryOverdue(entry.approximate_delivery_date);
+                    const missingInv = !hasPurchaseInvoice(entry);
+                    const missingVeh = !entry.vehicle_id && !entry.vehicle_label?.trim();
+                    return (
+                      <article
+                        className="registry-card purchase-card purchase-card-clickable"
+                        key={entry.id}
+                        onClick={() => openPurchaseDetailModal(entry)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            openPurchaseDetailModal(entry);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div className="purchase-card-body">
+                          <div className="purchase-card-info">
+                            <h4 className="purchase-card-name">{entry.part_name}</h4>
+                            <p className="purchase-card-supplier">{entry.supplier_name}</p>
+                            <div className="purchase-card-chips">
+                              {entry.delivered ? (
+                                <span className="purchase-chip-status purchase-chip-status-delivered">Delivered</span>
+                              ) : null}
+                              {missingInv ? (
+                                <span className="purchase-chip-status purchase-chip-status-warn">No invoice</span>
+                              ) : null}
+                              {missingVeh ? (
+                                <span className="purchase-chip-status purchase-chip-status-muted">No vehicle</span>
+                              ) : null}
+                              {overdue ? (
+                                <span className="purchase-chip-status purchase-chip-status-danger">Delivery overdue</span>
+                              ) : null}
+                              {entry.vehicle_label ? (
+                                <span className="purchase-chip-muted">{entry.vehicle_label}</span>
+                              ) : null}
+                              {entry.invoice_url ? (
+                                <button
+                                  className="purchase-chip-muted purchase-chip-link"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenInvoice(entry.invoice_url);
+                                  }}
+                                  title="Open invoice"
+                                  type="button"
+                                >
+                                  {entry.invoice_name || "Invoice"}
+                                </button>
+                              ) : entry.invoice_name ? (
+                                <span className="purchase-chip-muted">{entry.invoice_name}</span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="purchase-card-financials">
+                            <div className="purchase-financials-header">
+                              <span className="tag">{formatDisplayDate(entry.order_date)}</span>
+                              {entry.approximate_delivery_date ? (
+                                <span
+                                  className={
+                                    overdue ? "purchase-delivery-date purchase-delivery-overdue" : "purchase-delivery-date"
+                                  }
+                                >
+                                  → {formatDisplayDate(entry.approximate_delivery_date)}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="purchase-financials-total">{formatCurrency(saleTotal)}</div>
+                            <div className="purchase-financials-grid">
+                              <span className="purchase-financials-label">Buy</span>
+                              <span>{formatCurrency(purchaseTotal)}</span>
+                              <span className="purchase-financials-label">Qty</span>
+                              <span>×{entry.quantity}</span>
+                              <span className="purchase-financials-label">Margin</span>
+                              <span className={marginVal >= 0 ? "purchase-margin-pos" : "purchase-margin-neg"}>
+                                {marginVal >= 0 ? "+" : ""}
+                                {formatCurrency(marginVal)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           )}
-          {purchaseHasMore ? (
+          {purchaseHasMore && !emptyServerList ? (
             <div className="load-more-bar">
               <button
                 type="button"
@@ -3749,16 +4039,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 onClick={() => void loadMorePurchases()}
                 disabled={purchaseLoadingMore}
               >
-                {purchaseLoadingMore ? "Loading…" : `Load more (${purchaseCount - visiblePurchases.length} remaining)`}
+                {purchaseLoadingMore ? "Loading…" : `Load more (${loadedRemaining} remaining)`}
               </button>
             </div>
           ) : null}
         </div>
 
         {selectedPurchase ? (
-          <div className="modal-overlay" role="presentation" onClick={closePurchaseDetailModal}>
+          <div
+            className="modal-overlay purchase-detail-overlay"
+            role="presentation"
+            onClick={closePurchaseDetailModal}
+          >
             <section
-              className="modal-card modal-card-large"
+              className="modal-card modal-card-large purchase-detail-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="purchase-modal-title"
@@ -3774,7 +4068,29 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </button>
               </div>
 
-              <div className="customer-detail-stack">
+              <div className="purchase-modal-tabs subnav-tabs" role="tablist" aria-label="Purchase detail sections">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={purchaseDetailModalTab === "order"}
+                  className={purchaseDetailModalTab === "order" ? "subnav-tab subnav-tab-active" : "subnav-tab"}
+                  onClick={() => setPurchaseDetailModalTab("order")}
+                >
+                  Order
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={purchaseDetailModalTab === "invoice"}
+                  className={purchaseDetailModalTab === "invoice" ? "subnav-tab subnav-tab-active" : "subnav-tab"}
+                  onClick={() => setPurchaseDetailModalTab("invoice")}
+                >
+                  Invoice
+                </button>
+              </div>
+
+              <div className="customer-detail-stack purchase-modal-stack">
+                {purchaseDetailModalTab === "order" ? (
                 <div className="detail-card">
                   <strong>Purchase Info</strong>
                   <div className="stack-form">
@@ -3935,9 +4251,22 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         />
                       </label>
                     </div>
+
+                    <label className="purchases-delivered-field">
+                      <input
+                        type="checkbox"
+                        checked={purchaseModalForm.delivered}
+                        onChange={(event) =>
+                          setPurchaseModalForm((current) => ({ ...current, delivered: event.target.checked }))
+                        }
+                      />
+                      <span>Delivered (received at workshop)</span>
+                    </label>
                   </div>
                 </div>
+                ) : null}
 
+                {purchaseDetailModalTab === "invoice" ? (
                 <div className="detail-card">
                   <strong>Invoice</strong>
                   <div className="invoice-panel">
@@ -3994,6 +4323,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                   </div>
                 </div>
+                ) : null}
 
                 {purchaseModalError ? <p className="form-error">{purchaseModalError}</p> : null}
 
@@ -4180,6 +4510,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     />
                   </label>
                 </div>
+
+                <label className="purchases-delivered-field">
+                  <input
+                    type="checkbox"
+                    checked={purchaseForm.delivered}
+                    onChange={(event) =>
+                      setPurchaseForm((current) => ({ ...current, delivered: event.target.checked }))
+                    }
+                  />
+                  <span>Delivered (received at workshop)</span>
+                </label>
 
                 <label>
                   <span>Invoice</span>

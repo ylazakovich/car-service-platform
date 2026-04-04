@@ -237,6 +237,7 @@ describe("bootstrap application", () => {
                 vehicle: null,
                 invoice_name: "",
                 invoice_url: "",
+                delivered: false,
                 created_at: "2025-04-05T10:00:00Z",
                 updated_at: "2025-04-05T10:00:00Z",
               },
@@ -276,7 +277,7 @@ describe("bootstrap application", () => {
     expect(await screen.findByRole("heading", { name: "Kanban Board", level: 2 })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Purchases" }));
-    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Purchases", level: 2 })).toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Users" })).toBeInTheDocument();
   });
@@ -296,7 +297,7 @@ describe("bootstrap application", () => {
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
-    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Purchases", level: 2 })).toBeInTheDocument();
   });
 
   it("recalculates dashboard moneyflow totals for the selected date range", async () => {
@@ -484,6 +485,7 @@ describe("bootstrap application", () => {
                 vehicle: null,
                 invoice_name: "",
                 invoice_url: "",
+                delivered: false,
                 created_at: "2025-02-10T10:00:00Z",
                 updated_at: "2025-02-10T10:00:00Z",
               },
@@ -501,6 +503,7 @@ describe("bootstrap application", () => {
                 vehicle: null,
                 invoice_name: "",
                 invoice_url: "",
+                delivered: false,
                 created_at: "2025-03-10T10:00:00Z",
                 updated_at: "2025-03-10T10:00:00Z",
               },
@@ -518,6 +521,7 @@ describe("bootstrap application", () => {
                 vehicle: null,
                 invoice_name: "",
                 invoice_url: "",
+                delivered: false,
                 created_at: "2025-03-28T10:00:00Z",
                 updated_at: "2025-03-28T10:00:00Z",
               },
@@ -535,6 +539,7 @@ describe("bootstrap application", () => {
                 vehicle: null,
                 invoice_name: "",
                 invoice_url: "",
+                delivered: false,
                 created_at: "2025-03-29T10:00:00Z",
                 updated_at: "2025-03-29T10:00:00Z",
               },
@@ -552,6 +557,7 @@ describe("bootstrap application", () => {
                 vehicle: null,
                 invoice_name: "",
                 invoice_url: "",
+                delivered: false,
                 created_at: "2025-04-15T10:00:00Z",
                 updated_at: "2025-04-15T10:00:00Z",
               },
@@ -619,7 +625,7 @@ describe("bootstrap application", () => {
     expect(endInput).toHaveValue("31-01-2025");
 
     await user.click(screen.getByRole("button", { name: "Purchases" }));
-    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Purchases", level: 2 })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Dashboard" }));
     await waitFor(() => {
@@ -825,13 +831,15 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     expect(screen.queryByText("TOR-2040")).not.toBeInTheDocument();
     await user.click(await screen.findByRole("heading", { name: "Brake Pad Set", level: 4 }));
+    const purchaseDialog = await screen.findByRole("dialog");
     expect(screen.queryByLabelText("Tracking")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Repair Code")).not.toBeInTheDocument();
     expect(screen.queryByText("TOR-2040")).not.toBeInTheDocument();
     expect(screen.queryByText("Supplier Document")).not.toBeInTheDocument();
 
-    expect(await screen.findByText("No invoice attached yet")).toBeInTheDocument();
-    expect(screen.getByText("Add Invoice")).toBeInTheDocument();
+    await user.click(within(purchaseDialog).getByRole("tab", { name: "Invoice" }));
+    expect(await within(purchaseDialog).findByText("No invoice attached yet")).toBeInTheDocument();
+    expect(within(purchaseDialog).getByText("Add Invoice")).toBeInTheDocument();
 
     const invoiceInput = view.container.querySelector("#purchase-modal-invoice-input");
     expect(invoiceInput).not.toBeNull();
@@ -839,19 +847,19 @@ describe("bootstrap application", () => {
     const invoiceFile = new File(["invoice"], "invoice.pdf", { type: "application/pdf" });
     await user.upload(invoiceInput as HTMLInputElement, invoiceFile);
 
-    expect(await screen.findByText("invoice.pdf")).toBeInTheDocument();
-    expect(screen.getByText("Attached")).toBeInTheDocument();
-    expect(screen.getByText("Replace Invoice")).toBeInTheDocument();
-    expect(screen.getByText("Delete Invoice")).toBeInTheDocument();
-    expect(screen.queryByText("Open Invoice")).not.toBeInTheDocument();
+    expect(await within(purchaseDialog).findByText("invoice.pdf")).toBeInTheDocument();
+    expect(within(purchaseDialog).getByText("Attached")).toBeInTheDocument();
+    expect(within(purchaseDialog).getByText("Replace Invoice")).toBeInTheDocument();
+    expect(within(purchaseDialog).getByText("Delete Invoice")).toBeInTheDocument();
+    expect(within(purchaseDialog).queryByText("Open Invoice")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "invoice.pdf" }));
+    await user.click(within(purchaseDialog).getByRole("button", { name: "invoice.pdf" }));
     expect(mockOpen).toHaveBeenCalledWith("blob:test-invoice", "_blank", "noopener,noreferrer");
 
-    await user.click(screen.getByRole("button", { name: "Delete Invoice" }));
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Delete Invoice" }));
     expect(mockConfirm).toHaveBeenCalledWith("Remove the attached invoice from this purchase?");
-    expect(await screen.findByText("No invoice attached yet")).toBeInTheDocument();
-    expect(screen.getByText("Empty")).toBeInTheDocument();
+    expect(await within(purchaseDialog).findByText("No invoice attached yet")).toBeInTheDocument();
+    expect(within(purchaseDialog).getByText("Empty")).toBeInTheDocument();
   });
 
   it("keeps purchase linkage to the selected repair even without manual vehicle selection", async () => {
@@ -876,6 +884,7 @@ describe("bootstrap application", () => {
             vehicle_license_plate: "WB 1234K",
             invoice_name: "",
             invoice_url: "",
+            delivered: false,
             created_at: "2025-04-05T10:00:00Z",
             updated_at: "2025-04-05T10:00:00Z",
           },
