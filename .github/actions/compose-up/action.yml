@@ -1,0 +1,54 @@
+name: Compose up (CI stack)
+description: Prepare .env from .env.example and run docker compose up -d --build; optional wait for frontend.
+
+inputs:
+  env-profile:
+    description: "default = copy .env.example only; json-info = also set LOG_FORMAT=json and LOG_LEVEL=INFO (Docker log artifact jobs)"
+    required: false
+    default: default
+  wait-for-frontend:
+    description: "If true, poll until the frontend URL responds (Playwright / E2E)"
+    required: false
+    default: "false"
+  frontend-health-url:
+    description: URL checked when wait-for-frontend is true
+    required: false
+    default: "http://127.0.0.1:4173/"
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare .env
+      shell: bash
+      env:
+        ENV_PROFILE: ${{ inputs.env-profile }}
+      run: |
+        set -euo pipefail
+        if [ -f .env.example ]; then
+          cp .env.example .env
+          if [ "$ENV_PROFILE" = "json-info" ]; then
+            sed -i 's/LOG_FORMAT=text/LOG_FORMAT=json/' .env || true
+            sed -i 's/LOG_LEVEL=DEBUG/LOG_LEVEL=INFO/' .env || true
+          fi
+        fi
+
+    - name: Build and start stack
+      shell: bash
+      run: docker compose up -d --build
+
+    - name: Wait for frontend
+      if: ${{ inputs.wait-for-frontend == 'true' }}
+      shell: bash
+      env:
+        FRONTEND_HEALTH_URL: ${{ inputs.frontend-health-url }}
+      run: |
+        set -euo pipefail
+        for i in $(seq 1 90); do
+          if curl -sf "$FRONTEND_HEALTH_URL" >/dev/null; then
+            echo "frontend healthy"
+            exit 0
+          fi
+          sleep 2
+        done
+        docker compose logs --tail=120 || true
+        exit 1

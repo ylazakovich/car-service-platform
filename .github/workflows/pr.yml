@@ -8,8 +8,8 @@ on:
       - "docs/**"
       - "LICENSE"
 
-# Same PR = one group. Do not cancel in-progress runs: E2E is last and slow; canceling leaves
-# only Frontend+Backend artifacts → merged Allure shows unit+api but 0 end-to-end (misleading).
+# Same PR = one group. Do not cancel in-progress runs: canceling mid-run drops some job artifacts;
+# merged Allure would miss suites from jobs that had not finished uploading (misleading report).
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: false
@@ -155,7 +155,6 @@ jobs:
   e2e:
     name: "E2E: Playwright + Allure"
     runs-on: ubuntu-latest
-    needs: [frontend, backend]
     env:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       E2E_ADMIN_EMAIL: admin@autoservice.local
@@ -171,24 +170,9 @@ jobs:
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
-      - name: Prepare .env
-        run: |
-          if [ -f .env.example ]; then cp .env.example .env; fi
-
-      - name: Build and start stack
-        run: docker compose up -d --build
-
-      - name: Wait for frontend
-        run: |
-          for i in $(seq 1 90); do
-            if curl -sf http://127.0.0.1:4173/ >/dev/null; then
-              echo "frontend healthy"
-              exit 0
-            fi
-            sleep 2
-          done
-          docker compose logs --tail=120 || true
-          exit 1
+      - uses: ./.github/actions/compose-up
+        with:
+          wait-for-frontend: "true"
 
       - name: Run Playwright
         working-directory: frontend
@@ -254,21 +238,13 @@ jobs:
   docker:
     name: "Docker: Build & Logs"
     runs-on: ubuntu-latest
-    needs: [frontend, backend]
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Create .env if template exists
-        run: |
-          if [ -f .env.example ]; then
-            cp .env.example .env
-            sed -i 's/LOG_FORMAT=text/LOG_FORMAT=json/' .env || true
-            sed -i 's/LOG_LEVEL=DEBUG/LOG_LEVEL=INFO/' .env || true
-          fi
-
-      - name: Build and start containers
-        run: docker compose up -d --build
+      - uses: ./.github/actions/compose-up
+        with:
+          env-profile: json-info
 
       - name: Collect Docker logs
         if: always()
