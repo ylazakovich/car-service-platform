@@ -4,4 +4,6 @@ __pycache__/
 *.pyd
 .venv/
 test-results/
+allure-results/
+.pytest_cache/
 staticfiles/
