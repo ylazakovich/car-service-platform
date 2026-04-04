@@ -5,7 +5,7 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "20"
+    default: "24"
   install-dependencies:
     description: If true, restore npm cache and run npm ci in frontend/
     required: false
