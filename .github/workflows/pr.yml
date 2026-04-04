@@ -124,6 +124,9 @@ jobs:
           path: backend/test-results/
           retention-days: 30
 
+      # Allure: чтобы сработал .github/workflows/report.yml, в PR Pipeline нужен артефакт с именем "allure-results"
+      # (каталог с *-result.json). Пока тесты Allure не подключены — шаг не добавляем.
+
   docker:
     name: "Docker: Build & Logs"
     runs-on: ubuntu-latest
