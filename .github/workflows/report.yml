@@ -6,7 +6,7 @@ on:
     types: [completed]
 
 permissions:
-  contents: read
+  contents: write # peaceiris → push ветки gh-pages
   checks: write
   pull-requests: write
   actions: read
@@ -58,18 +58,35 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Allure Pages — номер PR и тот же репозиторий (не fork)
+        id: allure_pages
+        if: steps.allure.outputs.present == 'true'
+        env:
+          PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: |
+          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          HEAD_FULL="${{ github.event.workflow_run.head_repository.full_name }}"
+          REPO_FULL="${{ github.repository }}"
+          if [ "$HEAD_FULL" = "$REPO_FULL" ]; then
+            echo "same_repo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "same_repo=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up Node.js (Allure CLI + allure-ci.mjs)
         if: steps.allure.outputs.present == 'true'
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: "20"
 
-      - name: Generate Allure HTML and PR comment markdown
+      - name: Generate Allure HTML, badges, PR comment markdown
         if: steps.allure.outputs.present == 'true'
         env:
           PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
         run: |
           npx --yes allure generate artifacts/allure-results -o allure-report
+          node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
           PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
@@ -85,6 +102,15 @@ jobs:
             --output allure-pr-comment.md \
             --pages-url "$PAGES_URL" \
             --fork-pr "false"
+
+      - name: Publish Allure preview to GitHub Pages (ветка gh-pages)
+        if: steps.allure.outputs.present == 'true' && steps.allure_pages.outputs.same_repo == 'true' && steps.allure_pages.outputs.pr_number != ''
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: allure/pr-${{ steps.allure_pages.outputs.pr_number }}
+          keep_files: true
 
       - name: Post or update Allure comment on PR
         if: steps.allure.outputs.present == 'true'
