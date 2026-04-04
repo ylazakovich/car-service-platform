@@ -4,9 +4,9 @@
 История и завершенные крупные блоки выносятся в `docs/planning/archive/`.
 
 - Active plan owner: `planner` + `architect`
-- Last updated: `2026-04-02`
+- Last updated: `2026-04-04`
 - Archive: `docs/planning/archive/`
-- Status: `m2 completed | m3 pdf-backed reporting and historical analytics — next`
+- Status: `m2 completed | m3 in progress — PDF persist + snapshot on branch; dashboard/historical UI отдельным PR/веткой`
 
 ## 1) Product Goal
 Собрать устойчивую `car-service-platform`, которая закрывает не только операционный цикл автосервиса, но и аналитический контур после завершения ремонта: итоговые документы, финансовые срезы и историческую отчётность.
@@ -22,12 +22,13 @@
 ## 2) Current Baseline
 - Репозиторий инициализирован, CI настроен, docker-compose + gunicorn + nginx работают в production-режиме.
 - Полный backend CRUD реализован для `Customer`, `Vehicle`, `Repair`, `RepairNote`, `Purchase`, `Supplier`, `Service`.
-- REST API покрыт тестами: **57 backend + 8 frontend smoke tests**.
+- REST API покрыт тестами: **100+ backend** (django test) **+ frontend unit/e2e** (Vitest; Playwright для сценария PDF).
 - Роли `admin` / `staff` реализованы на уровне API (ownership, queryset scoping, perform_create guard).
 - Repair flow переведен на backend: tracking code `TOR-{id:04d}` генерируется на сервере, note history сохраняется с авторством, смена статуса работает через drag-and-drop.
 - Purchases и Services уже имеют реальные API и используются frontend-частью вместо demo-state.
 - Vehicle-поля `mileage`, `last_service_date`, `added_date` синхронизированы с backend.
 - `Dashboard` уже выполняет роль операционной сводки, но еще не является источником исторической аналитики по выгруженным документам.
+- **M3 slice (ветка `feature/m3-pdf-snapshot-persist`):** модели `RepairDocument` + `RepairFinancialSnapshot`, файлы PDF в media, расчёт сумм в одном месте (`financial_totals`). API: `GET /repairs/<id>/pdf/` — последняя выгрузка без новой версии; `POST /repairs/<id>/pdf/export/` — новая версия + snapshot. UI: View PDF, в модалке — Export new version. E2E Playwright: повторный просмотр не дублирует POST export.
 - Фото ремонта на UI присутствуют, но upload остается deferred до выбора постоянного хранилища.
 - Технический долг M2 закрыт; платформа готова к переходу в отчетность и документы.
 
@@ -81,9 +82,9 @@
 Цель milestone: привязать завершенный ремонт к выгружаемому PDF-документу и сделать этот документ источником согласованной аналитики по ценам, работам и запчастям.
 
 Milestone включает:
-1. На странице `Repair` для статуса `completed` появляется кнопка `Выгрузить PDF`.
-2. При выгрузке создается PDF с работами, запчастями, дополнительными позициями/расходами и итогами.
-3. PDF прикрепляется к аналитическому dashboard-срезу вместе с сохраненным финансовым snapshot.
+1. На странице `Repair` для статуса `completed` — просмотр последнего PDF и явная новая выгрузка (текущий UI: **View PDF** + **Export new version** в превью; первая выгрузка при отсутствии файла через POST export).
+2. При **export** создается PDF с работами, запчастями, дополнительными позициями/расходами и итогами; каждая выгрузка — новая версия в БД.
+3. PDF и snapshot готовы к привязке к dashboard-срезу (данные в БД; агрегаты на UI dashboard — отдельная ветка/PR).
 4. Аналитика использует значения из сохраненного snapshot, связанного с PDF, а не только текущее mutable-состояние ремонта.
 5. История snapshot-версий хранится в БД, чтобы можно было смотреть прошлые аналитические состояния.
 6. Monthly history, supplier report и completion act выстраиваются поверх того же финансового источника истины.
@@ -115,9 +116,9 @@ Milestone включает:
 - current status: `completed 2026-03-27`
 
 ### M3: PDF-Backed Reporting
-- PDF-выгрузка завершенного ремонта
-- attachment PDF к аналитическому dashboard
-- versioned financial snapshots в БД
+- PDF-выгрузка завершенного ремонта (**сделано:** persist + versioned export; GET последней / POST новой версии)
+- attachment PDF к аналитическому dashboard (**в работе / другая ветка**)
+- versioned financial snapshots в БД (**сделано** на уровне модели и записи при export)
 - историческая аналитика по сохраненным snapshot-данным
 - monthly history и supplier reporting на едином source of truth
 - QuickFocus/VPR flow с inline-созданием `Vehicle` и `Customer`
@@ -125,7 +126,7 @@ Milestone включает:
 - большой service board calendar в dashboard с визуализацией текущих repair statuses
 - moneyflow default date range `today - 30 days` -> `today`
 - staff vehicle-only visibility без customer PII
-- current status: `next`
+- current status: `in progress` (pdf+snapshot slice готов к ревью; dashboard + historical UI — дальше)
 
 ### M4: Deferred Media And Extended Reporting
 - постоянное хранилище фото ремонта (MinIO / S3-compatible)
@@ -134,9 +135,9 @@ Milestone включает:
 
 ## 6) Acceptance Criteria
 Milestone `M3` считается завершённым, если:
-1. На странице завершенного ремонта есть кнопка `Выгрузить PDF`, недоступная для незавершенных ремонтов.
-2. Выгрузка создает PDF-документ с работами, запчастями, дополнительными затратами и итоговыми суммами.
-3. После выгрузки создается сохраненный финансовый snapshot и связь `repair -> exported PDF -> dashboard analytics`.
+1. На странице завершенного ремонта есть действие просмотра PDF и выгрузки новой версии, недоступные для незавершенных ремонтов (**частично закрыто:** View PDF / Export new version).
+2. Выгрузка (export) создает PDF-документ с работами, запчастями, дополнительными затратами и итоговыми суммами (**закрыто** на стороне генератора + persist).
+3. После выгрузки создается сохраненный финансовый snapshot и связь `repair -> exported PDF` (**закрыто**); привязка к **dashboard analytics** — еще нет.
 4. Главный аналитический dashboard считает суммы по сохраненным snapshot-данным, включая цены услуг и цены продажи запчастей.
 5. Пользователь может открыть исторический период и увидеть аналитику, соответствующую данным на момент конкретной выгрузки.
 6. При создании нового VPR пользователь может, не покидая flow, найти существующий `Vehicle` либо создать новый `Vehicle`, а если у него нет клиента, то и нового `Customer`.
@@ -169,7 +170,7 @@ Milestone `M3` считается завершённым, если:
 - staff vehicle-only access model с глобальной видимостью машин и скрытием customer PII
 
 ## 9) Deferred / Open Decisions
-- допускается ли несколько PDF-версий для одного `Repair`, и какая версия считается активной для dashboard по умолчанию
+- ~~несколько PDF-версий на `Repair`~~: **да, версии монотонны; для просмотра по умолчанию — последняя (GET); новая версия только через POST export**; для dashboard «активная» версия на период — TBD при интеграции дашборда
 - нужны ли ручные корректировки snapshot-данных после выгрузки
 - как моделировать "прочие расходы": отдельная сущность, generic line items или расширение текущих сущностей
 - это отдельный quick-create UX внутри repair flow или переиспользование существующих customer/vehicle modal-компонентов
