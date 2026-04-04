@@ -32,7 +32,13 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npx vitest run --reporter=default --reporter=github-actions --reporter=junit --outputFile=test-results/junit.xml
+        run: >
+          npx vitest run
+          --reporter=default
+          --reporter=github-actions
+          --reporter=junit
+          --reporter=allure-vitest/reporter
+          --outputFile=test-results/junit.xml
 
       - name: Test summary
         if: always()
@@ -60,6 +66,15 @@ jobs:
           path: frontend/test-results/
           retention-days: 30
 
+      - name: Upload Allure results (frontend)
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: allure-results-frontend
+          path: frontend/allure-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
   backend:
     name: "Backend: Build & Test"
     runs-on: ubuntu-latest
@@ -82,13 +97,9 @@ jobs:
       - name: Run tests
         env:
           DJANGO_SECRET_KEY: ci-test-secret-key
-          TEST_OUTPUT_DIR: test-results
-        run: >
-          python manage.py test
-          --settings=config.settings_test
-          --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner
-          --no-input
-          -v 2
+        run: |
+          mkdir -p test-results
+          pytest --alluredir=allure-results --junitxml=test-results/junit.xml -v
 
       - name: Test summary
         if: always()
@@ -124,7 +135,14 @@ jobs:
           path: backend/test-results/
           retention-days: 30
 
-      # Allure: report.yml expects an artifact named "allure-results" (*-result.json). Not wired until tests emit Allure.
+      - name: Upload Allure results (backend)
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: allure-results-backend
+          path: backend/allure-results/
+          if-no-files-found: ignore
+          retention-days: 30
 
   docker:
     name: "Docker: Build & Logs"
