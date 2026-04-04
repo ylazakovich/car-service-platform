@@ -126,7 +126,7 @@ jobs:
           FORK_PR: ${{ steps.fork.outputs.fork }}
         run: |
           cp -f .github/allure/categories.json artifacts/allure-results/categories.json
-          npx --yes allure generate artifacts/allure-results -o allure-report
+          npx --yes allure generate artifacts/allure-results -o allure-report --config ./allurerc.mjs
           node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
