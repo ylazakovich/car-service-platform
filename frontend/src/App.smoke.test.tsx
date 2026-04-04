@@ -38,6 +38,53 @@ function renderApp(route = "/app") {
   );
 }
 
+function formatExpectedDateInput(value: Date) {
+  const day = String(value.getDate()).padStart(2, "0");
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const year = String(value.getFullYear());
+  return `${day}-${month}-${year}`;
+}
+
+/** Minimal valid `/api/analytics/dashboard/` payload for tests that override `mockApi.get`. */
+function createStubDashboardAnalyticsResponse() {
+  return {
+    moneyflow_range: { start_date: "2025-01-01", end_date: "2025-12-31" },
+    operational_range: { start_date: "2025-01-01", end_date: "2025-12-31" },
+    pdf: {
+      latest_act_totals: {
+        labor_total: 0,
+        parts_client_total: 0,
+        parts_purchase_total: 0,
+        other_expenses_total: 0,
+        document_total: 0,
+        repairs_with_latest_act: 0,
+      },
+      coverage: { completed_in_range: 0, completed_without_pdf: 0 },
+      exports_in_period: 0,
+      completed_repairs_with_multiple_exports: 0,
+      completed_to_first_export_lag_days: {
+        average: null,
+        median: null,
+        p90: null,
+        sample_size: 0,
+      },
+      series_by_export_day: [],
+    },
+    operational: {
+      funnel_by_status: { new: 0, in_progress: 0, waiting_parts: 0, completed: 0 },
+      repairs_created_in_range: 0,
+      cycle_time_days: { median: null, p90: null, sample_completed_in_range: 0 },
+      active_workload_preview: [],
+      recently_created_preview: [],
+    },
+    moneyflow: {
+      supplier_spend_top: [],
+      purchases_unlinked: { count: 0, total_spend: 0 },
+      exports_by_exporter: [],
+    },
+  };
+}
+
 describe("bootstrap application", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -128,6 +175,48 @@ describe("bootstrap application", () => {
               updated_at: "2025-04-05T10:00:00Z",
             },
           ],
+        });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({
+          data: [
+            { id: 1, name: "Brake Inspection", description: "", price: "299.00", is_active: true },
+          ],
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({
+          data: {
+            moneyflow_range: { start_date: "2025-04-01", end_date: "2025-04-30" },
+            operational_range: { start_date: "2025-04-01", end_date: "2025-04-30" },
+            pdf: {
+              latest_act_totals: {
+                labor_total: 0,
+                parts_client_total: 0,
+                parts_purchase_total: 0,
+                other_expenses_total: 0,
+                document_total: 0,
+                repairs_with_latest_act: 0,
+              },
+              coverage: { completed_in_range: 0, completed_without_pdf: 0 },
+              exports_in_period: 0,
+              completed_repairs_with_multiple_exports: 0,
+              completed_to_first_export_lag_days: {
+                average: null,
+                median: null,
+                p90: null,
+                sample_size: 0,
+              },
+              series_by_export_day: [],
+            },
+            operational: {
+              funnel_by_status: { new: 0, in_progress: 1, waiting_parts: 0, completed: 0 },
+              repairs_created_in_range: 1,
+              cycle_time_days: { median: null, p90: null, sample_completed_in_range: 0 },
+              active_workload_preview: [],
+              recently_created_preview: [],
+            },
+          },
         });
       }
       if (url === "/purchases/") {
@@ -241,6 +330,50 @@ describe("bootstrap application", () => {
               added_date: "2024-11-04",
             },
           ],
+        });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({
+          data: [
+            { id: 1, name: "Oil Change", description: "", price: "190.00", is_active: true },
+            { id: 2, name: "Brake Service", description: "", price: "420.00", is_active: true },
+            { id: 3, name: "Diagnostics", description: "", price: "260.00", is_active: true },
+          ],
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({
+          data: {
+            moneyflow_range: { start_date: "2025-03-01", end_date: "2025-03-31" },
+            operational_range: { start_date: "2025-03-01", end_date: "2025-03-31" },
+            pdf: {
+              latest_act_totals: {
+                labor_total: 610,
+                parts_client_total: 230,
+                parts_purchase_total: 150,
+                other_expenses_total: 0,
+                document_total: 840,
+                repairs_with_latest_act: 2,
+              },
+              coverage: { completed_in_range: 2, completed_without_pdf: 0 },
+              exports_in_period: 0,
+              completed_repairs_with_multiple_exports: 0,
+              completed_to_first_export_lag_days: {
+                average: 0,
+                median: 0,
+                p90: 0,
+                sample_size: 2,
+              },
+              series_by_export_day: [],
+            },
+            operational: {
+              funnel_by_status: { new: 0, in_progress: 0, waiting_parts: 0, completed: 0 },
+              repairs_created_in_range: 0,
+              cycle_time_days: { median: 4, p90: 10, sample_completed_in_range: 2 },
+              active_workload_preview: [],
+              recently_created_preview: [],
+            },
+          },
         });
       }
       if (url === "/repairs/") {
@@ -458,6 +591,68 @@ describe("bootstrap application", () => {
     });
   });
 
+  it("resets moneyflow to the last 30 days on every dashboard visit", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+
+    const today = new Date();
+    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - 30);
+
+    const startInput = await screen.findByLabelText("Start date");
+    const endInput = await screen.findByLabelText("End date");
+
+    expect(startInput).toHaveValue(formatExpectedDateInput(startDate));
+    expect(endInput).toHaveValue(formatExpectedDateInput(endDate));
+
+    await user.clear(startInput);
+    await user.type(startInput, "01-01-2025");
+    await user.tab();
+    await user.clear(endInput);
+    await user.type(endInput, "31-01-2025");
+    await user.tab();
+
+    expect(startInput).toHaveValue("01-01-2025");
+    expect(endInput).toHaveValue("31-01-2025");
+
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    expect(await screen.findByRole("heading", { name: "Purchase Registry", level: 2 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Dashboard" }));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Start date")).toHaveValue(formatExpectedDateInput(startDate));
+      expect(screen.getByLabelText("End date")).toHaveValue(formatExpectedDateInput(endDate));
+    });
+  });
+
+  it("shows a moneyflow chart with toggleable series", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Flow Timeline", level: 3 })).toBeInTheDocument();
+
+    const purchaseToggle = screen.getByRole("button", { name: "Purchase Spend trend" });
+    const serviceToggle = screen.getByRole("button", { name: "Service Sales (live) trend" });
+    const partsToggle = screen.getByRole("button", { name: "Parts Sales (live) trend" });
+
+    expect(purchaseToggle).toHaveAttribute("aria-pressed", "true");
+    expect(serviceToggle).toHaveAttribute("aria-pressed", "true");
+    expect(partsToggle).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(purchaseToggle);
+    await user.click(serviceToggle);
+    await user.click(partsToggle);
+
+    expect(purchaseToggle).toHaveAttribute("aria-pressed", "false");
+    expect(serviceToggle).toHaveAttribute("aria-pressed", "false");
+    expect(partsToggle).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Turn on at least one line to display the chart.")).toBeInTheDocument();
+  });
+
   it("opens detail dialogs for customer and vehicle cards", async () => {
     const user = userEvent.setup();
     renderApp("/app");
@@ -549,6 +744,9 @@ describe("bootstrap application", () => {
       }
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
       }
       return Promise.resolve({ data: [] });
     });
@@ -865,6 +1063,9 @@ describe("bootstrap application", () => {
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
       return Promise.resolve({ data: [] });
     });
 
@@ -929,6 +1130,9 @@ describe("bootstrap application", () => {
       }
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
       }
       return Promise.resolve({ data: [] });
     });
@@ -1010,6 +1214,9 @@ describe("bootstrap application", () => {
       }
       if (url === "/purchases/suppliers/" || url === "/services/" || url === "/auth/staff/") {
         return Promise.resolve({ data: [] });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
       }
       return Promise.resolve({ data: [] });
     });
@@ -1111,6 +1318,9 @@ describe("bootstrap application", () => {
             },
           ],
         });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
       }
       return Promise.resolve({ data: [] });
     });

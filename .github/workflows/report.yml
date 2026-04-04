@@ -14,10 +14,10 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write # peaceiris pushes the gh-pages branch
+  contents: write # deploy-gh-pages-subdir pushes the gh-pages branch
   checks: write
   pull-requests: write
-  actions: read
+  actions: write
 
 jobs:
   test-report:
@@ -30,6 +30,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: ./.github/actions/setup-node
+        with:
+          install-dependencies: "false"
 
       - name: Resolve PR number (GitHub Pages path)
         id: pr_ctx
@@ -97,11 +101,23 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Set up Node.js (Allure CLI + allure-ci.mjs)
+      - name: Set up Python (Django version for Allure environment.properties)
         if: steps.allure.outputs.present == 'true'
-        uses: ./.github/actions/setup-node
+        uses: ./.github/actions/setup-python
         with:
-          install-dependencies: "false"
+          requirements: requirements-test.txt
+
+      - name: Write Allure environment.properties
+        if: steps.allure.outputs.present == 'true'
+        env:
+          ALLURE_RESULTS_DIR: ${{ github.workspace }}/artifacts/allure-results
+          ALLURE_VARIABLES_JSON: ${{ github.workspace }}/artifacts/allure-variables.json
+          REPO_ROOT: ${{ github.workspace }}
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+          GITHUB_REF_NAME: ${{ github.event.workflow_run.head_branch }}
+          ALLURE_GITHUB_WORKFLOW: ${{ github.event.workflow_run.name }}
+          ALLURE_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: bash scripts/ci/write-allure-environment.sh
 
       - name: Generate Allure HTML, badges, PR comment markdown
         if: steps.allure.outputs.present == 'true'
@@ -125,15 +141,14 @@ jobs:
             --pages-url "$PAGES_URL" \
             --fork-pr "$FORK_PR"
 
-      # Per-PR folder on gh-pages: allure/pr-<N>/ — keep_files preserves other PRs; re-run overwrites this PR only.
+      # Per-PR folder on gh-pages: allure/pr-<N>/ — rsync --delete only that subdir; other PR folders stay intact.
       - name: Deploy Allure HTML to GitHub Pages
         if: ${{ steps.allure.outputs.present == 'true' && steps.pr_ctx.outputs.has_pr == 'true' && steps.fork.outputs.fork == 'false' }}
-        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
+        uses: ./.github/actions/deploy-gh-pages-subdir
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report
+          token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report
           destination_dir: allure/pr-${{ steps.pr_ctx.outputs.number }}
-          keep_files: true
 
       - name: Post or update Allure comment on PR
         if: steps.allure.outputs.present == 'true'

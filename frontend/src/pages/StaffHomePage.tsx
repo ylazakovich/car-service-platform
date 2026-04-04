@@ -5,6 +5,7 @@ import api from "../api/client";
 import { exportRepairPdf, fetchStaffUsers, openRepairPdfForPreview, type StaffUser } from "../api/repairs";
 import { PdfPreviewModal } from "../components/PdfPreviewModal";
 import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
+import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from "../api/analytics";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases } from "../features/staff/hooks/usePurchases";
@@ -69,10 +70,27 @@ type StaffHomePageProps = {
 };
 
 type UserAccessTab = "owner" | "admins" | "masters";
-type DashboardTab = "moneyflow" | "service_board";
+type DashboardTab = "moneyflow" | "service_board" | "procurement";
 type DashboardDateRange = {
   start_date: string;
   end_date: string;
+};
+type MoneyflowSeriesKey =
+  | "purchase_spend"
+  | "service_sales"
+  | "parts_sales"
+  | "pdf_document_total"
+  | "pdf_labor_export_day"
+  | "pdf_parts_client_export_day";
+type MoneyflowSeriesVisibility = Record<MoneyflowSeriesKey, boolean>;
+type MoneyflowChartPoint = {
+  date: string;
+  purchase_spend: number;
+  service_sales: number;
+  parts_sales: number;
+  pdf_document_total: number;
+  pdf_labor_export_day: number;
+  pdf_parts_client_export_day: number;
 };
 
 const emptyCustomerForm: CustomerFormState = {
@@ -101,19 +119,65 @@ function getStaffUserLabel(staff: StaffUser): string {
   return [staff.first_name, staff.last_name].filter(Boolean).join(" ") || staff.email;
 }
 
-const repairServiceSaleCatalog: Record<string, number> = {
-  "Oil Change": 190,
-  "Brake Service": 420,
-  Diagnostics: 260,
-  "Suspension Repair": 780,
-  "Engine Check": 340,
-  [customRepairServiceOption]: 320,
+const moneyflowSeriesMeta: Record<MoneyflowSeriesKey, { label: string; color: string }> = {
+  purchase_spend: {
+    label: "Purchase Spend",
+    color: "var(--warning)",
+  },
+  service_sales: {
+    label: "Service Sales (live)",
+    color: "var(--info)",
+  },
+  parts_sales: {
+    label: "Parts Sales (live)",
+    color: "var(--accent)",
+  },
+  pdf_document_total: {
+    label: "Act document total (export day)",
+    color: "var(--success)",
+  },
+  pdf_labor_export_day: {
+    label: "Act labor (export day)",
+    color: "#7c9cff",
+  },
+  pdf_parts_client_export_day: {
+    label: "Act parts to client (export day)",
+    color: "#c49cff",
+  },
 };
 
+const defaultMoneyflowSeriesVisibility: MoneyflowSeriesVisibility = {
+  purchase_spend: true,
+  service_sales: true,
+  parts_sales: true,
+  pdf_document_total: false,
+  pdf_labor_export_day: false,
+  pdf_parts_client_export_day: false,
+};
+
+function formatIsoLocalDate(value: Date): string {
+  const year = String(value.getFullYear());
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getLocalDateWithOffset(days: number): string {
+  const base = new Date();
+  const localDate = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  localDate.setDate(localDate.getDate() + days);
+  return formatIsoLocalDate(localDate);
+}
+
 function getLocalTodayDate(): string {
-  const now = new Date();
-  const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return localTime.toISOString().slice(0, 10);
+  return getLocalDateWithOffset(0);
+}
+
+function getMoneyflowDefaultDateRange(): DashboardDateRange {
+  return {
+    start_date: getLocalDateWithOffset(-30),
+    end_date: getLocalTodayDate(),
+  };
 }
 
 function getApproximateDeliveryDate(orderDate: string): string {
@@ -128,6 +192,10 @@ function getApproximateDeliveryDate(orderDate: string): string {
 
   parsed.setDate(parsed.getDate() + 4);
   return parsed.toISOString().slice(0, 10);
+}
+
+function toIsoDateKey(value: string): string {
+  return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : "";
 }
 
 function formatDisplayDate(value: string): string {
@@ -152,6 +220,75 @@ function getDateBounds(values: string[]) {
   };
 }
 
+function createIsoDateRange(startDate: string, endDate: string): string[] {
+  const start = parseIsoDate(startDate);
+  const end = parseIsoDate(endDate);
+
+  if (!start || !end || start > end) {
+    return [];
+  }
+
+  const next: string[] = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    next.push(formatIsoLocalDate(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return next;
+}
+
+function sumByIsoDate(target: Map<string, number>, date: string, amount: number) {
+  const key = toIsoDateKey(date);
+  if (!key) {
+    return;
+  }
+
+  target.set(key, (target.get(key) ?? 0) + amount);
+}
+
+function buildSvgLinePath(points: Array<{ x: number; y: number }>): string {
+  return points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+}
+
+function getChartTickIndexes(length: number): number[] {
+  if (length <= 1) {
+    return [0];
+  }
+
+  const indexes = [0, Math.floor((length - 1) / 3), Math.floor(((length - 1) * 2) / 3), length - 1];
+  return [...new Set(indexes)];
+}
+
+function formatChartAxisCurrency(value: number): string {
+  if (value <= 0) {
+    return "0 zł";
+  }
+
+  if (value >= 1000) {
+    return `${new Intl.NumberFormat("pl-PL", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value)} zł`;
+  }
+
+  return `${Math.round(value)} zł`;
+}
+
+function formatChartDateLabel(value: string): string {
+  const parsed = parseIsoDate(value);
+  if (!parsed) {
+    return value;
+  }
+
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  return `${day}-${month}`;
+}
+
 function isDateWithinRange(value: string, startDate: string, endDate: string) {
   if (!value) {
     return false;
@@ -167,8 +304,11 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
   return true;
 }
 
-function getRepairServiceSaleValue(serviceName: string) {
-  return repairServiceSaleCatalog[serviceName] ?? 320;
+function getRepairServiceSaleValue(serviceName: string, priceByName: Map<string, number>) {
+  if (serviceName === customRepairServiceOption) {
+    return 0;
+  }
+  return priceByName.get(serviceName) ?? 0;
 }
 
 const calendarWeekdayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -195,6 +335,7 @@ function parseIsoDate(value: string): Date | null {
 
   return parsed;
 }
+
 
 function formatDateInputValue(value: string): string {
   const parsed = parseIsoDate(value);
@@ -511,6 +652,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function StaffHomePage({ activeSection, onSelectSection, openRepairComposerRequest }: StaffHomePageProps) {
   const { user, isStaff, isAdmin } = useAuth();
   const lastHandledRepairComposerRequest = useRef(0);
+  const dashboardMoneyflowDatesInitialized = useRef(false);
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
   const [serverVehicles, setServerVehicles] = useState<Vehicle[]>([]);
   const [demoCustomers, setDemoCustomers] = useState<Customer[]>([]);
@@ -538,9 +680,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [isSavingVehicle, setIsSavingVehicle] = useState(false);
   const [activeUserTab, setActiveUserTab] = useState<UserAccessTab>("owner");
   const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>("moneyflow");
-  const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
+  const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>(() => getMoneyflowDefaultDateRange());
+  const [moneyflowSeriesVisibility, setMoneyflowSeriesVisibility] = useState<MoneyflowSeriesVisibility>(
+    defaultMoneyflowSeriesVisibility
+  );
   const [serviceBoardDateRange, setServiceBoardDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
   const [apiServices, setApiServices] = useState<ServiceItem[]>([]);
+  const [dashboardAnalytics, setDashboardAnalytics] = useState<DashboardAnalyticsResponse | null>(null);
+  const [dashboardAnalyticsLoading, setDashboardAnalyticsLoading] = useState(false);
+  const [dashboardAnalyticsError, setDashboardAnalyticsError] = useState("");
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
   const [isInlineCustomerOpen, setIsInlineCustomerOpen] = useState(false);
@@ -676,14 +824,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () => [...apiServices.map((s) => s.name), customRepairServiceOption],
     [apiServices]
   );
-  const moneyflowDateBounds = useMemo(
-    () =>
-      getDateBounds([
-        ...purchases.map((entry) => entry.order_date),
-        ...repairs.map((repair) => repair.completed_at).filter(Boolean),
-      ]),
-    [purchases, repairs]
-  );
+  const servicePriceByName = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of apiServices) {
+      if (s.price != null && s.price !== "") {
+        const n = Number(s.price);
+        if (!Number.isNaN(n)) {
+          m.set(s.name, n);
+        }
+      }
+    }
+    return m;
+  }, [apiServices]);
   const serviceBoardDateBounds = useMemo(
     () => getDateBounds(repairs.map((repair) => repair.created_at)),
     [repairs]
@@ -702,10 +854,59 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }, []);
 
   useEffect(() => {
-    if (!moneyflowDateRange.start_date && !moneyflowDateRange.end_date && moneyflowDateBounds.start_date && moneyflowDateBounds.end_date) {
-      setMoneyflowDateRange(moneyflowDateBounds);
+    if (activeSection === "dashboard") {
+      if (!dashboardMoneyflowDatesInitialized.current) {
+        dashboardMoneyflowDatesInitialized.current = true;
+        setMoneyflowDateRange(getMoneyflowDefaultDateRange());
+      }
+    } else {
+      dashboardMoneyflowDatesInitialized.current = false;
     }
-  }, [moneyflowDateBounds, moneyflowDateRange.end_date, moneyflowDateRange.start_date]);
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== "dashboard") {
+      return;
+    }
+    const mfStart = moneyflowDateRange.start_date;
+    const mfEnd = moneyflowDateRange.end_date;
+    if (!mfStart || !mfEnd) {
+      return;
+    }
+    const opStart = serviceBoardDateRange.start_date || mfStart;
+    const opEnd = serviceBoardDateRange.end_date || mfEnd;
+    let cancelled = false;
+    setDashboardAnalyticsLoading(true);
+    setDashboardAnalyticsError("");
+    void fetchDashboardAnalytics({
+      start_date: mfStart,
+      end_date: mfEnd,
+      operational_start_date: opStart,
+      operational_end_date: opEnd,
+    })
+      .then((data) => {
+        if (!cancelled) {
+          setDashboardAnalytics(data);
+          setDashboardAnalyticsLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setDashboardAnalytics(null);
+          setDashboardAnalyticsLoading(false);
+          setDashboardAnalyticsError(getErrorMessage(err, "Unable to load dashboard analytics."));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeSection,
+    moneyflowDateRange.start_date,
+    moneyflowDateRange.end_date,
+    serviceBoardDateRange.start_date,
+    serviceBoardDateRange.end_date,
+  ]);
 
   useEffect(() => {
     if (
@@ -1365,6 +1566,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () => new Set(completedRepairsForServiceSales.map((repair) => repair.tracking_code)),
     [completedRepairsForServiceSales]
   );
+  const completedRepairsByMoneyflowCode = useMemo(
+    () => new Map(completedRepairsForServiceSales.map((repair) => [repair.tracking_code, repair])),
+    [completedRepairsForServiceSales]
+  );
   const filteredServiceBoardRepairs = useMemo(
     () =>
       repairs.filter((repair) =>
@@ -1396,10 +1601,152 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [completedRepairCodesInMoneyflowRange, purchases]
   );
   const totalServiceSales = useMemo(
-    () => completedRepairsForServiceSales.reduce((sum, repair) => sum + getRepairServiceSaleValue(repair.service_name), 0),
-    [completedRepairsForServiceSales]
+    () =>
+      completedRepairsForServiceSales.reduce(
+        (sum, repair) => sum + getRepairServiceSaleValue(repair.service_name, servicePriceByName),
+        0
+      ),
+    [completedRepairsForServiceSales, servicePriceByName]
   );
   const projectedMargin = totalPartsSales - totalPurchaseCost;
+  const pdfSeriesByExportDay = useMemo(() => {
+    const documentTotal = new Map<string, number>();
+    const laborTotal = new Map<string, number>();
+    const partsClientTotal = new Map<string, number>();
+    for (const row of dashboardAnalytics?.pdf?.series_by_export_day ?? []) {
+      documentTotal.set(row.date, row.document_total);
+      laborTotal.set(row.date, row.labor_total);
+      partsClientTotal.set(row.date, row.parts_client_total);
+    }
+    return { documentTotal, laborTotal, partsClientTotal };
+  }, [dashboardAnalytics]);
+  const moneyflowChartData = useMemo<MoneyflowChartPoint[]>(() => {
+    const dateRange = createIsoDateRange(moneyflowDateRange.start_date, moneyflowDateRange.end_date);
+    if (dateRange.length === 0) {
+      return [];
+    }
+
+    const purchaseSpendByDate = new Map<string, number>();
+    filteredMoneyflowPurchases.forEach((entry) => {
+      sumByIsoDate(purchaseSpendByDate, entry.order_date, entry.purchase_price * entry.quantity);
+    });
+
+    const serviceSalesByDate = new Map<string, number>();
+    completedRepairsForServiceSales.forEach((repair) => {
+      sumByIsoDate(
+        serviceSalesByDate,
+        repair.completed_at,
+        getRepairServiceSaleValue(repair.service_name, servicePriceByName)
+      );
+    });
+
+    const partsSalesByDate = new Map<string, number>();
+    purchases.forEach((entry) => {
+      const relatedRepair = entry.repair_code ? completedRepairsByMoneyflowCode.get(entry.repair_code) : undefined;
+      if (!relatedRepair?.completed_at) {
+        return;
+      }
+
+      sumByIsoDate(partsSalesByDate, relatedRepair.completed_at, entry.sale_price * entry.quantity);
+    });
+
+    return dateRange.map((date) => ({
+      date,
+      purchase_spend: purchaseSpendByDate.get(date) ?? 0,
+      service_sales: serviceSalesByDate.get(date) ?? 0,
+      parts_sales: partsSalesByDate.get(date) ?? 0,
+      pdf_document_total: pdfSeriesByExportDay.documentTotal.get(date) ?? 0,
+      pdf_labor_export_day: pdfSeriesByExportDay.laborTotal.get(date) ?? 0,
+      pdf_parts_client_export_day: pdfSeriesByExportDay.partsClientTotal.get(date) ?? 0,
+    }));
+  }, [
+    completedRepairsByMoneyflowCode,
+    completedRepairsForServiceSales,
+    filteredMoneyflowPurchases,
+    moneyflowDateRange.end_date,
+    moneyflowDateRange.start_date,
+    pdfSeriesByExportDay,
+    purchases,
+    servicePriceByName,
+  ]);
+  const visibleMoneyflowSeriesKeys = useMemo(
+    () => (Object.keys(moneyflowSeriesMeta) as MoneyflowSeriesKey[]).filter((key) => moneyflowSeriesVisibility[key]),
+    [moneyflowSeriesVisibility]
+  );
+  const moneyflowChartModel = useMemo(() => {
+    const chartWidth = 720;
+    const chartHeight = 280;
+    const paddingLeft = 56;
+    const paddingRight = 18;
+    const paddingTop = 16;
+    const paddingBottom = 36;
+    const innerWidth = chartWidth - paddingLeft - paddingRight;
+    const innerHeight = chartHeight - paddingTop - paddingBottom;
+    const xStep = moneyflowChartData.length > 1 ? innerWidth / (moneyflowChartData.length - 1) : 0;
+    const maxValue = visibleMoneyflowSeriesKeys.reduce((currentMax, key) => {
+      const seriesMax = Math.max(...moneyflowChartData.map((point) => point[key]), 0);
+      return Math.max(currentMax, seriesMax);
+    }, 0);
+    const visibleSeries = visibleMoneyflowSeriesKeys.map((key) => {
+      const points = moneyflowChartData.map((point, index) => {
+        const x = paddingLeft + xStep * index;
+        const y =
+          maxValue <= 0
+            ? chartHeight - paddingBottom
+            : chartHeight - paddingBottom - (point[key] / maxValue) * innerHeight;
+
+        return {
+          x,
+          y,
+          value: point[key],
+          date: point.date,
+        };
+      });
+
+      return {
+        key,
+        label: moneyflowSeriesMeta[key].label,
+        color: moneyflowSeriesMeta[key].color,
+        points,
+        path: buildSvgLinePath(points),
+      };
+    });
+    const tickIndexes = getChartTickIndexes(moneyflowChartData.length);
+    const xTicks = tickIndexes
+      .map((index) => moneyflowChartData[index])
+      .filter((point): point is MoneyflowChartPoint => Boolean(point))
+      .map((point) => ({
+        date: point.date,
+        label: formatChartDateLabel(point.date),
+        x:
+          moneyflowChartData.length <= 1
+            ? paddingLeft + innerWidth / 2
+            : paddingLeft + xStep * moneyflowChartData.findIndex((entry) => entry.date === point.date),
+      }));
+    const yAxisValues = maxValue <= 0 ? [0] : [maxValue, maxValue / 2, 0];
+    const yTicks = [...new Set(yAxisValues)].map((value) => ({
+      value,
+      label: formatChartAxisCurrency(value),
+      y:
+        maxValue <= 0
+          ? chartHeight - paddingBottom
+          : chartHeight - paddingBottom - (value / maxValue) * innerHeight,
+    }));
+    const hasVisibleValues = visibleSeries.some((series) => series.points.some((point) => point.value > 0));
+
+    return {
+      chartWidth,
+      chartHeight,
+      paddingLeft,
+      paddingRight,
+      paddingTop,
+      paddingBottom,
+      hasVisibleValues,
+      visibleSeries,
+      xTicks,
+      yTicks,
+    };
+  }, [moneyflowChartData, visibleMoneyflowSeriesKeys]);
   const dashboardWorkerLoad = useMemo(
     () =>
       staffUsers.map((master) => {
@@ -1421,6 +1768,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     {
       id: "moneyflow",
       label: "MoneyFlow",
+    },
+    {
+      id: "procurement",
+      label: "Procurement",
     },
     {
       id: "service_board",
@@ -1506,11 +1857,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   function renderDashboard() {
     const recentRepairs = [...filteredServiceBoardRepairs]
       .sort((left, right) => right.created_at.localeCompare(left.created_at))
-      .slice(0, 3);
-    const activeDateRange = activeDashboardTab === "moneyflow" ? moneyflowDateRange : serviceBoardDateRange;
+      .slice(0, 5);
+    const funnelStatuses: RepairStatus[] = ["new", "in_progress", "waiting_parts", "completed"];
+    const opAnalytics = dashboardAnalytics?.operational;
+    const activeWorkloadFromApi = opAnalytics?.active_workload_preview ?? [];
+    const recentlyCreatedFromApi = opAnalytics?.recently_created_preview ?? [];
+    const activeWorkloadRepairsFallback = [...activeRepairs].sort((left, right) =>
+      right.updated_at.localeCompare(left.updated_at)
+    );
+    const activeDateRange =
+      activeDashboardTab === "service_board" ? serviceBoardDateRange : moneyflowDateRange;
     const updateActiveDateRange = (field: keyof DashboardDateRange, value: string) => {
-      if (activeDashboardTab === "moneyflow") {
-        setMoneyflowDateRange((current) => {
+      if (activeDashboardTab === "service_board") {
+        setServiceBoardDateRange((current) => {
           if (field === "start_date") {
             return {
               start_date: value,
@@ -1525,7 +1884,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         });
         return;
       }
-      setServiceBoardDateRange((current) => {
+      setMoneyflowDateRange((current) => {
         if (field === "start_date") {
           return {
             start_date: value,
@@ -1539,6 +1898,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         };
       });
     };
+    const toggleMoneyflowSeries = (key: MoneyflowSeriesKey) => {
+      setMoneyflowSeriesVisibility((current) => ({
+        ...current,
+        [key]: !current[key],
+      }));
+    };
 
     return (
       <div className="workspace-stack dashboard-workspace">
@@ -1548,12 +1913,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               <p className="eyebrow">Workshop Command</p>
               <h2>Operations Dashboard</h2>
               <p className="workspace-copy">
-                Track intake volume, purchase movement and repair load without leaving the staff workspace.
+                Track purchases, revenue, PDF completion acts, and service load in one staff workspace.
               </p>
             </div>
           </div>
 
-          <div className="dashboard-folder-tabs" role="tablist" aria-label="Dashboard views">
+          <div className="dashboard-folder-tabs" role="tablist" aria-label="Dashboard tabs">
             {dashboardTabs.map((tab) => (
               <button
                 key={tab.id}
@@ -1585,6 +1950,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 />
               </label>
             </div>
+            {dashboardAnalyticsLoading ? (
+              <p className="workspace-note" aria-live="polite">
+                Loading analytics…
+              </p>
+            ) : null}
+            {dashboardAnalyticsError && !dashboardAnalyticsLoading ? (
+              <p className="workspace-note" role="alert">
+                {dashboardAnalyticsError}
+              </p>
+            ) : null}
             {activeDashboardTab === "moneyflow" ? (
               <div className="workspace-stack">
                 <section className="dashboard-report-section">
@@ -1595,11 +1970,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                   </div>
 
-                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-single">
+                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
                     <article className="metric-card">
-                      <span className="metric-label">Total Service Sales</span>
+                      <span className="metric-label">Service sales (live)</span>
                       <strong>{formatCurrency(totalServiceSales)}</strong>
-                      <p>Total amount sold from services inside the selected period.</p>
+                      <p>From the service catalog API for the selected period.</p>
+                    </article>
+                    <article className="metric-card">
+                      <span className="metric-label">Combined live (services + parts)</span>
+                      <strong>{formatCurrency(totalServiceSales + totalPartsSales)}</strong>
+                      <p>Live estimate: services plus parts resale for completed jobs in range.</p>
+                    </article>
+                    <article className="metric-card metric-card-accent">
+                      <span className="metric-label">Parts sales (live)</span>
+                      <strong>{formatCurrency(totalPartsSales)}</strong>
+                      <p>Also shown below; use for comparison with the act snapshot.</p>
                     </article>
                   </div>
                 </section>
@@ -1614,21 +1999,324 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                   <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
                     <article className="metric-card">
-                      <span className="metric-label">Purchase Spend</span>
+                      <span className="metric-label">Purchase spend</span>
                       <strong>{formatCurrency(totalPurchaseCost)}</strong>
-                      <p>Total amount spent on ordered parts inside the selected period.</p>
+                      <p>Sum of purchase orders by order date in the period.</p>
                     </article>
                     <article className="metric-card">
-                      <span className="metric-label">Parts Sales</span>
+                      <span className="metric-label">Parts sales to client</span>
                       <strong>{formatCurrency(totalPartsSales)}</strong>
-                      <p>Total resale value of booked parts inside the selected period.</p>
+                      <p>Purchase lines tied to completed repairs in range.</p>
                     </article>
                     <article className="metric-card">
-                      <span className="metric-label">Total Margin</span>
+                      <span className="metric-label">Parts margin</span>
                       <strong>{formatCurrency(projectedMargin)}</strong>
-                      <p>Difference between parts purchase spend and parts sales.</p>
+                      <p>Parts sales minus purchase spend in the period.</p>
                     </article>
                   </div>
+                </section>
+
+                {dashboardAnalytics?.pdf ? (
+                  <>
+                    <section className="dashboard-report-section">
+                      <div className="dashboard-report-head">
+                        <div>
+                          <p className="eyebrow">Stored completion acts</p>
+                          <h3>Latest PDF snapshot per job</h3>
+                        </div>
+                      </div>
+                      <p className="workspace-copy">
+                        Totals use the <strong>latest</strong> export for each repair whose{" "}
+                        <strong>completed date</strong> falls in the selected range. Each PDF export is also counted on
+                        the chart on its export day (the &quot;Act … (export day)&quot; series).
+                      </p>
+                      <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
+                        <article className="metric-card">
+                          <span className="metric-label">Labor (acts)</span>
+                          <strong>{formatCurrency(dashboardAnalytics.pdf.latest_act_totals.labor_total)}</strong>
+                          <p>From the latest act per qualifying repair.</p>
+                        </article>
+                        <article className="metric-card">
+                          <span className="metric-label">Parts to client (acts)</span>
+                          <strong>{formatCurrency(dashboardAnalytics.pdf.latest_act_totals.parts_client_total)}</strong>
+                          <p>Snapshot at the last export.</p>
+                        </article>
+                        <article className="metric-card">
+                          <span className="metric-label">Document total (acts)</span>
+                          <strong>{formatCurrency(dashboardAnalytics.pdf.latest_act_totals.document_total)}</strong>
+                          <p>Full document total from the latest snapshot.</p>
+                        </article>
+                        <article className="metric-card">
+                          <span className="metric-label">Completed without act</span>
+                          <strong>{dashboardAnalytics.pdf.coverage.completed_without_pdf}</strong>
+                          <p>
+                            Of {dashboardAnalytics.pdf.coverage.completed_in_range} completed in range still need a
+                            PDF export.
+                          </p>
+                        </article>
+                        <article className="metric-card">
+                          <span className="metric-label">Exports in period</span>
+                          <strong>{dashboardAnalytics.pdf.exports_in_period}</strong>
+                          <p>All PDF versions created in this date range.</p>
+                        </article>
+                        <article className="metric-card">
+                          <span className="metric-label">Multi-export jobs</span>
+                          <strong>{dashboardAnalytics.pdf.completed_repairs_with_multiple_exports}</strong>
+                          <p>Completed in range with more than one stored act version.</p>
+                        </article>
+                      </div>
+                    </section>
+
+                    <section className="dashboard-report-section">
+                      <div className="dashboard-report-head">
+                        <div>
+                          <p className="eyebrow">Reconciliation</p>
+                          <h3>Live estimate vs latest act</h3>
+                        </div>
+                      </div>
+                      <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
+                        <article className="metric-card">
+                          <span className="metric-label">Service / labor</span>
+                          <strong>
+                            {formatCurrency(totalServiceSales)} →{" "}
+                            {formatCurrency(dashboardAnalytics.pdf.latest_act_totals.labor_total)}
+                          </strong>
+                          <p>Live uses the current catalog; acts use values frozen at export.</p>
+                        </article>
+                        <article className="metric-card">
+                          <span className="metric-label">Parts to client</span>
+                          <strong>
+                            {formatCurrency(totalPartsSales)} →{" "}
+                            {formatCurrency(dashboardAnalytics.pdf.latest_act_totals.parts_client_total)}
+                          </strong>
+                          <p>Live from purchase lines; acts from snapshot at export.</p>
+                        </article>
+                        <article className="metric-card">
+                          <span className="metric-label">First export lag (median days)</span>
+                          <strong>
+                            {dashboardAnalytics.pdf.completed_to_first_export_lag_days.median != null
+                              ? `${dashboardAnalytics.pdf.completed_to_first_export_lag_days.median} d`
+                              : "—"}
+                          </strong>
+                          <p>
+                            From completed date to first PDF (sample{" "}
+                            {dashboardAnalytics.pdf.completed_to_first_export_lag_days.sample_size}).
+                          </p>
+                        </article>
+                      </div>
+                    </section>
+                  </>
+                ) : (
+                  <p className="workspace-note">Billing analytics unavailable (check connection or sign-in).</p>
+                )}
+
+                <section className="panel dashboard-moneyflow-chart-panel">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">MoneyFlow Chart</p>
+                      <h3>Flow Timeline</h3>
+                    </div>
+                  </div>
+
+                  <p className="workspace-copy dashboard-chart-copy">
+                    Compare purchase spend with live service and parts estimates. Turn on the &quot;Act … (export
+                    day)&quot; series to overlay sums from stored PDFs by export day (each export counts separately).
+                  </p>
+
+                  <div className="moneyflow-series-toggle-row" role="group" aria-label="MoneyFlow chart series">
+                    {(Object.keys(moneyflowSeriesMeta) as MoneyflowSeriesKey[]).map((key) => {
+                      const meta = moneyflowSeriesMeta[key];
+                      const isVisible = moneyflowSeriesVisibility[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`moneyflow-series-toggle ${isVisible ? "moneyflow-series-toggle-active" : ""}`}
+                          aria-pressed={isVisible}
+                          aria-label={`${meta.label} trend`}
+                          onClick={() => toggleMoneyflowSeries(key)}
+                        >
+                          <span className="moneyflow-series-swatch" style={{ backgroundColor: meta.color }} />
+                          <span>{meta.label}</span>
+                          <span className="moneyflow-series-state">{isVisible ? "On" : "Off"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {visibleMoneyflowSeriesKeys.length === 0 ? (
+                    <p className="workspace-note">Turn on at least one line to display the chart.</p>
+                  ) : null}
+
+                  {visibleMoneyflowSeriesKeys.length > 0 && !moneyflowChartModel.hasVisibleValues ? (
+                    <p className="workspace-note">No movement for the selected series in this period yet.</p>
+                  ) : null}
+
+                  {visibleMoneyflowSeriesKeys.length > 0 && moneyflowChartModel.hasVisibleValues ? (
+                    <div className="moneyflow-chart-shell">
+                      <svg
+                        className="moneyflow-chart-svg"
+                        viewBox={`0 0 ${moneyflowChartModel.chartWidth} ${moneyflowChartModel.chartHeight}`}
+                        role="img"
+                        aria-label="MoneyFlow trend chart"
+                      >
+                        {moneyflowChartModel.yTicks.map((tick) => (
+                          <g key={tick.label}>
+                            <line
+                              x1={moneyflowChartModel.paddingLeft}
+                              y1={tick.y}
+                              x2={moneyflowChartModel.chartWidth - moneyflowChartModel.paddingRight}
+                              y2={tick.y}
+                              className="moneyflow-chart-gridline"
+                            />
+                            <text x={14} y={tick.y + 4} className="moneyflow-chart-axis-label">
+                              {tick.label}
+                            </text>
+                          </g>
+                        ))}
+
+                        {moneyflowChartModel.xTicks.map((tick) => (
+                          <g key={tick.date}>
+                            <line
+                              x1={tick.x}
+                              y1={moneyflowChartModel.paddingTop}
+                              x2={tick.x}
+                              y2={moneyflowChartModel.chartHeight - moneyflowChartModel.paddingBottom}
+                              className="moneyflow-chart-gridline moneyflow-chart-gridline-vertical"
+                            />
+                            <text
+                              x={tick.x}
+                              y={moneyflowChartModel.chartHeight - 10}
+                              textAnchor="middle"
+                              className="moneyflow-chart-axis-label"
+                            >
+                              {tick.label}
+                            </text>
+                          </g>
+                        ))}
+
+                        {moneyflowChartModel.visibleSeries.map((series) => (
+                          <g key={series.key}>
+                            <path d={series.path} fill="none" stroke={series.color} strokeWidth="3" strokeLinecap="round" />
+                            {series.points.length <= 45
+                              ? series.points.map((point) => (
+                                  <circle
+                                    key={`${series.key}-${point.date}`}
+                                    cx={point.x}
+                                    cy={point.y}
+                                    r="3.6"
+                                    fill={series.color}
+                                    stroke="rgba(18, 20, 29, 0.96)"
+                                    strokeWidth="1.6"
+                                  />
+                                ))
+                              : null}
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+                  ) : null}
+                </section>
+              </div>
+            ) : null}
+
+            {activeDashboardTab === "procurement" ? (
+              <div className="workspace-stack">
+                <section className="dashboard-report-section">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">Purchasing</p>
+                      <h3>Top suppliers by spend</h3>
+                    </div>
+                  </div>
+                  <p className="workspace-copy">
+                    Sum of <code>purchase price × quantity</code> by order date in the selected range (same window as
+                    the MoneyFlow tab).
+                  </p>
+                  {dashboardAnalytics?.moneyflow?.supplier_spend_top?.length ? (
+                    <table className="dashboard-table">
+                      <thead>
+                        <tr>
+                          <th>Supplier</th>
+                          <th>Lines</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardAnalytics.moneyflow.supplier_spend_top.map((row) => (
+                          <tr key={`${row.supplier_id}-${row.supplier_name}`}>
+                            <td>{row.supplier_name || `ID ${row.supplier_id}`}</td>
+                            <td>{row.line_count}</td>
+                            <td>{formatCurrency(row.total_spend)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="workspace-note">No purchases in this period.</p>
+                  )}
+                </section>
+
+                <section className="dashboard-report-section">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">Data quality</p>
+                      <h3>Unlinked purchases</h3>
+                    </div>
+                  </div>
+                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
+                    <article className="metric-card">
+                      <span className="metric-label">Lines without repair_code</span>
+                      <strong>{dashboardAnalytics?.moneyflow?.purchases_unlinked.count ?? "—"}</strong>
+                      <p>Orders in range with no repair code.</p>
+                    </article>
+                    <article className="metric-card">
+                      <span className="metric-label">Unlinked spend</span>
+                      <strong>
+                        {dashboardAnalytics?.moneyflow
+                          ? formatCurrency(dashboardAnalytics.moneyflow.purchases_unlinked.total_spend)
+                          : "—"}
+                      </strong>
+                      <p>Same date range as MoneyFlow.</p>
+                    </article>
+                  </div>
+                </section>
+
+                <section className="dashboard-report-section">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">PDF</p>
+                      <h3>Exports by staff</h3>
+                    </div>
+                  </div>
+                  <p className="workspace-copy">
+                    Count of <code>RepairDocument</code> rows created in range (<code>created_at</code>), grouped by{" "}
+                    <code>exported_by</code>.
+                  </p>
+                  {dashboardAnalytics?.moneyflow?.exports_by_exporter?.length ? (
+                    <table className="dashboard-table">
+                      <thead>
+                        <tr>
+                          <th>User</th>
+                          <th>Exports</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardAnalytics.moneyflow.exports_by_exporter.map((row, idx) => (
+                          <tr key={`${row.user_id ?? "none"}-${idx}`}>
+                            <td>
+                              {row.user_id == null
+                                ? "Not set"
+                                : row.display_name || row.email || `ID ${row.user_id}`}
+                            </td>
+                            <td>{row.export_count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="workspace-note">No PDF exports in this period.</p>
+                  )}
                 </section>
               </div>
             ) : null}
@@ -1653,11 +2341,52 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </article>
                 </div>
 
+                {opAnalytics ? (
+                  <section className="dashboard-report-section">
+                    <div className="metric-grid metric-grid-three">
+                      <article className="metric-card">
+                        <span className="metric-label">Median cycle time</span>
+                        <strong>
+                          {opAnalytics.cycle_time_days.median != null
+                            ? `${opAnalytics.cycle_time_days.median} d`
+                            : "—"}
+                        </strong>
+                        <p>Create → complete for jobs finished in the ServiceBoard date range.</p>
+                      </article>
+                      <article className="metric-card">
+                        <span className="metric-label">Cycle p90</span>
+                        <strong>
+                          {opAnalytics.cycle_time_days.p90 != null ? `${opAnalytics.cycle_time_days.p90} d` : "—"}
+                        </strong>
+                        <p>Sample: {opAnalytics.cycle_time_days.sample_completed_in_range} completed.</p>
+                      </article>
+                      <article className="metric-card">
+                        <span className="metric-label">Created in range</span>
+                        <strong>{opAnalytics.repairs_created_in_range}</strong>
+                        <p>Repairs with created date inside the ServiceBoard period.</p>
+                      </article>
+                    </div>
+                    <p className="eyebrow" style={{ marginTop: "0.75rem" }}>
+                      Status funnel (created in period)
+                    </p>
+                    <div className="moneyflow-series-toggle-row" role="list">
+                      {funnelStatuses.map((status) => (
+                        <span key={status} className="moneyflow-series-toggle moneyflow-series-toggle-active" role="listitem">
+                          <span>{REPAIR_STATUS_LABELS[status]}</span>
+                          <span className="moneyflow-series-state">{opAnalytics.funnel_by_status[status] ?? 0}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                ) : (
+                  <p className="workspace-note">Operational analytics unavailable for this range.</p>
+                )}
+
                 <section className="panel dashboard-mini-panel">
                   <div className="panel-header">
                     <div>
                       <p className="eyebrow">Repair Flow</p>
-                      <h3>Current Work Queue</h3>
+                      <h3>Active workload</h3>
                     </div>
                     <div className="hero-actions">
                       <button type="button" className="button button-secondary" onClick={() => onSelectSection("vehicles")}>
@@ -1668,23 +2397,86 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       </button>
                     </div>
                   </div>
-
+                  <p className="workspace-copy">
+                    Non-completed jobs in the ServiceBoard period, ordered by last update (server) or the same filter
+                    client-side if offline.
+                  </p>
                   <div className="dashboard-inline-list">
-                    {recentRepairs.length === 0 ? <p className="workspace-note">No repair jobs inside this period.</p> : null}
-                    {recentRepairs.map((repair) => (
-                      <article className="dashboard-inline-card" key={repair.id}>
-                        <div>
-                          <h4>{repair.service_name}</h4>
-                          <p>{repair.vehicle_label}</p>
-                        </div>
-                        <div className="dashboard-inline-meta">
-                          <span className={getRepairStatusClass(repair.status)}>
-                            {REPAIR_STATUS_LABELS[repair.status]}
-                          </span>
-                          <p>{repair.master_name}</p>
-                        </div>
-                      </article>
-                    ))}
+                    {activeWorkloadFromApi.length === 0 && activeWorkloadRepairsFallback.length === 0 ? (
+                      <p className="workspace-note">No active jobs in this period.</p>
+                    ) : null}
+                    {activeWorkloadFromApi.length > 0
+                      ? activeWorkloadFromApi.map((row) => (
+                          <article className="dashboard-inline-card" key={`api-active-${row.id}`}>
+                            <div>
+                              <h4>{row.service_name}</h4>
+                              <p>{row.vehicle_label}</p>
+                            </div>
+                            <div className="dashboard-inline-meta">
+                              <span className={getRepairStatusClass(row.status as RepairStatus)}>
+                                {REPAIR_STATUS_LABELS[row.status as RepairStatus]}
+                              </span>
+                              <p>{row.tracking_code}</p>
+                            </div>
+                          </article>
+                        ))
+                      : activeWorkloadRepairsFallback.map((repair) => (
+                          <article className="dashboard-inline-card" key={`local-active-${repair.id}`}>
+                            <div>
+                              <h4>{repair.service_name}</h4>
+                              <p>{repair.vehicle_label}</p>
+                            </div>
+                            <div className="dashboard-inline-meta">
+                              <span className={getRepairStatusClass(repair.status)}>
+                                {REPAIR_STATUS_LABELS[repair.status]}
+                              </span>
+                              <p>{repair.master_name}</p>
+                            </div>
+                          </article>
+                        ))}
+                  </div>
+                </section>
+
+                <section className="panel dashboard-mini-panel">
+                  <div className="panel-header">
+                    <div>
+                      <p className="eyebrow">Intake</p>
+                      <h3>Recently created</h3>
+                    </div>
+                  </div>
+                  <div className="dashboard-inline-list">
+                    {recentlyCreatedFromApi.length === 0 && recentRepairs.length === 0 ? (
+                      <p className="workspace-note">No repair jobs inside this period.</p>
+                    ) : null}
+                    {recentlyCreatedFromApi.length > 0
+                      ? recentlyCreatedFromApi.map((row) => (
+                          <article className="dashboard-inline-card" key={`api-recent-${row.id}`}>
+                            <div>
+                              <h4>{row.service_name}</h4>
+                              <p>{row.vehicle_label}</p>
+                            </div>
+                            <div className="dashboard-inline-meta">
+                              <span className={getRepairStatusClass(row.status as RepairStatus)}>
+                                {REPAIR_STATUS_LABELS[row.status as RepairStatus]}
+                              </span>
+                              <p>{row.tracking_code}</p>
+                            </div>
+                          </article>
+                        ))
+                      : recentRepairs.map((repair) => (
+                          <article className="dashboard-inline-card" key={`local-recent-${repair.id}`}>
+                            <div>
+                              <h4>{repair.service_name}</h4>
+                              <p>{repair.vehicle_label}</p>
+                            </div>
+                            <div className="dashboard-inline-meta">
+                              <span className={getRepairStatusClass(repair.status)}>
+                                {REPAIR_STATUS_LABELS[repair.status]}
+                              </span>
+                              <p>{repair.master_name}</p>
+                            </div>
+                          </article>
+                        ))}
                   </div>
                 </section>
 
