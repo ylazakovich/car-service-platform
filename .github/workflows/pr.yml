@@ -33,13 +33,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: >
-          npx vitest run
-          --reporter=default
-          --reporter=github-actions
-          --reporter=junit
-          --reporter=allure-vitest/reporter
-          --outputFile=test-results/junit.xml
+        run: npx vitest run
 
       - name: Test summary
         if: always()
@@ -98,8 +92,9 @@ jobs:
       - name: Run tests
         env:
           DJANGO_SECRET_KEY: ci-test-secret-key
+          TEST_OUTPUT_DIR: test-results
         run: |
-          mkdir -p test-results
+          mkdir -p allure-results test-results
           pytest --alluredir=allure-results --junitxml=test-results/junit.xml -v
 
       - name: Test summary

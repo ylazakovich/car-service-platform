@@ -3,7 +3,7 @@
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
 - Last updated: `2026-04-04`
-- Status: `m3 pdf persist + snapshot done on branch; dashboard/historical next`
+- Status: `m3 pdf + snapshot + staff dashboard analytics (API + MoneyFlow/Procurement/ServiceBoard UI) done on branch; historical UX / monthly / supplier next`
 
 ## NOW
 
@@ -11,7 +11,7 @@
 - [x] Завершенный `Repair`: просмотр PDF и новая выгрузка только при `completed` (UI: **View PDF**; первая выгрузка при отсутствии файла; **Export new version** в превью). API: `GET …/pdf/` (последняя версия, без новой записи) и `POST …/pdf/export/` (новая версия).
 - [x] Backend: `RepairDocument` + `RepairFinancialSnapshot`, versioned persist в media и БД; суммы из одного расчёта (`financial_totals`).
 - [x] Состав snapshot: labor, parts client/purchase, other (0), document total, связь с документом и timestamp/author export.
-- [ ] Привязать созданный PDF и snapshot к главному аналитическому dashboard, чтобы агрегаты считались по сохраненным значениям из выгрузки.
+- [x] Привязать созданный PDF и snapshot к главному аналитическому dashboard: `GET /api/analytics/dashboard/`, вкладки MoneyFlow (акты + сверка + график), Procurement (поставщики / unlinked / экспорты по пользователю), ServiceBoard (операционные KPI из API).
 - [ ] Спроектировать сценарий исторического просмотра аналитики: как выбирать период, активную версию snapshot и как отображать архивные данные без пересчета задним числом.
 - [ ] Согласовать source of truth для supplier/monthly analytics с новым snapshot-слоем, чтобы отчеты не расходились между собой.
 - [ ] Полный контур: `… -> dashboard totals -> historical lookup` (частично: backend persist + Playwright `frontend/e2e/repair-pdf-view.spec.ts` для просмотра без лишнего POST export).
@@ -32,8 +32,8 @@
 - [ ] Определить, по каким датам рисуется календарь для ремонта: дата создания, planned dates, completed date или derived operational span, чтобы представление было доменно корректным.
 
 ### Dashboard: MoneyFlow Default Range
-- [ ] Исправить `dashboard -> moneyflow` default dates: `EndDate = today`, `StartDate = today - 30 days` при каждом открытии экрана.
-- [ ] Убрать зависимость initial moneyflow range от data bounds и зафиксировать rolling default, который не подменяется предыдущим пользовательским выбором при новом заходе.
+- [x] При первом заходе на **Dashboard** выставлять moneyflow-диапазон: последние 30 дней → сегодня (local); при уходе со страницы и повторном входе — снова инициализация (ref), без привязки к data bounds.
+- [ ] Явно зафиксировать в тестах e2e/unit сценарий «ушёл на другую вкладку → вернулся → снова rolling 30d» (smoke частично покрывает).
 - [ ] Добавить проверку timezone/date math для `moneyflow`, чтобы `today` и `-30 days` считались стабильно и без off-by-one ошибок.
 
 ### Staff Vehicle-Only Access
@@ -47,7 +47,8 @@
 - [ ] Довести completion act до финального документа и определить, это тот же PDF-поток или отдельный документный сценарий.
 - [ ] Подготовить карточку автомобиля с реальной историей ремонтов и документами по завершенным работам.
 - [ ] Подготовить карточку клиента с реальной историей обращений и завершенных ремонтов.
-- [ ] Добавить e2e-сценарий для документного и **аналитического** flow (PDF e2e уже есть; дождаться dashboard-ветки).
+- [x] Добавить e2e-сценарий для **дашборда** (минимум: `frontend/e2e/admin-dashboard-visit.spec.ts` — вход admin, вкладки MoneyFlow / Procurement / ServiceBoard).
+- [ ] Расширить e2e: проверка загрузки `/analytics/dashboard/` и ключевых KPI (после стабильных фикстур).
 - [ ] Добавить e2e-сценарий для QuickFocus/VPR flow: `поиск vehicle -> create vehicle -> create customer if needed -> create repair`.
 - [ ] Добавить тесты и e2e-сценарий для admin user revocation flow.
 - [ ] Добавить тесты и e2e-сценарии для service board calendar: текущий день, waiting parts, легенда, переключение периода.
@@ -64,7 +65,7 @@
 ## Notes
 - Этот файл намеренно короткий.
 - **PR `feature/m3-pdf-snapshot-persist`:** закрывает первый вертикальный срез M3 (persist + snapshot + разделение просмотра/новой выгрузки). Дашборд и историческая аналитика — следующий шаг (может быть отдельная ветка).
-- Первый приоритет M3: PDF + snapshot — **выполнен на уровне API/БД/UI repair**; интеграция с dashboard остаётся открытой.
+- Первый приоритет M3: PDF + snapshot — **выполнен**; интеграция с dashboard (read-only аналитика) — **выполнена** в текущей ветке.
 - Второй приоритет M3: убрать блокер создания VPR, когда нужный `Vehicle` или `Customer` еще не заведены.
 - Третий приоритет M3: дать админу управляемый способ закрывать доступ staff после увольнения.
 - Четвертый приоритет M3: превратить service board в календарный operational dashboard с фокусом на текущий день.

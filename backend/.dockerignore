@@ -6,3 +6,9 @@ __pycache__/
 .venv/
 test-results/
 staticfiles/
+allure-results/
+allure-report/
+htmlcov/
+.coverage
+.coverage.*
+coverage/
