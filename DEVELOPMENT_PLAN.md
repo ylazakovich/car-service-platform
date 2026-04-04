@@ -6,7 +6,7 @@
 - Active plan owner: `planner` + `architect`
 - Last updated: `2026-04-04`
 - Archive: `docs/planning/archive/`
-- Status: `m2 completed | m3 in progress — PDF persist + versioned snapshot + client portal + staff dashboard analytics (MoneyFlow PDF aggregates, Procurement API block, ServiceBoard KPIs) done; historical period picker / monthly / supplier reporting — дальше`
+- Status: `m2 completed | m3 in progress — PDF persist + versioned snapshot + client portal + staff dashboard analytics (MoneyFlow PDF aggregates, Procurement API block, ServiceBoard KPIs) done; планируется: расширение MoneyFlow сводкой по закупкам + новая вкладка Dashboard (No invoice / No vehicles); historical period picker / monthly / supplier reporting — дальше`
 
 ## 1) Product Goal
 Собрать устойчивую `car-service-platform`, которая закрывает не только операционный цикл автосервиса, но и аналитический контур после завершения ремонта: итоговые документы, финансовые срезы и историческую отчётность.
@@ -28,6 +28,7 @@
 - Purchases и Services уже имеют реальные API и используются frontend-частью вместо demo-state.
 - Vehicle-поля `mileage`, `last_service_date`, `added_date` синхронизированы с backend.
 - `Dashboard`: вкладка **MoneyFlow** показывает live-оценку (услуги из API, запчасти/закупки) и агрегаты по **последнему PDF/snapshot** за период + график (в т.ч. по дням экспорта); **Procurement** — топ поставщиков, несвязанные закупки, экспорты по сотруднику; **ServiceBoard** — воронка, cycle time, превью очередей. Исторический «срез на дату в прошлом» как отдельный UX ещё не сделан.
+- **Планируемое разделение Purchases ↔ Dashboard:** с экрана **Purchases** убраны сводка **Displayed / Buy / Sale / Margin** и клиентские фильтры **No invoice** / **No vehicle** — их переносят в аналитический контур: сводка закупок по выбранному периоду — во **вкладку MoneyFlow**; списки/метрики закупок без инвойса и без привязки к авто — в **отдельную подвкладку Dashboard** (не дублировать как фильтры в основном списке закупок).
 - **M3 slice (ветка `feature/m3-pdf-snapshot-persist`):** модели `RepairDocument` + `RepairFinancialSnapshot`, файлы PDF в media, расчёт сумм в одном месте (`financial_totals`). API: `GET /repairs/<id>/pdf/` — последняя выгрузка без новой версии; `POST /repairs/<id>/pdf/export/` — новая версия + snapshot. UI: View PDF, в модалке — Export new version. E2E Playwright: повторный просмотр не дублирует POST export.
 - Фото ремонта на UI присутствуют, но upload остается deferred до выбора постоянного хранилища.
 - Технический долг M2 закрыт; платформа готова к переходу в отчетность и документы.
@@ -93,6 +94,8 @@ Milestone включает:
 9. Service board во вкладке dashboard показывает большой operational calendar с текущим фокусом, статусными обозначениями и легендой.
 10. Money Flow во вкладке dashboard всегда открывается с диапазоном `today - 30 days` -> `today`.
 11. Staff видит весь vehicle registry и repair history по машинам, но не получает доступ к customer identity и контактам.
+12. **MoneyFlow:** в той же вкладке отображается сводка по закупкам за выбранный период (кол-во отображаемых/учтённых строк, сумма закупки, сумма продажи клиенту, маржа) — логическое место для метрик, ранее показанных на **Purchases**; источник данных и согласование с пагинацией/API фиксируются при реализации (предпочтительно серверный агрегат за период).
+13. **Dashboard:** добавлена отдельная подвкладка для операционного контроля закупок **без инвойса** и **без привязки к автомобилю** (аналог бывших фильтров на **Purchases**), с возможностью перейти к записи закупки.
 
 ## 5) Delivery Roadmap
 
@@ -126,6 +129,7 @@ Milestone включает:
 - большой service board calendar в dashboard с визуализацией текущих repair statuses
 - moneyflow default date range `today - 30 days` -> `today`
 - staff vehicle-only visibility без customer PII
+- расширение **MoneyFlow** сводкой по закупкам (buy/sale/margin, учёт строк за период) + новая **подвкладка Dashboard** «No invoice / No vehicles»
 - current status: `in progress` (pdf + snapshot + dashboard analytics slice; historical/monthly/supplier UI — дальше)
 
 ### M4: Deferred Media And Extended Reporting
@@ -173,6 +177,8 @@ Milestone `M3` считается завершённым, если:
 8. Во вкладке `service_board` есть большой календарь, который стартует от текущей даты и показывает статусные маркеры/линии по активным ремонтам, включая `in_progress` и `waiting_parts`, с понятной легендой.
 9. Во вкладке `moneyflow` при каждом открытии `EndDate` равен текущему дню, а `StartDate` равен дате 30 дней назад, независимо от предыдущих выборов пользователя.
 10. Staff видит все машины и их repair history, но не видит customer name, contact details и другие персональные данные клиента.
+11. Во вкладке `moneyflow` видна сводка по закупкам за выбранный диапазон дат (в т.ч. buy / sale / margin и пояснение, что входит в подсчёт), согласованная с `DOMAIN_RULES.md` и не противоречащая блокам snapshot/live.
+12. В dashboard есть отдельная подвкладка со списками/счётчиками закупок без прикреплённого инвойса и без привязанного автомобиля, с навигацией к деталям закупки; для `staff` — без утечки customer PII.
 
 ## 7) Constraints
 - Active-файлы должны оставаться короткими и без архивной истории.
@@ -196,6 +202,8 @@ Milestone `M3` считается завершённым, если:
 - dashboard service board calendar с operational view от текущего дня
 - dashboard moneyflow с фиксированным rolling default range `today - 30 days` -> `today`
 - staff vehicle-only access model с глобальной видимостью машин и скрытием customer PII
+- moneyflow: сводные метрики по закупкам за период (перенос с UX **Purchases**)
+- dashboard: подвкладка контроля закупок **No invoice** и **No vehicles**
 
 ## 9) Deferred / Open Decisions
 - ~~несколько PDF-версий на `Repair`~~: **да, версии монотонны; для просмотра по умолчанию — последняя (GET); новая версия только через POST export**; для dashboard агрегатов «по последнему акту» — **последняя версия по `version`** (см. `DOMAIN_RULES.md` §3.1)

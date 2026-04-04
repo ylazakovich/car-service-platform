@@ -47,6 +47,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "repair_code",
             "invoice_name",
             "invoice_url",
+            "delivered",
             "created_at",
             "updated_at",
         )
