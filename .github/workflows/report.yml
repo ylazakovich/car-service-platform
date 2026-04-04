@@ -38,18 +38,22 @@ jobs:
         with:
           install-dependencies: "false"
 
+      # workflow_run.pull_requests is often empty (forks, timing). Fall back: commit → PR (gh api).
       - name: Resolve PR number (GitHub Pages path)
         id: pr_ctx
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
-          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          if [ -n "$PR_NUMBER" ]; then
-            echo "has_pr=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_pr=false" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number??''))")"
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER="$(gh api "repos/$REPO/commits/$HEAD_SHA/pulls" -q '.[0].number // empty' 2>/dev/null || true)"
           fi
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          if [ -n "$PR_NUMBER" ]; then echo "has_pr=true" >> "$GITHUB_OUTPUT"; else echo "has_pr=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Detect fork PR (no Pages preview for cross-repo)
         id: fork
@@ -82,9 +86,27 @@ jobs:
             fi
           done
 
+      # hashFiles() follows .gitignore; repo root ignores artifacts/ → conditions were always false on GitHub.
+      - name: Probe downloaded JUnit paths
+        id: junit_paths
+        run: |
+          fr="false"
+          be="false"
+          e2e="false"
+          [ -f artifacts/frontend-test-results/junit.xml ] && fr="true"
+          shopt -s nullglob
+          be_xml=(artifacts/backend-test-results/*.xml)
+          ((${#be_xml[@]})) && be="true"
+          shopt -u nullglob
+          [ -f artifacts/e2e-test-results/e2e-junit.xml ] && e2e="true"
+          echo "frontend=$fr" >> "$GITHUB_OUTPUT"
+          echo "backend=$be" >> "$GITHUB_OUTPUT"
+          echo "e2e=$e2e" >> "$GITHUB_OUTPUT"
+          echo "Probe: frontend=$fr backend=$be e2e=$e2e"
+
       # dorny/test-reporter: reporter "java-junit" = JUnit XML (Vitest, pytest, xmlrunner, etc.), not a Java stack.
       - name: Frontend Test Report
-        if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
+        if: steps.junit_paths.outputs.frontend == 'true'
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: Frontend Tests
@@ -92,7 +114,7 @@ jobs:
           reporter: java-junit
 
       - name: Backend Test Report
-        if: ${{ hashFiles('artifacts/backend-test-results/*.xml') != '' }}
+        if: steps.junit_paths.outputs.backend == 'true'
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: Backend Tests
@@ -100,7 +122,7 @@ jobs:
           reporter: java-junit
 
       - name: E2E (Playwright) Test Report
-        if: ${{ hashFiles('artifacts/e2e-test-results/e2e-junit.xml') != '' }}
+        if: steps.junit_paths.outputs.e2e == 'true'
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: E2E (Playwright)
@@ -178,17 +200,17 @@ jobs:
 
       - name: Post or update Allure comment on PR
         if: steps.allure.outputs.present == 'true'
+        env:
+          PR_NUMBER_RESOLVED: ${{ steps.pr_ctx.outputs.number }}
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const fs = require('fs');
-            const run = context.payload.workflow_run;
-            const prs = run.pull_requests || [];
-            if (prs.length === 0) {
-              core.info('workflow_run has no pull_requests; skip Allure PR comment (fork PRs may be empty).');
+            const issue_number = parseInt(process.env.PR_NUMBER_RESOLVED || '', 10);
+            if (!issue_number) {
+              core.info('No PR number (workflow_run.pull_requests empty and no commit→PR match); skip Allure PR comment.');
               return;
             }
-            const issue_number = prs[0].number;
             const marker = '<!-- csp-allure-ci -->';
             const body = fs.readFileSync('allure-pr-comment.md', 'utf8');
             const { data: comments } = await github.rest.issues.listComments({
