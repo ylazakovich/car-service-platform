@@ -6,7 +6,7 @@ on:
     types: [completed]
 
 permissions:
-  contents: write # peaceiris → push ветки gh-pages
+  contents: write # peaceiris pushes the gh-pages branch
   checks: write
   pull-requests: write
   actions: read
@@ -30,7 +30,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
 
-      # dorny/test-reporter: значение reporter "java-junit" = формат JUnit XML (Vitest, Django xmlrunner и т.д.), не стек Java.
+      # dorny/test-reporter: reporter "java-junit" means JUnit XML (Vitest, Django xmlrunner), not a Java stack.
       - name: Frontend Test Report
         if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
@@ -47,8 +47,8 @@ jobs:
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
 
-      # Allure: артефакт job PR Pipeline с именем "allure-results" → каталог artifacts/allure-results/
-      # Скрипт: .github/scripts/allure-ci.mjs — см. комментарий в pr.yml про выгрузку результатов.
+      # Allure: PR Pipeline must upload an artifact named "allure-results" → artifacts/allure-results/
+      # Script: .github/scripts/allure-ci.mjs (see pr.yml for when to upload).
       - name: Detect Allure results (artifact allure-results)
         id: allure
         run: |
@@ -58,7 +58,13 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Allure Pages — номер PR и тот же репозиторий (не fork)
+      - name: Set up Node.js (Allure CLI + allure-ci.mjs)
+        if: steps.allure.outputs.present == 'true'
+        uses: ./.github/actions/setup-node
+        with:
+          install-dependencies: "false"
+
+      - name: Allure Pages — PR number and same-repo check (skip fork PR previews)
         id: allure_pages
         if: steps.allure.outputs.present == 'true'
         env:
@@ -68,17 +74,12 @@ jobs:
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           HEAD_FULL="${{ github.event.workflow_run.head_repository.full_name }}"
           REPO_FULL="${{ github.repository }}"
-          if [ "$HEAD_FULL" = "$REPO_FULL" ]; then
+          # If head_repository is missing, treat as same repo (GitHub sometimes omits it on same-repo PRs).
+          if [ -z "$HEAD_FULL" ] || [ "$HEAD_FULL" = "$REPO_FULL" ]; then
             echo "same_repo=true" >> "$GITHUB_OUTPUT"
           else
             echo "same_repo=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Set up Node.js (Allure CLI + allure-ci.mjs)
-        if: steps.allure.outputs.present == 'true'
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
-        with:
-          node-version: "20"
 
       - name: Generate Allure HTML, badges, PR comment markdown
         if: steps.allure.outputs.present == 'true'
@@ -103,7 +104,7 @@ jobs:
             --pages-url "$PAGES_URL" \
             --fork-pr "false"
 
-      - name: Publish Allure preview to GitHub Pages (ветка gh-pages)
+      - name: Publish Allure preview to GitHub Pages (gh-pages branch)
         if: steps.allure.outputs.present == 'true' && steps.allure_pages.outputs.same_repo == 'true' && steps.allure_pages.outputs.pr_number != ''
         uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4
         with:

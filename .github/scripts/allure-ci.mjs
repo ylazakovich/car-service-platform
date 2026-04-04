@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Allure 2 — Shields endpoint JSON (allure-report/badges/) и тело PR-комментария.
- * Маркер `<!-- csp-allure-ci -->` — для upsert комментария в .github/workflows/report.yml.
- * Живёт в репозитории car-service-platform; в workflow вызывать из корня репозитория:
+ * Allure 2 — emit Shields-style JSON under allure-report/badges/ and a PR comment body.
+ * Marker `<!-- csp-allure-ci -->` is used by .github/workflows/report.yml to upsert the bot comment.
+ * Run from the repository root, for example:
  *
  *   node .github/scripts/allure-ci.mjs badges --results allure-results --out allure-report
  *   node .github/scripts/allure-ci.mjs pr-body --results allure-results --report allure-report \
