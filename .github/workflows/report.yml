@@ -30,6 +30,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
 
+      # dorny/test-reporter: значение reporter "java-junit" = формат JUnit XML (Vitest, Django xmlrunner и т.д.), не стек Java.
       - name: Frontend Test Report
         if: ${{ hashFiles('artifacts/frontend-test-results/junit.xml') != '' }}
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
@@ -45,3 +46,84 @@ jobs:
           name: Backend Tests
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
+
+      # Allure: артефакт job PR Pipeline с именем "allure-results" → каталог artifacts/allure-results/
+      # Скрипт: .github/scripts/allure-ci.mjs — см. комментарий в pr.yml про выгрузку результатов.
+      - name: Detect Allure results (artifact allure-results)
+        id: allure
+        run: |
+          if [ -d artifacts/allure-results ] && compgen -G 'artifacts/allure-results/*-result.json' > /dev/null; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node.js (Allure CLI + allure-ci.mjs)
+        if: steps.allure.outputs.present == 'true'
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: "20"
+
+      - name: Generate Allure HTML and PR comment markdown
+        if: steps.allure.outputs.present == 'true'
+        env:
+          PR_PULLS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: |
+          npx --yes allure generate artifacts/allure-results -o allure-report
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          PR_NUMBER="$(node -e "const a=JSON.parse(process.env.PR_PULLS_JSON||'[]'); process.stdout.write(String(a[0]?.number||''))")"
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No PR number on workflow_run; Pages link omitted."
+            PAGES_URL=""
+          else
+            PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/"
+          fi
+          node .github/scripts/allure-ci.mjs pr-body \
+            --results artifacts/allure-results \
+            --report allure-report \
+            --output allure-pr-comment.md \
+            --pages-url "$PAGES_URL" \
+            --fork-pr "false"
+
+      - name: Post or update Allure comment on PR
+        if: steps.allure.outputs.present == 'true'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const fs = require('fs');
+            const run = context.payload.workflow_run;
+            const prs = run.pull_requests || [];
+            if (prs.length === 0) {
+              core.info('workflow_run has no pull_requests; skip Allure PR comment (fork PRs may be empty).');
+              return;
+            }
+            const issue_number = prs[0].number;
+            const marker = '<!-- csp-allure-ci -->';
+            const body = fs.readFileSync('allure-pr-comment.md', 'utf8');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find(
+              (c) =>
+                c.user?.login === 'github-actions[bot]' &&
+                (c.body || '').includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body
+              });
+            }
