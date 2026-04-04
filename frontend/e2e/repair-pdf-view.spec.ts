@@ -2,7 +2,8 @@ import { test, expect } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 
 const STAFF_EMAIL = process.env.E2E_STAFF_EMAIL ?? "staff@autoservice.local";
-const STAFF_PASSWORD = process.env.E2E_STAFF_PASSWORD ?? "demo-staff-change-me";
+/** Must match STAFF_PASSWORD passed into the backend container (see docker-compose + .env.example). */
+const STAFF_PASSWORD = process.env.E2E_STAFF_PASSWORD ?? "change-me-in-production";
 
 /**
  * Expects Docker Compose with seeded staff user (see backend seed_staff) and at least one completed repair on the board.
