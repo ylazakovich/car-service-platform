@@ -2,7 +2,7 @@
 
 Технический baseline для `car-service-platform`.
 
-- Last updated: `2026-03-14`
+- Last updated: `2026-04-05`
 - Status: `approved baseline for project bootstrap`
 
 ## 1) Recommended Stack
@@ -102,6 +102,12 @@
 - код должен быть длинным и случайным, а не последовательным ID
 - доступ должен быть ограничен scope конкретного ремонта или акта
 
+### Test stack (staff UI + API)
+
+- Frontend: `Vitest` + Testing Library.
+- Backend: `pytest` (+ Allure-результаты в CI).
+- E2E: `Playwright` против полного Docker Compose; политика детерминизма и слои framework — `docs/testing/playwright-e2e-framework.md`.
+
 ## 5) Why This Stack
 
 - `Django` закрывает admin, ORM, auth, permissions и быстрый старт команды.
@@ -190,3 +196,5 @@
 - Execution backlog: `NEXT_STEPS.md`
 - Domain rules: `DOMAIN_RULES.md`
 - Technical baseline: `TECH_STACK.md`
+- E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`
+- Агенты / MCP (рекомендации): `docs/dev/agents-and-mcp.md`

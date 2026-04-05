@@ -1,36 +1,37 @@
 # .agents
 
-Локальные role-skills проекта.
+Project-local role skills.
 
-## Как использовать
+## How to use
 
-1. Откройте корневой `AGENTS.md`.
-2. Определите обязательную последовательность ролей по workflow из `AGENTS.md`.
-3. Запускайте `SKILL.md` каждой роли в порядке, требуемом этим workflow.
-4. Передавайте результат следующей роли в формате `Assumptions / Decisions / Output / Risks`.
+1. Open the root `AGENTS.md`.
+2. Determine the required role order from the workflow in `AGENTS.md`.
+3. Run each role’s `SKILL.md` in that order.
+4. Hand off to the next role using `Assumptions / Decisions / Output / Risks`.
 
-## Быстрый Маппинг Ролей
+## Role map
 
-- `planner` — строит исполнимый план.
-- `architect` — валидирует архитектурные решения и риски.
-- `domain-reviewer` — валидирует бизнес-инварианты и доменную корректность.
-- `backend-developer` — реализует серверные изменения.
-- `frontend-developer` — реализует клиентские изменения.
-- `plan-reviewer` — сверяет план и реализацию, выдает вердикт.
+- `planner` — builds an executable plan.
+- `architect` — validates architecture and risks.
+- `domain-reviewer` — validates business invariants and domain correctness.
+- `backend-developer` — implements server-side changes.
+- `frontend-developer` — implements client-side changes.
+- `e2e-validator` — Playwright E2E, scenario and CI stability (see `docs/testing/playwright-e2e-framework.md`).
+- `plan-reviewer` — checks plan vs implementation, issues verdict.
 
-## Обязательный Контекст
+## Required context
 
-- `DEVELOPMENT_PLAN.md` — active стратегия.
+- `DEVELOPMENT_PLAN.md` — active strategy.
 - `NEXT_STEPS.md` — active backlog.
-- `DOMAIN_RULES.md` — обязательный доменный контекст для задач, затрагивающих бизнес-правила, статусы, расчеты и инварианты.
-- `docs/planning/archive/` — история и старые snapshot-планы.
+- `DOMAIN_RULES.md` — required domain context when tasks touch business rules, statuses, calculations, or invariants.
+- `docs/planning/archive/` — history and old snapshot plans.
 
-## Шаблоны
+## Templates
 
 - Plan review report: `.agents/templates/plan-review-report.md`
 
-## Локальные Запуски
+## Local runs
 
-- Папка артефактов (по желанию): `.agents/runs/` — создавать run-папку и складывать туда отчёты ролей только если пользователь явно попросил в промпте; подробности в корневом `AGENTS.md`.
-- При явном запросе артефактов — новая run-папка:
+- Artifact folder (optional): `.agents/runs/` — create a run folder and store role reports only if the user explicitly asks in the prompt; see root `AGENTS.md`.
+- When artifacts are explicitly requested — new run folder:
   - `scripts/agents/new-run.sh "task name"`
