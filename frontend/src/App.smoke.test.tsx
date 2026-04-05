@@ -644,7 +644,7 @@ describe("bootstrap application", () => {
     await user.tab();
 
     const salesPlan = screen.getByRole("heading", { name: "Sales Plan", level: 3 }).closest("section");
-    const actsFact = screen.getByRole("heading", { name: "Actuals from Acts", level: 3 }).closest("section");
+    const actsFact = screen.getByRole("heading", { name: "Acts Coverage", level: 3 }).closest("section");
     const repairCalendar = screen.getByRole("heading", { name: "Repair Calendar", level: 3 }).closest("section");
 
     expect(salesPlan).not.toBeNull();
@@ -662,16 +662,18 @@ describe("bootstrap application", () => {
       expect(within(salesPlan as HTMLElement).getByText("Δ +30,00 zł")).toBeInTheDocument();
       expect(within(salesPlan as HTMLElement).getByText("Δ -20,00 zł")).toBeInTheDocument();
       expect(within(salesPlan as HTMLElement).getByText("Δ +10,00 zł")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Coverage")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("2 / 2")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Median first export")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Coverage status")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Fully covered")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("100%")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("2 of 2 completed repairs have an act.")).toBeInTheDocument();
       expect(within(actsFact as HTMLElement).getByText("2 d")).toBeInTheDocument();
       expect(within(actsFact as HTMLElement).queryByText("Labor (acts)")).not.toBeInTheDocument();
       expect(within(actsFact as HTMLElement).queryByText("Parts to client (acts)")).not.toBeInTheDocument();
       expect(within(actsFact as HTMLElement).queryByText("Document total (acts)")).not.toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Completed without act")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Exports in period")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Multi-export jobs")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Missing acts")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Median time to first act")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Re-exported repairs")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Act exports in period:")).toBeInTheDocument();
       const calEl = repairCalendar as HTMLElement;
       expect(within(calEl).getAllByText("TOR-1015").length).toBeGreaterThan(0);
       expect(calEl.textContent).toContain("Chris Mason");
@@ -730,6 +732,129 @@ describe("bootstrap application", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("Start date")).toHaveValue(formatExpectedDateInput(startDate));
       expect(screen.getByLabelText("End date")).toHaveValue(formatExpectedDateInput(endDate));
+    });
+  });
+
+  it("shows a partial act coverage state when completed repairs still miss acts", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        const analytics = createStubDashboardAnalyticsResponse();
+        analytics.pdf.latest_act_totals.repairs_with_latest_act = 1;
+        analytics.pdf.coverage.completed_in_range = 4;
+        analytics.pdf.coverage.completed_without_pdf = 3;
+        analytics.pdf.exports_in_period = 5;
+        analytics.pdf.completed_repairs_with_multiple_exports = 1;
+        return Promise.resolve({ data: analytics });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/vehicles/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/customers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/suppliers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/users/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderApp("/app");
+
+    const actsFact = await screen.findByRole("heading", { name: "Acts Coverage", level: 3 });
+    const section = actsFact.closest("section");
+
+    expect(section).not.toBeNull();
+
+    await waitFor(() => {
+      expect(within(section as HTMLElement).getByText("Partial coverage")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("25%")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("1 of 4 completed repairs have an act.")).toBeInTheDocument();
+      expect(
+        within(section as HTMLElement).getByText("3 completed repairs are still waiting for their first act.")
+      ).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("Missing acts")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("3")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("Median time to first act")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("—")).toBeInTheDocument();
+      expect(
+        within(section as HTMLElement).getByText("No completed repairs with an exported act yet.")
+      ).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("Re-exported repairs")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("1")).toBeInTheDocument();
+    });
+  });
+
+  it("shows a neutral empty state when the selected period has no completed repairs", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/vehicles/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/customers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/suppliers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/users/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderApp("/app");
+
+    const actsFact = await screen.findByRole("heading", { name: "Acts Coverage", level: 3 });
+    const section = actsFact.closest("section");
+
+    expect(section).not.toBeNull();
+
+    await waitFor(() => {
+      expect(within(section as HTMLElement).getByText("No completed repairs")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("No completed repairs in this period.")).toBeInTheDocument();
+      expect(
+        within(section as HTMLElement).getByText("Pick a date range with completed work to review act coverage.")
+      ).toBeInTheDocument();
+      expect(within(section as HTMLElement).queryByText("0 / 0")).not.toBeInTheDocument();
     });
   });
 
@@ -1024,6 +1149,130 @@ describe("bootstrap application", () => {
           part_name: "Brake Sensor",
           repair_code: "TOR-1011",
           vehicle_id: 1,
+        })
+      );
+    });
+  });
+
+  it("lets staff explicitly unlink a purchase from repair before saving", async () => {
+    const user = userEvent.setup();
+    mockApi.post.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/purchases/") {
+        return Promise.resolve({
+          data: {
+            id: 100,
+            order_date: data?.order_date,
+            approximate_delivery_date: null,
+            supplier: { id: 1, name: data?.supplier_name, nip: "", phone: "", email: "", notes: "" },
+            part_name: data?.part_name,
+            quantity: data?.quantity,
+            purchase_price: String(data?.purchase_price),
+            sale_price: String(data?.sale_price ?? 0),
+            repair_code: typeof data?.repair_code === "string" ? data.repair_code : "",
+            vehicle: typeof data?.vehicle_id === "number" ? data.vehicle_id : null,
+            vehicle_license_plate: typeof data?.vehicle_id === "number" ? "WB 1234K" : "",
+            invoice_name: "",
+            invoice_url: "",
+            delivered: false,
+            created_at: "2025-04-05T10:00:00Z",
+            updated_at: "2025-04-05T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({
+        data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+      });
+    });
+
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    await user.click(await screen.findByRole("button", { name: "+ Add Purchase" }));
+
+    expect(screen.getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Leave this empty for stock or reserve parts that are not tied to a repair.")
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
+    await user.tab();
+    await user.type(screen.getByLabelText("Supplier"), "AutoParts Pro");
+    await user.type(screen.getByLabelText("Part"), "Brake Sensor");
+    await user.type(screen.getByLabelText("Purchase Price"), "85");
+    await user.selectOptions(screen.getByLabelText("Linked Repair"), "TOR-1011");
+
+    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+    expect(screen.getByRole("button", { name: "Unlink repair" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Unlink repair" }));
+    expect(screen.getByLabelText("Linked Repair")).toHaveValue("");
+    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+
+    await user.click(screen.getByRole("button", { name: "Add Purchase" }));
+
+    await waitFor(() => {
+      const purchaseCall = mockApi.post.mock.calls.find(([url]) => url === "/purchases/");
+      expect(purchaseCall).toBeTruthy();
+      const payload = purchaseCall?.[1] as Record<string, unknown>;
+      expect(payload).toMatchObject({
+        order_date: "2025-04-05",
+        supplier_name: "AutoParts Pro",
+        part_name: "Brake Sensor",
+        vehicle_id: 1,
+      });
+      expect(payload).not.toHaveProperty("repair_code");
+    });
+  });
+
+  it("removes repair linkage when editing an existing purchase", async () => {
+    const user = userEvent.setup();
+    mockApi.patch.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/purchases/2") {
+        return Promise.resolve({
+          data: {
+            id: 2,
+            order_date: data?.order_date,
+            approximate_delivery_date: null,
+            supplier: { id: 1, name: data?.supplier_name, nip: "", phone: "", email: "", notes: "" },
+            part_name: data?.part_name,
+            quantity: data?.quantity,
+            purchase_price: String(data?.purchase_price),
+            sale_price: String(data?.sale_price ?? 0),
+            repair_code: typeof data?.repair_code === "string" ? data.repair_code : "TOR-1011",
+            vehicle: typeof data?.vehicle_id === "number" ? data.vehicle_id : null,
+            vehicle_license_plate: typeof data?.vehicle_id === "number" ? "WB 1234K" : "",
+            invoice_name: "",
+            invoice_url: "",
+            delivered: Boolean(data?.delivered),
+            created_at: "2025-04-05T10:00:00Z",
+            updated_at: "2025-04-05T10:05:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    await user.click(await screen.findByText("Brake Pad Set"));
+
+    const purchaseDialog = await screen.findByRole("dialog");
+    expect(within(purchaseDialog).getByLabelText("Linked Repair")).toHaveValue("TOR-1011");
+
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Unlink repair" }));
+    expect(within(purchaseDialog).getByLabelText("Linked Repair")).toHaveValue("");
+
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Save Purchase" }));
+
+    await waitFor(() => {
+      expect(mockApi.patch).toHaveBeenCalledWith(
+        "/purchases/2",
+        expect.objectContaining({
+          repair_code: "",
+          vehicle_id: null,
         })
       );
     });
