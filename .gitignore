@@ -30,6 +30,9 @@ artifacts/
 # Generated when reproducing Allure PR comment locally
 allure-pr-comment.md
 
+# Local MCP tokens merged by scripts/mcp/install-user.mjs
+mcp/local.overrides.json
+
 # Editor / OS (optional local noise)
 .idea/
 *.swp

@@ -198,3 +198,4 @@
 - Technical baseline: `TECH_STACK.md`
 - E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`
 - Агенты / MCP (рекомендации): `docs/dev/agents-and-mcp.md`
+- MCP user install: `mcp/README.md`, `scripts/mcp/install-user.mjs`
