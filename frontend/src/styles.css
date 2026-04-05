@@ -1474,18 +1474,19 @@ textarea { resize: vertical; }
   color: var(--text-soft);
 }
 
+.dashboard-calendar-shell-wrap {
+  position: relative;
+}
+
 .dashboard-calendar-shell {
   display: grid;
   gap: 0.9rem;
-  border: 1px solid rgba(91, 156, 246, 0.14);
-  border-radius: 26px;
-  background:
-    radial-gradient(circle at top right, rgba(91, 156, 246, 0.12), transparent 42%),
-    linear-gradient(180deg, rgba(91, 156, 246, 0.08), rgba(255, 255, 255, 0)),
-    rgba(7, 10, 17, 0.82);
-  padding: 1.15rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
   overflow-x: auto;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: none;
 }
 
 .dashboard-calendar-month-banner {
@@ -1519,10 +1520,10 @@ textarea { resize: vertical; }
   display: grid;
   gap: 0;
   min-width: 700px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
-  background: rgba(245, 247, 252, 0.03);
+  background: transparent;
 }
 
 .dashboard-calendar-weekday-header,
@@ -1562,8 +1563,12 @@ textarea { resize: vertical; }
 
 .dashboard-calendar-week {
   position: relative;
-  min-height: calc(8rem + (var(--dashboard-calendar-bar-count) * 1.3rem));
+  min-height: calc(3.35rem + (var(--dashboard-calendar-bar-count) * 1.14rem));
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-calendar-week-parts {
+  min-height: calc(2.55rem + (var(--dashboard-calendar-bar-count) * 1.14rem));
 }
 
 .dashboard-calendar-week:first-child {
@@ -1576,12 +1581,17 @@ textarea { resize: vertical; }
 }
 
 .dashboard-calendar-window {
-  min-height: calc(8rem + (var(--dashboard-calendar-bar-count) * 1.3rem));
-  padding: 0.9rem 0.85rem;
+  min-height: calc(3.35rem + (var(--dashboard-calendar-bar-count) * 1.14rem));
+  padding: 0.55rem 0.85rem;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
     rgba(255, 255, 255, 0.02);
+}
+
+.dashboard-calendar-window-parts {
+  min-height: calc(2.55rem + (var(--dashboard-calendar-bar-count) * 1.14rem));
+  padding: 0.4rem 0.75rem;
 }
 
 .dashboard-calendar-window:last-child {
@@ -1621,9 +1631,13 @@ textarea { resize: vertical; }
   left: 0;
   right: 0;
   padding: 0 0.28rem;
-  grid-auto-rows: 1.02rem;
-  row-gap: 0.24rem;
+  grid-auto-rows: 0.94rem;
+  row-gap: 0.28rem;
   pointer-events: none;
+}
+
+.dashboard-calendar-week-overlay-parts {
+  top: 2rem;
 }
 
 .dashboard-calendar-segment {
@@ -1643,25 +1657,45 @@ textarea { resize: vertical; }
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 6px 16px rgba(0, 0, 0, 0.16);
+}
+
+.dashboard-calendar-segment-status-new {
+  --dashboard-calendar-repair-fill: #7eb0ff;
+  --dashboard-calendar-repair-line: rgba(91, 156, 246, 0.45);
 }
 
 .dashboard-calendar-segment-status-in_progress {
-  background: linear-gradient(90deg, #6ea9ff, #8dbdff 55%, #b6d5ff);
+  --dashboard-calendar-repair-fill: #8dbdff;
+  --dashboard-calendar-repair-line: rgba(110, 169, 255, 0.42);
 }
 
 .dashboard-calendar-segment-status-waiting_parts {
-  background: linear-gradient(90deg, #f5a164, #ffc187 55%, #ffe0c4);
+  --dashboard-calendar-repair-fill: #ffc187;
+  --dashboard-calendar-repair-line: rgba(245, 161, 100, 0.42);
+}
+
+.dashboard-calendar-segment-status-completed {
+  --dashboard-calendar-repair-fill: #7ed0a9;
+  --dashboard-calendar-repair-line: rgba(78, 201, 148, 0.4);
 }
 
 .dashboard-calendar-segment-repairs {
-  min-height: 1.08rem;
+  min-height: 0.84rem;
+  background: var(--dashboard-calendar-repair-fill, #c8c8c8);
+  color: #1a1f27;
 }
 
 .dashboard-calendar-segment-parts {
-  min-height: 0.88rem;
+  min-height: 0.72rem;
   background: linear-gradient(90deg, rgba(205, 216, 58, 0.95), rgba(228, 236, 124, 0.88));
   color: #14180a;
+  padding: 0 0.42rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.03em;
 }
 
 .dashboard-calendar-segment-active {
@@ -1907,37 +1941,59 @@ textarea { resize: vertical; }
     0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
-.dashboard-calendar-detail {
+.dashboard-calendar-tooltip {
+  position: absolute;
+  z-index: 5;
+  width: min(22rem, calc(100% - 1.5rem));
   display: grid;
   gap: var(--s3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
   background:
     radial-gradient(circle at top right, rgba(205, 216, 58, 0.08), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
-    rgba(7, 10, 17, 0.68);
-  padding: 1.1rem 1.15rem;
+    linear-gradient(180deg, rgba(17, 23, 35, 0.98), rgba(10, 14, 23, 0.96)),
+    rgba(7, 10, 17, 0.96);
+  padding: 1rem 1.05rem;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
 }
 
-.dashboard-calendar-detail h4 {
+.dashboard-calendar-tooltip::before {
+  content: "";
+  position: absolute;
+  top: -0.45rem;
+  left: calc(50% - 0.45rem);
+  width: 0.9rem;
+  height: 0.9rem;
+  transform: rotate(45deg);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 23, 35, 0.98);
+}
+
+.dashboard-calendar-tooltip-pinned {
+  border-color: rgba(205, 216, 58, 0.26);
+}
+
+.dashboard-calendar-tooltip-copy p {
+  margin: 0.28rem 0 0;
+}
+
+.dashboard-calendar-tooltip h4 {
   margin: 0.2rem 0 0;
   font-size: 1rem;
 }
 
-.dashboard-calendar-detail-copy p {
-  margin: 0.28rem 0 0;
-}
-
-.dashboard-calendar-detail-meta {
+.dashboard-calendar-tooltip-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
 }
 
-.dashboard-calendar-detail-parts {
+.dashboard-calendar-tooltip-parts {
   margin: -0.1rem 0 0;
   color: var(--text-mid);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
 }
 
 .dashboard-calendar-swatch-in-progress {
@@ -4832,7 +4888,7 @@ button.moneyflow-series-toggle {
 
   .dashboard-calendar-shell,
   .dashboard-calendar-detail {
-    padding: 0.95rem;
+    padding: 0;
   }
 
   .dashboard-calendar-monthboard {
