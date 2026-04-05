@@ -25,8 +25,9 @@ export class StaffRepairsPage {
     return this.page.getByRole("dialog", { name: "Certificate of Completion" });
   }
 
-  viewPdfButton(): Locator {
-    return this.page.getByRole("button", { name: "View PDF" });
+  /** Completed repair without an export yet shows **Make Act**; after first open — **View PDF**. */
+  repairPdfPrimaryButton(): Locator {
+    return this.page.getByRole("button", { name: /^(View PDF|Make Act)$/ });
   }
 
   exportNewVersionButton(): Locator {
@@ -85,7 +86,7 @@ export class StaffRepairsPage {
   }
 
   async openCertificateFromViewPdf(): Promise<void> {
-    await this.viewPdfButton().click();
+    await this.repairPdfPrimaryButton().click();
     await expect(this.certificateDialog()).toBeVisible({ timeout: 30_000 });
   }
 

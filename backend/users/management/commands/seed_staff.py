@@ -8,12 +8,16 @@ class Command(BaseCommand):
     help = "Create or update the initial staff user from environment or debug defaults."
 
     def handle(self, *args, **options):
-        email = settings.STAFF_EMAIL or None
-        password = settings.STAFF_PASSWORD or None
+        email = (settings.STAFF_EMAIL or "").strip() or None
+        password = (settings.STAFF_PASSWORD or "").strip() or None
 
         if not email and settings.DEBUG:
             email = "staff@autoservice.local"
-            password = "demo-staff-change-me"
+            password = "staff12345"
+
+        # Email from env but empty password (common partial .env): align with .env.example / Playwright defaults.
+        if email and not password and settings.DEBUG:
+            password = "staff12345"
 
         if not email or not password:
             self.stdout.write("No staff credentials configured; skipping seed_staff.")

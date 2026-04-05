@@ -23,6 +23,6 @@ test.describe("Staff repairs mobile @mobile-only", () => {
 
     await repairs.openSeededRepairCard();
     await repairs.expectRepairDetailDialogVisible();
-    await expect(repairs.viewPdfButton()).toBeVisible();
+    await expect(repairs.repairPdfPrimaryButton()).toBeVisible();
   });
 });
