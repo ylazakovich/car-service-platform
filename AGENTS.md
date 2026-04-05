@@ -8,11 +8,12 @@
 
 Перед первым осмысленным действием в репозитории агент **обязан** выполнить подготовку среды (или явно подтвердить, что она уже сделана в этой среде):
 
-1. **Зависимости** — один раз на клон/машину: `bash scripts/agents/bootstrap-environment.sh` (Node `npm ci` в `frontend/`, Python `pip` для `backend/`, при необходимости `playwright install chromium`).
-2. **MCP** — профиль проекта в user-level конфиг: `node scripts/mcp/install-user.mjs` (Cursor) или `--target claude` для Claude Code. Детали: `mcp/README.md`.
-3. **GitHub MCP** — токен **на сессию** из GitHub CLI: `node scripts/mcp/sync-github-token-from-gh.mjs`, затем снова `node scripts/mcp/install-user.mjs` с тем же `--target`; файл `mcp/local.overrides.json` gitignored. Требуется установленный и залогиненный `gh`. Агент **не** кладёт PAT в репозиторий и **не** логирует значение токена.
+1. **MCP** — профиль проекта в user-level конфиг: `node scripts/mcp/install-user.mjs` (Cursor) или `--target claude` для Claude Code. Детали: `mcp/README.md`.
+2. **GitHub MCP** — токен **на сессию** из GitHub CLI: `node scripts/mcp/sync-github-token-from-gh.mjs`, затем снова `node scripts/mcp/install-user.mjs` с тем же `--target`; файл `mcp/local.overrides.json` gitignored. Требуется установленный и залогиненный `gh`. Агент **не** кладёт PAT в репозиторий и **не** логирует значение токена.
 
-**Одной командой:** `bash scripts/agents/bootstrap-agent-session.sh` (опции: `--deps-only`, `--skip-github-token`, `--mcp-target claude`).
+**Зависимости на хосте (npm/pip/playwright)** для основного рабочего процесса **не обязательны**: приложение и библиотеки живут в **Docker** с hot reload (`docker-compose.dev.yml` / `scripts/start.sh`). Устанавливать пакеты на машину нужно только если агент явно запускает тесты/сборку **вне** контейнеров — тогда опционально: `bash scripts/agents/bootstrap-environment.sh` или `bash scripts/agents/bootstrap-agent-session.sh --with-host-deps`.
+
+**Одной командой (MCP + gh, без хостовых пакетов):** `bash scripts/agents/bootstrap-agent-session.sh` (опции: `--skip-github-token`, `--mcp-target claude`, `--with-host-deps`, `--deps-only` — только хостовые пакеты без MCP).
 
 Полная инструкция, чеклист и нюансы провайдеров: **`docs/dev/agent-session-bootstrap.md`**.
 

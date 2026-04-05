@@ -63,7 +63,7 @@ node scripts/mcp/install-user.mjs          # or --target claude
 - The script does **not** print the token.
 - Requires `gh auth login` beforehand.
 
-Full flow (deps + MCP + gh): `bash scripts/agents/bootstrap-agent-session.sh` — see **`docs/dev/agent-session-bootstrap.md`**.
+Default bootstrap (MCP + gh, **no** host npm/pip — Docker is the norm): `bash scripts/agents/bootstrap-agent-session.sh`. Optional host packages: `--with-host-deps`. See **`docs/dev/agent-session-bootstrap.md`**.
 
 ## Other tools (Codex, etc.)
 

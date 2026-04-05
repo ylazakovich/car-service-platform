@@ -1,7 +1,7 @@
 # Агентский pipeline и MCP (car-service-platform)
 
 - Last updated: 2026-04-05
-- Bootstrap сессии (обязательно для агентов): `docs/dev/agent-session-bootstrap.md`, `bash scripts/agents/bootstrap-agent-session.sh`
+- Bootstrap сессии (обязательно для агентов): `docs/dev/agent-session-bootstrap.md`, `bash scripts/agents/bootstrap-agent-session.sh` (по умолчанию без установки пакетов на хост — Docker + hot reload)
 - Цель: единая «базовая точка» для Codex / Claude / Cursor без угадывания ролей; согласование с [Everything Claude Code (ECC)](https://github.com/affaan-m/everything-claude-code).
 
 ## 1) Локальные роли проекта (source of truth)
