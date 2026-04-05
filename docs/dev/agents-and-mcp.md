@@ -15,6 +15,7 @@
 | `backend-developer` | API, модели, миграции, Django |
 | `frontend-developer` | UI, роутинг, клиент API |
 | `e2e-validator` | изменения UI / критичных потоков; поддержка Playwright в актуальном состоянии |
+| `e2e-testing` | паттерны Playwright (POM, CI, артефакты); локальная копия [ECC e2e-testing](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md) с overrides в `.agents/e2e-testing/SKILL.md` |
 | `plan-reviewer` | полный scope, закрытие milestone |
 | `renovate-verify` | только изменения `renovate.json` / deps policy |
 
@@ -23,7 +24,8 @@
 ## 2) Что убрать / не дублировать
 
 - Не добавлять 10+ `.md` агентов в `.agents/`, если они полностью совпадают с ECC — это устаревает отдельно от продуктового кода.
-- Держать в репозитории только **доменно-специфичные** роли: `domain-reviewer`, при необходимости расширения `e2e-validator` под сиды/PDF.
+- Держать в репозитории **доменно-специфичные** роли: `domain-reviewer`, при необходимости расширения `e2e-validator` под сиды/PDF.
+- Исключение: `e2e-testing` — переносимый skill из ECC с явной секцией overrides под этот репозиторий (не дублировать другие ECC skills без той же дисциплины).
 
 ## 3) Рекомендуемый MCP набор (из ECC `mcp-configs`)
 

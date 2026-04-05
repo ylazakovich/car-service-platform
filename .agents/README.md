@@ -17,6 +17,7 @@ Project-local role skills.
 - `backend-developer` — implements server-side changes.
 - `frontend-developer` — implements client-side changes.
 - `e2e-validator` — Playwright E2E, scenario and CI stability (see `docs/testing/playwright-e2e-framework.md`).
+- `e2e-testing` — Playwright patterns (POM, artifacts, flake mitigation); ECC-derived, see overrides in `e2e-testing/SKILL.md`.
 - `plan-reviewer` — checks plan vs implementation, issues verdict.
 
 ## Required context
