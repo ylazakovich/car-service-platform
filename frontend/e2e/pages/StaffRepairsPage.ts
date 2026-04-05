@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { SEEDED_REPAIR_CARD_HEADING } from "../e2e-seed";
+import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
 
 /**
  * Staff repairs board (kanban; mobile list скрыт CSS — на узкой ширине тот же канбан, колонки столбцом).
@@ -40,30 +41,7 @@ export class StaffRepairsPage {
    * Сначала poll до появления любой навигации (гидрация), затем клик по приоритету как раньше в helpers/repair-board.
    */
   async gotoRepairsSection(): Promise<void> {
-    const mobileToggle = this.staffMobileWorkspaceMenuToggle();
-    const quickNav = this.staffQuickNav();
-    const taskSwitcher = this.page.getByLabel("Staff task switcher");
-    const staffSections = this.page.getByLabel("Staff sections");
-
-    await expect
-      .poll(
-        async () =>
-          (await mobileToggle.isVisible()) || (await taskSwitcher.isVisible()) || (await staffSections.isVisible()),
-        { timeout: 20_000 },
-      )
-      .toBe(true);
-
-    if (await mobileToggle.isVisible()) {
-      await mobileToggle.click();
-      await expect(quickNav).toBeVisible({ timeout: 10_000 });
-      await quickNav.getByRole("button", { name: "Repairs" }).click();
-      return;
-    }
-    if (await taskSwitcher.isVisible()) {
-      await taskSwitcher.getByRole("button", { name: "Repairs" }).click();
-      return;
-    }
-    await staffSections.getByRole("button", { name: "Repairs" }).click();
+    await new StaffMobileNavigationPage(this.page).gotoStaffSection("Repairs");
   }
 
   /**

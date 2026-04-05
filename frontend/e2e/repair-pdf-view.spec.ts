@@ -6,7 +6,8 @@ import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 /**
  * Expects Docker Compose with seeded staff user (see backend seed_staff) and at least one completed repair on the board.
  */
-test.describe("Repair PDF: view without new export", () => {
+/** @desktop — счётчики POST /pdf/export и модалка превью стабильны на широком layout; mobile-chrome см. staff-repairs-mobile. */
+test.describe("Repair PDF: view without new export @desktop", () => {
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
   });
