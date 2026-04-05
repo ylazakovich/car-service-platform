@@ -752,7 +752,7 @@ textarea { resize: vertical; }
   -webkit-line-clamp: 2;
 }
 
-.mobile-menu-button,
+.shell-mobile-menu-btn,
 .shell-sidebar-close,
 .mobile-tabbar-link {
   border: 0;
@@ -760,30 +760,33 @@ textarea { resize: vertical; }
   cursor: pointer;
 }
 
-.mobile-menu-button {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface-mid);
+/* Mobile header: compact “more” — opens same drawer (profile, sign out, full nav) */
+.shell-mobile-menu-btn {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  width: 40px;
+  height: 40px;
   padding: 0;
+  border-radius: 11px;
+  color: var(--text-mid);
   flex-shrink: 0;
+  transition: color 0.14s, background 0.14s;
 }
 
-.mobile-menu-button span {
-  width: 16px;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--text);
+.shell-mobile-menu-btn:hover {
+  color: var(--text);
+  background: var(--surface-mid);
 }
 
-.mobile-signout-button {
-  flex-shrink: 0;
+.shell-mobile-menu-btn:focus-visible {
+  outline: 2px solid rgba(205, 216, 58, 0.45);
+  outline-offset: 2px;
+}
+
+/* Shown only ≤820px (see media block) */
+.shell-mobile-swipe-hint {
+  display: none;
 }
 
 .shell-sidebar-close {
@@ -4033,48 +4036,38 @@ textarea { resize: vertical; }
     top: 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-columns: 40px minmax(0, 1fr);
     align-items: center;
     column-gap: 10px;
     border-bottom: 1px solid var(--border);
     background: linear-gradient(180deg, rgba(18, 18, 24, 0.97) 0%, rgba(13, 13, 17, 0.94) 100%);
     backdrop-filter: blur(16px);
-    padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 8px;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
     min-height: 0;
   }
 
-  .shell-mobile-bar .mobile-menu-button {
+  .shell-mobile-bar .shell-mobile-menu-btn {
     width: 40px;
     height: 40px;
-    border-radius: 11px;
     justify-self: start;
   }
 
   .shell-mobile-context {
     justify-self: stretch;
     text-align: center;
-    gap: 2px;
     min-width: 0;
-    max-height: none;
-  }
-
-  .shell-mobile-context .mobile-section-pill {
-    font-size: 0.58rem;
-    padding: 0.22rem 0.45rem;
-    letter-spacing: 0.1em;
-    line-height: 1;
+    display: block;
   }
 
   .shell-mobile-section-title {
-    font-size: 0.875rem;
+    font-size: 1.02rem;
     font-weight: 700;
     letter-spacing: -0.02em;
-    line-height: 1.25;
+    line-height: 1.2;
     margin: 0;
   }
 
-  /* Override base 2-line clamp so the bar stays one compact strip (~52px + safe-area) */
   .shell-mobile-bar .shell-mobile-context strong.shell-mobile-section-title {
     display: block;
     overflow: hidden;
@@ -4086,20 +4079,39 @@ textarea { resize: vertical; }
     max-width: 100%;
   }
 
-  .mobile-signout-button {
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 0.38rem 0.55rem;
-    line-height: 1.2;
-    white-space: nowrap;
+  .shell-mobile-swipe-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s2);
+    padding: var(--s2) var(--s3);
+    margin: 0 var(--s3) var(--s2);
     border-radius: 10px;
-    border: 1px solid var(--border);
-    min-height: 0;
+    background: rgba(205, 216, 58, 0.07);
+    border: 1px solid rgba(205, 216, 58, 0.22);
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--text-mid);
+    z-index: 29;
   }
 
-  .mobile-signout-button:hover:not(:disabled) {
-    border-color: var(--border-strong);
-    background: var(--surface-mid);
+  .shell-mobile-swipe-hint-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .shell-mobile-swipe-hint-close {
+    border: 0;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 1.15rem;
+    line-height: 1;
+    padding: 0 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 4px;
+  }
+
+  .shell-mobile-swipe-hint-close:hover {
     color: var(--text);
   }
 
@@ -4201,7 +4213,7 @@ textarea { resize: vertical; }
     display: grid;
     gap: var(--s3);
     position: sticky;
-    top: calc(3.35rem + env(safe-area-inset-top, 0px));
+    top: calc(3.05rem + env(safe-area-inset-top, 0px));
     z-index: 12;
   }
 
