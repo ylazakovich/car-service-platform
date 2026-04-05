@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { AUTH_STATE_STAFF } from "./e2e/fixtures/auth";
+
 const isCi = !!process.env.CI;
 
 const allureReporter = [
@@ -34,6 +36,7 @@ const reporters = isCi
  * Projects:
  * - desktop-chrome — полная ширина; пропускает тесты с `@mobile-only` в имени/describe.
  * - mobile-chrome — Pixel 5 (viewport < 820px CSS breakpoint); пропускает `@desktop`.
+ * - setup — `e2e/auth.setup.ts` пишет `e2e/.auth/*.json` (staff по умолчанию для обоих браузеров).
  *
  * В CI тесты идут последовательно (workers=1, fullyParallel=false) — лог ближе к Vitest.
  */
@@ -53,17 +56,25 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "setup",
+      testMatch: /e2e\/auth\.setup\.ts/,
+    },
+    {
       name: "desktop-chrome",
+      dependencies: ["setup"],
       grepInvert: /@mobile-only/,
       use: {
         ...devices["Desktop Chrome"],
+        storageState: AUTH_STATE_STAFF,
       },
     },
     {
       name: "mobile-chrome",
+      dependencies: ["setup"],
       grepInvert: /@desktop/,
       use: {
         ...devices["Pixel 5"],
+        storageState: AUTH_STATE_STAFF,
       },
     },
   ],
