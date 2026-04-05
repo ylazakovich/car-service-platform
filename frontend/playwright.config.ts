@@ -41,7 +41,8 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: !isCi,
   forbidOnly: isCi,
-  retries: isCi ? 1 : 0,
+  /** Политика проекта: без ретраев — флаки чиним детерминизмом и готовностью стека (см. docs/testing/playwright-e2e-framework.md). */
+  retries: 0,
   workers: isCi ? 1 : undefined,
   reporter: reporters,
   use: {

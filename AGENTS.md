@@ -21,6 +21,8 @@
 - `NEXT_STEPS.md` — active backlog (`NOW/NEXT/LATER`).
 - `DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов.
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
+- `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
+- `docs/dev/agents-and-mcp.md` — сжатые рекомендации по ролям и MCP (в т.ч. ECC).
 
 ## RUN_DIR (опционально)
 
