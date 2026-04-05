@@ -22,7 +22,7 @@ Project-local role skills.
 
 ## Required context
 
-- Root `AGENTS.md` — **session bootstrap** (MCP + `gh` → GitHub MCP; host npm/pip optional — Docker) before substantive work.
+- Root `AGENTS.md` — **session bootstrap** (MCP; host npm/pip optional — Docker) before substantive work.
 - `docs/dev/agent-session-bootstrap.md` — step-by-step bootstrap for any provider.
 - `DEVELOPMENT_PLAN.md` — active strategy.
 - `NEXT_STEPS.md` — active backlog.

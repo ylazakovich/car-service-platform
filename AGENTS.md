@@ -9,11 +9,10 @@
 Перед первым осмысленным действием в репозитории агент **обязан** выполнить подготовку среды (или явно подтвердить, что она уже сделана в этой среде):
 
 1. **MCP** — merge в user-level конфиг: `node scripts/mcp/install-user.mjs` (Cursor) или `--target claude` для Claude Code. По умолчанию профиль **пустой** (`mcp/car-service-platform.default.json`), чтобы **не дублировать** серверы, которые уже даёт плагин everything-claude-code (context7, playwright, github, …). Полный stdio-набор только если ECC нет: `--profile standalone`. Правила и чеклист: **`docs/dev/mcp-deduplication.md`**. Агент **не** добавляет в project-local `~/.claude.json` те же MCP, что уже «connected» из Built-in / User; при дубле — убрать **локальный** к проекту, оставить глобальный/plugin.
-2. **GitHub MCP** — токен **на сессию** из GitHub CLI: `node scripts/mcp/sync-github-token-from-gh.mjs`, затем снова `node scripts/mcp/install-user.mjs` с тем же `--target` (и тем же `--profile`); файл `mcp/local.overrides.json` gitignored. Требуется установленный и залогиненный `gh`. Агент **не** кладёт PAT в репозиторий и **не** логирует значение токена. Если GitHub идёт только через `plugin:...:github`, настройте токен по документации плагина; overrides с ключом `github` нужны для stdio-сервера с этим именем.
 
 **Зависимости на хосте (npm/pip/playwright)** для основного рабочего процесса **не обязательны**: приложение и библиотеки живут в **Docker** с hot reload (`docker-compose.dev.yml` / `scripts/start.sh`). Устанавливать пакеты на машину нужно только если агент явно запускает тесты/сборку **вне** контейнеров — тогда опционально: `bash scripts/agents/bootstrap-environment.sh` или `bash scripts/agents/bootstrap-agent-session.sh --with-host-deps`.
 
-**Одной командой (MCP + gh, без хостовых пакетов):** `bash scripts/agents/bootstrap-agent-session.sh` (опции: `--skip-github-token`, `--mcp-target claude`, `--mcp-profile default|standalone`, `--with-host-deps`, `--deps-only` — только хостовые пакеты без MCP).
+**Одной командой (MCP, без хостовых пакетов):** `bash scripts/agents/bootstrap-agent-session.sh` (опции: `--mcp-target claude`, `--mcp-profile default|standalone`, `--with-host-deps`, `--deps-only` — только хостовые пакеты без MCP).
 
 ## Политика проверки: готово ли окружение для агентов
 
@@ -21,8 +20,7 @@
 
 1. Запустить **`node scripts/agents/verify-agent-environment.mjs`**: по умолчанию проверяется **Codex** (`~/.codex/config.toml` и секция `[mcp_servers]`). Для Cursor / Claude Code указать **`--mcp-target cursor`** или **`--mcp-target claude`**.
 2. Если проверка **не прошла**: для **Cursor / Claude Code** — `bash scripts/agents/bootstrap-agent-session.sh` с тем же `--mcp-target` (и профилем MCP при необходимости), затем verify снова; для **Codex** — настроить `~/.codex/config.toml` (`[mcp_servers.*]`, см. `mcp/README.md` и [документацию Codex MCP](https://developers.openai.com/codex/mcp)), затем verify снова.
-3. Для работы **GitHub MCP через stdio** (`mcpServers.github` после merge): добавить флаги **`--require-github --require-stdio-github`** (проверяют `gh auth` и непустой токен в `mcp/local.overrides.json`). Если GitHub только через **plugin** ECC — эти флаги не использовать; достаточно базовой проверки и настройки токена по документации плагина.
-4. Для **CI / только репозиторий** (без домашнего MCP-файла): **`--skip-user-mcp-file`**.
+3. Для **CI / только репозиторий** (без домашнего MCP-файла): **`--skip-user-mcp-file`**.
 
 В минимальном ответе агента поле **`Bootstrap`** допускает формулировку вроде: `verify-agent-environment OK` или `verify failed → bootstrap → verify OK`.
 
@@ -57,7 +55,7 @@
 - `docs/dev/agents-and-mcp.md` — сжатые рекомендации по ролям и MCP (в т.ч. ECC).
 - `mcp/README.md` — переносимый JSON-профиль MCP и `node scripts/mcp/install-user.mjs` (Cursor / Claude Code).
 - `docs/dev/mcp-deduplication.md` — дубли, MCP hygiene, ограничение MCP по проекту (в т.ч. Codex `.codex/config.toml`).
-- `docs/dev/agent-session-bootstrap.md` — обязательный bootstrap сессии (deps, MCP, `gh` → GitHub MCP).
+- `docs/dev/agent-session-bootstrap.md` — обязательный bootstrap сессии (deps, MCP).
 - `scripts/agents/verify-agent-environment.mjs` — проверка готовности окружения перед работой агента.
 
 ## RUN_DIR (опционально)

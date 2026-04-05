@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 /**
- * Read-only checks: repo layout + user-level MCP config (+ optional gh / stdio GitHub token).
+ * Read-only checks: repo layout + user-level MCP config.
  *
  * Usage (repo root):
  *   node scripts/agents/verify-agent-environment.mjs          # default: Codex (~/.codex/config.toml)
  *   node scripts/agents/verify-agent-environment.mjs --mcp-target cursor
  *   node scripts/agents/verify-agent-environment.mjs --mcp-target claude
- *   node scripts/agents/verify-agent-environment.mjs --require-github --require-stdio-github
  *   node scripts/agents/verify-agent-environment.mjs --skip-user-mcp-file
  *   node scripts/agents/verify-agent-environment.mjs --quiet && echo OK
  *
@@ -16,8 +15,7 @@
  * @see docs/dev/agent-session-bootstrap.md
  */
 
-import { execSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,21 +23,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..", "..");
 
-const PLACEHOLDER_TOKENS = new Set([
-  "",
-  "ghp_replace_me",
-  "YOUR_GITHUB_PAT_HERE",
-  "replace_me",
-]);
-
 function printHelp() {
   console.log(`Usage: node scripts/agents/verify-agent-environment.mjs [options]
 
 Options:
   --mcp-target codex|cursor|claude   User config to check (default: codex → ~/.codex/config.toml)
-  --require-github           gh must be installed and authenticated (gh auth status)
-  --require-stdio-github       mcp/local.overrides.json must define a real github PAT
-                               for stdio server (not for plugin-only GitHub MCP)
   --skip-user-mcp-file       Only check repo files (e.g. CI)
   --quiet                    Minimal output
   --help, -h                 This message
@@ -50,17 +38,12 @@ Typical (Codex — default):
 Cursor / Claude Code:
   node scripts/agents/verify-agent-environment.mjs --mcp-target cursor
   node scripts/agents/verify-agent-environment.mjs --mcp-target claude
-
-Strict (GitHub MCP via stdio + gh):
-  node scripts/agents/verify-agent-environment.mjs --require-github --require-stdio-github
 `);
 }
 
 function parseArgs(argv) {
   const out = {
     mcpTarget: "codex",
-    requireGithub: false,
-    requireStdioGithub: false,
     skipUserMcpFile: false,
     quiet: false,
     help: false,
@@ -69,8 +52,6 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--help" || a === "-h") out.help = true;
     else if (a === "--mcp-target" && argv[i + 1]) out.mcpTarget = argv[++i];
-    else if (a === "--require-github") out.requireGithub = true;
-    else if (a === "--require-stdio-github") out.requireStdioGithub = true;
     else if (a === "--skip-user-mcp-file") out.skipUserMcpFile = true;
     else if (a === "--quiet") out.quiet = true;
     else {
@@ -156,43 +137,6 @@ function main() {
       }
       log(`  OK  user MCP file (${dest})`, opts.quiet);
     }
-  }
-
-  if (opts.requireGithub) {
-    try {
-      execSync("gh auth status", { stdio: "ignore" });
-    } catch {
-      console.error("GitHub CLI not installed or not authenticated.");
-      console.error("  Install https://cli.github.com/ then: gh auth login");
-      process.exit(1);
-    }
-    log("  OK  gh auth status", opts.quiet);
-  }
-
-  if (opts.requireStdioGithub) {
-    const ov = join(ROOT, "mcp", "local.overrides.json");
-    if (!existsSync(ov)) {
-      console.error(`Missing ${ov}`);
-      console.error(
-        "  Run: node scripts/mcp/sync-github-token-from-gh.mjs && node scripts/mcp/install-user.mjs",
-      );
-      process.exit(1);
-    }
-    let o;
-    try {
-      o = JSON.parse(readFileSync(ov, "utf8"));
-    } catch {
-      console.error(`Invalid JSON: ${ov}`);
-      process.exit(1);
-    }
-    const tok = o?.mcpServers?.github?.env?.GITHUB_PERSONAL_ACCESS_TOKEN;
-    if (typeof tok !== "string" || PLACEHOLDER_TOKENS.has(tok.trim())) {
-      console.error(
-        "mcp/local.overrides.json: missing or placeholder GITHUB_PERSONAL_ACCESS_TOKEN for mcpServers.github",
-      );
-      process.exit(1);
-    }
-    log("  OK  mcp/local.overrides.json defines github token (value not printed)", opts.quiet);
   }
 
   log("", opts.quiet);

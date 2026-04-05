@@ -43,10 +43,4 @@ else
   echo "[bootstrap] skip playwright install (SKIP_PLAYWRIGHT=${SKIP_PLAYWRIGHT})"
 fi
 
-if command -v gh >/dev/null 2>&1; then
-  echo "[bootstrap] gh CLI present (use scripts/mcp/sync-github-token-from-gh.mjs for GitHub MCP token)"
-else
-  echo "[bootstrap] hint: install GitHub CLI (gh) for session token → GitHub MCP"
-fi
-
 echo "[bootstrap] done"
