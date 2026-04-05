@@ -125,6 +125,7 @@ type DashboardCalendarBarSegment = {
   key: string;
   repair: RepairEntry;
   layer: "repairs" | "parts";
+  purchase: PurchaseEntry | null;
   weekIndex: number;
   startColumn: number;
   span: number;
@@ -137,8 +138,19 @@ type DashboardCalendarBarSegment = {
 type DashboardCalendarWeek = {
   weekIndex: number;
   days: DashboardCalendarGridDay[];
-  segments: DashboardCalendarBarSegment[];
-  stackCount: number;
+  repairSegments: DashboardCalendarBarSegment[];
+  repairStackCount: number;
+  partSegments: DashboardCalendarBarSegment[];
+  partStackCount: number;
+};
+
+type DashboardCalendarTooltipState = {
+  repairId: number;
+  layer: "repairs" | "parts";
+  purchaseId: number | null;
+  top: number;
+  left: number;
+  pinned: boolean;
 };
 
 const emptyCustomerForm: CustomerFormState = {
@@ -705,6 +717,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>("moneyflow");
   const [moneyflowDateRange, setMoneyflowDateRange] = useState<DashboardDateRange>(() => getMoneyflowDefaultDateRange());
   const [activeMoneyflowCalendarRepairId, setActiveMoneyflowCalendarRepairId] = useState<number | null>(null);
+  const [moneyflowCalendarTooltip, setMoneyflowCalendarTooltip] = useState<DashboardCalendarTooltipState | null>(null);
   const [showMoneyflowRepairLayer, setShowMoneyflowRepairLayer] = useState(true);
   const [showMoneyflowPartsLayer, setShowMoneyflowPartsLayer] = useState(true);
   const [serviceBoardDateRange, setServiceBoardDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
@@ -733,6 +746,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [editLastName, setEditLastName] = useState("");
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const moneyflowCalendarWrapRef = useRef<HTMLDivElement | null>(null);
   const [resetLinkResult, setResetLinkResult] = useState<{ userId: number; url: string } | null>(null);
   const [repairPdfBlob, setRepairPdfBlob] = useState<Blob | null>(null);
   const [repairPdfLoading, setRepairPdfLoading] = useState(false);
@@ -821,6 +835,71 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return;
     }
     setShowMoneyflowPartsLayer((current) => !current);
+  }
+
+  function showMoneyflowCalendarTooltip(
+    segment: {
+      repairId: number;
+      layer: "repairs" | "parts";
+      purchaseId: number | null;
+    },
+    anchor: HTMLElement,
+    options?: {
+      pinned?: boolean;
+    }
+  ) {
+    if (moneyflowCalendarTooltip?.pinned && !options?.pinned) {
+      return;
+    }
+
+    const wrap = moneyflowCalendarWrapRef.current;
+    if (!wrap) {
+      setActiveMoneyflowCalendarRepairId(segment.repairId);
+      return;
+    }
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const anchorRect = anchor.getBoundingClientRect();
+    const tooltipHalfWidth = 170;
+    const rawLeft = anchorRect.left - wrapRect.left + anchorRect.width / 2;
+    const left = Math.min(Math.max(rawLeft, tooltipHalfWidth), Math.max(wrapRect.width - tooltipHalfWidth, tooltipHalfWidth));
+    const top = anchorRect.bottom - wrapRect.top + 10;
+
+    setActiveMoneyflowCalendarRepairId(segment.repairId);
+    setMoneyflowCalendarTooltip({
+      repairId: segment.repairId,
+      layer: segment.layer,
+      purchaseId: segment.purchaseId,
+      top,
+      left,
+      pinned: Boolean(options?.pinned),
+    });
+  }
+
+  function clearMoneyflowCalendarTooltip() {
+    setActiveMoneyflowCalendarRepairId(null);
+    setMoneyflowCalendarTooltip(null);
+  }
+
+  function togglePinnedMoneyflowCalendarTooltip(
+    segment: {
+      repairId: number;
+      layer: "repairs" | "parts";
+      purchaseId: number | null;
+    },
+    anchor: HTMLElement
+  ) {
+    if (
+      moneyflowCalendarTooltip?.pinned &&
+      moneyflowCalendarTooltip.repairId === segment.repairId &&
+      moneyflowCalendarTooltip.layer === segment.layer &&
+      moneyflowCalendarTooltip.purchaseId === segment.purchaseId
+    ) {
+      clearMoneyflowCalendarTooltip();
+      return;
+    }
+
+    showMoneyflowCalendarTooltip(segment, anchor, { pinned: true });
   }
 
   useEffect(() => {
@@ -1805,14 +1884,31 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
     return next;
   }, [moneyflowCalendarDays]);
+  const moneyflowCalendarDisplayRange = useMemo(() => {
+    const rangeStart = parseIsoDate(moneyflowDateRange.start_date);
+    const rangeEnd = parseIsoDate(moneyflowDateRange.end_date);
+    if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) {
+      return null;
+    }
+
+    const gridStart = new Date(rangeStart);
+    gridStart.setDate(rangeStart.getDate() - ((rangeStart.getDay() + 6) % 7));
+    const gridEnd = new Date(rangeEnd);
+    gridEnd.setDate(rangeEnd.getDate() + (6 - ((rangeEnd.getDay() + 6) % 7)));
+
+    return {
+      start_date: formatIsoLocalDate(gridStart),
+      end_date: formatIsoLocalDate(gridEnd),
+    };
+  }, [moneyflowDateRange.end_date, moneyflowDateRange.start_date]);
   const moneyflowCalendarLanes = useMemo<DashboardCalendarLane[]>(() => {
-    const rangeStart = moneyflowDateRange.start_date;
-    const rangeEnd = moneyflowDateRange.end_date;
-    if (!rangeStart || !rangeEnd || moneyflowCalendarDays.length === 0) {
+    const rangeStart = moneyflowCalendarDisplayRange?.start_date;
+    const rangeEnd = moneyflowCalendarDisplayRange?.end_date;
+    if (!rangeStart || !rangeEnd) {
       return [];
     }
 
-    const dayIndexByDate = new Map(moneyflowCalendarDays.map((day, index) => [day.date, index]));
+    const dayIndexByDate = new Map(createIsoDateRange(rangeStart, rangeEnd).map((date, index) => [date, index]));
     const todayKey = getLocalTodayDate();
     const statusPriority: Record<RepairStatus, number> = {
       waiting_parts: 0,
@@ -1899,7 +1995,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         }
         return right.repair.updated_at.localeCompare(left.repair.updated_at);
       });
-  }, [moneyflowCalendarDays, moneyflowDateRange.end_date, moneyflowDateRange.start_date, purchases, repairs]);
+  }, [moneyflowCalendarDisplayRange, purchases, repairs]);
   const filteredServiceBoardRepairs = useMemo(
     () =>
       repairs.filter((repair) =>
@@ -1949,20 +2045,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [moneyflowCalendarLanes, showMoneyflowPartsLayer, showMoneyflowRepairLayer]
   );
   const moneyflowCalendarGridDays = useMemo<DashboardCalendarGridDay[]>(() => {
-    const rangeStart = parseIsoDate(moneyflowDateRange.start_date);
-    const rangeEnd = parseIsoDate(moneyflowDateRange.end_date);
-    if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) {
+    if (!moneyflowCalendarDisplayRange) {
       return [];
     }
 
-    const gridStart = new Date(rangeStart);
-    gridStart.setDate(rangeStart.getDate() - ((rangeStart.getDay() + 6) % 7));
-    const gridEnd = new Date(rangeEnd);
-    gridEnd.setDate(rangeEnd.getDate() + (6 - ((rangeEnd.getDay() + 6) % 7)));
-
     const todayKey = getLocalTodayDate();
     const next: DashboardCalendarGridDay[] = [];
-    const cursor = new Date(gridStart);
+    const cursor = parseIsoDate(moneyflowCalendarDisplayRange.start_date);
+    const gridEnd = parseIsoDate(moneyflowCalendarDisplayRange.end_date);
+
+    if (!cursor || !gridEnd) {
+      return [];
+    }
 
     while (cursor <= gridEnd) {
       const date = formatIsoLocalDate(cursor);
@@ -1980,110 +2074,146 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
 
     return next;
-  }, [moneyflowDateRange.end_date, moneyflowDateRange.start_date]);
+  }, [moneyflowCalendarDisplayRange, moneyflowDateRange.end_date, moneyflowDateRange.start_date]);
   const moneyflowCalendarWeeks = useMemo<DashboardCalendarWeek[]>(() => {
     if (moneyflowCalendarGridDays.length === 0) {
       return [];
     }
 
-    const segmentsByWeek = new Map<number, DashboardCalendarBarSegment[]>();
-    const rangeStart = moneyflowDateRange.start_date;
-    const rangeEnd = moneyflowDateRange.end_date;
+    const displayStart = moneyflowCalendarDisplayRange?.start_date ?? moneyflowDateRange.start_date;
+    const displayEnd = moneyflowCalendarDisplayRange?.end_date ?? moneyflowDateRange.end_date;
+    const repairSegmentsByWeek = new Map<number, DashboardCalendarBarSegment[]>();
+    const partSegmentsByWeek = new Map<number, DashboardCalendarBarSegment[]>();
+    const partsLanes = visibleMoneyflowCalendarLanes.filter((lane) => lane.partCount > 0);
     const todayKey = getLocalTodayDate();
+    let nextPartStackIndex = 0;
 
-    visibleMoneyflowCalendarLanes.forEach((lane) => {
-      const segmentDefinitions: Array<{
+    function pushSegment(
+      bucketMap: Map<number, DashboardCalendarBarSegment[]>,
+      definition: {
+        key: string;
         startDate: string;
         endDate: string;
         layer: "repairs" | "parts";
+        purchase: PurchaseEntry | null;
         label: string;
-      }> = [];
+        stackIndex: number;
+      },
+      lane: DashboardCalendarLane
+    ) {
+      let cursor = definition.startDate;
 
-      if (showMoneyflowRepairLayer) {
-        segmentDefinitions.push({
-          startDate: lane.visibleStartDate,
-          endDate: lane.visibleEndDate,
-          layer: "repairs",
-          label: lane.repair.tracking_code,
-        });
-      }
-
-      if (showMoneyflowPartsLayer) {
-        lane.linkedParts.forEach((part) => {
-          const orderDate = toIsoDateKey(part.order_date);
-          if (!orderDate) {
-            return;
-          }
-
-          const approximateDeliveryDate = toIsoDateKey(part.approximate_delivery_date);
-          const rawEndDate = part.delivered ? approximateDeliveryDate || orderDate : approximateDeliveryDate || todayKey;
-          const normalizedEndDate = rawEndDate < orderDate ? orderDate : rawEndDate;
-          if (orderDate > rangeEnd || normalizedEndDate < rangeStart) {
-            return;
-          }
-
-          const visiblePartStartDate = orderDate < rangeStart ? rangeStart : orderDate;
-          const visiblePartEndDate = normalizedEndDate > rangeEnd ? rangeEnd : normalizedEndDate;
-          if (visiblePartEndDate < visiblePartStartDate) {
-            return;
-          }
-
-          segmentDefinitions.push({
-            startDate: visiblePartStartDate,
-            endDate: visiblePartEndDate,
-            layer: "parts",
-            label: part.part_name,
-          });
-        });
-      }
-
-      segmentDefinitions.forEach((definition) => {
-        let cursor = definition.startDate;
-
-        while (cursor <= definition.endDate) {
-          const parsedCursor = parseIsoDate(cursor);
-          if (!parsedCursor) {
-            break;
-          }
-
-          const weekIndex = Math.floor(diffIsoDays(moneyflowCalendarGridDays[0].date, cursor) / 7);
-          const normalizedWeekdayIndex = (parsedCursor.getDay() + 6) % 7;
-          const weekEndDate = addDaysToIsoDate(cursor, 6 - normalizedWeekdayIndex);
-          const segmentEnd = weekEndDate < definition.endDate ? weekEndDate : definition.endDate;
-          const startColumn = normalizedWeekdayIndex + 1;
-          const span = diffIsoDays(cursor, segmentEnd) + 1;
-          const bucket = segmentsByWeek.get(weekIndex) ?? [];
-
-          bucket.push({
-            key: `${definition.layer}-${lane.repair.id}-${cursor}`,
-            repair: lane.repair,
-            layer: definition.layer,
-            weekIndex,
-            startColumn,
-            span,
-            stackIndex: 0,
-            label: definition.label,
-            isActive: activeMoneyflowCalendarRepairId === lane.repair.id,
-            isOverdue: lane.isOverdue,
-          });
-          segmentsByWeek.set(weekIndex, bucket);
-          cursor = addDaysToIsoDate(segmentEnd, 1);
+      while (cursor <= definition.endDate) {
+        const parsedCursor = parseIsoDate(cursor);
+        if (!parsedCursor) {
+          break;
         }
+
+        const weekIndex = Math.floor(diffIsoDays(moneyflowCalendarGridDays[0].date, cursor) / 7);
+        const normalizedWeekdayIndex = (parsedCursor.getDay() + 6) % 7;
+        const weekEndDate = addDaysToIsoDate(cursor, 6 - normalizedWeekdayIndex);
+        const segmentEnd = weekEndDate < definition.endDate ? weekEndDate : definition.endDate;
+        const startColumn = normalizedWeekdayIndex + 1;
+        const span = diffIsoDays(cursor, segmentEnd) + 1;
+        const bucket = bucketMap.get(weekIndex) ?? [];
+
+        bucket.push({
+          key: `${definition.key}-${cursor}`,
+          repair: lane.repair,
+          layer: definition.layer,
+          purchase: definition.purchase,
+          weekIndex,
+          startColumn,
+          span,
+          stackIndex: definition.stackIndex,
+          label: definition.label,
+          isActive: activeMoneyflowCalendarRepairId === lane.repair.id,
+          isOverdue: lane.isOverdue,
+        });
+        bucketMap.set(weekIndex, bucket);
+        cursor = addDaysToIsoDate(segmentEnd, 1);
+      }
+    }
+
+    if (showMoneyflowRepairLayer) {
+      visibleMoneyflowCalendarLanes.forEach((lane, laneIndex) => {
+        pushSegment(
+          repairSegmentsByWeek,
+          {
+            key: `repairs-${lane.repair.id}`,
+            startDate: lane.visibleStartDate,
+            endDate: lane.visibleEndDate,
+            layer: "repairs",
+            purchase: null,
+            label: lane.repair.tracking_code,
+            stackIndex: laneIndex,
+          },
+          lane
+        );
       });
-    });
+    }
+
+    if (showMoneyflowPartsLayer) {
+      partsLanes.forEach((lane) => {
+        [...lane.linkedParts]
+          .sort((left, right) => {
+            const leftDate = toIsoDateKey(left.order_date) ?? "";
+            const rightDate = toIsoDateKey(right.order_date) ?? "";
+            if (leftDate !== rightDate) {
+              return leftDate.localeCompare(rightDate);
+            }
+            return left.id - right.id;
+          })
+          .forEach((part) => {
+            const orderDate = toIsoDateKey(part.order_date);
+            if (!orderDate) {
+              return;
+            }
+
+            const approximateDeliveryDate = toIsoDateKey(part.approximate_delivery_date);
+            const rawEndDate = part.delivered ? approximateDeliveryDate || orderDate : approximateDeliveryDate || todayKey;
+            const normalizedEndDate = rawEndDate < orderDate ? orderDate : rawEndDate;
+            if (orderDate > displayEnd || normalizedEndDate < displayStart) {
+              return;
+            }
+
+            const visiblePartStartDate = orderDate < displayStart ? displayStart : orderDate;
+            const visiblePartEndDate = normalizedEndDate > displayEnd ? displayEnd : normalizedEndDate;
+            if (visiblePartEndDate < visiblePartStartDate) {
+              return;
+            }
+
+            pushSegment(
+              partSegmentsByWeek,
+              {
+                key: `parts-${lane.repair.id}-${part.id}`,
+                startDate: visiblePartStartDate,
+                endDate: visiblePartEndDate,
+                layer: "parts",
+                purchase: part,
+                label: part.part_name,
+                stackIndex: nextPartStackIndex++,
+              },
+              lane
+            );
+          });
+      });
+    }
 
     return Array.from({ length: Math.ceil(moneyflowCalendarGridDays.length / 7) }, (_, weekIndex) => {
       const days = moneyflowCalendarGridDays.slice(weekIndex * 7, weekIndex * 7 + 7);
-      const segments = (segmentsByWeek.get(weekIndex) ?? [])
+      const repairSegments = (repairSegmentsByWeek.get(weekIndex) ?? [])
         .sort((left, right) => {
-          const leftOrder =
-            visibleMoneyflowCalendarLanes.findIndex((lane) => lane.repair.id === left.repair.id) * 2 +
-            (left.layer === "parts" ? 1 : 0);
-          const rightOrder =
-            visibleMoneyflowCalendarLanes.findIndex((lane) => lane.repair.id === right.repair.id) * 2 +
-            (right.layer === "parts" ? 1 : 0);
-          if (leftOrder !== rightOrder) {
-            return leftOrder - rightOrder;
+          if (left.stackIndex !== right.stackIndex) {
+            return left.stackIndex - right.stackIndex;
+          }
+          return left.startColumn - right.startColumn;
+        })
+        .map((segment, stackIndex) => ({ ...segment, stackIndex }));
+      const partSegments = (partSegmentsByWeek.get(weekIndex) ?? [])
+        .sort((left, right) => {
+          if (left.stackIndex !== right.stackIndex) {
+            return left.stackIndex - right.stackIndex;
           }
           return left.startColumn - right.startColumn;
         })
@@ -2092,32 +2222,38 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return {
         weekIndex,
         days,
-        segments,
-        stackCount: Math.max(segments.length, 1),
+        repairSegments,
+        repairStackCount: Math.max(repairSegments.length, 1),
+        partSegments,
+        partStackCount: Math.max(partSegments.length, 1),
       };
     });
   }, [
     activeMoneyflowCalendarRepairId,
+    moneyflowCalendarDisplayRange,
     moneyflowCalendarGridDays,
     showMoneyflowPartsLayer,
     showMoneyflowRepairLayer,
     visibleMoneyflowCalendarLanes,
   ]);
   const activeMoneyflowCalendarLane =
-    visibleMoneyflowCalendarLanes.find((lane) => lane.repair.id === activeMoneyflowCalendarRepairId) ??
-    visibleMoneyflowCalendarLanes[0] ??
-    null;
+    visibleMoneyflowCalendarLanes.find((lane) => lane.repair.id === activeMoneyflowCalendarRepairId) ?? null;
+  const activeMoneyflowCalendarPurchase =
+    moneyflowCalendarTooltip?.purchaseId != null
+      ? purchases.find((purchase) => purchase.id === moneyflowCalendarTooltip.purchaseId) ?? null
+      : null;
   const primaryMoneyflowMonthSegment = moneyflowCalendarMonthSegments[0] ?? null;
   useEffect(() => {
     if (visibleMoneyflowCalendarLanes.length === 0) {
-      setActiveMoneyflowCalendarRepairId(null);
+      clearMoneyflowCalendarTooltip();
       return;
     }
 
     setActiveMoneyflowCalendarRepairId((current) =>
-      current && visibleMoneyflowCalendarLanes.some((lane) => lane.repair.id === current)
-        ? current
-        : visibleMoneyflowCalendarLanes[0].repair.id
+      current && visibleMoneyflowCalendarLanes.some((lane) => lane.repair.id === current) ? current : null
+    );
+    setMoneyflowCalendarTooltip((current) =>
+      current && visibleMoneyflowCalendarLanes.some((lane) => lane.repair.id === current.repairId) ? current : null
     );
   }, [visibleMoneyflowCalendarLanes]);
   const dashboardWorkerLoad = useMemo(
@@ -2521,155 +2657,274 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                   {moneyflowCalendarDays.length > 0 && visibleMoneyflowCalendarLanes.length > 0 ? (
                     <>
-                      <div className="dashboard-calendar-shell" data-no-swipe-nav>
-                        <div className="dashboard-calendar-monthboard">
-                          <div className="dashboard-calendar-weekday-header" role="presentation">
-                            {dashboardCalendarWeekdayLabels.map((label) => (
-                              <div
-                                key={`calendar-weekday-${label}`}
-                                className={`dashboard-calendar-weekday-cell ${
-                                  label === "Sat" || label === "Sun" ? "dashboard-calendar-weekday-cell-weekend" : ""
-                                }`}
-                              >
-                                {label}
-                              </div>
-                            ))}
-                          </div>
+                      <div
+                        className="dashboard-calendar-shell-wrap"
+                        ref={moneyflowCalendarWrapRef}
+                        onMouseLeave={() => {
+                          if (!moneyflowCalendarTooltip?.pinned) {
+                            clearMoneyflowCalendarTooltip();
+                          }
+                        }}
+                      >
+                        <div className="dashboard-calendar-shell" data-no-swipe-nav>
+                          <div className="dashboard-calendar-monthboard">
+                            <div className="dashboard-calendar-weekday-header" role="presentation">
+                              {dashboardCalendarWeekdayLabels.map((label) => (
+                                <div
+                                  key={`calendar-weekday-${label}`}
+                                  className={`dashboard-calendar-weekday-cell ${
+                                    label === "Sat" || label === "Sun" ? "dashboard-calendar-weekday-cell-weekend" : ""
+                                  }`}
+                                >
+                                  {label}
+                                </div>
+                              ))}
+                            </div>
 
-                          <div className="dashboard-calendar-weeks">
-                            {moneyflowCalendarWeeks.map((week) => (
-                              <div
-                                key={`moneyflow-calendar-week-${week.weekIndex}`}
-                                className="dashboard-calendar-week"
-                                style={
-                                  {
-                                    "--dashboard-calendar-bar-count": String(week.stackCount),
-                                  } as CSSProperties
-                                }
-                              >
-                                <div className="dashboard-calendar-week-grid">
-                                  {week.days.map((day) => (
-                                    <div
-                                      key={`moneyflow-calendar-day-${day.date}`}
-                                      className={`dashboard-calendar-window ${
-                                        day.isWeekend ? "dashboard-calendar-window-weekend" : ""
-                                      } ${day.isToday ? "dashboard-calendar-window-today" : ""} ${
-                                        day.isInRange ? "" : "dashboard-calendar-window-outside"
-                                      }`}
-                                    >
-                                      <span className="dashboard-calendar-window-number">{day.dayNumber}</span>
+                            <div className="dashboard-calendar-weeks">
+                              {moneyflowCalendarWeeks.map((week) => {
+                                const visibleRepairSegments = showMoneyflowRepairLayer ? week.repairSegments : [];
+                                const visiblePartSegments = showMoneyflowPartsLayer ? week.partSegments : [];
+                                const repairRows = visibleRepairSegments.length;
+                                const partRows = visiblePartSegments.length;
+                                const hasBothLayers = repairRows > 0 && partRows > 0;
+                                const partRowOffset = repairRows > 0 ? repairRows + (hasBothLayers ? 1 : 0) : 0;
+                                const totalRows = Math.max(repairRows + partRows + (hasBothLayers ? 1 : 0), 1);
+
+                                return (
+                                  <div
+                                    key={`moneyflow-calendar-week-${week.weekIndex}`}
+                                    className={`dashboard-calendar-week ${
+                                      partRows > 0 && repairRows === 0 ? "dashboard-calendar-week-parts" : ""
+                                    }`}
+                                    style={
+                                      {
+                                        "--dashboard-calendar-bar-count": String(totalRows),
+                                      } as CSSProperties
+                                    }
+                                  >
+                                    <div className="dashboard-calendar-week-grid">
+                                      {week.days.map((day) => (
+                                        <div
+                                          key={`moneyflow-calendar-day-${day.date}`}
+                                          className={`dashboard-calendar-window ${
+                                            partRows > 0 && repairRows === 0 ? "dashboard-calendar-window-parts" : ""
+                                          } ${day.isWeekend ? "dashboard-calendar-window-weekend" : ""} ${
+                                            day.isToday ? "dashboard-calendar-window-today" : ""
+                                          } ${day.isInRange ? "" : "dashboard-calendar-window-outside"}`}
+                                        >
+                                          <span className="dashboard-calendar-window-number">{day.dayNumber}</span>
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
-                                </div>
 
-                                <div className="dashboard-calendar-week-overlay">
-                                  {week.segments.map((segment) => (
-                                    <button
-                                      key={segment.key}
-                                      type="button"
-                                      className={`dashboard-calendar-segment dashboard-calendar-segment-${segment.layer} ${
-                                        segment.layer === "repairs"
-                                          ? `dashboard-calendar-segment-status-${segment.repair.status}`
-                                          : ""
-                                      } ${segment.isActive ? "dashboard-calendar-segment-active" : ""} ${
-                                        segment.isOverdue ? "dashboard-calendar-segment-overdue" : ""
+                                    <div
+                                      className={`dashboard-calendar-week-overlay ${
+                                        partRows > 0 && repairRows === 0 ? "dashboard-calendar-week-overlay-parts" : ""
                                       }`}
-                                      style={{
-                                        gridColumn: `${segment.startColumn} / span ${segment.span}`,
-                                        gridRow: segment.stackIndex + 1,
-                                      }}
-                                      aria-label={
-                                        segment.layer === "parts"
-                                          ? `Open repair ${segment.repair.tracking_code} parts lane`
-                                          : `Open repair ${segment.repair.tracking_code}`
-                                      }
-                                      onMouseEnter={() => setActiveMoneyflowCalendarRepairId(segment.repair.id)}
-                                      onFocus={() => setActiveMoneyflowCalendarRepairId(segment.repair.id)}
-                                      onClick={() => openRepairModal(segment.repair)}
                                     >
-                                      <span>{segment.label}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
+                                      {visibleRepairSegments.map((segment) => (
+                                        <button
+                                          key={segment.key}
+                                          type="button"
+                                          className={`dashboard-calendar-segment dashboard-calendar-segment-${segment.layer} ${
+                                            `dashboard-calendar-segment-status-${segment.repair.status}`
+                                          } ${segment.isActive ? "dashboard-calendar-segment-active" : ""} ${
+                                            segment.isOverdue ? "dashboard-calendar-segment-overdue" : ""
+                                          }`}
+                                          style={{
+                                            gridColumn: `${segment.startColumn} / span ${segment.span}`,
+                                            gridRow: segment.stackIndex + 1,
+                                          }}
+                                          aria-label={`Show repair ${segment.repair.tracking_code} details`}
+                                          onClick={(event) =>
+                                            togglePinnedMoneyflowCalendarTooltip(
+                                              {
+                                                repairId: segment.repair.id,
+                                                layer: segment.layer,
+                                                purchaseId: segment.purchase?.id ?? null,
+                                              },
+                                              event.currentTarget
+                                            )
+                                          }
+                                        >
+                                          <span>{segment.label}</span>
+                                        </button>
+                                      ))}
+
+                                      {visiblePartSegments.map((segment) => (
+                                        <button
+                                          key={segment.key}
+                                          type="button"
+                                          className={`dashboard-calendar-segment dashboard-calendar-segment-${segment.layer} ${
+                                            segment.isActive ? "dashboard-calendar-segment-active" : ""
+                                          } ${segment.isOverdue ? "dashboard-calendar-segment-overdue" : ""}`}
+                                          style={{
+                                            gridColumn: `${segment.startColumn} / span ${segment.span}`,
+                                            gridRow: segment.stackIndex + partRowOffset + 1,
+                                          }}
+                                          aria-label={`Show repair ${segment.repair.tracking_code} parts details`}
+                                          onClick={(event) =>
+                                            togglePinnedMoneyflowCalendarTooltip(
+                                              {
+                                                repairId: segment.repair.id,
+                                                layer: segment.layer,
+                                                purchaseId: segment.purchase?.id ?? null,
+                                              },
+                                              event.currentTarget
+                                            )
+                                          }
+                                        >
+                                          <span>{segment.label}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
+                        {moneyflowCalendarTooltip && activeMoneyflowCalendarLane ? (
+                          <aside
+                            className={`dashboard-calendar-tooltip ${
+                              moneyflowCalendarTooltip.pinned ? "dashboard-calendar-tooltip-pinned" : ""
+                            }`}
+                            style={{
+                              top: `${moneyflowCalendarTooltip.top}px`,
+                              left: `${moneyflowCalendarTooltip.left}px`,
+                            }}
+                            aria-live="polite"
+                          >
+                            {moneyflowCalendarTooltip.layer === "parts" && activeMoneyflowCalendarPurchase ? (
+                              <>
+                                <div className="dashboard-calendar-tooltip-copy">
+                                  <p className="eyebrow">Selected purchase</p>
+                                  <h4>
+                                    {activeMoneyflowCalendarPurchase.part_name} • {activeMoneyflowCalendarLane.repair.tracking_code}
+                                  </h4>
+                                  <p>{activeMoneyflowCalendarLane.repair.vehicle_label}</p>
+                                  <p className="meta-line">
+                                    Supplier {activeMoneyflowCalendarPurchase.supplier_name || "Unknown supplier"}
+                                  </p>
+                                </div>
+                                <div className="dashboard-calendar-tooltip-meta">
+                                  <span className="tag">
+                                    Qty {activeMoneyflowCalendarPurchase.quantity}
+                                  </span>
+                                  <span className="tag">
+                                    Buy {formatCurrency(activeMoneyflowCalendarPurchase.purchase_price)}
+                                  </span>
+                                  <span className="tag">
+                                    Sale {formatCurrency(activeMoneyflowCalendarPurchase.sale_price)}
+                                  </span>
+                                  <span className="tag">
+                                    Ordered {formatDisplayDate(activeMoneyflowCalendarPurchase.order_date)}
+                                  </span>
+                                  <span className="tag">
+                                    ETA{" "}
+                                    {activeMoneyflowCalendarPurchase.approximate_delivery_date
+                                      ? formatDisplayDate(activeMoneyflowCalendarPurchase.approximate_delivery_date)
+                                      : "—"}
+                                  </span>
+                                  <span className="tag">
+                                    {activeMoneyflowCalendarPurchase.delivered ? "Delivered" : "In transit"}
+                                  </span>
+                                  {activeMoneyflowCalendarPurchase.invoice_name ? (
+                                    <span className="tag">Invoice {activeMoneyflowCalendarPurchase.invoice_name}</span>
+                                  ) : (
+                                    <span className="tag">No invoice</span>
+                                  )}
+                                </div>
+                                <div className="hero-actions">
+                                  <button
+                                    type="button"
+                                    className="button"
+                                    onClick={() => openPurchaseDetailModal(activeMoneyflowCalendarPurchase)}
+                                  >
+                                    Open Purchase
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="button button-secondary"
+                                    onClick={() => openRepairModal(activeMoneyflowCalendarLane.repair)}
+                                  >
+                                    Open Repair
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="dashboard-calendar-tooltip-copy">
+                                  <p className="eyebrow">Selected repair</p>
+                                  <h4>
+                                    {activeMoneyflowCalendarLane.repair.tracking_code} •{" "}
+                                    {activeMoneyflowCalendarLane.repair.vehicle_label}
+                                  </h4>
+                                  <p>{activeMoneyflowCalendarLane.repair.service_name}</p>
+                                  <p className="meta-line">
+                                    {activeMoneyflowCalendarLane.repair.issue_notes || "No issue notes provided."}
+                                  </p>
+                                </div>
+                                <div className="dashboard-calendar-tooltip-meta">
+                                  <span className={getRepairStatusClass(activeMoneyflowCalendarLane.repair.status)}>
+                                    {REPAIR_STATUS_LABELS[activeMoneyflowCalendarLane.repair.status]}
+                                  </span>
+                                  {activeMoneyflowCalendarLane.isOverdue ? <span className="tag">ETA overdue</span> : null}
+                                  <span className="tag">
+                                    Visible {formatDisplayDate(activeMoneyflowCalendarLane.visibleStartDate)} -&gt;{" "}
+                                    {formatDisplayDate(activeMoneyflowCalendarLane.visibleEndDate)}
+                                  </span>
+                                  <span className="tag">
+                                    Master {activeMoneyflowCalendarLane.repair.master_name || "Unassigned"}
+                                  </span>
+                                  <span className="tag">
+                                    Created {formatDisplayDate(activeMoneyflowCalendarLane.repair.created_at)}
+                                  </span>
+                                  {activeMoneyflowCalendarLane.partCount > 0 ? (
+                                    <span className="tag">
+                                      Parts {activeMoneyflowCalendarLane.partCount} lines / qty {activeMoneyflowCalendarLane.partQuantity}
+                                    </span>
+                                  ) : null}
+                                  {activeMoneyflowCalendarLane.partsVisibleStartDate &&
+                                  activeMoneyflowCalendarLane.partsVisibleEndDate ? (
+                                    <span className="tag">
+                                      Parts window {formatDisplayDate(activeMoneyflowCalendarLane.partsVisibleStartDate)} -&gt;{" "}
+                                      {formatDisplayDate(activeMoneyflowCalendarLane.partsVisibleEndDate)}
+                                    </span>
+                                  ) : null}
+                                  {activeMoneyflowCalendarLane.repair.estimated_date ? (
+                                    <span className="tag">
+                                      ETA {formatDisplayDate(activeMoneyflowCalendarLane.repair.estimated_date)}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                {activeMoneyflowCalendarLane.partNames.length > 0 ? (
+                                  <p className="dashboard-calendar-tooltip-parts">
+                                    Linked parts: {activeMoneyflowCalendarLane.partNames.join(", ")}
+                                  </p>
+                                ) : null}
+                                <div className="hero-actions">
+                                  <button
+                                    type="button"
+                                    className="button"
+                                    onClick={() => openRepairModal(activeMoneyflowCalendarLane.repair)}
+                                  >
+                                    Open Repair
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="button button-secondary"
+                                    onClick={() => onSelectSection("repairs")}
+                                  >
+                                    Go To Repairs Tab
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </aside>
+                        ) : null}
                       </div>
-
-                      <section className="dashboard-calendar-detail" aria-live="polite">
-                        {activeMoneyflowCalendarLane ? (
-                          <>
-                            <div className="dashboard-calendar-detail-copy">
-                              <p className="eyebrow">Selected repair</p>
-                              <h4>
-                                {activeMoneyflowCalendarLane.repair.tracking_code} •{" "}
-                                {activeMoneyflowCalendarLane.repair.vehicle_label}
-                              </h4>
-                              <p>{activeMoneyflowCalendarLane.repair.service_name}</p>
-                              <p className="meta-line">
-                                {activeMoneyflowCalendarLane.repair.issue_notes || "No issue notes provided."}
-                              </p>
-                            </div>
-                            <div className="dashboard-calendar-detail-meta">
-                              <span className={getRepairStatusClass(activeMoneyflowCalendarLane.repair.status)}>
-                                {REPAIR_STATUS_LABELS[activeMoneyflowCalendarLane.repair.status]}
-                              </span>
-                              {activeMoneyflowCalendarLane.isOverdue ? <span className="tag">ETA overdue</span> : null}
-                              <span className="tag">
-                                Visible {formatDisplayDate(activeMoneyflowCalendarLane.visibleStartDate)} -&gt;{" "}
-                                {formatDisplayDate(activeMoneyflowCalendarLane.visibleEndDate)}
-                              </span>
-                              <span className="tag">
-                                Master {activeMoneyflowCalendarLane.repair.master_name || "Unassigned"}
-                              </span>
-                              <span className="tag">
-                                Created {formatDisplayDate(activeMoneyflowCalendarLane.repair.created_at)}
-                              </span>
-                              {activeMoneyflowCalendarLane.partCount > 0 ? (
-                                <span className="tag">
-                                  Parts {activeMoneyflowCalendarLane.partCount} lines / qty {activeMoneyflowCalendarLane.partQuantity}
-                                </span>
-                              ) : null}
-                              {activeMoneyflowCalendarLane.partsVisibleStartDate &&
-                              activeMoneyflowCalendarLane.partsVisibleEndDate ? (
-                                <span className="tag">
-                                  Parts window {formatDisplayDate(activeMoneyflowCalendarLane.partsVisibleStartDate)} -&gt;{" "}
-                                  {formatDisplayDate(activeMoneyflowCalendarLane.partsVisibleEndDate)}
-                                </span>
-                              ) : null}
-                              {activeMoneyflowCalendarLane.repair.estimated_date ? (
-                                <span className="tag">
-                                  ETA {formatDisplayDate(activeMoneyflowCalendarLane.repair.estimated_date)}
-                                </span>
-                              ) : null}
-                            </div>
-                            {activeMoneyflowCalendarLane.partNames.length > 0 ? (
-                              <p className="dashboard-calendar-detail-parts">
-                                Linked parts: {activeMoneyflowCalendarLane.partNames.join(", ")}
-                              </p>
-                            ) : null}
-                            <div className="hero-actions">
-                              <button
-                                type="button"
-                                className="button"
-                                onClick={() => openRepairModal(activeMoneyflowCalendarLane.repair)}
-                              >
-                                Open Repair
-                              </button>
-                              <button
-                                type="button"
-                                className="button button-secondary"
-                                onClick={() => onSelectSection("repairs")}
-                              >
-                                Go To Repairs Tab
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="workspace-note">Hover or focus a repair lane to inspect the job details.</p>
-                        )}
-                      </section>
                     </>
                   ) : null}
                 </section>
