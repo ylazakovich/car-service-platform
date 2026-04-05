@@ -105,6 +105,8 @@ jobs:
           echo "Probe: frontend=$fr backend=$be e2e=$e2e"
 
       # dorny/test-reporter: reporter "java-junit" = JUnit XML (Vitest, pytest, xmlrunner, etc.), not a Java stack.
+      # fail-on-error: false — иначе при любом упавшем тесте шаг падает и job не доходит до Merge Allure / gh-pages / комментария в PR.
+      # Итог провала по-прежнему виден в созданном check run у test-reporter и в Allure.
       - name: Frontend Test Report
         if: steps.junit_paths.outputs.frontend == 'true'
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
@@ -112,6 +114,7 @@ jobs:
           name: Frontend Tests
           path: artifacts/frontend-test-results/junit.xml
           reporter: java-junit
+          fail-on-error: "false"
 
       - name: Backend Test Report
         if: steps.junit_paths.outputs.backend == 'true'
@@ -120,6 +123,7 @@ jobs:
           name: Backend Tests
           path: artifacts/backend-test-results/*.xml
           reporter: java-junit
+          fail-on-error: "false"
 
       - name: E2E (Playwright) Test Report
         if: steps.junit_paths.outputs.e2e == 'true'
@@ -128,6 +132,7 @@ jobs:
           name: E2E (Playwright)
           path: artifacts/e2e-test-results/e2e-junit.xml
           reporter: java-junit
+          fail-on-error: "false"
 
       # PR Pipeline uploads allure-results-frontend, allure-results-backend, allure-results-e2e; merge without clobbering environment fragments.
       - name: Merge Allure results
@@ -239,3 +244,15 @@ jobs:
                 body
               });
             }
+
+      # После публикации отчётов: сохранить красный статус workflow, если PR Pipeline не success (отдельно от fail-on-error в test-reporter).
+      - name: Mirror PR Pipeline conclusion
+        if: always()
+        run: |
+          case '${{ github.event.workflow_run.conclusion }}' in
+            success) exit 0 ;;
+            *)
+              echo "::error::PR Pipeline ended as ${{ github.event.workflow_run.conclusion }}. Allure/JUnit steps above still ran; see PR comment, Checks tab, and artifacts on the source run (e.g. playwright-report from End-to-end job)."
+              exit 1
+              ;;
+          esac
