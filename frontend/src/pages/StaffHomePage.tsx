@@ -782,6 +782,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     dragOverCardId,
     handleCardDragOver,
     handleCardDrop,
+    handleCopyTrackingCode,
     handleCopyPortalLink,
     handleRegeneratePortalLink,
     markRepairPdfAvailable,
@@ -3392,6 +3393,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             activeFilter={mobileRepairStatusFilter}
             onFilterChange={setMobileRepairStatusFilter}
             onOpenRepair={openRepairModal}
+            onCopyTrackingCode={handleCopyTrackingCode}
             repairPartSummaries={repairPartSummaries}
           />
 
@@ -3408,6 +3410,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onCardDragOver={handleCardDragOver}
             onCardDrop={handleCardDrop}
             onOpenRepair={openRepairModal}
+            onCopyTrackingCode={handleCopyTrackingCode}
             repairPartSummaries={repairPartSummaries}
           />
         </div>
