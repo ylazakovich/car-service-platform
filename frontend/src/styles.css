@@ -5453,9 +5453,34 @@ textarea { resize: vertical; }
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .repair-update-modal .panel-header .inline-actions,
-  .vehicle-detail-modal .panel-header .inline-actions {
-    justify-content: center;
+  /*
+   * Repairs / Vehicles: в глобальном @media .panel-header = column — заголовок и кнопки штабелируются
+   * и шапка модалки выглядит «жирной». Как у Purchases: ряд title | actions, плотнее padding.
+   */
+  .repair-update-modal .panel-header:has(.inline-actions),
+  .vehicle-detail-modal .panel-header:has(.inline-actions) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s3);
+    text-align: start;
+    padding-top: calc(var(--s3) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s2);
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) > div:first-child,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) > div:first-child {
+    text-align: start;
+    flex: 1 1 auto;
+    min-width: min(100%, 11rem);
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) .inline-actions,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) .inline-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--s2);
   }
 
   .repair-form-modal .panel-header {
@@ -5466,12 +5491,24 @@ textarea { resize: vertical; }
     margin-bottom: var(--s3);
     margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
     margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
-    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
-    padding-bottom: var(--s3);
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s3);
+    text-align: start;
+    padding-top: calc(var(--s3) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s2);
     padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
     padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
     background: var(--surface);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .repair-form-modal .panel-header > div:first-child {
+    text-align: start;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .repair-modal-actions,
