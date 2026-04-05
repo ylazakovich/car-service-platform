@@ -233,11 +233,16 @@ function StaffShell() {
           <span />
         </button>
         <div className="shell-mobile-context">
-          <span className="mobile-section-pill">{isStaff ? "Staff Flow" : "Workspace"}</span>
-          <strong>{sectionLabels[activeSection]}</strong>
+          <span className="mobile-section-pill">{isStaff ? "Staff" : "Workspace"}</span>
+          <strong className="shell-mobile-section-title">{sectionLabels[activeSection]}</strong>
         </div>
-        <button type="button" className="button button-secondary mobile-signout-button" onClick={logout}>
-          Sign Out
+        <button
+          type="button"
+          className="button button-ghost mobile-signout-button"
+          onClick={logout}
+          aria-label="Sign out"
+        >
+          <span className="mobile-signout-text">Sign out</span>
         </button>
       </header>
 
