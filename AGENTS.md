@@ -24,6 +24,7 @@
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
 - `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
 - `docs/dev/agents-and-mcp.md` — сжатые рекомендации по ролям и MCP (в т.ч. ECC).
+- `mcp/README.md` — переносимый JSON-профиль MCP и команда `node scripts/mcp/install-user.mjs` для записи в user-level конфиг (Cursor / Claude Code).
 
 ## RUN_DIR (опционально)
 

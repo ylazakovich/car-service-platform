@@ -42,7 +42,9 @@
 
 **Не включать по умолчанию:** тяжёлые или редкие серверы (лишние SaaS), если нет ежедневного use case.
 
-Практическая установка: скопировать нужные блоки из `mcp-configs/mcp-servers.json` репозитория ECC в проектный `.mcp.json` / настройки Cursor, подставив секреты через env, без коммита ключей.
+**Этот репозиторий:** готовый профиль и установщик — `mcp/car-service-platform.default.json` + `node scripts/mcp/install-user.mjs` (глобально в `~/.cursor/mcp.json` или `~/.claude/settings.json`). Подробности: `mcp/README.md`.
+
+Дополнительно можно копировать блоки из [`mcp-configs/mcp-servers.json`](https://github.com/affaan-m/everything-claude-code/blob/main/mcp-configs/mcp-servers.json) репозитория ECC и вручную вставлять в настройки провайдера.
 
 ## 4) Оптимизация pipeline для «сокомандников»
 
