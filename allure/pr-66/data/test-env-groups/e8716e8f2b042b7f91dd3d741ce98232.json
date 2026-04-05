@@ -1,1 +1,1 @@
-{"id":"e8716e8f2b042b7f91dd3d741ce98232","fullName":"purchases.tests.PurchaseApiTests#test_update_purchase_part_name","name":"test_update_purchase_part_name","status":"passed","testResultsByEnv":{"backend":"adae54865d56c3a5f78cd99398966724"}}
+{"id":"e8716e8f2b042b7f91dd3d741ce98232","fullName":"purchases.tests.PurchaseApiTests#test_update_purchase_part_name","name":"test_update_purchase_part_name","status":"passed","testResultsByEnv":{"backend":"db08cb1abea4e9002fa28893363d1ae2"}}
