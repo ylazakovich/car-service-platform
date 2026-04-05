@@ -4,6 +4,18 @@
 
 Цель: единый workflow для планирования, реализации и верификации изменений в `car-service-platform` без привязки к одному ассистенту.
 
+## Обязательная подготовка агентной сессии (любой провайдер)
+
+Перед первым осмысленным действием в репозитории агент **обязан** выполнить подготовку среды (или явно подтвердить, что она уже сделана в этой среде):
+
+1. **Зависимости** — один раз на клон/машину: `bash scripts/agents/bootstrap-environment.sh` (Node `npm ci` в `frontend/`, Python `pip` для `backend/`, при необходимости `playwright install chromium`).
+2. **MCP** — профиль проекта в user-level конфиг: `node scripts/mcp/install-user.mjs` (Cursor) или `--target claude` для Claude Code. Детали: `mcp/README.md`.
+3. **GitHub MCP** — токен **на сессию** из GitHub CLI: `node scripts/mcp/sync-github-token-from-gh.mjs`, затем снова `node scripts/mcp/install-user.mjs` с тем же `--target`; файл `mcp/local.overrides.json` gitignored. Требуется установленный и залогиненный `gh`. Агент **не** кладёт PAT в репозиторий и **не** логирует значение токена.
+
+**Одной командой:** `bash scripts/agents/bootstrap-agent-session.sh` (опции: `--deps-only`, `--skip-github-token`, `--mcp-target claude`).
+
+Полная инструкция, чеклист и нюансы провайдеров: **`docs/dev/agent-session-bootstrap.md`**.
+
 ## Структура
 
 - `.agents/planner/SKILL.md` — декомпозиция задачи и исполнимый план.
@@ -25,6 +37,7 @@
 - `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
 - `docs/dev/agents-and-mcp.md` — сжатые рекомендации по ролям и MCP (в т.ч. ECC).
 - `mcp/README.md` — переносимый JSON-профиль MCP и команда `node scripts/mcp/install-user.mjs` для записи в user-level конфиг (Cursor / Claude Code).
+- `docs/dev/agent-session-bootstrap.md` — обязательный bootstrap сессии (deps, MCP, `gh` → GitHub MCP).
 
 ## RUN_DIR (опционально)
 
@@ -215,6 +228,7 @@ flowchart TD
 
 ```md
 Role: <planner|architect|domain-reviewer|backend-developer|frontend-developer|e2e-validator|plan-reviewer>
+Bootstrap: <выполнен `bootstrap-agent-session` / deps-only / пропущено — причина>
 Scope: <full|iteration>
 Skipped roles: <кратко, если scope: iteration и роли намеренно не запускались; иначе "—">
 Assumptions:

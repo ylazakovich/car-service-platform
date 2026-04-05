@@ -50,6 +50,21 @@ node scripts/mcp/install-user.mjs --force-profile
 
 Remove placeholder `YOUR_GITHUB_PAT_HERE` from the default file before relying on GitHub MCP.
 
+## Session token via GitHub CLI (required for agents in this repo)
+
+For **each working session**, prefer the token issued to [GitHub CLI](https://cli.github.com/) instead of a long-lived PAT in git:
+
+```bash
+node scripts/mcp/sync-github-token-from-gh.mjs
+node scripts/mcp/install-user.mjs          # or --target claude
+```
+
+- Writes **`mcp/local.overrides.json`** (gitignored) with `GITHUB_PERSONAL_ACCESS_TOKEN` from `gh auth token`.
+- The script does **not** print the token.
+- Requires `gh auth login` beforehand.
+
+Full flow (deps + MCP + gh): `bash scripts/agents/bootstrap-agent-session.sh` — see **`docs/dev/agent-session-bootstrap.md`**.
+
 ## Other tools (Codex, etc.)
 
 - **Codex** often uses `~/.codex/config.toml` — different format; translate entries manually from `car-service-platform.default.json`.
