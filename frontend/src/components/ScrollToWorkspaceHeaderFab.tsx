@@ -109,12 +109,9 @@ export function ScrollToWorkspaceHeaderFab({
       type="button"
       className="shell-scroll-to-header-fab"
       onClick={handleClick}
-      aria-label="Back to workspace header"
+      aria-label="Jump to top of page and focus workspace menu"
     >
-      <span className="shell-scroll-to-header-fab-icon" aria-hidden>
-        ↑
-      </span>
-      <span>Top</span>
+      <span className="shell-scroll-to-header-fab-label">Jump to top</span>
     </button>
   );
 }

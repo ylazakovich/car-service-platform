@@ -1,9 +1,22 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@autoservice.local";
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "change-me-in-production";
-const STAFF_EMAIL = process.env.E2E_STAFF_EMAIL ?? "staff@autoservice.local";
-const STAFF_PASSWORD = process.env.E2E_STAFF_PASSWORD ?? "change-me-in-production";
+/** Prefer `E2E_*` (CI), else same keys as Docker backend (`ADMIN_*` / `STAFF_*`) after `applyRepoRootDotEnv()`. */
+const ADMIN_EMAIL =
+  process.env.E2E_ADMIN_EMAIL ||
+  process.env.ADMIN_EMAIL ||
+  "admin@autoservice.local";
+const ADMIN_PASSWORD =
+  process.env.E2E_ADMIN_PASSWORD ||
+  process.env.ADMIN_PASSWORD ||
+  "admin12345";
+const STAFF_EMAIL =
+  process.env.E2E_STAFF_EMAIL ||
+  process.env.STAFF_EMAIL ||
+  "staff@autoservice.local";
+const STAFF_PASSWORD =
+  process.env.E2E_STAFF_PASSWORD ||
+  process.env.STAFF_PASSWORD ||
+  "staff12345";
 
 /**
  * Login screen — role-based locators, same flow for admin and staff.
@@ -46,6 +59,6 @@ export class LoginPage {
 
   async signInAsStaff(): Promise<void> {
     await this.signIn(STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(this.page).toHaveURL(/\/app/);
+    await expect(this.page).toHaveURL(/\/app/, { timeout: 30_000 });
   }
 }

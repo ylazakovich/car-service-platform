@@ -16,7 +16,7 @@ source .env
 set +a
 
 DEMO_STAFF_EMAIL="${DEMO_STAFF_EMAIL:-staff@autoservice.local}"
-DEMO_STAFF_PASSWORD="${DEMO_STAFF_PASSWORD:-demo-staff-change-me}"
+DEMO_STAFF_PASSWORD="${DEMO_STAFF_PASSWORD:-staff12345}"
 
 if ! docker compose ps backend --format json | grep -q '"State":"running"'; then
   echo "Error: backend container is not running." >&2

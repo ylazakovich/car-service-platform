@@ -4436,36 +4436,57 @@ textarea { resize: vertical; }
     overflow: hidden;
   }
 
-  /* Плавающий «в шапку» — только при active в JS (mobile shell). */
+  /*
+   * Полоса «в шапку» на всю ширину между отступами — те же отступы/радиус/фон, что у .shell-mobile-sticky-stack.
+   */
   .shell-scroll-to-header-fab {
     position: fixed;
     z-index: 28;
+    left: max(var(--s4), env(safe-area-inset-left, 0px));
     right: max(var(--s4), env(safe-area-inset-right, 0px));
-    bottom: max(var(--s4), env(safe-area-inset-bottom, 0px));
-    display: inline-flex;
+    bottom: max(var(--s3), env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--s2);
-    padding: 0.52rem 0.9rem;
-    border-radius: 999px;
-    border: 1px solid var(--border-strong);
-    background: var(--surface);
+    min-height: 44px;
+    padding: 10px var(--s4);
+    margin: 0;
+    width: auto;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(
+        0deg,
+        rgba(205, 216, 58, 0.075) 0%,
+        rgba(205, 216, 58, 0.045) 42%,
+        rgba(205, 216, 58, 0.018) 100%
+      ),
+      var(--surface);
     color: var(--text);
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    line-height: 1;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.22);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
       border-color 0.15s ease,
       color 0.15s ease,
-      box-shadow 0.15s ease;
+      box-shadow 0.15s ease,
+      background 0.15s ease;
   }
 
   .shell-scroll-to-header-fab:hover {
     border-color: var(--border-accent);
     color: var(--accent);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      0 10px 32px rgba(0, 0, 0, 0.28);
   }
 
   .shell-scroll-to-header-fab:focus-visible {
@@ -4473,9 +4494,15 @@ textarea { resize: vertical; }
     outline-offset: 2px;
   }
 
-  .shell-scroll-to-header-fab-icon {
-    font-size: 1.05rem;
-    line-height: 1;
+  .shell-scroll-to-header-fab-label {
+    display: block;
+    margin: 0;
+    max-width: 100%;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-align: center;
   }
 
   .shell-mobile-picker-backdrop {
@@ -4491,7 +4518,7 @@ textarea { resize: vertical; }
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Sticky “card” header aligned with workspace panels (see .workspace-topbar). --shell-mobile-sticky-top via App.tsx ResizeObserver. */
+  /* Sticky «шапка»: подсветка на всю высоту блока (без узкой полосы только у верхнего края). */
   .shell-mobile-sticky-stack {
     display: block;
     position: sticky;
@@ -4500,16 +4527,25 @@ textarea { resize: vertical; }
     top: var(--shell-mobile-stack-inset-top);
     z-index: 32;
     margin: var(--shell-mobile-stack-inset-top) var(--s4) var(--s3);
-    padding-top: var(--s2);
+    padding-top: 0;
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 22px;
     background:
-      radial-gradient(ellipse at 0% 0%, rgba(205, 216, 58, 0.06) 0%, transparent 52%),
+      linear-gradient(
+        180deg,
+        rgba(205, 216, 58, 0.075) 0%,
+        rgba(205, 216, 58, 0.045) 42%,
+        rgba(205, 216, 58, 0.018) 100%
+      ),
       var(--surface);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.04),
       0 8px 28px rgba(0, 0, 0, 0.22);
     overflow: hidden;
+  }
+
+  .shell-mobile-sticky-stack.shell-mobile-sticky-stack--menu-open {
+    border-radius: 22px 22px 18px 18px;
   }
 
   /* Закрытое меню: высота = только шапка, без «пустой половины карточки». */
@@ -4539,9 +4575,10 @@ textarea { resize: vertical; }
     gap: 0.35rem;
     width: 100%;
     margin: 0;
-    padding: 6px var(--s4) 7px;
+    padding: 10px var(--s4) 10px;
     border: 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 0;
     background: transparent;
     font: inherit;
     color: inherit;
@@ -4550,14 +4587,8 @@ textarea { resize: vertical; }
     text-align: center;
   }
 
-  /* Закрытое меню: только компактная шапка, без нижней границы. */
-  .shell-mobile-sticky-stack:not(.shell-mobile-sticky-stack--menu-open) .shell-mobile-header-toggle {
-    border-bottom: none;
-    padding-bottom: 8px;
-  }
-
   .shell-mobile-header-toggle:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .shell-mobile-header-toggle:focus-visible {
@@ -4633,9 +4664,9 @@ textarea { resize: vertical; }
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 8px 10px 10px;
-    border-top: none;
-    background: rgba(0, 0, 0, 0.12);
+    padding: 10px 10px 10px;
+    border-top: 1px solid var(--border);
+    background: transparent;
     position: relative;
     z-index: 31;
   }
