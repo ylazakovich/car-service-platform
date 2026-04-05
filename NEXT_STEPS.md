@@ -11,8 +11,8 @@
 - [x] Зафиксировать целевой дизайн framework: `docs/testing/playwright-e2e-framework.md`.
 - [x] Политика **без ретраев** в `frontend/playwright.config.ts` (`retries: 0`).
 - [x] Восстановить отсутствующий skill `.agents/e2e-validator/SKILL.md` (дрифт с `AGENTS.md`).
-- [ ] **CI:** перед `npx playwright test` опрашивать `GET /api/health` с того же origin, что `PLAYWRIGHT_BASE_URL` (расширить `.github/actions/compose-up` или отдельный step в `pr.yml`).
-- [ ] **Playwright global setup:** единая точка ожидания готовности API (и при необходимости — повторяемая проверка после старта контейнеров).
+- [x] **CI:** перед `npx playwright test` опрашивать `GET /api/health` с того же origin, что `PLAYWRIGHT_BASE_URL` — `.github/actions/compose-up` (`wait-for-api-health`) + `pr.yml` E2E job.
+- [x] **Playwright global setup:** `frontend/e2e/global-setup.ts` (poll `/api/health`, опциональный пропуск `E2E_SKIP_GLOBAL_SETUP=1`).
 - [ ] **Сиды PDF:** явное начальное состояние для сценария «View PDF без лишнего POST» (два ремонта или расширение `seed_e2e_data` / отдельная команда) — убрать зависимость от порядка прогонов.
 - [ ] Расширить assert’ы dashboard E2E: не только headings, а ключевые KPI/тексты виджетов при фикстурных данных.
 - [x] Задокументировать рекомендуемый набор MCP и выравнивание с ECC: `docs/dev/agents-and-mcp.md` (поддерживать при изменении практик команды).
