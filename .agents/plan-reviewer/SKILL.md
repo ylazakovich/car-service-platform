@@ -1,26 +1,26 @@
 # plan-reviewer
 
 ## Purpose
-Проверить качество плана и соответствие итоговой реализации плану и архитектуре.
+Review plan quality and whether the final implementation matches the plan and architecture.
 
 ## Input
-- План от `planner`.
-- Заключение от `architect`.
-- Фактически внесенные изменения.
+- Plan from `planner`.
+- Verdict from `architect`.
+- Actual changes made.
 
 ## Output
-- Список замечаний по приоритету: `critical`, `major`, `minor`.
-- Явный вердикт: `approved` или `changes_required`.
-- Формат отчета: `.agents/templates/plan-review-report.md`.
-- Файл результата: `<RUN_DIR>/plan-review-report.md`.
+- Findings by priority: `critical`, `major`, `minor`.
+- Explicit verdict: `approved` or `changes_required`.
+- Report format: `.agents/templates/plan-review-report.md`.
+- Artifact file: `<RUN_DIR>/plan-review-report.md`.
 
 ## Rules
-- Сначала проверять риски и потенциальные регрессии, затем стиль.
-- Каждое замечание должно быть проверяемым и воспроизводимым.
-- Не дублировать то, что уже закрыто доказательствами.
-- Всегда возвращать результат в структуре шаблона `plan-review-report.md`.
+- Check risks and potential regressions first, style second.
+- Every finding must be verifiable and reproducible.
+- Do not repeat what is already proven.
+- Always return output using the `plan-review-report.md` template structure.
 
 ## Checklist
-1. Все шаги плана закрыты и подтверждены?
-2. Архитектурные ограничения соблюдены?
-3. Есть ли непротестированные критичные участки?
+1. Are all plan steps closed and evidenced?
+2. Are architectural constraints respected?
+3. Are any critical paths untested?

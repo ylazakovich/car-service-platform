@@ -14,6 +14,14 @@ inputs:
     description: URL checked when wait-for-frontend is true
     required: false
     default: "http://127.0.0.1:4173/"
+  wait-for-api-health:
+    description: "If true, poll GET api-health-url until 200 (same origin as Playwright — nginx /api → backend)"
+    required: false
+    default: "false"
+  api-health-url:
+    description: Full URL for backend health via frontend proxy (must match PLAYWRIGHT_BASE_URL origin)
+    required: false
+    default: "http://127.0.0.1:4173/api/health"
   github-actions-cache:
     description: "If true, use docker/setup-buildx-action and docker-compose.ci.cache.yml (GHA cache backend; requires actions:write)"
     required: false
@@ -67,5 +75,23 @@ runs:
           fi
           sleep 2
         done
+        docker compose logs --tail=120 || true
+        exit 1
+
+    - name: Wait for API health
+      if: ${{ inputs.wait-for-api-health == 'true' }}
+      shell: bash
+      env:
+        API_HEALTH_URL: ${{ inputs.api-health-url }}
+      run: |
+        set -euo pipefail
+        for i in $(seq 1 90); do
+          if curl -sf "$API_HEALTH_URL" | grep -q '"status"'; then
+            echo "api health ok"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "API health check failed: $API_HEALTH_URL"
         docker compose logs --tail=120 || true
         exit 1

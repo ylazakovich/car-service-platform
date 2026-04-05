@@ -4,9 +4,9 @@
 История и завершенные крупные блоки выносятся в `docs/planning/archive/`.
 
 - Active plan owner: `planner` + `architect`
-- Last updated: `2026-04-04`
+- Last updated: `2026-04-05`
 - Archive: `docs/planning/archive/`
-- Status: `m2 completed | m3 in progress — PDF persist + versioned snapshot + client portal + staff dashboard analytics (MoneyFlow PDF aggregates, Procurement API block, ServiceBoard KPIs) done; планируется: расширение MoneyFlow сводкой по закупкам + новая вкладка Dashboard (No invoice / No vehicles); historical period picker / monthly / supplier reporting — дальше`
+- Status: `m2 completed | m3 in progress — PDF persist + versioned snapshot + client portal + staff dashboard analytics (MoneyFlow / Procurement / ServiceBoard) в продуктовом контуре; дальше: MoneyFlow сводка закупок + Dashboard No invoice/No vehicles; исторический UX / monthly / supplier; параллельно — усиление E2E+CI (без ретраев, готовность API, явные PDF-фикстуры) по docs/testing/playwright-e2e-framework.md`
 
 ## 1) Product Goal
 Собрать устойчивую `car-service-platform`, которая закрывает не только операционный цикл автосервиса, но и аналитический контур после завершения ремонта: итоговые документы, финансовые срезы и историческую отчётность.
@@ -137,9 +137,22 @@ Milestone включает:
 - расширенные финансовые сценарии: оплаты, скидки, налоги, inventory
 - current status: `later`
 
-### LATER (lowest priority): Allure, END-TO-END и структура отчёта
+### M3 companion: надёжность E2E и CI (активный технический трек)
 
-Не блокирует M3–M4; делается после стабилизации сценариев из `NEXT_STEPS.md`.
+**Приоритет:** не ниже регрессии по dashboard/PDF: слабый E2E маскирует поломки M3. Источник правды по дизайну: `docs/testing/playwright-e2e-framework.md`.
+
+Критические пробелы (закрываются задачами в `NEXT_STEPS.md`):
+
+1. **Готовность стека:** CI опрашивает фронт и затем `GET /api/health` через тот же origin (`compose-up` + `e2e/global-setup.ts`); при регрессии см. `docs/testing/playwright-e2e-framework.md` §5.
+2. **Детерминизм PDF-тестов:** сид `seed_e2e_data` не фиксирует наличие уже выгруженного PDF; сценарии «idempotent View PDF» зависят от порядка прогонов — нужны явные фикстуры (два ремонта или расширенный сид).
+3. **Политика без ретраев:** `playwright.config.ts` — `retries: 0`; флаки устраняются ожиданиями состояния и данными, не повторным запуском.
+4. **Глубина assert’ов:** smoke dashboard проверяет в основном заголовки; целевые проверки — KPI/виджеты после стабильных фикстур (см. framework doc).
+
+Агенты и MCP (без раздувания локального набора): `docs/dev/agents-and-mcp.md`. Восстановлен локальный skill `.agents/e2e-validator/SKILL.md` (раньше был указан в `AGENTS.md`, но отсутствовал в дереве).
+
+### LATER: Allure-дерево, расширенная телеметрия отчёта
+
+Не блокирует M3–M4 по функциям; пересекается с E2E-треком выше.
 
 **Цель:** один Allure Report 3 с читаемым деревом Behaviors, понятным окружением прогона и возможностью «раскопать» E2E (trace / вложения).
 
@@ -228,6 +241,11 @@ Milestone `M3` считается завершённым, если:
 - Execution backlog (active): `NEXT_STEPS.md`
 - Domain rules: `DOMAIN_RULES.md`
 - Technical baseline: `TECH_STACK.md`
+- E2E / Playwright framework (target): `docs/testing/playwright-e2e-framework.md`
+- E2E patterns (ECC-derived, local): `.agents/e2e-testing/SKILL.md`
+- Агенты и MCP (рекомендации): `docs/dev/agents-and-mcp.md`
+- MCP профиль (JSON + установка в user config): `mcp/README.md`, `mcp/car-service-platform.default.json` (пустой, без дублей ECC), `mcp/car-service-platform.standalone.json`, `docs/dev/mcp-deduplication.md`, `scripts/mcp/install-user.mjs`
+- Подготовка агентной сессии (любой провайдер): `docs/dev/agent-session-bootstrap.md`, `scripts/agents/bootstrap-agent-session.sh`, `scripts/mcp/sync-github-token-from-gh.mjs`
 - History: `docs/planning/archive/`
 
 ## 11) Access Model

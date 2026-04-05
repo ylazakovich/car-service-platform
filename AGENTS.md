@@ -4,6 +4,37 @@
 
 Цель: единый workflow для планирования, реализации и верификации изменений в `car-service-platform` без привязки к одному ассистенту.
 
+## Обязательная подготовка агентной сессии (любой провайдер)
+
+Перед первым осмысленным действием в репозитории агент **обязан** выполнить подготовку среды (или явно подтвердить, что она уже сделана в этой среде):
+
+1. **MCP** — merge в user-level конфиг: `node scripts/mcp/install-user.mjs` (Cursor) или `--target claude` для Claude Code. По умолчанию профиль **пустой** (`mcp/car-service-platform.default.json`), чтобы **не дублировать** серверы, которые уже даёт плагин everything-claude-code (context7, playwright, github, …). Полный stdio-набор только если ECC нет: `--profile standalone`. Правила и чеклист: **`docs/dev/mcp-deduplication.md`**. Агент **не** добавляет в project-local `~/.claude.json` те же MCP, что уже «connected» из Built-in / User; при дубле — убрать **локальный** к проекту, оставить глобальный/plugin.
+2. **GitHub MCP** — токен **на сессию** из GitHub CLI: `node scripts/mcp/sync-github-token-from-gh.mjs`, затем снова `node scripts/mcp/install-user.mjs` с тем же `--target` (и тем же `--profile`); файл `mcp/local.overrides.json` gitignored. Требуется установленный и залогиненный `gh`. Агент **не** кладёт PAT в репозиторий и **не** логирует значение токена. Если GitHub идёт только через `plugin:...:github`, настройте токен по документации плагина; overrides с ключом `github` нужны для stdio-сервера с этим именем.
+
+**Зависимости на хосте (npm/pip/playwright)** для основного рабочего процесса **не обязательны**: приложение и библиотеки живут в **Docker** с hot reload (`docker-compose.dev.yml` / `scripts/start.sh`). Устанавливать пакеты на машину нужно только если агент явно запускает тесты/сборку **вне** контейнеров — тогда опционально: `bash scripts/agents/bootstrap-environment.sh` или `bash scripts/agents/bootstrap-agent-session.sh --with-host-deps`.
+
+**Одной командой (MCP + gh, без хостовых пакетов):** `bash scripts/agents/bootstrap-agent-session.sh` (опции: `--skip-github-token`, `--mcp-target claude`, `--mcp-profile default|standalone`, `--with-host-deps`, `--deps-only` — только хостовые пакеты без MCP).
+
+## Политика проверки: готово ли окружение для агентов
+
+Перед задачей (или сразу после bootstrap) агент **должен** убедиться, что среда соответствует ожиданиям репозитория:
+
+1. Запустить **`node scripts/agents/verify-agent-environment.mjs`**: по умолчанию проверяется **Codex** (`~/.codex/config.toml` и секция `[mcp_servers]`). Для Cursor / Claude Code указать **`--mcp-target cursor`** или **`--mcp-target claude`**.
+2. Если проверка **не прошла**: для **Cursor / Claude Code** — `bash scripts/agents/bootstrap-agent-session.sh` с тем же `--mcp-target` (и профилем MCP при необходимости), затем verify снова; для **Codex** — настроить `~/.codex/config.toml` (`[mcp_servers.*]`, см. `mcp/README.md` и [документацию Codex MCP](https://developers.openai.com/codex/mcp)), затем verify снова.
+3. Для работы **GitHub MCP через stdio** (`mcpServers.github` после merge): добавить флаги **`--require-github --require-stdio-github`** (проверяют `gh auth` и непустой токен в `mcp/local.overrides.json`). Если GitHub только через **plugin** ECC — эти флаги не использовать; достаточно базовой проверки и настройки токена по документации плагина.
+4. Для **CI / только репозиторий** (без домашнего MCP-файла): **`--skip-user-mcp-file`**.
+
+В минимальном ответе агента поле **`Bootstrap`** допускает формулировку вроде: `verify-agent-environment OK` или `verify failed → bootstrap → verify OK`.
+
+## Политика MCP hygiene (предупреждение пользователю)
+
+Любые **уже подключённые** глобальные MCP продолжают участвовать в сессии (схемы инструментов → расход контекста), даже если задача их не использует.
+
+- Агент **обязан** напомнить пользователю **отключить ненужные** MCP в настройках клиента — обычно **один раз за сессию** (после verify/bootstrap или в первом содержательном ответе). Текст и нюансы: **`docs/dev/mcp-deduplication.md`** (раздел «Предупреждение пользователю»).
+- **Автоматически** запретить «лишние» MCP в следующих сессиях репозиторий **не может** — это настройка Cursor / Claude Code / Codex. Для **Codex** в этом репо есть проектный **`.codex/config.toml`**: при trusted-проекте можно задать `enabled = false` для лишних серверов **только в этом репозитории** (пример в файле).
+
+Полная инструкция, чеклист и нюансы провайдеров: **`docs/dev/agent-session-bootstrap.md`**.
+
 ## Структура
 
 - `.agents/planner/SKILL.md` — декомпозиция задачи и исполнимый план.
@@ -12,6 +43,7 @@
 - `.agents/backend-developer/SKILL.md` — реализация серверной части.
 - `.agents/frontend-developer/SKILL.md` — реализация клиентской части.
 - `.agents/e2e-validator/SKILL.md` — E2E-валидация через Playwright; при провале — фикс кода + unit-тесты.
+- `.agents/e2e-testing/SKILL.md` — паттерны Playwright (POM, CI, артефакты, флаки); адаптация [ECC e2e-testing](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md) с секцией overrides под этот репозиторий.
 - `.agents/plan-reviewer/SKILL.md` — финальная сверка плана и результата.
 - `.agents/renovate-verify/SKILL.md` — локальная проверка `renovate.json` через Docker (`renovate --platform=local`); скрипт `scripts/renovate-local-verify.sh`.
 
@@ -21,6 +53,12 @@
 - `NEXT_STEPS.md` — active backlog (`NOW/NEXT/LATER`).
 - `DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов.
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
+- `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
+- `docs/dev/agents-and-mcp.md` — сжатые рекомендации по ролям и MCP (в т.ч. ECC).
+- `mcp/README.md` — переносимый JSON-профиль MCP и `node scripts/mcp/install-user.mjs` (Cursor / Claude Code).
+- `docs/dev/mcp-deduplication.md` — дубли, MCP hygiene, ограничение MCP по проекту (в т.ч. Codex `.codex/config.toml`).
+- `docs/dev/agent-session-bootstrap.md` — обязательный bootstrap сессии (deps, MCP, `gh` → GitHub MCP).
+- `scripts/agents/verify-agent-environment.mjs` — проверка готовности окружения перед работой агента.
 
 ## RUN_DIR (опционально)
 
@@ -211,6 +249,8 @@ flowchart TD
 
 ```md
 Role: <planner|architect|domain-reviewer|backend-developer|frontend-developer|e2e-validator|plan-reviewer>
+Bootstrap: <`verify-agent-environment` OK | после bootstrap OK | deps-only | пропущено — причина>
+MCP hygiene: <напоминание пользователю выведено — см. docs/dev/mcp-deduplication.md | N/A — уже минимальный набор / пользователь явно отказался>
 Scope: <full|iteration>
 Skipped roles: <кратко, если scope: iteration и роли намеренно не запускались; иначе "—">
 Assumptions:

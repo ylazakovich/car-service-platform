@@ -2,10 +2,20 @@
 
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
-- Last updated: `2026-04-04`
-- Status: `m3 pdf + snapshot + staff dashboard analytics (API + MoneyFlow/Procurement/ServiceBoard UI) done on branch; в плане: MoneyFlow сводка закупок + Dashboard No invoice/No vehicles; historical UX / monthly / supplier next`
+- Last updated: `2026-04-05`
+- Status: `m3 продуктовый контур pdf/snapshot/dashboard в работе; усиление E2E+CI (без ретраев) вынесено в активный трек — см. docs/testing/playwright-e2e-framework.md и NOW ниже`
 
 ## NOW
+
+### E2E / Playwright / CI (активный трек качества)
+- [x] Зафиксировать целевой дизайн framework: `docs/testing/playwright-e2e-framework.md`.
+- [x] Политика **без ретраев** в `frontend/playwright.config.ts` (`retries: 0`).
+- [x] Восстановить отсутствующий skill `.agents/e2e-validator/SKILL.md` (дрифт с `AGENTS.md`).
+- [x] **CI:** перед `npx playwright test` опрашивать `GET /api/health` с того же origin, что `PLAYWRIGHT_BASE_URL` — `.github/actions/compose-up` (`wait-for-api-health`) + `pr.yml` E2E job.
+- [x] **Playwright global setup:** `frontend/e2e/global-setup.ts` (poll `/api/health`, опциональный пропуск `E2E_SKIP_GLOBAL_SETUP=1`).
+- [ ] **Сиды PDF:** явное начальное состояние для сценария «View PDF без лишнего POST» (два ремонта или расширение `seed_e2e_data` / отдельная команда) — убрать зависимость от порядка прогонов.
+- [ ] Расширить assert’ы dashboard E2E: не только headings, а ключевые KPI/тексты виджетов при фикстурных данных.
+- [x] Задокументировать рекомендуемый набор MCP и выравнивание с ECC: `docs/dev/agents-and-mcp.md` (поддерживать при изменении практик команды).
 
 ### PDF + Financial Snapshot
 - [x] Завершенный `Repair`: просмотр PDF и новая выгрузка только при `completed` (UI: **View PDF**; первая выгрузка при отсутствии файла; **Export new version** в превью). API: `GET …/pdf/` (последняя версия, без новой записи) и `POST …/pdf/export/` (новая версия).
