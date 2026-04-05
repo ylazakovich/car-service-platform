@@ -143,6 +143,22 @@ class PurchaseApiTests(TestCase):
         self.assertEqual(Supplier.objects.count(), supplier_count_before)
         self.assertEqual(response.json()["supplier"]["name"], self.supplier.name)
 
+    def test_create_purchase_without_repair_or_vehicle(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/purchases/",
+            self._purchase_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        purchase = Purchase.objects.get(id=response.json()["id"])
+        self.assertEqual(purchase.repair_code, "")
+        self.assertIsNone(purchase.vehicle)
+        self.assertEqual(response.json()["repair_code"], "")
+        self.assertIsNone(response.json()["vehicle"])
+
     def test_search_filters_by_part_name(self):
         self.client.force_authenticate(self.user)
         Purchase.objects.create(

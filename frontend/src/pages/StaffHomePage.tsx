@@ -1906,6 +1906,39 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     const combinedLiveTotal = totalServiceSales + totalPartsSales;
     const combinedToActDelta = pdfTotals ? pdfTotals.document_total - combinedLiveTotal : null;
     const pdfLag = dashboardAnalytics?.pdf?.completed_to_first_export_lag_days ?? null;
+    const pdfAnalytics = dashboardAnalytics?.pdf ?? null;
+    const completedInRange = pdfAnalytics?.coverage.completed_in_range ?? 0;
+    const missingActs = pdfAnalytics?.coverage.completed_without_pdf ?? 0;
+    const repairsWithLatestAct = pdfAnalytics?.latest_act_totals.repairs_with_latest_act ?? 0;
+    const coveragePercent =
+      completedInRange > 0 ? Math.round((repairsWithLatestAct / completedInRange) * 100) : null;
+    const coverageState =
+      completedInRange === 0
+        ? "empty"
+        : repairsWithLatestAct === 0
+          ? "missing"
+          : repairsWithLatestAct === completedInRange
+            ? "healthy"
+            : "partial";
+    const coverageStatusLabel =
+      coverageState === "empty"
+        ? "No completed repairs"
+        : coverageState === "missing"
+          ? "No act coverage"
+          : coverageState === "healthy"
+            ? "Fully covered"
+            : "Partial coverage";
+    const coverageHeroValue = coveragePercent == null ? "—" : `${coveragePercent}%`;
+    const coverageHeroCopy =
+      completedInRange === 0
+        ? "No completed repairs in this period."
+        : `${repairsWithLatestAct} of ${completedInRange} completed repairs have an act.`;
+    const coverageHeroNote =
+      completedInRange === 0
+        ? "Pick a date range with completed work to review act coverage."
+        : missingActs > 0
+          ? `${missingActs} completed repairs are still waiting for their first act.`
+          : "All completed repairs in this range already have an act.";
     const activeDateRange =
       activeDashboardTab === "service_board" ? serviceBoardDateRange : moneyflowDateRange;
     const updateActiveDateRange = (field: keyof DashboardDateRange, value: string) => {
@@ -2063,56 +2096,52 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 <section className="dashboard-report-section dashboard-report-section-fact">
                   <div className="dashboard-report-head">
                     <div>
-                      <p className="eyebrow">Stored completion acts</p>
-                      <h3>Actuals from Acts</h3>
+                      <p className="eyebrow">Act coverage</p>
+                      <h3>Acts Coverage</h3>
                     </div>
                   </div>
                   <p className="workspace-copy">
-                    Fixed values from the latest stored act per qualifying repair.
+                    Track how many completed repairs already have an exported act in the selected period.
                   </p>
 
-                  {dashboardAnalytics?.pdf ? (
+                  {pdfAnalytics ? (
                     <div className="dashboard-report-stack">
-                      <div className="dashboard-fact-summary">
-                        <article className="dashboard-fact-pill">
-                          <span className="dashboard-fact-pill-label">Coverage</span>
-                          <strong>
-                            {dashboardAnalytics.pdf.latest_act_totals.repairs_with_latest_act} /{" "}
-                            {dashboardAnalytics.pdf.coverage.completed_in_range}
-                          </strong>
-                          <p>Completed repairs in range that already have a latest stored act.</p>
+                      <article className={`dashboard-fact-hero dashboard-fact-hero-${coverageState}`}>
+                        <div className="dashboard-fact-hero-head">
+                          <span className="dashboard-fact-pill-label">Coverage status</span>
+                          <span className={`dashboard-fact-status dashboard-fact-status-${coverageState}`}>
+                            {coverageStatusLabel}
+                          </span>
+                        </div>
+                        <strong>{coverageHeroValue}</strong>
+                        <p className="dashboard-fact-hero-copy">{coverageHeroCopy}</p>
+                        <p className="dashboard-fact-hero-note">{coverageHeroNote}</p>
+                      </article>
+
+                      <div className="metric-grid dashboard-metric-grid dashboard-fact-metric-grid">
+                        <article className="metric-card metric-card-fact">
+                          <span className="metric-label">Missing acts</span>
+                          <strong>{missingActs}</strong>
+                          <p>Completed repairs still waiting for their first act.</p>
                         </article>
-                        <article className="dashboard-fact-pill">
-                          <span className="dashboard-fact-pill-label">Median first export</span>
+                        <article className="metric-card metric-card-fact">
+                          <span className="metric-label">Median time to first act</span>
                           <strong>{pdfLag?.median != null ? `${pdfLag.median} d` : "—"}</strong>
                           <p>
                             {pdfLag?.sample_size
-                              ? `Completed -> first PDF export across ${pdfLag.sample_size} repairs.`
-                              : "No completed repairs with exports yet."}
-                          </p>
-                        </article>
-                      </div>
-
-                      <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                        <article className="metric-card metric-card-fact">
-                          <span className="metric-label">Completed without act</span>
-                          <strong>{dashboardAnalytics.pdf.coverage.completed_without_pdf}</strong>
-                          <p>
-                            Of {dashboardAnalytics.pdf.coverage.completed_in_range} completed in range still need a
-                            PDF export.
+                              ? "From repair completion to first export."
+                              : "No completed repairs with an exported act yet."}
                           </p>
                         </article>
                         <article className="metric-card metric-card-fact">
-                          <span className="metric-label">Exports in period</span>
-                          <strong>{dashboardAnalytics.pdf.exports_in_period}</strong>
-                          <p>All PDF versions created in this date range.</p>
-                        </article>
-                        <article className="metric-card metric-card-fact">
-                          <span className="metric-label">Multi-export jobs</span>
-                          <strong>{dashboardAnalytics.pdf.completed_repairs_with_multiple_exports}</strong>
-                          <p>Completed in range with more than one stored act version.</p>
+                          <span className="metric-label">Re-exported repairs</span>
+                          <strong>{pdfAnalytics.completed_repairs_with_multiple_exports}</strong>
+                          <p>Completed repairs with more than one stored act version.</p>
                         </article>
                       </div>
+                      <p className="dashboard-fact-meta">
+                        Act exports in period: <strong>{pdfAnalytics.exports_in_period}</strong>
+                      </p>
                     </div>
                   ) : (
                     <p className="workspace-note">Billing analytics unavailable (check connection or sign-in).</p>
@@ -4041,6 +4070,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               {missingVeh ? (
                                 <span className="purchase-chip-status purchase-chip-status-muted">No vehicle</span>
                               ) : null}
+                              {!entry.repair_code.trim() ? (
+                                <span className="purchase-chip-status purchase-chip-status-muted">No repair</span>
+                              ) : null}
                               {overdue ? (
                                 <span className="purchase-chip-status purchase-chip-status-danger">Delivery overdue</span>
                               ) : null}
@@ -4262,7 +4294,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           })
                         }
                       >
-                        <option value="">Optional</option>
+                        <option value="">No repair linked</option>
                         {purchaseModalRepairOptions.map((repair) => (
                           <option key={repair.id} value={repair.tracking_code}>
                             {repair.tracking_code} • {repair.vehicle_label}
@@ -4270,6 +4302,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         ))}
                       </select>
                     </label>
+                    {purchaseModalForm.repair_code ? (
+                      <div className="inline-actions">
+                        <button
+                          type="button"
+                          className="purchase-inline-action"
+                          onClick={() =>
+                            setPurchaseModalForm((current) => ({
+                              ...current,
+                              repair_code: "",
+                            }))
+                          }
+                        >
+                          Unlink repair
+                        </button>
+                      </div>
+                    ) : null}
+                    <p className="workspace-note">Leave this empty for stock or reserve parts that are not tied to a repair.</p>
 
                     <div className="form-grid">
                       <label>
@@ -4527,7 +4576,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       })
                     }
                   >
-                    <option value="">Optional</option>
+                    <option value="">No repair linked</option>
                     {purchaseCreateRepairOptions.map((repair) => (
                       <option key={repair.id} value={repair.tracking_code}>
                         {repair.tracking_code} • {repair.vehicle_label}
@@ -4535,6 +4584,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     ))}
                   </select>
                 </label>
+                {purchaseForm.repair_code ? (
+                  <div className="inline-actions">
+                    <button
+                      type="button"
+                      className="purchase-inline-action"
+                      onClick={() =>
+                        setPurchaseForm((current) => ({
+                          ...current,
+                          repair_code: "",
+                        }))
+                      }
+                    >
+                      Unlink repair
+                    </button>
+                  </div>
+                ) : null}
+                <p className="workspace-note">Leave this empty for stock or reserve parts that are not tied to a repair.</p>
 
                 <div className="form-grid">
                   <label>
