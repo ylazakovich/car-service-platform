@@ -1,0 +1,10 @@
+# Optional overlay: publish dev frontend + backend on all host interfaces (LAN / phone on same Wi‑Fi).
+# Do not add this file to COMPOSE_FILE by default — use: bash scripts/publish-dev-to-lan.sh
+
+services:
+  backend:
+    ports: !override
+      - "${BACKEND_PORT:-8000}:8000"
+  frontend:
+    ports: !override
+      - "${FRONTEND_DEV_PORT:-4173}:5173"
