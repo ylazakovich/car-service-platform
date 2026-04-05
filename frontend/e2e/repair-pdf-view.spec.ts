@@ -1,21 +1,14 @@
 import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
-import { navigateToStaffRepairs, openSeededRepairCard } from "./helpers/repair-board";
-
-const STAFF_EMAIL = process.env.E2E_STAFF_EMAIL ?? "staff@autoservice.local";
-/** Must match STAFF_PASSWORD passed into the backend container (see docker-compose + .env.example). */
-const STAFF_PASSWORD = process.env.E2E_STAFF_PASSWORD ?? "change-me-in-production";
+import { openStaffApp } from "./fixtures/auth";
+import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
  * Expects Docker Compose with seeded staff user (see backend seed_staff) and at least one completed repair on the board.
  */
 test.describe("Repair PDF: view without new export", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByRole("textbox", { name: "Email" }).fill(STAFF_EMAIL);
-    await page.getByRole("textbox", { name: "Password" }).fill(STAFF_PASSWORD);
-    await page.getByRole("button", { name: "Sign In" }).click();
-    await expect(page).toHaveURL(/\/app/);
+    await openStaffApp(page);
   });
 
   test("two View PDF opens only call POST export once (first time) or zero times (if already exported)", async ({
@@ -33,26 +26,17 @@ test.describe("Repair PDF: view without new export", () => {
       }
     });
 
-    await navigateToStaffRepairs(page);
-    await openSeededRepairCard(page);
+    const repairs = new StaffRepairsPage(page);
+    await repairs.gotoRepairsSection();
+    await repairs.openSeededRepairCard();
 
-    await page.getByRole("button", { name: "View PDF" }).click();
-    await expect(page.getByRole("dialog", { name: "Certificate of Completion" })).toBeVisible({
-      timeout: 30_000,
-    });
+    await repairs.openCertificateFromViewPdf();
 
     const exportCountAfterFirstOpen = exportPostUrls.length;
 
-    await page
-      .getByRole("dialog", { name: "Certificate of Completion" })
-      .getByRole("button", { name: "Close" })
-      .click();
-    await expect(page.getByRole("dialog", { name: "Certificate of Completion" })).toBeHidden();
+    await repairs.closeCertificateDialog();
 
-    await page.getByRole("button", { name: "View PDF" }).click();
-    await expect(page.getByRole("dialog", { name: "Certificate of Completion" })).toBeVisible({
-      timeout: 30_000,
-    });
+    await repairs.openCertificateFromViewPdf();
 
     expect(exportPostUrls.length).toBe(exportCountAfterFirstOpen);
   });
@@ -70,17 +54,15 @@ test.describe("Repair PDF: view without new export", () => {
       }
     });
 
-    await navigateToStaffRepairs(page);
-    await openSeededRepairCard(page);
+    const repairs = new StaffRepairsPage(page);
+    await repairs.gotoRepairsSection();
+    await repairs.openSeededRepairCard();
 
-    await page.getByRole("button", { name: "View PDF" }).click();
-    await expect(page.getByRole("dialog", { name: "Certificate of Completion" })).toBeVisible({
-      timeout: 30_000,
-    });
+    await repairs.openCertificateFromViewPdf();
 
     const afterOpen = exportPostUrls.length;
 
-    await page.getByRole("button", { name: "Export new version" }).click();
+    await repairs.exportNewVersionButton().click();
     await expect
       .poll(() => exportPostUrls.length, { timeout: 30_000 })
       .toBeGreaterThan(afterOpen);
