@@ -2488,6 +2488,11 @@ textarea { resize: vertical; }
     border-left: 1px solid var(--border);
     overflow-y: auto;
   }
+
+  /* Боковая панель без скругления — шапка без radius */
+  .purchase-detail-modal .panel-header {
+    border-radius: 0;
+  }
 }
 
 @media (max-width: 899px) {
@@ -3263,18 +3268,52 @@ textarea { resize: vertical; }
   scroll-padding-bottom: calc(var(--s8) + env(safe-area-inset-bottom, 0px));
 }
 
-/* Repair Update: шапка с тем же «призрачным» градиентом, что у .repair-modal-actions (зеркально: плотно сверху → прозрачно снизу) */
-.repair-update-modal .panel-header {
+/* Repair Update + Vehicles + Purchases: призрачная шапка вплотную к краю карточки (компенсация padding модалки) */
+.repair-update-modal .panel-header,
+.vehicle-detail-modal .panel-header,
+.vehicle-form-modal .panel-header,
+.purchase-detail-modal .panel-header,
+.purchase-form-modal .panel-header {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding-bottom: var(--s4);
+  margin: calc(var(--s6) * -1) calc(var(--s6) * -1) 0;
+  /* Симметрия по вертикали — текст по центру полосы, не «прилипший» к низу */
+  padding: var(--s5) var(--s6);
+  border-radius: 17px 17px 0 0;
+  align-items: center;
   background: linear-gradient(
     180deg,
     rgba(21, 21, 28, 0.96) 0%,
     rgba(21, 21, 28, 0.96) calc(100% - 28%),
     rgba(21, 21, 28, 0) 100%
   );
+}
+
+/* Заголовок по центру модалки, если нет боковых действий в шапке */
+.repair-update-modal .panel-header:not(:has(.inline-actions)),
+.vehicle-detail-modal .panel-header:not(:has(.inline-actions)),
+.vehicle-form-modal .panel-header,
+.purchase-detail-modal .panel-header,
+.purchase-form-modal .panel-header {
+  justify-content: center;
+  text-align: center;
+}
+
+/* PDF / Delete / Edit в шапке — строка с разносом, текст слева */
+.repair-update-modal .panel-header:has(.inline-actions),
+.vehicle-detail-modal .panel-header:has(.inline-actions) {
+  justify-content: space-between;
+  text-align: start;
+}
+
+/* UA / типографика: лишний зазор под заголовком в призрачной шапке */
+.repair-update-modal .panel-header h3,
+.vehicle-detail-modal .panel-header h3,
+.vehicle-form-modal .panel-header h3,
+.purchase-detail-modal .panel-header h3,
+.purchase-form-modal .panel-header h3 {
+  margin: 0;
 }
 
 .repair-form-stack,
@@ -3541,6 +3580,7 @@ textarea { resize: vertical; }
 
 .repair-modal-actions {
   padding-top: var(--s2);
+  align-items: center;
 }
 
 .repair-update-modal .repair-modal-actions {
@@ -3549,12 +3589,24 @@ textarea { resize: vertical; }
 }
 
 .vehicle-form-modal,
-.vehicle-detail-modal {
+.vehicle-detail-modal,
+.purchase-detail-modal,
+.purchase-form-modal {
   scroll-padding-bottom: calc(var(--s8) + env(safe-area-inset-bottom, 0px));
 }
 
-.vehicle-modal-actions {
+.vehicle-modal-actions,
+.purchase-modal-actions {
   padding-top: var(--s2);
+  align-items: center;
+}
+
+.vehicle-detail-modal .vehicle-modal-actions,
+.vehicle-form-modal .vehicle-modal-actions,
+.purchase-detail-modal .purchase-modal-actions,
+.purchase-form-modal .purchase-modal-actions {
+  justify-content: flex-end;
+  gap: var(--s3);
 }
 
 /* ═══════════════════════════════════════════════
@@ -5344,9 +5396,10 @@ textarea { resize: vertical; }
     text-align: left;
   }
 
+  /* Шит вплотную к краю вьюпорта: safe-area переносим в padding карточки + компенсируем margin шапки/футера. */
   .modal-overlay {
     align-items: end;
-    padding: var(--s2);
+    padding: 0;
   }
 
   .modal-card,
@@ -5354,29 +5407,94 @@ textarea { resize: vertical; }
     width: 100%;
     max-height: min(94vh, 960px);
     border-radius: 20px 20px 0 0;
-    padding: var(--s4);
-  }
-
-  .repair-update-modal .panel-header {
-    top: calc(var(--s2) * -1);
+    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
+    padding-right: calc(var(--s4) + env(safe-area-inset-right, 0px));
     padding-bottom: var(--s4);
+    padding-left: calc(var(--s4) + env(safe-area-inset-left, 0px));
   }
 
-  .repair-form-modal .panel-header,
+  /*
+   * Нижний «призрак» вплотную к низу карточки — без двойного padding.
+   * Верхний padding карточки = 0: иначе отрицательный margin-top у шапки поднимал блок визуально,
+   * а поток формы оставался выше — при открытии первая строка (Order Date) оказывалась под sticky-шапкой.
+   */
+  .modal-card.repair-update-modal,
+  .modal-card.repair-form-modal,
+  .modal-card.vehicle-detail-modal,
+  .modal-card.vehicle-form-modal,
+  .modal-card.purchase-detail-modal,
+  .modal-card.purchase-form-modal {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .repair-update-modal .panel-header,
   .vehicle-detail-modal .panel-header,
-  .vehicle-form-modal .panel-header {
-    position: sticky;
-    top: calc(var(--s2) * -1);
-    z-index: 2;
-    background: linear-gradient(180deg, rgba(21, 21, 28, 1) 72%, rgba(21, 21, 28, 0.88) 100%);
+  .vehicle-form-modal .panel-header,
+  .purchase-detail-modal .panel-header,
+  .purchase-form-modal .panel-header {
+    margin-top: 0;
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    margin-bottom: var(--s3);
+    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
     padding-bottom: var(--s3);
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    border-radius: 20px 20px 0 0;
+    top: 0;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 0;
+    box-sizing: border-box;
+    /* Сплошная шапка без прозрачного «хвоста» — форма не просвечивает и не перекрывается при scrollTop=0 */
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .repair-modal-actions {
+  .repair-update-modal .panel-header .inline-actions,
+  .vehicle-detail-modal .panel-header .inline-actions {
+    justify-content: center;
+  }
+
+  .repair-form-modal .panel-header {
     position: sticky;
-    bottom: calc(var(--s2) * -1);
-    background: linear-gradient(180deg, rgba(21, 21, 28, 0) 0%, rgba(21, 21, 28, 0.96) 28%);
-    padding: var(--s4) 0 calc(var(--s2) + env(safe-area-inset-bottom, 0px));
+    top: 0;
+    z-index: 2;
+    margin-top: 0;
+    margin-bottom: var(--s3);
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s3);
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .repair-modal-actions,
+  .vehicle-modal-actions,
+  .purchase-modal-actions {
+    position: sticky;
+    bottom: 0;
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    margin-top: var(--s3);
+    margin-bottom: 0;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    /* Как шапка: сплошная плашка + тонкая линия к контенту (сверху у футера) */
+    background: var(--surface);
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.04);
+    min-height: 0;
+    padding-top: var(--s3);
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    padding-bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px));
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
   }
 
   .vehicle-info-split {
@@ -5411,12 +5529,6 @@ textarea { resize: vertical; }
     align-self: stretch;
   }
 
-  .vehicle-modal-actions {
-    position: sticky;
-    bottom: calc(var(--s2) * -1);
-    background: linear-gradient(180deg, rgba(21, 21, 28, 0) 0%, rgba(21, 21, 28, 0.96) 28%);
-    padding: var(--s4) 0 calc(var(--s2) + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 /* ═══════════════════════════════════════════════
