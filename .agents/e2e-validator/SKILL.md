@@ -13,6 +13,7 @@ description: Validate UI and critical flows with Playwright; on failure fix code
 ## Required context
 
 - `docs/testing/playwright-e2e-framework.md` — no-retries policy, layers, seeds, CI health gate.
+- `.agents/e2e-testing/SKILL.md` — POM, wait patterns, CI/reporting reference (respect project overrides table first).
 - `frontend/playwright.config.ts` (`globalSetup`), `frontend/e2e/global-setup.ts`, `frontend/e2e/`.
 - `DOMAIN_RULES.md` — if the scenario touches repair status, PDF, snapshot, admin/staff roles.
 - CI: `e2e` job in `.github/workflows/pr.yml`.

@@ -12,6 +12,7 @@
 - `.agents/backend-developer/SKILL.md` — реализация серверной части.
 - `.agents/frontend-developer/SKILL.md` — реализация клиентской части.
 - `.agents/e2e-validator/SKILL.md` — E2E-валидация через Playwright; при провале — фикс кода + unit-тесты.
+- `.agents/e2e-testing/SKILL.md` — паттерны Playwright (POM, CI, артефакты, флаки); адаптация [ECC e2e-testing](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md) с секцией overrides под этот репозиторий.
 - `.agents/plan-reviewer/SKILL.md` — финальная сверка плана и результата.
 - `.agents/renovate-verify/SKILL.md` — локальная проверка `renovate.json` через Docker (`renovate --platform=local`); скрипт `scripts/renovate-local-verify.sh`.
 

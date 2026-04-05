@@ -66,4 +66,4 @@
 
 ## 7) Ссылки на внешние практики
 
-Паттерны Page Object, trace, reporters — skill **e2e-testing** из репозитория [everything-claude-code](https://github.com/affaan-m/everything-claude-code) (общие рекомендации Playwright); проектные правила и домен — только `DOMAIN_RULES.md` и этот документ.
+Локальная копия skill **e2e-testing** (upstream ECC): `.agents/e2e-testing/SKILL.md` — [исходник в everything-claude-code](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md). Сначала таблица **Car-service-platform overrides** в том файле; домен — `DOMAIN_RULES.md` и этот документ.

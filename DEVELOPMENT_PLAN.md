@@ -242,6 +242,7 @@ Milestone `M3` считается завершённым, если:
 - Domain rules: `DOMAIN_RULES.md`
 - Technical baseline: `TECH_STACK.md`
 - E2E / Playwright framework (target): `docs/testing/playwright-e2e-framework.md`
+- E2E patterns (ECC-derived, local): `.agents/e2e-testing/SKILL.md`
 - Агенты и MCP (рекомендации): `docs/dev/agents-and-mcp.md`
 - History: `docs/planning/archive/`
 
