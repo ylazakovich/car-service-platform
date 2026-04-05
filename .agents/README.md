@@ -22,6 +22,8 @@ Project-local role skills.
 
 ## Required context
 
+- Root `AGENTS.md` — **session bootstrap** (deps, MCP, `gh` → GitHub MCP) before substantive work.
+- `docs/dev/agent-session-bootstrap.md` — step-by-step bootstrap for any provider.
 - `DEVELOPMENT_PLAN.md` — active strategy.
 - `NEXT_STEPS.md` — active backlog.
 - `DOMAIN_RULES.md` — required domain context when tasks touch business rules, statuses, calculations, or invariants.

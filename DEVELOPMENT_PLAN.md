@@ -245,6 +245,7 @@ Milestone `M3` считается завершённым, если:
 - E2E patterns (ECC-derived, local): `.agents/e2e-testing/SKILL.md`
 - Агенты и MCP (рекомендации): `docs/dev/agents-and-mcp.md`
 - MCP профиль (JSON + установка в user config): `mcp/README.md`, `mcp/car-service-platform.default.json`, `scripts/mcp/install-user.mjs`
+- Подготовка агентной сессии (любой провайдер): `docs/dev/agent-session-bootstrap.md`, `scripts/agents/bootstrap-agent-session.sh`, `scripts/mcp/sync-github-token-from-gh.mjs`
 - History: `docs/planning/archive/`
 
 ## 11) Access Model
