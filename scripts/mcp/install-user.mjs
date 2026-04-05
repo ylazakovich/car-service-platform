@@ -7,6 +7,12 @@
  *   node scripts/mcp/install-user.mjs --dry-run
  *   node scripts/mcp/install-user.mjs --target claude
  *   node scripts/mcp/install-user.mjs --force-profile
+ *   node scripts/mcp/install-user.mjs --profile standalone
+ *
+ * Profiles:
+ *   default (omit flag) → mcp/car-service-platform.default.json — empty mcpServers; avoids
+ *     duplicating servers already provided by everything-claude-code (see docs/dev/mcp-deduplication.md).
+ *   standalone → mcp/car-service-platform.standalone.json — full stdio set when no ECC/plugin.
  *
  * Targets:
  *   cursor (default) → ~/.cursor/mcp.json  { mcpServers: {...} }
@@ -27,15 +33,22 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, "..", "..");
 const DEFAULT_PROFILE = join(REPO_ROOT, "mcp", "car-service-platform.default.json");
+const STANDALONE_PROFILE = join(REPO_ROOT, "mcp", "car-service-platform.standalone.json");
 const LOCAL_OVERRIDES = join(REPO_ROOT, "mcp", "local.overrides.json");
 
 function parseArgs(argv) {
-  const out = { dryRun: false, target: "cursor", forceProfile: false };
+  const out = { dryRun: false, target: "cursor", forceProfile: false, profile: "default" };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--dry-run") out.dryRun = true;
     else if (a === "--force-profile") out.forceProfile = true;
-    else if (a === "--target" && argv[i + 1]) {
+    else if (a === "--profile" && argv[i + 1]) {
+      out.profile = argv[++i];
+      if (!["default", "standalone"].includes(out.profile)) {
+        console.error(`Unknown --profile ${out.profile} (use default | standalone)`);
+        process.exit(1);
+      }
+    } else if (a === "--target" && argv[i + 1]) {
       out.target = argv[++i];
       if (!["cursor", "claude"].includes(out.target)) {
         console.error(`Unknown --target ${out.target} (use cursor | claude)`);
@@ -44,6 +57,11 @@ function parseArgs(argv) {
     }
   }
   return out;
+}
+
+function resolveProfilePath(profile) {
+  if (profile === "standalone") return STANDALONE_PROFILE;
+  return DEFAULT_PROFILE;
 }
 
 function readJson(path) {
@@ -92,10 +110,10 @@ function forceProfileOnly(profile, overrides) {
   return out;
 }
 
-function installCursor({ dryRun, forceProfile }) {
+function installCursor({ dryRun, forceProfile, profilePath }) {
   const cursorDir = join(homedir(), ".cursor");
   const dest = join(cursorDir, "mcp.json");
-  const { mcpServers: profile } = readJson(DEFAULT_PROFILE);
+  const { mcpServers: profile } = readJson(profilePath);
   const overrides = existsSync(LOCAL_OVERRIDES) ? readJson(LOCAL_OVERRIDES).mcpServers || {} : {};
 
   let existingRoot = {};
@@ -126,10 +144,10 @@ function installCursor({ dryRun, forceProfile }) {
   console.log("Wrote", dest);
 }
 
-function installClaude({ dryRun, forceProfile }) {
+function installClaude({ dryRun, forceProfile, profilePath }) {
   const claudeDir = join(homedir(), ".claude");
   const dest = join(claudeDir, "settings.json");
-  const { mcpServers: profile } = readJson(DEFAULT_PROFILE);
+  const { mcpServers: profile } = readJson(profilePath);
   const overrides = existsSync(LOCAL_OVERRIDES) ? readJson(LOCAL_OVERRIDES).mcpServers || {} : {};
 
   let existingRoot = {};
@@ -162,12 +180,13 @@ function installClaude({ dryRun, forceProfile }) {
 
 function main() {
   const opts = parseArgs(process.argv);
-  if (!existsSync(DEFAULT_PROFILE)) {
-    console.error("Missing profile:", DEFAULT_PROFILE);
+  const profilePath = resolveProfilePath(opts.profile);
+  if (!existsSync(profilePath)) {
+    console.error("Missing profile file:", profilePath);
     process.exit(1);
   }
 
-  console.log("Profile:", DEFAULT_PROFILE);
+  console.log("Profile file:", profilePath, `(mode: ${opts.profile})`);
   if (existsSync(LOCAL_OVERRIDES)) {
     console.log("Local overrides:", LOCAL_OVERRIDES);
   } else {
@@ -176,10 +195,12 @@ function main() {
     );
   }
 
+  const installOpts = { ...opts, profilePath };
+
   if (opts.target === "cursor") {
-    installCursor(opts);
+    installCursor(installOpts);
   } else {
-    installClaude(opts);
+    installClaude(installOpts);
   }
 
   console.log("\nRestart Cursor / Claude Code so MCP reloads.");

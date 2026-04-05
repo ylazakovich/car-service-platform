@@ -1,7 +1,8 @@
 # Агентский pipeline и MCP (car-service-platform)
 
-- Last updated: 2026-04-05
+- Last updated: 2026-04-06
 - Bootstrap сессии (обязательно для агентов): `docs/dev/agent-session-bootstrap.md`, `bash scripts/agents/bootstrap-agent-session.sh` (по умолчанию без установки пакетов на хост — Docker + hot reload)
+- Проверка готовности окружения: `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **Codex**; `--mcp-target cursor|claude` для других клиентов; политика в `AGENTS.md`)
 - Цель: единая «базовая точка» для Codex / Claude / Cursor без угадывания ролей; согласование с [Everything Claude Code (ECC)](https://github.com/affaan-m/everything-claude-code).
 
 ## 1) Локальные роли проекта (source of truth)
@@ -24,6 +25,7 @@
 
 ## 2) Что убрать / не дублировать
 
+- **MCP:** не поднимать второй экземпляр с тем же назначением, что уже есть в Built-in (everything-claude-code) или User MCPs. Профиль по умолчанию в репо **пустой**; полный stdio-набор — `--profile standalone`. Подробно: **`docs/dev/mcp-deduplication.md`**.
 - Не добавлять 10+ `.md` агентов в `.agents/`, если они полностью совпадают с ECC — это устаревает отдельно от продуктового кода.
 - Держать в репозитории **доменно-специфичные** роли: `domain-reviewer`, при необходимости расширения `e2e-validator` под сиды/PDF.
 - Исключение: `e2e-testing` — переносимый skill из ECC с явной секцией overrides под этот репозиторий (не дублировать другие ECC skills без той же дисциплины).
@@ -43,7 +45,9 @@
 
 **Не включать по умолчанию:** тяжёлые или редкие серверы (лишние SaaS), если нет ежедневного use case.
 
-**Этот репозиторий:** готовый профиль и установщик — `mcp/car-service-platform.default.json` + `node scripts/mcp/install-user.mjs` (глобально в `~/.cursor/mcp.json` или `~/.claude/settings.json`). Подробности: `mcp/README.md`.
+**MCP hygiene:** агент напоминает отключить глобально включённые, но нерелевантные для репо MCP (контекст на схемы tools). См. **`docs/dev/mcp-deduplication.md`** и поле **`MCP hygiene`** в `AGENTS.md`.
+
+**Этот репозиторий:** `node scripts/mcp/install-user.mjs` мержит в `~/.cursor/mcp.json` или `~/.claude/settings.json`. По умолчанию читается **пустой** `mcp/car-service-platform.default.json` (без дублей к ECC); полный набор stdio — `mcp/car-service-platform.standalone.json` и флаг `--profile standalone`. Подробности: `mcp/README.md`, `docs/dev/mcp-deduplication.md`.
 
 Дополнительно можно копировать блоки из [`mcp-configs/mcp-servers.json`](https://github.com/affaan-m/everything-claude-code/blob/main/mcp-configs/mcp-servers.json) репозитория ECC и вручную вставлять в настройки провайдера.
 
