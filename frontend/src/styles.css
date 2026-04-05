@@ -714,8 +714,7 @@ textarea { resize: vertical; }
 }
 
 .shell-mobile-bar,
-.sidebar-backdrop,
-.mobile-tabbar,
+.shell-mobile-sticky-stack,
 .shell-sidebar-header {
   display: none;
 }
@@ -739,7 +738,6 @@ textarea { resize: vertical; }
   display: grid;
   gap: var(--s1);
   min-width: 0;
-  flex: 1;
 }
 
 .shell-mobile-context strong {
@@ -752,41 +750,10 @@ textarea { resize: vertical; }
   -webkit-line-clamp: 2;
 }
 
-.shell-mobile-menu-btn,
-.shell-sidebar-close,
-.mobile-tabbar-link {
+.shell-sidebar-close {
   border: 0;
   background: transparent;
   cursor: pointer;
-}
-
-/* Mobile header: compact “more” — opens same drawer (profile, sign out, full nav) */
-.shell-mobile-menu-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 11px;
-  color: var(--text-mid);
-  flex-shrink: 0;
-  transition: color 0.14s, background 0.14s;
-}
-
-.shell-mobile-menu-btn:hover {
-  color: var(--text);
-  background: var(--surface-mid);
-}
-
-.shell-mobile-menu-btn:focus-visible {
-  outline: 2px solid rgba(205, 216, 58, 0.45);
-  outline-offset: 2px;
-}
-
-/* Shown only ≤820px (see media block) */
-.shell-mobile-swipe-hint {
-  display: none;
 }
 
 .shell-sidebar-close {
@@ -4027,30 +3994,143 @@ textarea { resize: vertical; }
     grid-template-columns: 1fr;
   }
 
-  body.mobile-nav-open {
+  /*
+   * Иначе при min-height: 100vh у .shell строки grid растягиваются (align-content: stretch по умолчанию),
+   * первая строка «съедает» высоту — между sticky-шапкой и main получается огромный пустой зазор
+   * на коротких страницах (Purchases, Users, Vehicles и т.д.).
+   */
+  .shell {
+    align-content: start;
+  }
+
+  /* Staff desktop sidebar must not appear in the mobile shell (defense in depth vs JS breakpoint). */
+  #staff-shell-sidebar {
+    display: none !important;
+  }
+
+  body.mobile-shell-picker-open {
     overflow: hidden;
   }
 
-  .shell-mobile-bar {
+  .shell-mobile-picker-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(5, 5, 8, 0.55);
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Sticky “card” header aligned with workspace panels (see .workspace-topbar). --shell-mobile-sticky-top via App.tsx ResizeObserver. */
+  .shell-mobile-sticky-stack {
+    display: block;
     position: sticky;
-    top: 0;
-    z-index: 30;
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr);
-    align-items: center;
-    column-gap: 10px;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(18, 18, 24, 0.97) 0%, rgba(13, 13, 17, 0.94) 100%);
-    backdrop-filter: blur(16px);
-    padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 8px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+    /* Воздух от верха + на iPhone не под вырез: один раз через max, не дублируем с padding. */
+    --shell-mobile-stack-inset-top: max(var(--s3), env(safe-area-inset-top, 0px));
+    top: var(--shell-mobile-stack-inset-top);
+    z-index: 32;
+    margin: var(--shell-mobile-stack-inset-top) var(--s4) var(--s3);
+    padding-top: var(--s2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background:
+      radial-gradient(ellipse at 0% 0%, rgba(205, 216, 58, 0.06) 0%, transparent 52%),
+      var(--surface);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+  }
+
+  /* Закрытое меню: высота = только шапка, без «пустой половины карточки». */
+  .shell-mobile-sticky-stack:not(.shell-mobile-sticky-stack--menu-open) {
+    height: fit-content;
+    padding-bottom: 0;
+  }
+
+  .shell-mobile-bar {
+    position: static;
+    top: auto;
+    z-index: auto;
+    display: block;
+    border-bottom: none;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    box-shadow: none;
     min-height: 0;
   }
 
-  .shell-mobile-bar .shell-mobile-menu-btn {
-    width: 40px;
-    height: 40px;
-    justify-self: start;
+  .shell-mobile-header-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0;
+    padding: 6px var(--s4) 7px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+  }
+
+  /* Закрытое меню: только компактная шапка, без нижней границы. */
+  .shell-mobile-sticky-stack:not(.shell-mobile-sticky-stack--menu-open) .shell-mobile-header-toggle {
+    border-bottom: none;
+    padding-bottom: 8px;
+  }
+
+  .shell-mobile-header-toggle:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .shell-mobile-header-toggle:focus-visible {
+    outline: 2px solid rgba(205, 216, 58, 0.5);
+    outline-offset: -2px;
+  }
+
+  .shell-mobile-header-toggle-text {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding-right: 1.35rem;
+    box-sizing: border-box;
+  }
+
+  .shell-mobile-header-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text-soft);
+    line-height: 1.2;
+  }
+
+  .shell-mobile-header-chevron-wrap {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+  }
+
+  .shell-mobile-header-chevron {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: var(--text-soft);
+    line-height: 1;
   }
 
   .shell-mobile-context {
@@ -4060,8 +4140,12 @@ textarea { resize: vertical; }
     display: block;
   }
 
+  .shell-mobile-context--title-only {
+    padding: 0 0.25rem;
+  }
+
   .shell-mobile-section-title {
-    font-size: 1.02rem;
+    font-size: 1rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -4079,40 +4163,136 @@ textarea { resize: vertical; }
     max-width: 100%;
   }
 
-  .shell-mobile-swipe-hint {
+  .shell-mobile-quick-nav {
     display: flex;
-    align-items: flex-start;
-    gap: var(--s2);
-    padding: var(--s2) var(--s3);
-    margin: 0 var(--s3) var(--s2);
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px 10px;
+    border-top: none;
+    background: rgba(0, 0, 0, 0.12);
+    position: relative;
+    z-index: 31;
+  }
+
+  .shell-mobile-quick-nav--expanded {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .shell-mobile-quick-sections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Компактные «вкладки» секций (Users / Vehicles / …) — ~44px по высоте, без лишнего min-height. */
+  .shell-mobile-quick-section {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 5.6rem;
+    min-height: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.3rem 0.35rem;
+    border: 1px solid var(--border);
     border-radius: 10px;
-    background: rgba(205, 216, 58, 0.07);
-    border: 1px solid rgba(205, 216, 58, 0.22);
-    font-size: 0.72rem;
-    line-height: 1.4;
+    background: var(--surface-mid);
     color: var(--text-mid);
-    z-index: 29;
-  }
-
-  .shell-mobile-swipe-hint-text {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .shell-mobile-swipe-hint-close {
-    border: 0;
-    background: transparent;
-    color: var(--text-soft);
-    font-size: 1.15rem;
-    line-height: 1;
-    padding: 0 2px;
+    font: inherit;
+    font-size: 0.63rem;
+    font-weight: 700;
+    line-height: 1.12;
     cursor: pointer;
-    flex-shrink: 0;
-    border-radius: 4px;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.14s, background 0.14s, color 0.14s;
   }
 
-  .shell-mobile-swipe-hint-close:hover {
+  .shell-mobile-quick-section:hover {
+    border-color: var(--border-strong);
     color: var(--text);
+  }
+
+  .shell-mobile-quick-section-active {
+    border-color: var(--border-accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .shell-mobile-quick-section-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .shell-mobile-quick-section-label {
+    text-align: center;
+    word-break: break-word;
+    max-width: 100%;
+  }
+
+  .shell-mobile-picker-cta {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .shell-mobile-account {
+    display: grid;
+    gap: var(--s3);
+    padding: var(--s3);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-mid);
+  }
+
+  .shell-mobile-account-row {
+    display: flex;
+    gap: var(--s3);
+    align-items: flex-start;
+  }
+
+  .shell-mobile-account .user-avatar {
+    flex-shrink: 0;
+  }
+
+  .shell-mobile-account-details {
+    display: grid;
+    gap: var(--s2);
+    min-width: 0;
+    flex: 1;
+  }
+
+  .shell-mobile-account-email {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .shell-mobile-sign-out {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .shell-mobile-picker-done {
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem var(--s3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-mid);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .shell-mobile-picker-done:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
   }
 
   .shell-sidebar {
@@ -4138,60 +4318,11 @@ textarea { resize: vertical; }
     gap: var(--s3);
   }
 
-  .sidebar-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    border: 0;
-    background: rgba(5, 5, 8, 0.62);
-    padding: 0;
-  }
-
   .shell-main {
     padding:
       var(--s4)
       var(--s4)
-      calc(var(--s6) + 64px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .mobile-tabbar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--s1);
-    position: fixed;
-    left: var(--s2);
-    right: var(--s2);
-    bottom: calc(var(--s2) + env(safe-area-inset-bottom, 0px));
-    z-index: 35;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: rgba(21, 21, 28, 0.94);
-    backdrop-filter: blur(14px);
-    padding: var(--s1) var(--s2);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-  }
-
-  .mobile-tabbar-link {
-    display: grid;
-    justify-items: center;
-    gap: 4px;
-    border-radius: 12px;
-    color: var(--text-mid);
-    font-size: 0.68rem;
-    font-weight: 700;
-    padding: 0.48rem 0.35rem;
-    line-height: 1.15;
-  }
-
-  .mobile-tabbar-link .nav-link-icon svg {
-    width: 15px;
-    height: 15px;
-  }
-
-  .mobile-tabbar-link-active {
-    background: var(--accent-dim);
-    color: var(--accent);
+      calc(var(--s6) + env(safe-area-inset-bottom, 0px));
   }
 
   .workspace-topbar,
@@ -4208,36 +4339,28 @@ textarea { resize: vertical; }
 
   .form-grid          { grid-template-columns: 1fr; }
   .photo-preview-grid { grid-template-columns: repeat(2, 1fr); }
-  /* Sit below the sticky shell header so filters/search do not slide under it */
+  /* Sit below the sticky shell stack; --shell-mobile-sticky-top is set in App.tsx (includes safe-area via header padding). */
   .staff-mobile-taskbar {
     display: grid;
     gap: var(--s3);
     position: sticky;
-    top: calc(3.05rem + env(safe-area-inset-top, 0px));
+    top: var(--shell-mobile-sticky-top, 3.05rem);
     z-index: 12;
   }
 
-  .shell:has(.mobile-tabbar) .staff-mobile-switcher {
+  /* Один источник заголовка секции — shell picker; убираем второй «плашечный» блок (Staff Task + summary). */
+  .staff-mobile-taskbar .staff-mobile-taskcopy {
     display: none;
   }
 
-  .shell:has(.mobile-tabbar) .staff-mobile-taskcard {
+  .staff-mobile-taskbar .staff-mobile-taskcard {
     padding: var(--s3);
     gap: var(--s3);
   }
 
-  .shell:has(.mobile-tabbar) .staff-mobile-taskcopy strong {
-    font-size: 0.92rem;
-  }
-
-  .shell:has(.mobile-tabbar) .staff-mobile-taskcopy p {
-    font-size: 0.8rem;
-    line-height: 1.4;
-    margin: 0;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+  /* Единая мобильная шапка / drawer: дублирующий switcher не нужен (раньше завязка на :has(.shell-mobile-quick-nav)). */
+  .staff-mobile-switcher {
+    display: none;
   }
 
   @media (min-width: 380px) {
@@ -4369,6 +4492,11 @@ textarea { resize: vertical; }
     align-items: stretch;
     gap: var(--s3);
     padding: var(--s3) var(--s4);
+  }
+
+  /* Staff: дублирует shell + mobile rail (поиск уже в rail). */
+  .vehicles-workspace .vehicles-section-topbar--staff-mobile-skip {
+    display: none !important;
   }
 
   .vehicles-workspace .vehicles-section-topbar h2 {

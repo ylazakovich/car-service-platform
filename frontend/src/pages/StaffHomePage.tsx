@@ -2158,7 +2158,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                   {moneyflowCalendarDays.length > 0 && moneyflowCalendarLanes.length > 0 ? (
                     <>
-                      <div className="dashboard-calendar-shell">
+                      <div className="dashboard-calendar-shell" data-no-swipe-nav>
                         <div className="dashboard-calendar-header">
                           <div className="dashboard-calendar-label-spacer">Repair</div>
                           <div
@@ -2830,7 +2830,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           onPrimaryAction: openVehicleCreateModal,
         })}
 
-        <div className="kanban-topbar purchases-section-topbar vehicles-section-topbar">
+        <div
+          className={`kanban-topbar purchases-section-topbar vehicles-section-topbar${
+            isStaff ? " vehicles-section-topbar--staff-mobile-skip" : ""
+          }`}
+        >
           <div>
             <p className="eyebrow">{meta.eyebrow}</p>
             <h2>{meta.title}</h2>
