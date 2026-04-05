@@ -28,17 +28,32 @@ export class StaffRepairsPage {
   }
 
   /**
-   * Перейти в раздел Repairs без strict-mode (на узком экране несколько кнопок «Repairs»).
-   * Один union-локатор + waitFor — избегаем isVisible() без ожидания (гидрация shell).
+   * Перейти в раздел Repairs. На мобилке в DOM одновременно несколько кнопок «Repairs»
+   * (tabbar / switcher / sidebar) — union `.or()` даёт strict mode violation при waitFor/click.
+   * Сначала poll до появления любой навигации (гидрация), затем клик по приоритету как раньше в helpers/repair-board.
    */
   async gotoRepairsSection(): Promise<void> {
-    const repairsEntry = this.page
-      .getByLabel("Staff quick navigation")
-      .getByRole("button", { name: "Repairs" })
-      .or(this.page.getByLabel("Staff task switcher").getByRole("button", { name: "Repairs" }))
-      .or(this.page.getByLabel("Staff sections").getByRole("button", { name: "Repairs" }));
-    await repairsEntry.waitFor({ state: "visible", timeout: 20_000 });
-    await repairsEntry.click();
+    const quickNav = this.page.getByLabel("Staff quick navigation");
+    const taskSwitcher = this.page.getByLabel("Staff task switcher");
+    const staffSections = this.page.getByLabel("Staff sections");
+
+    await expect
+      .poll(
+        async () =>
+          (await quickNav.isVisible()) || (await taskSwitcher.isVisible()) || (await staffSections.isVisible()),
+        { timeout: 20_000 },
+      )
+      .toBe(true);
+
+    if (await quickNav.isVisible()) {
+      await quickNav.getByRole("button", { name: "Repairs" }).click();
+      return;
+    }
+    if (await taskSwitcher.isVisible()) {
+      await taskSwitcher.getByRole("button", { name: "Repairs" }).click();
+      return;
+    }
+    await staffSections.getByRole("button", { name: "Repairs" }).click();
   }
 
   /**
