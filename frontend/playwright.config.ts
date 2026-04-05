@@ -38,10 +38,12 @@ const reporters = isCi
  * В CI тесты идут последовательно (workers=1, fullyParallel=false) — лог ближе к Vitest.
  */
 export default defineConfig({
+  globalSetup: "./e2e/global-setup.ts",
   testDir: "./e2e",
   fullyParallel: !isCi,
   forbidOnly: isCi,
-  retries: isCi ? 1 : 0,
+  /** Политика проекта: без ретраев — флаки чиним детерминизмом и готовностью стека (см. docs/testing/playwright-e2e-framework.md). */
+  retries: 0,
   workers: isCi ? 1 : undefined,
   reporter: reporters,
   use: {
