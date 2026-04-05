@@ -1804,19 +1804,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       }),
     [filteredServiceBoardRepairs, staffUsers]
   );
-  const dashboardTabs: Array<{ id: DashboardTab; label: string }> = [
-    {
-      id: "moneyflow",
-      label: "MoneyFlow",
-    },
-    {
-      id: "warehouse",
-      label: "Warehouse",
-    },
-    {
-      id: "service_board",
-      label: "ServiceBoard",
-    },
+  const dashboardTabs: Array<{ id: DashboardTab; label: string; shortLabel: string }> = [
+    { id: "moneyflow", label: "MoneyFlow", shortLabel: "Money" },
+    { id: "warehouse", label: "Warehouse", shortLabel: "Stock" },
+    { id: "service_board", label: "ServiceBoard", shortLabel: "Jobs" },
   ];
 
   function formatCurrency(value: number) {
@@ -1993,11 +1984,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 key={tab.id}
                 type="button"
                 role="tab"
+                aria-label={tab.label}
                 aria-selected={activeDashboardTab === tab.id}
                 className={`dashboard-folder-tab ${activeDashboardTab === tab.id ? "dashboard-folder-tab-active" : ""}`}
                 onClick={() => setActiveDashboardTab(tab.id)}
               >
-                <span className="dashboard-folder-label">{tab.label}</span>
+                <span className="dashboard-folder-label">
+                  <span className="dashboard-folder-label-long">{tab.label}</span>
+                  <span className="dashboard-folder-label-short">{tab.shortLabel}</span>
+                </span>
               </button>
             ))}
           </div>
@@ -4621,20 +4616,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderUsersSection() {
+    const meta = sectionMeta.users;
     return (
       <div className="workspace-stack users-workspace">
-        <div className="kanban-topbar">
-          <div>
-            <p className="section-eyebrow">Team</p>
-            <h2>User Management</h2>
+        <div className="kanban-topbar users-section-topbar">
+          <div className="users-section-head">
+            <p className="eyebrow">{meta.eyebrow}</p>
+            <h2>{meta.title}</h2>
           </div>
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <span className="registry-count">{allUsers.length} users</span>
-            {isAdmin && (
-              <button className="button" onClick={() => setShowInviteForm((v) => !v)}>
-                + Invite User
+          <div className="users-section-actions">
+            <span className="registry-count">
+              {allUsers.length} {allUsers.length === 1 ? "user" : "users"}
+            </span>
+            {isAdmin ? (
+              <button type="button" className="button" onClick={() => setShowInviteForm((v) => !v)}>
+                + Invite user
               </button>
-            )}
+            ) : null}
           </div>
         </div>
 
