@@ -1612,7 +1612,7 @@ describe("bootstrap application", () => {
     expect(screen.queryByText("Order TOR-0001")).not.toBeInTheDocument();
   });
 
-  it("kanban cards do not show tracking code chip", async () => {
+  it("kanban cards show tracking code chip", async () => {
     const user = userEvent.setup();
     renderApp("/app");
 
@@ -1620,7 +1620,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findAllByText("Brake Inspection");
 
-    expect(screen.queryByText("#TOR-1011")).not.toBeInTheDocument();
+    expect(screen.getByText("#TOR-1011")).toBeInTheDocument();
   });
 
   it("shows regenerate portal link button to admin", async () => {
