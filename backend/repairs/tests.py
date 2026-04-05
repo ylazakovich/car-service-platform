@@ -620,8 +620,7 @@ class RepairPdfViewTests(TestCase):
         get_r = self.client.get(f"/api/repairs/{repair.id}/pdf/")
         self.assertEqual(get_r.status_code, 200)
         self.assertEqual(get_r["Content-Type"], "application/pdf")
-        get_body = b"".join(get_r.streaming_content)
-        self.assertEqual(len(get_body), len(post_r.content))
+        self.assertEqual(get_r.content, post_r.content)
 
     def test_pdf_returns_404_for_unknown_repair(self):
         self.client.force_authenticate(self.staff_user)
