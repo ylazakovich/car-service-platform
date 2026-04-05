@@ -16,6 +16,7 @@ source .env
 set +a
 
 : "${FRONTEND_DEV_PORT:=4173}"
+
 if command -v lsof >/dev/null 2>&1; then
   if lsof -nP -iTCP:"${FRONTEND_DEV_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
     echo "Error: TCP port ${FRONTEND_DEV_PORT} is already in use on this machine." >&2
@@ -46,5 +47,6 @@ echo "  Frontend (Vite): http://localhost:${FRONTEND_DEV_PORT:-4173}"
 echo "  Backend (runserver): http://localhost:${BACKEND_PORT:-8000}"
 echo "  Admin: http://localhost:${BACKEND_PORT:-8000}/admin/"
 echo ""
+echo "LAN / phone testing (optional): bash scripts/publish-dev-to-lan.sh"
 echo "Stop: bash scripts/stop.sh"
 echo "Prod-like stack: bash scripts/start-prod.sh"
