@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { BrandMark } from "./components/BrandMark";
@@ -148,6 +148,18 @@ function getInitialStaffSection(): StaffSection {
 
 const STAFF_ALLOWED_SECTIONS: StaffSection[] = ["vehicles", "repairs"];
 
+const SWIPE_NAV_HINT_KEY = "car-service-swipe-nav-hint-dismissed";
+
+function IconMoreMenu() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 /* ── Staff Shell ────────────────────────────────────────── */
 
 function StaffShell() {
@@ -158,7 +170,16 @@ function StaffShell() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileFirstName, setProfileFirstName] = useState("");
   const [profileLastName, setProfileLastName] = useState("");
+  const [swipeHintVisible, setSwipeHintVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.sessionStorage.getItem(SWIPE_NAV_HINT_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  });
   const profileFirstRef = useRef<HTMLInputElement>(null);
+  const mainTouchRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   function startEditProfile() {
     setProfileFirstName(user?.first_name ?? "");
@@ -184,6 +205,20 @@ function StaffShell() {
       ]
     : navGroups;
   const mobileSections = visibleNavGroups.flatMap((group) => group.items);
+
+  const navigableSections = useMemo(
+    () => (isStaff ? (["vehicles", "repairs"] as StaffSection[]) : navGroups.flatMap((g) => g.items)),
+    [isStaff]
+  );
+
+  const dismissSwipeHint = useCallback(() => {
+    try {
+      window.sessionStorage.setItem(SWIPE_NAV_HINT_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setSwipeHintVisible(false);
+  }, []);
 
   useEffect(() => {
     writeStoredStaffSection(activeSection);
@@ -218,40 +253,75 @@ function StaffShell() {
     setIsMobileNavOpen(false);
   }
 
+  const handleMainTouchStart = useCallback((event: React.TouchEvent) => {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    mainTouchRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+  }, []);
+
+  const handleMainTouchEnd = useCallback(
+    (event: React.TouchEvent) => {
+      const start = mainTouchRef.current;
+      mainTouchRef.current = null;
+      if (!start || event.changedTouches.length !== 1) return;
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      if (Math.abs(dx) < 56) return;
+      if (Math.abs(dy) > Math.abs(dx) * 0.9) return;
+      if (Date.now() - start.t > 750) return;
+
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, button, a, [data-no-swipe-nav]")) return;
+
+      const sections = navigableSections;
+      const idx = sections.indexOf(activeSection);
+      if (idx < 0) return;
+      if (dx < 0 && idx < sections.length - 1) {
+        setActiveSection(sections[idx + 1]!);
+        setIsMobileNavOpen(false);
+      } else if (dx > 0 && idx > 0) {
+        setActiveSection(sections[idx - 1]!);
+        setIsMobileNavOpen(false);
+      }
+    },
+    [activeSection, navigableSections]
+  );
+
   return (
     <div className="shell">
       <header className="shell-mobile-bar">
         <button
           type="button"
-          className="mobile-menu-button"
-          aria-label={isMobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          className="shell-mobile-menu-btn"
+          aria-label={isMobileNavOpen ? "Close menu" : "Open menu and account"}
           aria-expanded={isMobileNavOpen}
           onClick={() => setIsMobileNavOpen((current) => !current)}
         >
-          <span />
-          <span />
-          <span />
+          <IconMoreMenu />
         </button>
         <div className="shell-mobile-context">
-          <span className="mobile-section-pill">{isStaff ? "Staff" : "Workspace"}</span>
           <strong className="shell-mobile-section-title">{sectionLabels[activeSection]}</strong>
         </div>
-        <button
-          type="button"
-          className="button button-ghost mobile-signout-button"
-          onClick={logout}
-          aria-label="Sign out"
-        >
-          <span className="mobile-signout-text">Sign out</span>
-        </button>
       </header>
+
+      {swipeHintVisible && navigableSections.length > 1 ? (
+        <div className="shell-mobile-swipe-hint" role="status">
+          <span className="shell-mobile-swipe-hint-text">
+            Swipe left or right on the page to switch sections. Sign out lives in the menu (⋯).
+          </span>
+          <button type="button" className="shell-mobile-swipe-hint-close" onClick={dismissSwipeHint} aria-label="Dismiss tip">
+            ×
+          </button>
+        </div>
+      ) : null}
 
       {isMobileNavOpen ? <button type="button" className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setIsMobileNavOpen(false)} /> : null}
 
       <aside className={`shell-sidebar ${isMobileNavOpen ? "shell-sidebar-mobile-open" : ""}`}>
         <div className="shell-sidebar-top">
           <div className="shell-sidebar-header">
-            <span className="mobile-section-pill">{isStaff ? "Staff Menu" : "Workspace Menu"}</span>
+            <span className="mobile-section-pill">Menu</span>
             <button type="button" className="shell-sidebar-close" onClick={() => setIsMobileNavOpen(false)}>
               Close
             </button>
@@ -343,7 +413,11 @@ function StaffShell() {
         </div>
       </aside>
 
-      <main className="shell-main">
+      <main
+        className="shell-main"
+        onTouchStart={handleMainTouchStart}
+        onTouchEnd={handleMainTouchEnd}
+      >
         <StaffHomePage
           activeSection={activeSection}
           onSelectSection={setActiveSection}
