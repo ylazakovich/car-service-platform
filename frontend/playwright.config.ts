@@ -38,6 +38,7 @@ const reporters = isCi
  * В CI тесты идут последовательно (workers=1, fullyParallel=false) — лог ближе к Vitest.
  */
 export default defineConfig({
+  globalSetup: "./e2e/global-setup.ts",
   testDir: "./e2e",
   fullyParallel: !isCi,
   forbidOnly: isCi,

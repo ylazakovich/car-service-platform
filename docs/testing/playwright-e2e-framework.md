@@ -20,7 +20,7 @@
 | Слой | Назначение | Расположение (целевое) |
 |------|------------|-------------------------|
 | **Конфиг** | проекты desktop/mobile, репортеры, trace/screenshot, `retries: 0` | `playwright.config.ts` |
-| **Глобальная подготовка** | poll health API + опционально «version bump» для сидов | `e2e/global-setup.ts` (добавить) |
+| **Глобальная подготовка** | poll `GET /api/health` (тот же origin, что `baseURL`); пропуск: `E2E_SKIP_GLOBAL_SETUP=1` | `e2e/global-setup.ts` (+ `globalSetup` в `playwright.config.ts`) |
 | **Фикстуры** | авторизация по роли, сохранение storageState | `e2e/fixtures/auth.ts` |
 | **Page objects / экраны** | стабильные селекторы, переиспользование | `e2e/pages/*.ts` (эволюция из `helpers/`) |
 | **Данные** | константы, синхрон с Python-сидом | `e2e/e2e-seed.ts` + `seed_e2e_data.py` |
@@ -49,12 +49,14 @@
 
 ## 5) CI: жёсткие ворота
 
-Рекомендуемые доработки `compose-up` / шага перед Playwright:
+**Сделано:**
 
-1. После `curl` фронта — poll `GET /api/health` (через nginx, тот же host/port что и `PLAYWRIGHT_BASE_URL`).
-2. Опционально: один «smoke» запрос с авторизацией (service token или логин через API) — только если будут частые 502 от API при старте.
+1. Composite action `.github/actions/compose-up`: inputs `wait-for-api-health`, `api-health-url` (по умолчанию `http://127.0.0.1:4173/api/health`). После шага «Wait for frontend» идёт poll до JSON с `"status"` и успешного `curl`.
+2. Job E2E в `.github/workflows/pr.yml`: `wait-for-api-health: true`.
 
-Логи Docker уже собираются — оставить; при падении первого теста прикладывать trace + HAR (по желанию, второй этап).
+**Дальше (по необходимости):** smoke с авторизацией, если появятся частые 502 от API после старта nginx.
+
+Логи Docker при падении health-gate печатаются (`docker compose logs --tail=120`).
 
 ## 6) Версионирование и документация
 
