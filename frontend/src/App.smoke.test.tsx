@@ -1254,7 +1254,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
 
-    const kanban = await screen.findByLabelText("Desktop repairs board");
+    const kanban = await screen.findByLabelText("Repairs kanban board");
 
     expect(await screen.findByRole("button", { name: "Show 5 more" })).toBeInTheDocument();
     expect(within(kanban).getAllByText("Job 1").length).toBeGreaterThan(0);
@@ -1612,7 +1612,7 @@ describe("bootstrap application", () => {
       expect(within(dialog).getByRole("button", { name: "View PDF" })).toBeInTheDocument();
     });
 
-    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
 
     await user.click(screen.getAllByText("Existing Act Repair")[1]);
     dialog = await screen.findByRole("dialog");

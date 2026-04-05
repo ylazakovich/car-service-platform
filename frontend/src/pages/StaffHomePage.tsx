@@ -3554,67 +3554,113 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <p className="eyebrow">Repair Update</p>
                   <h3 id="repair-modal-title">{selectedRepair.vehicle_label}</h3>
                 </div>
-                <div className="inline-actions">
-                  {selectedRepair.status === "completed" && (
-                    <button
-                      type="button"
-                      className="button button-primary"
-                      disabled={repairPdfLoading}
-                      onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
-                    >
-                      {repairPdfLoading ? "Loading…" : selectedRepair.has_pdf ? "View PDF" : "Make Act"}
-                    </button>
-                  )}
-                  {!isStaff && (
-                    <button
-                      type="button"
-                      className="button button-danger"
-                      onClick={() => void handleRepairDelete(selectedRepair)}
-                    >
-                      Delete Repair
-                    </button>
-                  )}
-                  <button type="button" className="button button-secondary" onClick={handleCloseRepairModal}>
-                    Close
-                  </button>
-                </div>
+                {(selectedRepair.status === "completed" || !isStaff) && (
+                  <div className="inline-actions">
+                    {selectedRepair.status === "completed" && (
+                      <button
+                        type="button"
+                        className="button button-primary"
+                        disabled={repairPdfLoading}
+                        onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
+                      >
+                        {repairPdfLoading ? "Loading…" : selectedRepair.has_pdf ? "View PDF" : "Make Act"}
+                      </button>
+                    )}
+                    {!isStaff && (
+                      <button
+                        type="button"
+                        className="button button-danger"
+                        onClick={() => void handleRepairDelete(selectedRepair)}
+                      >
+                        Delete Repair
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* ── Status Switcher ────────────────────────────── */}
               <div className="status-switcher">
                 <span className="status-switcher-label">Status</span>
-                <div className="status-switcher-options">
-                  {REPAIR_KANBAN_COLUMNS.map(({ status, label }) => (
+                <div className="status-switcher-options status-switcher-options-stacked">
+                  <div className="status-switcher-row">
+                    {REPAIR_KANBAN_COLUMNS.filter((col) => col.status === "new" || col.status === "in_progress").map(({ status, label }) => (
+                      <button
+                        key={status}
+                        type="button"
+                        className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
+                        onClick={() => {
+                          setRepairModalStatus(status);
+                        }}
+                      >
+                        <span className="status-btn-dot" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="status-switcher-row status-switcher-row-waiting">
+                    {REPAIR_KANBAN_COLUMNS.filter((col) => col.status === "waiting_parts").map(({ status, label }) => (
+                      <button
+                        key={status}
+                        type="button"
+                        className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
+                        onClick={() => {
+                          setRepairModalStatus(status);
+                        }}
+                      >
+                        <span className="status-btn-dot" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="status-switcher-final">
                     <button
-                      key={status}
                       type="button"
-                      className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
+                      className={`status-btn status-btn-completed-final ${getRepairStatusClass("completed")} ${repairModalStatus === "completed" ? "status-btn-active" : ""}`}
                       onClick={() => {
-                        setRepairModalStatus(status);
-                        if (status === "completed") {
-                          setRepairModalCompletedAt((current) => current || selectedRepair.completed_at || getLocalTodayDate());
-                        }
+                        setRepairModalStatus("completed");
+                        setRepairModalCompletedAt((current) => current || selectedRepair.completed_at || getLocalTodayDate());
                       }}
                     >
                       <span className="status-btn-dot" />
-                      {label}
+                      {REPAIR_KANBAN_COLUMNS.find((col) => col.status === "completed")?.label ?? "Completed"}
                     </button>
-                  ))}
+                  </div>
                 </div>
               </div>
 
-              {repairModalStatus === "completed" ? (
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Completed Date</span>
-                  <FriendlyDateInput
-                    value={repairModalCompletedAt}
-                    onChange={setRepairModalCompletedAt}
-                    required
-                  />
-                </label>
-              ) : null}
-
               <div className="customer-detail-stack repair-modal-sections">
+                <div className="detail-card repair-status-field repair-modal-panel repair-modal-assignment-card">
+                  <div className="repair-modal-assignment-master">
+                    <span className="repair-modal-field-label">Master</span>
+                    {isStaff ? (
+                      <p className="repair-modal-master-readonly">{selectedRepair.master_name || "Unassigned"}</p>
+                    ) : (
+                      <select
+                        value={repairModalMasterId}
+                        onChange={(event) => setRepairModalMasterId(event.target.value)}
+                        aria-label="Assign master"
+                      >
+                        {staffUsers.map((master) => (
+                          <option key={master.id} value={master.id}>
+                            {getStaffUserLabel(master)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  {repairModalStatus === "completed" ? (
+                    <div className="repair-modal-completed-date repair-modal-assignment-completed">
+                      <span className="repair-modal-field-label">Completed Date</span>
+                      <FriendlyDateInput
+                        value={repairModalCompletedAt}
+                        onChange={setRepairModalCompletedAt}
+                        required
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="detail-card repair-info-card">
                   <strong>Repair Info</strong>
                   <div className="repair-info-stack">
@@ -3665,12 +3711,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                     <div className="repair-info-row">
                       <span className="repair-info-label">Est. Completion</span>
-                      <input
-                        type="date"
-                        className="repair-info-date-input"
-                        value={repairModalEstimatedDate}
-                        onChange={(e) => setRepairModalEstimatedDate(e.target.value)}
-                      />
+                      <div className="repair-info-date-wrap">
+                        <input
+                          type="date"
+                          className="repair-info-date-input"
+                          value={repairModalEstimatedDate}
+                          onChange={(e) => setRepairModalEstimatedDate(e.target.value)}
+                          aria-label="Estimated completion date"
+                        />
+                      </div>
                     </div>
                     <div className="repair-info-row repair-info-row-block">
                       <span className="repair-info-label">Issue</span>
@@ -3698,24 +3747,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                   )}
                 </div>
-
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Master</span>
-                  {isStaff ? (
-                    <p>{selectedRepair.master_name}</p>
-                  ) : (
-                    <select
-                      value={repairModalMasterId}
-                      onChange={(event) => setRepairModalMasterId(event.target.value)}
-                    >
-                      {staffUsers.map((master) => (
-                        <option key={master.id} value={master.id}>
-                          {getStaffUserLabel(master)}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </label>
 
                 <label className="detail-card repair-status-field repair-modal-panel">
                   <span>Add Repair Note</span>
