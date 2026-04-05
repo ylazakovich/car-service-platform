@@ -49,7 +49,12 @@ export function StaffRepairsMobileList({
 
   return (
     <div className="repairs-mobile-surface" aria-label="Mobile repairs list">
-      <div className="repair-mobile-filter-strip" role="tablist" aria-label="Repair status filters">
+      <div
+        className="repair-mobile-filter-strip"
+        role="tablist"
+        aria-label="Repair status filters"
+        data-no-swipe-nav
+      >
         <button
           type="button"
           className={`repair-mobile-filter ${activeFilter === "all" ? "repair-mobile-filter-active" : ""}`}

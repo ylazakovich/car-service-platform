@@ -11,8 +11,14 @@ export class StaffRepairsPage {
     this.page = page;
   }
 
+  /** Раскрытый блок секций/аккаунта (до открытия шапки `hidden` — не полагаемся на a11y tree). */
   staffQuickNav(): Locator {
-    return this.page.getByRole("navigation", { name: "Staff quick navigation" });
+    return this.page.locator("#mobile-section-picker");
+  }
+
+  /** Кнопка в шапке мобильного staff-shell: открыть/закрыть меню секций и аккаунта. */
+  staffMobileWorkspaceMenuToggle(): Locator {
+    return this.page.getByRole("button", { name: /Open workspace menu|Close workspace menu/ });
   }
 
   certificateDialog(): Locator {
@@ -33,19 +39,22 @@ export class StaffRepairsPage {
    * Сначала poll до появления любой навигации (гидрация), затем клик по приоритету как раньше в helpers/repair-board.
    */
   async gotoRepairsSection(): Promise<void> {
-    const quickNav = this.page.getByLabel("Staff quick navigation");
+    const mobileToggle = this.staffMobileWorkspaceMenuToggle();
+    const quickNav = this.staffQuickNav();
     const taskSwitcher = this.page.getByLabel("Staff task switcher");
     const staffSections = this.page.getByLabel("Staff sections");
 
     await expect
       .poll(
         async () =>
-          (await quickNav.isVisible()) || (await taskSwitcher.isVisible()) || (await staffSections.isVisible()),
+          (await mobileToggle.isVisible()) || (await taskSwitcher.isVisible()) || (await staffSections.isVisible()),
         { timeout: 20_000 },
       )
       .toBe(true);
 
-    if (await quickNav.isVisible()) {
+    if (await mobileToggle.isVisible()) {
+      await mobileToggle.click();
+      await expect(quickNav).toBeVisible({ timeout: 10_000 });
       await quickNav.getByRole("button", { name: "Repairs" }).click();
       return;
     }

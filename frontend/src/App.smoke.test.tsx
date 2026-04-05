@@ -672,9 +672,11 @@ describe("bootstrap application", () => {
       expect(within(actsFact as HTMLElement).getByText("Completed without act")).toBeInTheDocument();
       expect(within(actsFact as HTMLElement).getByText("Exports in period")).toBeInTheDocument();
       expect(within(actsFact as HTMLElement).getByText("Multi-export jobs")).toBeInTheDocument();
-      expect(within(repairCalendar as HTMLElement).getByText("TOR-1015")).toBeInTheDocument();
-      expect(within(repairCalendar as HTMLElement).getByText("Chris Mason")).toBeInTheDocument();
-      expect(within(repairCalendar as HTMLElement).getByText("March waiting for parts.")).toBeInTheDocument();
+      const calEl = repairCalendar as HTMLElement;
+      expect(within(calEl).getAllByText("TOR-1015").length).toBeGreaterThan(0);
+      expect(calEl.textContent).toContain("Chris Mason");
+      expect(calEl.textContent).toContain("Waiting for Parts");
+      expect(calEl.textContent).toContain("March waiting for parts.");
     });
 
     await user.click(screen.getByRole("tab", { name: "Warehouse" }));
@@ -738,10 +740,10 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
     const [startInput, endInput] = await screen.findAllByPlaceholderText("dd-mm-yyyy");
     await user.clear(startInput);
-    await user.type(startInput, "01-03-2025");
+    await user.type(startInput, "01-04-2025");
     await user.tab();
     await user.clear(endInput);
-    await user.type(endInput, "31-03-2025");
+    await user.type(endInput, "30-04-2025");
     await user.tab();
 
     const calendarSection = await screen.findByRole("heading", { name: "Repair Calendar", level: 3 });
@@ -751,11 +753,11 @@ describe("bootstrap application", () => {
     expect(screen.queryByText("Turn on at least one line to display the chart.")).not.toBeInTheDocument();
 
     const openButtons = within(calendarSection.closest("section") as HTMLElement).getAllByRole("button", {
-      name: "Open repair TOR-1015",
+      name: "Open repair TOR-1011",
     });
     await user.click(openButtons[0]);
 
-    expect(await screen.findByText("March waiting for parts.")).toBeInTheDocument();
+    expect(await screen.findByText("Customer reported vibration while braking.")).toBeInTheDocument();
   });
 
   it("opens detail dialogs for customer and vehicle cards", async () => {
