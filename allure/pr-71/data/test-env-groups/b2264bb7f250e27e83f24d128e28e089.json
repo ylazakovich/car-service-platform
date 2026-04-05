@@ -1,0 +1,1 @@
+{"id":"b2264bb7f250e27e83f24d128e28e089","fullName":"src/App.smoke.test.tsx#bootstrap application resets moneyflow to the last 30 days on every dashboard visit","name":"resets moneyflow to the last 30 days on every dashboard visit","status":"passed","testResultsByEnv":{"frontend":"b5e7f7a998998dccfc5ac00a151ced82"}}
