@@ -19,7 +19,7 @@ test.describe("Staff repairs mobile @mobile-only", () => {
     await expect(repairs.staffMobileWorkspaceMenuToggle()).toBeVisible({ timeout: 15_000 });
 
     await repairs.gotoRepairsSection();
-    await repairs.expectMobileRepairsListVisible();
+    await repairs.expectRepairsKanbanVisible();
 
     await repairs.openSeededRepairCard();
     await repairs.expectRepairDetailDialogVisible();

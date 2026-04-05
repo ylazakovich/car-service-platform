@@ -56,7 +56,7 @@ export function StaffRepairsKanban({
   }
 
   return (
-    <div className="repairs-web-surface" aria-label="Desktop repairs board">
+    <div className="repairs-web-surface" aria-label="Repairs kanban board">
       <div className="kanban-board">
         {REPAIR_KANBAN_COLUMNS.map(({ status, label }) => {
           const columnRepairs = repairs

@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ScrollToWorkspaceHeaderFab } from "./components/ScrollToWorkspaceHeaderFab";
 import { BrandMark } from "./components/BrandMark";
 import { useAuth } from "./context/AuthContext";
 import { updateUserName } from "./api/users";
@@ -532,6 +533,13 @@ function StaffShell() {
           onClick={() => closeMobilePicker()}
         />
       ) : null}
+
+      <ScrollToWorkspaceHeaderFab
+        active={shellMobileNarrow}
+        pickerOpen={isMobilePickerOpen}
+        headerRef={mobileStickyStackRef}
+        layoutRootRef={shellRef}
+      />
     </div>
   );
 }

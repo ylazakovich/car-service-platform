@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { SEEDED_REPAIR_CARD_HEADING } from "../e2e-seed";
 
 /**
- * Staff repairs board (desktop kanban + mobile list) and seeded E2E card.
+ * Staff repairs board (kanban; mobile list скрыт CSS — на узкой ширине тот же канбан, колонки столбцом).
  */
 export class StaffRepairsPage {
   readonly page: Page;
@@ -66,28 +66,16 @@ export class StaffRepairsPage {
   }
 
   /**
-   * Ждёт видимый kanban или мобильный список, затем открывает CI-seeded completed repair.
+   * Ждёт канбан, затем открывает CI-seeded completed repair (карточка в колонке Completed).
    */
   async openSeededRepairCard(): Promise<void> {
-    const mobileList = this.page.getByLabel("Mobile repairs list");
-    const desktopBoard = this.page.getByLabel("Desktop repairs board");
-    await expect
-      .poll(
-        async () => (await mobileList.isVisible()) || (await desktopBoard.isVisible()),
-        { timeout: 25_000 },
-      )
-      .toBe(true);
-
-    if (await mobileList.isVisible()) {
-      await this.page.locator(".repair-mobile-open").filter({ hasText: /E2E-CI-001/ }).first().click();
-      return;
-    }
-
+    const board = this.page.getByLabel("Repairs kanban board");
+    await expect(board).toBeVisible({ timeout: 25_000 });
     await this.page.getByRole("heading", { name: SEEDED_REPAIR_CARD_HEADING }).first().click();
   }
 
-  async expectMobileRepairsListVisible(timeoutMs = 25_000): Promise<void> {
-    await expect(this.page.getByLabel("Mobile repairs list")).toBeVisible({ timeout: timeoutMs });
+  async expectRepairsKanbanVisible(timeoutMs = 25_000): Promise<void> {
+    await expect(this.page.getByLabel("Repairs kanban board")).toBeVisible({ timeout: timeoutMs });
   }
 
   async expectRepairDetailDialogVisible(): Promise<void> {
