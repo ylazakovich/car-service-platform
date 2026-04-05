@@ -2984,8 +2984,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <p className="eyebrow">Vehicle Details</p>
                   <h3 id="vehicle-modal-title">{selectedVehicle.license_plate}</h3>
                 </div>
-                <div className="inline-actions">
-                  {!isStaff && (
+                {!isStaff && (
+                  <div className="inline-actions">
                     <button
                       type="button"
                       className="button button-secondary"
@@ -2996,16 +2996,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     >
                       Edit Vehicle
                     </button>
-                  )}
-                  {!isStaff && (
                     <button type="button" className="button button-danger" onClick={() => void handleVehicleDelete(selectedVehicle)}>
                       Delete Vehicle
                     </button>
-                  )}
-                  <button type="button" className="button button-secondary" onClick={closeVehicleDetailModal}>
-                    Close
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
 
               <div className="customer-detail-stack vehicle-detail-stack">
@@ -3022,7 +3017,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     closeVehicleDetailModal();
                     onSelectSection("repairs");
                   }}
-                  onClose={closeVehicleDetailModal}
                 />
 
                 <StaffVehicleDetailPanel
@@ -3036,6 +3030,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   getRepairStatusClass={getRepairStatusClass}
                   repairStatusLabels={REPAIR_STATUS_LABELS}
                 />
+              </div>
+
+              <div className="form-actions vehicle-modal-actions">
+                <button type="button" className="button button-secondary" onClick={closeVehicleDetailModal}>
+                  Cancel
+                </button>
               </div>
             </section>
           </div>
@@ -3054,9 +3054,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <p className="eyebrow">Vehicle Intake</p>
                   <h3>{editingVehicleId ? "Edit Vehicle" : "Register Vehicle"}</h3>
                 </div>
-                <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
-                  Close
-                </button>
               </div>
 
               <form className="stack-form vehicle-form-stack" onSubmit={handleVehicleSubmit}>
@@ -4133,9 +4130,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <p className="eyebrow">Purchase Details</p>
                   <h3 id="purchase-modal-title">{selectedPurchase.part_name}</h3>
                 </div>
-                <button type="button" className="button button-secondary" onClick={closePurchaseDetailModal}>
-                  Close
-                </button>
               </div>
 
               <div className="purchase-modal-tabs subnav-tabs" role="tablist" aria-label="Purchase detail sections">
@@ -4397,7 +4391,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {purchaseModalError ? <p className="form-error">{purchaseModalError}</p> : null}
 
-                <div className="form-actions">
+                <div className="form-actions purchase-modal-actions">
                   <button type="button" className="button" onClick={handlePurchaseModalSave}>
                     Save Purchase
                   </button>
@@ -4412,15 +4406,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
         {isPurchaseFormOpen ? (
           <div className="modal-overlay" role="presentation" onClick={closePurchaseFormModal}>
-            <section className="modal-card modal-card-large" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <section
+              className="modal-card modal-card-large purchase-form-modal"
+              role="dialog"
+              aria-modal="true"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="panel-header">
                 <div>
                   <p className="eyebrow">New Purchase</p>
                   <h3>Add Ordered Part</h3>
                 </div>
-                <button type="button" className="button button-secondary" onClick={closePurchaseFormModal}>
-                  Close
-                </button>
               </div>
 
               <form className="stack-form" onSubmit={handlePurchaseSubmit}>
@@ -4600,7 +4596,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
 
-                <div className="form-actions">
+                <div className="form-actions purchase-modal-actions">
                   <button type="submit" className="button" disabled={isSavingPurchase}>
                     {isSavingPurchase ? "Saving..." : "Add Purchase"}
                   </button>
