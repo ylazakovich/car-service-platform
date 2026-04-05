@@ -4742,25 +4742,6 @@ textarea { resize: vertical; }
     min-height: 44px;
   }
 
-  .shell-mobile-picker-done {
-    width: 100%;
-    margin: 0;
-    padding: 0.55rem var(--s3);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: transparent;
-    color: var(--text-mid);
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .shell-mobile-picker-done:hover {
-    color: var(--text);
-    border-color: var(--border-strong);
-  }
-
   .shell-sidebar {
     position: fixed;
     top: 0;

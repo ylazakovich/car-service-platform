@@ -410,10 +410,6 @@ function StaffShell() {
                 Sign out
               </button>
             </div>
-
-            <button type="button" className="shell-mobile-picker-done" onClick={() => closeMobilePicker()}>
-              Close
-            </button>
           </nav>
         ) : null}
       </div>
