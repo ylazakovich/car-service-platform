@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Full agent session bootstrap: deps + MCP profile + optional GitHub token from gh.
+# Agent session bootstrap: MCP profile + optional GitHub token from gh.
+# Host npm/pip/playwright are skipped by default (Docker + hot reload is the norm).
 # See docs/dev/agent-session-bootstrap.md and root AGENTS.md
 set -euo pipefail
 
@@ -9,6 +10,7 @@ cd "${ROOT_DIR}"
 MCP_TARGET="cursor"
 SKIP_GH=0
 DEPS_ONLY=0
+WITH_HOST_DEPS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -24,18 +26,25 @@ while [[ $# -gt 0 ]]; do
       DEPS_ONLY=1
       shift
       ;;
+    --with-host-deps)
+      WITH_HOST_DEPS=1
+      shift
+      ;;
     *)
-      echo "Usage: $0 [--deps-only] [--skip-github-token] [--mcp-target cursor|claude]" >&2
+      echo "Usage: $0 [--skip-github-token] [--mcp-target cursor|claude] [--with-host-deps] [--deps-only]" >&2
       exit 1
       ;;
   esac
 done
 
-bash "${ROOT_DIR}/scripts/agents/bootstrap-environment.sh"
-
 if [[ "${DEPS_ONLY}" == "1" ]]; then
-  echo "[bootstrap-agent-session] --deps-only: skipping MCP"
+  bash "${ROOT_DIR}/scripts/agents/bootstrap-environment.sh"
+  echo "[bootstrap-agent-session] --deps-only: done (host deps only)"
   exit 0
+fi
+
+if [[ "${WITH_HOST_DEPS}" == "1" ]]; then
+  bash "${ROOT_DIR}/scripts/agents/bootstrap-environment.sh"
 fi
 
 echo "[bootstrap-agent-session] MCP install-user → target=${MCP_TARGET}"

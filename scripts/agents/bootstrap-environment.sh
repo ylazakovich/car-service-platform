@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Idempotent local toolchain install for car-service-platform (agents / humans).
-# Does not start Docker. See docs/dev/agent-session-bootstrap.md
+# Optional: install Node/Python/Playwright on the HOST (for running tests outside Docker).
+# Default workflow uses Docker + hot reload — you usually do NOT need this. See docs/dev/agent-session-bootstrap.md
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

@@ -199,4 +199,4 @@
 - E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`
 - Агенты / MCP (рекомендации): `docs/dev/agents-and-mcp.md`
 - MCP user install: `mcp/README.md`, `scripts/mcp/install-user.mjs`
-- Agent session bootstrap: `docs/dev/agent-session-bootstrap.md`, `scripts/agents/bootstrap-agent-session.sh`
+- Agent session bootstrap (MCP + gh; host deps optional — Docker): `docs/dev/agent-session-bootstrap.md`, `scripts/agents/bootstrap-agent-session.sh`
