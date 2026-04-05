@@ -1,1 +1,1 @@
-{"id":"3f0244d77f33c98f8192971ba9cb2625","fullName":"services.tests.ServiceApiTests#test_update_service_name","name":"test_update_service_name","status":"passed","testResultsByEnv":{"backend":"eb18ed362291761289fe094afeebb2ff"}}
+{"id":"3f0244d77f33c98f8192971ba9cb2625","fullName":"services.tests.ServiceApiTests#test_update_service_name","name":"test_update_service_name","status":"passed","testResultsByEnv":{"backend":"588eb855ff271b913ec00d22c2e430e9"}}
