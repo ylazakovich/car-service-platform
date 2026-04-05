@@ -216,6 +216,11 @@ describe("bootstrap application", () => {
               active_workload_preview: [],
               recently_created_preview: [],
             },
+            moneyflow: {
+              supplier_spend_top: [],
+              purchases_unlinked: { count: 0, total_spend: 0 },
+              exports_by_exporter: [],
+            },
           },
         });
       }
@@ -373,6 +378,11 @@ describe("bootstrap application", () => {
               cycle_time_days: { median: 4, p90: 10, sample_completed_in_range: 2 },
               active_workload_preview: [],
               recently_created_preview: [],
+            },
+            moneyflow: {
+              supplier_spend_top: [],
+              purchases_unlinked: { count: 0, total_spend: 0 },
+              exports_by_exporter: [],
             },
           },
         });

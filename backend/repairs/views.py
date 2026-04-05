@@ -1,7 +1,7 @@
 from django.db.models import Q
 import secrets
 
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
@@ -115,10 +115,11 @@ class RepairPdfView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         filename = doc.original_filename or f"act_{repair.tracking_code}.pdf"
-        fh = doc.file.open("rb")
-        resp = FileResponse(fh, as_attachment=True, filename=filename)
-        resp["Content-Type"] = "application/pdf"
-        return resp
+        with doc.file.open("rb") as fh:
+            pdf_bytes = fh.read()
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 class RepairPdfExportView(APIView):
