@@ -4402,8 +4402,37 @@ textarea { resize: vertical; }
     gap: var(--s4);
   }
 
-  .repairs-web-surface {
+  /* Перебить .kanban-workspace .repairs-web-surface { display: flex } — иначе на мобилке видны и список, и канбан (двойной Completed и т.д.). */
+  .kanban-workspace .repairs-web-surface {
     display: none;
+  }
+
+  /* Как у dashboard-folder-tabs: без горизонтального скролла / «ползунка». */
+  .repair-mobile-filter-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow-x: visible;
+    overflow-y: visible;
+    padding-bottom: 0;
+  }
+
+  .repair-mobile-filter-strip > button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .repair-mobile-filter {
+    width: 100%;
+    max-width: none;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+    min-height: 44px;
+  }
+
+  .repair-mobile-filter span,
+  .repair-mobile-filter strong {
+    text-align: center;
   }
 
   .vehicles-mobile-surface {
@@ -4973,13 +5002,22 @@ textarea { resize: vertical; }
     padding: var(--s4);
   }
 
+  /* Селект и кнопка в одном ряду + width:100% у кнопки давали наложение на узкой ширине. */
   .inline-owner-header {
+    flex-direction: column;
     align-items: stretch;
+    gap: var(--s3);
+  }
+
+  .inline-owner-select {
+    width: 100%;
+    flex: none;
   }
 
   .inline-owner-toggle {
     justify-content: center;
     width: 100%;
+    align-self: stretch;
   }
 
   .vehicle-modal-actions {
