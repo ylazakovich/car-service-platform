@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import statistics
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -16,7 +16,6 @@ from rest_framework.views import APIView
 
 from purchases.models import Purchase
 from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot
-from services.models import Service
 
 
 def _parse_iso_date(value: str) -> date | None:
@@ -443,6 +442,9 @@ class StaffDashboardAnalyticsView(APIView):
         }
 
     def _service_board_block(self, op_start: date, op_end: date) -> dict:
+        today = timezone.localdate()
+        overdue_without_estimate_after = today - timedelta(days=7)
+
         range_repairs = Repair.objects.filter(
             created_at__date__lte=op_end,
         ).filter(Q(completed_at__isnull=True) | Q(completed_at__gte=op_start))
@@ -477,13 +479,23 @@ class StaffDashboardAnalyticsView(APIView):
             if repair.completed_at is None:
                 continue
             cycle_days.append((repair.completed_at - repair.created_at.date()).days)
-        median_cycle_time_days = float(statistics.median(cycle_days)) if cycle_days else None
+        average_cycle_time_days = round(sum(cycle_days) / len(cycle_days), 2) if cycle_days else None
 
         current_open_qs = Repair.objects.exclude(status=Repair.Status.COMPLETED)
         waiting_parts_current = current_open_qs.filter(status=Repair.Status.WAITING_PARTS).count()
         open_repairs_current = current_open_qs.count()
+        overdue_repairs_current = current_open_qs.filter(
+            Q(estimated_date__lt=today)
+            | (Q(estimated_date__isnull=True) & Q(created_at__date__lt=overdue_without_estimate_after))
+        ).count()
+        waiting_parts_qs = current_open_qs.filter(status=Repair.Status.WAITING_PARTS)
+        waiting_parts_oldest_days = None
+        waiting_parts_updated_dates = list(waiting_parts_qs.values_list("updated_at", flat=True))
+        if waiting_parts_updated_dates:
+            waiting_parts_oldest_days = max(
+                (today - updated_at.date()).days for updated_at in waiting_parts_updated_dates
+            )
 
-        services_by_name = {service.name: service for service in Service.objects.all()}
         master_ids = set(Repair.objects.filter(master_id__isnull=False).values_list("master_id", flat=True))
         master_ids.update(
             get_user_model().objects.filter(role=get_user_model().Role.STAFF).values_list("id", flat=True)
@@ -493,17 +505,12 @@ class StaffDashboardAnalyticsView(APIView):
         current_open_by_master = list(
             current_open_qs.filter(master_id__isnull=False).values("master_id").annotate(
                 assigned_open_current=Count("id"),
+                new_current=Count("id", filter=Q(status=Repair.Status.NEW)),
+                in_progress_current=Count("id", filter=Q(status=Repair.Status.IN_PROGRESS)),
                 waiting_parts_current=Count("id", filter=Q(status=Repair.Status.WAITING_PARTS)),
             )
         )
         current_master_counts = {row["master_id"]: row for row in current_open_by_master}
-
-        estimated_value_by_master: dict[int, Decimal] = {}
-        for repair in current_open_qs.filter(master_id__isnull=False):
-            service = services_by_name.get(repair.service_name)
-            if service is None or service.price is None:
-                continue
-            estimated_value_by_master[repair.master_id] = estimated_value_by_master.get(repair.master_id, Decimal("0")) + service.price
 
         completed_range_with_totals = list(completed_in_range_qs.filter(master_id__isnull=False))
         completed_repair_ids = [repair.id for repair in completed_range_with_totals]
@@ -525,14 +532,10 @@ class StaffDashboardAnalyticsView(APIView):
         )
         completed_counts_by_master = {row["master_id"]: row["completed_in_range"] for row in completed_repairs_by_master}
 
-        cycle_days_by_master: dict[int, list[int]] = {}
         actual_value_by_master: dict[int, Decimal] = {}
         for repair in completed_range_with_totals:
             if repair.master_id is None or repair.completed_at is None:
                 continue
-            cycle_days_by_master.setdefault(repair.master_id, []).append(
-                (repair.completed_at - repair.created_at.date()).days
-            )
             latest_doc_id = latest_doc_id_by_repair.get(repair.id)
             latest_document_total = snapshot_total_by_doc.get(latest_doc_id) if latest_doc_id is not None else None
             if latest_document_total is not None:
@@ -558,17 +561,16 @@ class StaffDashboardAnalyticsView(APIView):
                     "master_id": master.id,
                     "display_name": display_name,
                     "assigned_open_current": current_counts.get("assigned_open_current", 0),
+                    "new_current": current_counts.get("new_current", 0),
+                    "in_progress_current": current_counts.get("in_progress_current", 0),
                     "waiting_parts_current": current_counts.get("waiting_parts_current", 0),
-                    "estimated_assigned_value_current": _decimal_to_float(estimated_value_by_master.get(master.id)),
                 }
             )
-            master_cycle_days = cycle_days_by_master.get(master.id, [])
             masters_range.append(
                 {
                     "master_id": master.id,
                     "display_name": display_name,
                     "completed_in_range": completed_counts_by_master.get(master.id, 0),
-                    "median_cycle_time_days": float(statistics.median(master_cycle_days)) if master_cycle_days else None,
                     "actual_service_value_completed": _decimal_to_float(actual_value_by_master.get(master.id)),
                 }
             )
@@ -593,11 +595,13 @@ class StaffDashboardAnalyticsView(APIView):
                 "returning_customers_in_range": returning_customers_in_range,
                 "non_returning_customers_in_range": non_returning_customers_in_range,
                 "returning_ratio": returning_ratio,
-                "median_cycle_time_days": median_cycle_time_days,
+                "average_cycle_time_days": average_cycle_time_days,
                 "completed_repairs_in_range": completed_in_range_qs.count(),
             },
             "current_snapshot": {
                 "waiting_parts_current": waiting_parts_current,
+                "waiting_parts_oldest_days": waiting_parts_oldest_days,
+                "overdue_repairs_current": overdue_repairs_current,
                 "open_repairs_current": open_repairs_current,
             },
             "all_time_totals": {

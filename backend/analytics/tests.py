@@ -1,5 +1,5 @@
 import tempfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -347,12 +347,20 @@ class StaffDashboardAnalyticsTests(TestCase):
             created_at=timezone.make_aware(datetime(2026, 1, 10, 10, 0, 0)),
             master=master_a,
         )
+        Repair.objects.filter(pk=open_repair.pk).update(estimated_date=timezone.localdate() - timedelta(days=1))
+        new_repair = self._create_repair(
+            service_name="Oil Change",
+            status=Repair.Status.NEW,
+            created_at=timezone.make_aware(datetime(2026, 1, 12, 10, 0, 0)),
+            master=master_a,
+        )
         waiting_repair = self._create_repair(
             service_name="Oil Change",
             status=Repair.Status.WAITING_PARTS,
             created_at=timezone.make_aware(datetime(2026, 1, 11, 10, 0, 0)),
             master=master_b,
         )
+        Repair.objects.filter(pk=waiting_repair.pk).update(updated_at=timezone.now() - timedelta(days=4))
         completed_a = self._create_repair(
             service_name="Oil Change",
             status=Repair.Status.COMPLETED,
@@ -400,21 +408,23 @@ class StaffDashboardAnalyticsTests(TestCase):
 
         service_board = response.json()["service_board"]
         range_summary = service_board["range_summary"]
-        self.assertEqual(range_summary["open_repairs_end_of_range"], 2)
+        self.assertEqual(range_summary["open_repairs_end_of_range"], 3)
         self.assertEqual(range_summary["vehicles_in_range"], 2)
         self.assertEqual(range_summary["customers_in_range"], 2)
         self.assertEqual(range_summary["returning_customers_in_range"], 1)
         self.assertEqual(range_summary["non_returning_customers_in_range"], 1)
         self.assertEqual(range_summary["returning_ratio"], 0.5)
-        self.assertEqual(range_summary["median_cycle_time_days"], 12.0)
+        self.assertEqual(range_summary["average_cycle_time_days"], 12.0)
         self.assertEqual(range_summary["completed_repairs_in_range"], 2)
 
         current_snapshot = service_board["current_snapshot"]
+        self.assertEqual(current_snapshot["overdue_repairs_current"], 3)
         self.assertEqual(current_snapshot["waiting_parts_current"], 1)
-        self.assertEqual(current_snapshot["open_repairs_current"], 2)
+        self.assertEqual(current_snapshot["waiting_parts_oldest_days"], 4)
+        self.assertEqual(current_snapshot["open_repairs_current"], 3)
 
         all_time = service_board["all_time_totals"]
-        self.assertEqual(all_time["repairs_total"], 5)
+        self.assertEqual(all_time["repairs_total"], 6)
         self.assertEqual(all_time["vehicles_total"], 2)
         self.assertEqual(all_time["customers_total"], 2)
         self.assertEqual(all_time["returning_customers_total"], 1)
@@ -422,21 +432,22 @@ class StaffDashboardAnalyticsTests(TestCase):
         self.assertEqual(all_time["masters_total"], 3)
 
         masters_current = {row["master_id"]: row for row in service_board["masters_current"]}
-        self.assertEqual(masters_current[master_a.id]["assigned_open_current"], 1)
+        self.assertEqual(masters_current[master_a.id]["assigned_open_current"], 2)
+        self.assertEqual(masters_current[master_a.id]["new_current"], 1)
+        self.assertEqual(masters_current[master_a.id]["in_progress_current"], 1)
         self.assertEqual(masters_current[master_a.id]["waiting_parts_current"], 0)
-        self.assertEqual(masters_current[master_a.id]["estimated_assigned_value_current"], 400.0)
         self.assertEqual(masters_current[master_b.id]["assigned_open_current"], 1)
+        self.assertEqual(masters_current[master_b.id]["new_current"], 0)
+        self.assertEqual(masters_current[master_b.id]["in_progress_current"], 0)
         self.assertEqual(masters_current[master_b.id]["waiting_parts_current"], 1)
-        self.assertEqual(masters_current[master_b.id]["estimated_assigned_value_current"], 150.0)
 
         masters_range = {row["master_id"]: row for row in service_board["masters_range"]}
         self.assertEqual(masters_range[master_a.id]["completed_in_range"], 1)
-        self.assertEqual(masters_range[master_a.id]["median_cycle_time_days"], 10.0)
         self.assertEqual(masters_range[master_a.id]["actual_service_value_completed"], 200.0)
         self.assertEqual(masters_range[master_b.id]["completed_in_range"], 1)
-        self.assertEqual(masters_range[master_b.id]["median_cycle_time_days"], 14.0)
         self.assertEqual(masters_range[master_b.id]["actual_service_value_completed"], 470.0)
 
         # Existing current repairs stay untouched to ensure the payload is purely read-only.
+        self.assertEqual(Repair.objects.get(pk=new_repair.pk).status, Repair.Status.NEW)
         self.assertEqual(Repair.objects.get(pk=open_repair.pk).status, Repair.Status.IN_PROGRESS)
         self.assertEqual(Repair.objects.get(pk=waiting_repair.pk).status, Repair.Status.WAITING_PARTS)

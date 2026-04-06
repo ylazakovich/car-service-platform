@@ -552,6 +552,25 @@ input.friendly-date-input {
   font-size: 0.92rem;
 }
 
+.friendly-date-range-chip-input {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0;
+  width: 100%;
+}
+
+.friendly-date-range-chip-input::placeholder {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.friendly-date-range-chip-input:focus {
+  outline: none;
+}
+
 .friendly-date-range-chip-active {
   border-color: rgba(205, 216, 58, 0.24);
   background: rgba(205, 216, 58, 0.08);
@@ -2558,6 +2577,37 @@ button.moneyflow-series-toggle {
   text-transform: uppercase;
 }
 
+.dashboard-worker-stats-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dashboard-worker-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-worker-stat-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.dashboard-worker-stat-row span {
+  color: var(--text-soft);
+}
+
+.dashboard-worker-stat-row strong {
+  color: var(--text-mid);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 /* ═══════════════════════════════════════════════
    METRIC CARDS
    ═══════════════════════════════════════════════ */
@@ -2612,6 +2662,19 @@ button.moneyflow-series-toggle {
   display: grid;
   gap: var(--s4);
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.service-board-range-grid {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.service-board-range-panel {
+  min-width: 0;
+}
+
+.service-board-range-metrics-flow {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .section-split {
@@ -3232,11 +3295,20 @@ button.moneyflow-series-toggle {
 }
 
 .purchase-modal-tabs {
-  margin-bottom: var(--s3);
+  margin-top: var(--s3);
+  margin-bottom: var(--s5);
 }
 
 .purchase-modal-stack {
   min-height: 12rem;
+}
+
+.purchase-date-field > span {
+  min-height: calc(2 * 1.35em);
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.35;
+  text-wrap: balance;
 }
 
 @media (min-width: 900px) {
@@ -4082,6 +4154,12 @@ button.moneyflow-series-toggle {
 .purchase-detail-modal .panel-header h3,
 .purchase-form-modal .panel-header h3 {
   margin: 0;
+}
+
+.purchase-detail-modal .panel-header,
+.purchase-form-modal .panel-header {
+  padding-top: 0;
+  padding-bottom: var(--s4);
 }
 
 .repair-form-stack,

@@ -136,11 +136,13 @@ function createStubDashboardAnalyticsResponse(): DashboardAnalyticsResponse {
         returning_customers_in_range: 0,
         non_returning_customers_in_range: 0,
         returning_ratio: null,
-        median_cycle_time_days: null,
+        average_cycle_time_days: null,
         completed_repairs_in_range: 0,
       },
       current_snapshot: {
         waiting_parts_current: 0,
+        waiting_parts_oldest_days: null,
+        overdue_repairs_current: 0,
         open_repairs_current: 0,
       },
       all_time_totals: {
@@ -326,7 +328,7 @@ describe("bootstrap application", () => {
                 returning_customers_in_range: 0,
                 non_returning_customers_in_range: 1,
                 returning_ratio: 0,
-                median_cycle_time_days: null,
+                average_cycle_time_days: null,
                 completed_repairs_in_range: 0,
               },
               current_snapshot: {
@@ -873,7 +875,7 @@ describe("bootstrap application", () => {
     const startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - 30);
 
-    const rangeInput = await screen.findByLabelText("Date range");
+    const rangeInput = await screen.findByPlaceholderText("dd-mm-yyyy - dd-mm-yyyy");
 
     expect(rangeInput).toHaveValue(`${formatExpectedDateInput(startDate)} - ${formatExpectedDateInput(endDate)}`);
 
@@ -886,9 +888,24 @@ describe("bootstrap application", () => {
 
     await user.click(screen.getByRole("button", { name: "Dashboard" }));
     await waitFor(() => {
-      expect(screen.getByLabelText("Date range")).toHaveValue(
+      expect(screen.getByPlaceholderText("dd-mm-yyyy - dd-mm-yyyy")).toHaveValue(
         `${formatExpectedDateInput(startDate)} - ${formatExpectedDateInput(endDate)}`
       );
+    });
+  });
+
+  it("allows typing a dashboard date range manually", async () => {
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+
+    const rangeInput = await screen.findByPlaceholderText("dd-mm-yyyy - dd-mm-yyyy");
+    await user.clear(rangeInput);
+    await user.type(rangeInput, "01-02-2025 - 28-02-2025{enter}");
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("dd-mm-yyyy - dd-mm-yyyy")).toHaveValue("01-02-2025 - 28-02-2025");
     });
   });
 
@@ -912,11 +929,13 @@ describe("bootstrap application", () => {
             returning_customers_in_range: 2,
             non_returning_customers_in_range: 1,
             returning_ratio: 2 / 3,
-            median_cycle_time_days: 6,
+            average_cycle_time_days: 6,
             completed_repairs_in_range: 7,
           },
           current_snapshot: {
             waiting_parts_current: 2,
+            waiting_parts_oldest_days: 9,
+            overdue_repairs_current: 3,
             open_repairs_current: 4,
           },
           all_time_totals: {
@@ -932,8 +951,9 @@ describe("bootstrap application", () => {
               master_id: 10,
               display_name: "Chris North",
               assigned_open_current: 3,
+              new_current: 1,
+              in_progress_current: 1,
               waiting_parts_current: 1,
-              estimated_assigned_value_current: 950,
             },
           ],
           masters_range: [
@@ -941,7 +961,6 @@ describe("bootstrap application", () => {
               master_id: 10,
               display_name: "Chris North",
               completed_in_range: 4,
-              median_cycle_time_days: 5,
               actual_service_value_completed: 1800,
             },
           ],
@@ -983,7 +1002,6 @@ describe("bootstrap application", () => {
     expect(screen.getByRole("heading", { name: "Current load and performance", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Registry baseline", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Repair flow", level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Vehicles and clients", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Workshop objects", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Loyalty split", level: 3 })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Live operations", level: 3 })).not.toBeInTheDocument();
@@ -996,13 +1014,14 @@ describe("bootstrap application", () => {
 
     await waitFor(() => {
       expect(within(selectedRange).getByText("5")).toBeInTheDocument();
-      expect(within(selectedRange).getByText("2")).toBeInTheDocument();
-      expect(within(selectedRange).getByText("4")).toBeInTheDocument();
-      expect(within(selectedRange).getByText("3")).toBeInTheDocument();
       expect(within(selectedRange).getAllByText("6 d").length).toBeGreaterThan(0);
       expect(within(selectedRange).getByText("7")).toBeInTheDocument();
+      expect(within(selectedRange).getAllByText("2").length).toBeGreaterThan(0);
       expect(within(mastersSection).getByText("3 masters in the workshop roster.")).toBeInTheDocument();
-      expect(within(mastersSection).getByText(/950,00\s*zł/)).toBeInTheDocument();
+      expect(within(mastersSection).getByText("New")).toBeInTheDocument();
+      expect(within(mastersSection).getByText("In progress")).toBeInTheDocument();
+      expect(within(mastersSection).getByText("Waiting parts")).toBeInTheDocument();
+      expect(within(mastersSection).getAllByText("1").length).toBeGreaterThan(0);
       expect(within(mastersSection).getByText(/1800,00\s*zł/)).toBeInTheDocument();
       expect(within(mastersSection).getAllByText("Chris North")).toHaveLength(2);
       expect(within(allTimeSection).getByText("18")).toBeInTheDocument();

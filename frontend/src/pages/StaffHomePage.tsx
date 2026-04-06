@@ -479,6 +479,57 @@ function formatDateRangeInputValue(startValue: string, endValue: string): string
   return "";
 }
 
+function parseDateRangeInputValue(value: string): DashboardDateRange | null {
+  const normalized = value.trim();
+  if (!normalized) {
+    return { start_date: "", end_date: "" };
+  }
+
+  const fullRangeMatch = normalized.match(
+    /^((?:\d{4}-\d{2}-\d{2})|(?:\d{2}[./-]\d{2}[./-]\d{4}))\s*-\s*((?:\d{4}-\d{2}-\d{2})|(?:\d{2}[./-]\d{2}[./-]\d{4}))$/
+  );
+  if (fullRangeMatch) {
+    const startParsed = parseDateInputValue(fullRangeMatch[1] ?? "");
+    const endParsed = parseDateInputValue(fullRangeMatch[2] ?? "");
+    if (startParsed === null || endParsed === null) {
+      return null;
+    }
+    return normalizeDashboardDateRange({
+      start_date: startParsed || "",
+      end_date: endParsed || "",
+    });
+  }
+
+  const startOnly = parseDateInputValue(normalized);
+  if (startOnly !== null) {
+    return { start_date: startOnly || "", end_date: "" };
+  }
+
+  const twoPartRange = normalized.split(/\s+-\s+/);
+  if (twoPartRange.length === 1) {
+    const startOnlyFallback = parseDateInputValue(twoPartRange[0] ?? "");
+    if (startOnlyFallback === null) {
+      return null;
+    }
+    return { start_date: startOnlyFallback || "", end_date: "" };
+  }
+
+  if (twoPartRange.length !== 2) {
+    return null;
+  }
+
+  const startParsed = parseDateInputValue(twoPartRange[0] ?? "");
+  const endParsed = parseDateInputValue(twoPartRange[1] ?? "");
+  if (startParsed === null || endParsed === null) {
+    return null;
+  }
+
+  return normalizeDashboardDateRange({
+    start_date: startParsed || "",
+    end_date: endParsed || "",
+  });
+}
+
 type FriendlyDateInputProps = {
   value: string;
   onChange: (value: string) => void;
@@ -678,6 +729,9 @@ function FriendlyDateRangeInput({
   const normalizedRange = normalizeDashboardDateRange({ start_date: startValue, end_date: endValue });
   const [isOpen, setIsOpen] = useState(false);
   const [draftRange, setDraftRange] = useState<DashboardDateRange>(normalizedRange);
+  const [draftRangeInput, setDraftRangeInput] = useState(formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date));
+  const [draftStartInput, setDraftStartInput] = useState(formatDateInputValue(normalizedRange.start_date));
+  const [draftEndInput, setDraftEndInput] = useState(formatDateInputValue(normalizedRange.end_date));
   const [selectionStep, setSelectionStep] = useState<"start" | "end">("start");
   const [visibleMonth, setVisibleMonth] = useState(() =>
     getInitialCalendarMonth(normalizedRange.start_date || normalizedRange.end_date, min, max)
@@ -685,11 +739,17 @@ function FriendlyDateRangeInput({
 
   useEffect(() => {
     setDraftRange(normalizedRange);
+    setDraftRangeInput(formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date));
+    setDraftStartInput(formatDateInputValue(normalizedRange.start_date));
+    setDraftEndInput(formatDateInputValue(normalizedRange.end_date));
   }, [normalizedRange.end_date, normalizedRange.start_date]);
 
   useEffect(() => {
     if (isOpen) {
       setDraftRange(normalizedRange);
+      setDraftRangeInput(formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date));
+      setDraftStartInput(formatDateInputValue(normalizedRange.start_date));
+      setDraftEndInput(formatDateInputValue(normalizedRange.end_date));
       setSelectionStep(normalizedRange.start_date && !normalizedRange.end_date ? "end" : "start");
       setVisibleMonth(getInitialCalendarMonth(normalizedRange.start_date || normalizedRange.end_date, min, max));
     }
@@ -700,6 +760,9 @@ function FriendlyDateRangeInput({
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setDraftRange(normalizedRange);
+        setDraftRangeInput(formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date));
+        setDraftStartInput(formatDateInputValue(normalizedRange.start_date));
+        setDraftEndInput(formatDateInputValue(normalizedRange.end_date));
         setSelectionStep("start");
       }
     }
@@ -708,6 +771,9 @@ function FriendlyDateRangeInput({
       if (event.key === "Escape") {
         setIsOpen(false);
         setDraftRange(normalizedRange);
+        setDraftRangeInput(formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date));
+        setDraftStartInput(formatDateInputValue(normalizedRange.start_date));
+        setDraftEndInput(formatDateInputValue(normalizedRange.end_date));
         setSelectionStep("start");
       }
     }
@@ -737,6 +803,9 @@ function FriendlyDateRangeInput({
   function handleDaySelect(iso: string) {
     if (selectionStep === "start" || !draftRange.start_date || (draftRange.start_date && draftRange.end_date)) {
       setDraftRange({ start_date: iso, end_date: "" });
+      setDraftStartInput(formatDateInputValue(iso));
+      setDraftEndInput("");
+      setDraftRangeInput(formatDateRangeInputValue(iso, ""));
       setSelectionStep("end");
       return;
     }
@@ -748,9 +817,77 @@ function FriendlyDateRangeInput({
 
     const normalizedNextRange = normalizeDashboardDateRange(nextRange);
     setDraftRange(normalizedNextRange);
+    setDraftStartInput(formatDateInputValue(normalizedNextRange.start_date));
+    setDraftEndInput(formatDateInputValue(normalizedNextRange.end_date));
+    setDraftRangeInput(formatDateRangeInputValue(normalizedNextRange.start_date, normalizedNextRange.end_date));
     onChange(normalizedNextRange);
     setSelectionStep("start");
     setIsOpen(false);
+  }
+
+  function commitRangeInput() {
+    const parsedRange = parseDateRangeInputValue(draftRangeInput);
+    if (!parsedRange) {
+      setDraftRangeInput(formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date));
+      return;
+    }
+
+    const startValid =
+      !parsedRange.start_date || isIsoDateWithinBounds(parsedRange.start_date, min, max);
+    const endValid =
+      !parsedRange.end_date || isIsoDateWithinBounds(parsedRange.end_date, min, max);
+    if (!startValid || !endValid) {
+      setDraftRangeInput(formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date));
+      return;
+    }
+
+    setDraftRange(parsedRange);
+    setDraftStartInput(formatDateInputValue(parsedRange.start_date));
+    setDraftEndInput(formatDateInputValue(parsedRange.end_date));
+    setDraftRangeInput(formatDateRangeInputValue(parsedRange.start_date, parsedRange.end_date));
+
+    if (parsedRange.start_date && parsedRange.end_date) {
+      onChange(parsedRange);
+      setVisibleMonth(getInitialCalendarMonth(parsedRange.start_date || parsedRange.end_date, min, max));
+    }
+  }
+
+  function commitBoundaryInput(boundary: "start" | "end") {
+    const rawValue = boundary === "start" ? draftStartInput : draftEndInput;
+    const parsed = parseDateInputValue(rawValue);
+    if (parsed === null) {
+      if (boundary === "start") {
+        setDraftStartInput(formatDateInputValue(draftRange.start_date));
+      } else {
+        setDraftEndInput(formatDateInputValue(draftRange.end_date));
+      }
+      return;
+    }
+
+    if (parsed && !isIsoDateWithinBounds(parsed, min, max)) {
+      if (boundary === "start") {
+        setDraftStartInput(formatDateInputValue(draftRange.start_date));
+      } else {
+        setDraftEndInput(formatDateInputValue(draftRange.end_date));
+      }
+      return;
+    }
+
+    const nextRange = normalizeDashboardDateRange({
+      start_date: boundary === "start" ? (parsed || "") : draftRange.start_date,
+      end_date: boundary === "end" ? (parsed || "") : draftRange.end_date,
+    });
+
+    setDraftRange(nextRange);
+    setDraftStartInput(formatDateInputValue(nextRange.start_date));
+    setDraftEndInput(formatDateInputValue(nextRange.end_date));
+    setDraftRangeInput(formatDateRangeInputValue(nextRange.start_date, nextRange.end_date));
+    setSelectionStep(nextRange.start_date && !nextRange.end_date ? "end" : "start");
+
+    if (nextRange.start_date && nextRange.end_date) {
+      onChange(nextRange);
+      setVisibleMonth(getInitialCalendarMonth(nextRange.start_date || nextRange.end_date, min, max));
+    }
   }
 
   return (
@@ -759,19 +896,27 @@ function FriendlyDateRangeInput({
         <input
           id={inputId}
           className="friendly-date-input friendly-date-range-input"
-          value={formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date)}
+          value={draftRangeInput}
+          onChange={(event) => setDraftRangeInput(event.target.value)}
           onFocus={() => setIsOpen(true)}
           onClick={() => setIsOpen(true)}
+          onBlur={(event) => {
+            const nextFocused = event.relatedTarget as Node | null;
+            if (nextFocused && rootRef.current?.contains(nextFocused)) {
+              return;
+            }
+            commitRangeInput();
+          }}
           onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
+            if (event.key === "Enter") {
               event.preventDefault();
+              commitRangeInput();
               setIsOpen(true);
             }
           }}
           placeholder={placeholder}
           autoComplete="off"
           disabled={disabled}
-          readOnly
           aria-haspopup="dialog"
           aria-expanded={isOpen}
           aria-controls={`${inputId}-calendar`}
@@ -789,11 +934,43 @@ function FriendlyDateRangeInput({
           <div className="friendly-date-range-summary">
             <div className={`friendly-date-range-chip ${selectionStep === "start" ? "friendly-date-range-chip-active" : ""}`}>
               <span>Start</span>
-              <strong>{draftRange.start_date ? formatDateInputValue(draftRange.start_date) : "Pick date"}</strong>
+              <input
+                className="friendly-date-range-chip-input"
+                value={draftStartInput}
+                onChange={(event) => setDraftStartInput(event.target.value)}
+                onFocus={() => setSelectionStep("start")}
+                onBlur={() => commitBoundaryInput("start")}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    commitBoundaryInput("start");
+                  }
+                }}
+                placeholder="dd-mm-yyyy"
+                inputMode="numeric"
+                autoComplete="off"
+                disabled={disabled}
+              />
             </div>
             <div className={`friendly-date-range-chip ${selectionStep === "end" ? "friendly-date-range-chip-active" : ""}`}>
               <span>End</span>
-              <strong>{draftRange.end_date ? formatDateInputValue(draftRange.end_date) : "Pick date"}</strong>
+              <input
+                className="friendly-date-range-chip-input"
+                value={draftEndInput}
+                onChange={(event) => setDraftEndInput(event.target.value)}
+                onFocus={() => setSelectionStep("end")}
+                onBlur={() => commitBoundaryInput("end")}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    commitBoundaryInput("end");
+                  }
+                }}
+                placeholder="dd-mm-yyyy"
+                inputMode="numeric"
+                autoComplete="off"
+                disabled={disabled}
+              />
             </div>
           </div>
           <p className="friendly-date-range-copy">{helperText}</p>
@@ -3014,16 +3191,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         Range cards use the selected Service Board window. Open repairs are calculated as backlog at the
                         end of that range.
                       </p>
-                      <div className="dashboard-grid">
-                        <section className="panel dashboard-mini-panel">
+                      <div className="dashboard-grid service-board-range-grid">
+                        <section className="panel dashboard-mini-panel service-board-range-panel service-board-range-panel-flow">
                           <div className="panel-header">
                             <div>
                               <p className="eyebrow">Operations in range</p>
                               <h3>Repair flow</h3>
                             </div>
                           </div>
-                          <div className="metric-grid metric-grid-three">
-                            <article className="metric-card metric-card-accent">
+                          <div className="metric-grid service-board-range-metrics service-board-range-metrics-flow">
+                            <article className="metric-card">
                               <span className="metric-label">Open repairs</span>
                               <strong>{formatCount(serviceBoardAnalytics.range_summary.open_repairs_end_of_range)}</strong>
                               <p>Repairs still not completed by the range end date.</p>
@@ -3039,34 +3216,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <p>Closed jobs used for range performance.</p>
                             </article>
                             <article className="metric-card">
-                              <span className="metric-label">Median cycle time</span>
+                              <span className="metric-label">Average cycle time</span>
                               <strong>
-                                {serviceBoardAnalytics.range_summary.median_cycle_time_days != null
-                                  ? `${serviceBoardAnalytics.range_summary.median_cycle_time_days} d`
+                                {serviceBoardAnalytics.range_summary.average_cycle_time_days != null
+                                  ? `${serviceBoardAnalytics.range_summary.average_cycle_time_days} d`
                                   : "—"}
                               </strong>
                               <p>For repairs completed in the selected range.</p>
-                            </article>
-                          </div>
-                        </section>
-
-                        <section className="panel dashboard-mini-panel">
-                          <div className="panel-header">
-                            <div>
-                              <p className="eyebrow">Customer base in range</p>
-                              <h3>Vehicles and clients</h3>
-                            </div>
-                          </div>
-                          <div className="metric-grid metric-grid-three">
-                            <article className="metric-card">
-                              <span className="metric-label">Vehicles</span>
-                              <strong>{formatCount(serviceBoardAnalytics.range_summary.vehicles_in_range)}</strong>
-                              <p>Unique vehicles with repairs intersecting the range.</p>
-                            </article>
-                            <article className="metric-card">
-                              <span className="metric-label">Customers</span>
-                              <strong>{formatCount(serviceBoardAnalytics.range_summary.customers_in_range)}</strong>
-                              <p>Unique customers represented by those repairs.</p>
                             </article>
                           </div>
                         </section>
@@ -3101,9 +3257,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                   <strong>{master.display_name}</strong>
                                   <span className="tag">{formatCount(master.assigned_open_current)} open</span>
                                 </div>
-                                <div className="dashboard-worker-stats">
-                                  <span>Waiting parts {formatCount(master.waiting_parts_current)}</span>
-                                  <span>Estimate {formatCurrency(master.estimated_assigned_value_current)}</span>
+                                <div className="dashboard-worker-stats dashboard-worker-stats-list">
+                                  <div className="dashboard-worker-stat-row">
+                                    <span>New</span>
+                                    <strong>{formatCount(master.new_current)}</strong>
+                                  </div>
+                                  <div className="dashboard-worker-stat-row">
+                                    <span>In progress</span>
+                                    <strong>{formatCount(master.in_progress_current)}</strong>
+                                  </div>
+                                  <div className="dashboard-worker-stat-row">
+                                    <span>Waiting parts</span>
+                                    <strong>{formatCount(master.waiting_parts_current)}</strong>
+                                  </div>
                                 </div>
                               </article>
                             ))}
@@ -3128,11 +3294,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                   <span className="tag">{formatCount(master.completed_in_range)} done</span>
                                 </div>
                                 <div className="dashboard-worker-stats">
-                                  <span>
-                                    Median{" "}
-                                    {master.median_cycle_time_days != null ? `${master.median_cycle_time_days} d` : "—"}
-                                  </span>
-                                  <span>Actual {formatCurrency(master.actual_service_value_completed)}</span>
+                                  <span>Revenue {formatCurrency(master.actual_service_value_completed)}</span>
                                 </div>
                               </article>
                             ))}
@@ -4785,7 +4947,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <strong>Purchase Info</strong>
                   <div className="stack-form">
                     <div className="form-grid">
-                      <label>
+                      <label className="purchase-date-field">
                         <span>Order Date</span>
                         <FriendlyDateInput
                           value={purchaseModalForm.order_date}
@@ -4795,7 +4957,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         />
                       </label>
 
-                      <label>
+                      <label className="purchase-date-field">
                         <span>Approximate Delivery Date</span>
                         <FriendlyDateInput
                           value={purchaseModalForm.approximate_delivery_date}
@@ -5064,7 +5226,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
               <form className="stack-form" onSubmit={handlePurchaseSubmit}>
                 <div className="form-grid">
-                  <label>
+                  <label className="purchase-date-field">
                     <span>Order Date</span>
                     <FriendlyDateInput
                       value={purchaseForm.order_date}
@@ -5075,7 +5237,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     />
                   </label>
 
-                  <label>
+                  <label className="purchase-date-field">
                     <span>Approximate Delivery Date</span>
                     <FriendlyDateInput
                       value={purchaseForm.approximate_delivery_date}

@@ -33,12 +33,22 @@ WHERE phone IN (
     '+380504445566','+380675556677','+380936667788','+380507778899'
 );
 
--- Users (demo accounts — passwords match seed_admin defaults)
+-- Users (demo accounts — passwords match seed_admin/seed_staff defaults)
 INSERT INTO users (email, first_name, last_name, role, is_active, is_staff, is_superuser, password, created_at)
 VALUES
-    ('admin@autoservice.local', 'Admin', 'User',   'admin', true, true,  true,  'pbkdf2_sha256$1200000$u59JIdO8SIfCD2jcIJinCQ$iwA7WRvB8+8dK9fqq81N8UsE34wU16CrNI9R/LdIxEE=', NOW()),
-    ('staff@autoservice.local', 'Ivan',  'Master', 'staff', true, false, false, 'pbkdf2_sha256$1200000$q3nNHvqF73d16myDP3QMXM$/Vp/W0UOSiKcFLyODMQMF6pjlmlHk2wgxvt7I4nsdCE=', NOW())
-ON CONFLICT (email) DO NOTHING;
+    ('admin@autoservice.local', 'Admin', 'User',   'admin', true, true,  true,  'pbkdf2_sha256$1200000$0q47vafu3uAcpB4br2cyz0$RBdXsKhRgwJeURwQEVGhrS5ggRP3HXozkGjPFlH3h6c=', NOW()),
+    ('staff@autoservice.local', 'Ivan',  'Master', 'staff', true, false, false, 'pbkdf2_sha256$1200000$QLXgf0y8KSn48Z8T3bFull$uf8m+X1ZPlbDX8+I68Cd0ukSH4oVmJA51pMIsNJFFKU=', NOW()),
+    ('anna.master@autoservice.local', 'Anna', 'Koval', 'staff', true, false, false, 'pbkdf2_sha256$1200000$QLXgf0y8KSn48Z8T3bFull$uf8m+X1ZPlbDX8+I68Cd0ukSH4oVmJA51pMIsNJFFKU=', NOW()),
+    ('taras.master@autoservice.local', 'Taras', 'Melnyk', 'staff', true, false, false, 'pbkdf2_sha256$1200000$QLXgf0y8KSn48Z8T3bFull$uf8m+X1ZPlbDX8+I68Cd0ukSH4oVmJA51pMIsNJFFKU=', NOW())
+ON CONFLICT (email) DO UPDATE
+SET
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    role = EXCLUDED.role,
+    is_active = EXCLUDED.is_active,
+    is_staff = EXCLUDED.is_staff,
+    is_superuser = EXCLUDED.is_superuser,
+    password = EXCLUDED.password;
 
 -- Services (with demo prices in PLN)
 INSERT INTO services (name, description, price, is_active, created_at, updated_at)
@@ -883,10 +893,31 @@ VALUES
         1, 188.00, 285.00, 'TOR-3008', 'FV/2026/03/0700', '', false, NOW(), NOW()
     );
 
--- Assign staff master to all repairs where master is NULL
-UPDATE repairs
-SET master_id = (SELECT id FROM users WHERE email = 'staff@autoservice.local')
-WHERE master_id IS NULL;
+-- Distribute demo repairs evenly between the three demo masters for analytics widgets.
+WITH demo_masters AS (
+    SELECT
+        id,
+        ROW_NUMBER() OVER (ORDER BY email) - 1 AS slot
+    FROM users
+    WHERE email IN (
+        'anna.master@autoservice.local',
+        'staff@autoservice.local',
+        'taras.master@autoservice.local'
+    )
+),
+ranked_repairs AS (
+    SELECT
+        id,
+        (ROW_NUMBER() OVER (ORDER BY tracking_code, id) - 1) % 3 AS slot
+    FROM repairs
+    WHERE tracking_code LIKE 'TOR-%'
+)
+UPDATE repairs AS r
+SET master_id = dm.id
+FROM ranked_repairs AS rr
+JOIN demo_masters AS dm
+    ON dm.slot = rr.slot
+WHERE r.id = rr.id;
 
 -- Sequence resets
 SELECT setval(pg_get_serial_sequence('users',     'id'), MAX(id)) FROM users;

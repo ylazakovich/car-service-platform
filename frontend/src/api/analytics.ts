@@ -134,11 +134,13 @@ export type DashboardAnalyticsResponse = {
       returning_customers_in_range: number;
       non_returning_customers_in_range: number;
       returning_ratio: number | null;
-      median_cycle_time_days: number | null;
+      average_cycle_time_days: number | null;
       completed_repairs_in_range: number;
     };
     current_snapshot: {
       waiting_parts_current: number;
+      waiting_parts_oldest_days: number | null;
+      overdue_repairs_current: number;
       open_repairs_current: number;
     };
     all_time_totals: {
@@ -153,14 +155,14 @@ export type DashboardAnalyticsResponse = {
       master_id: number;
       display_name: string;
       assigned_open_current: number;
+      new_current: number;
+      in_progress_current: number;
       waiting_parts_current: number;
-      estimated_assigned_value_current: number;
     }>;
     masters_range: Array<{
       master_id: number;
       display_name: string;
       completed_in_range: number;
-      median_cycle_time_days: number | null;
       actual_service_value_completed: number;
     }>;
   };

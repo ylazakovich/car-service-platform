@@ -38,11 +38,12 @@ docker compose exec -T db psql \
 
 echo ""
 echo "Demo data loaded. The database now contains:"
-echo "  2 users   (admin@autoservice.local / staff@autoservice.local)"
+echo "  4 users   (admin + 3 masters: staff@autoservice.local, anna.master@autoservice.local, taras.master@autoservice.local)"
 echo "  54 services with PLN prices"
 echo "  10 customers"
 echo "  16 vehicles"
 echo "  ~50 repairs across all statuses (new / in_progress / waiting_parts / completed)"
+echo "  repair assignments split across 3 masters for dashboard analytics"
 echo "  ~30 purchases linked to repairs"
 echo "  10 suppliers"
 echo "  March 2026 moneyflow showcase data for the dashboard chart"
