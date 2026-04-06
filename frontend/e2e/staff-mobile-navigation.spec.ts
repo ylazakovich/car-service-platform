@@ -78,7 +78,10 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     try {
       await openVehicle.waitFor({ state: "visible", timeout: 25_000 });
     } catch {
-      test.skip(true, "Нет ТС в API (ожидается seed_e2e_data с E2E-CI-001) — в пустом реестре нет Mobile vehicles list");
+      test.skip(
+        true,
+        "Нет ТС в API (ожидается demo/demo_data.sql или иной сид с ТС) — в пустом реестре нет Mobile vehicles list",
+      );
       return;
     }
 
