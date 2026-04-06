@@ -2231,21 +2231,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         return right.repair.updated_at.localeCompare(left.repair.updated_at);
       });
   }, [moneyflowCalendarDisplayRange, purchases, repairs]);
-  const filteredServiceBoardRepairs = useMemo(
-    () =>
-      repairs.filter((repair) =>
-        isDateWithinRange(repair.created_at, serviceBoardDateRange.start_date, serviceBoardDateRange.end_date)
-      ),
-    [repairs, serviceBoardDateRange.end_date, serviceBoardDateRange.start_date]
-  );
-  const activeRepairs = useMemo(
-    () => filteredServiceBoardRepairs.filter((repair) => repair.status !== "completed"),
-    [filteredServiceBoardRepairs]
-  );
-  const waitingPartsRepairs = useMemo(
-    () => filteredServiceBoardRepairs.filter((repair) => repair.status === "waiting_parts"),
-    [filteredServiceBoardRepairs]
-  );
   const totalPartsSales = useMemo(
     () =>
       purchases.reduce(
@@ -2486,23 +2471,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       current && visibleMoneyflowCalendarLanes.some((lane) => lane.repair.id === current.repairId) ? current : null
     );
   }, [visibleMoneyflowCalendarLanes]);
-  const dashboardWorkerLoad = useMemo(
-    () =>
-      staffUsers.map((master) => {
-        const masterLabel = getStaffUserLabel(master);
-        const assignedRepairs = filteredServiceBoardRepairs.filter((repair) => Number(repair.master_id) === master.id);
-        const liveRepairs = assignedRepairs.filter((repair) => repair.status !== "completed");
-        return {
-          id: master.id,
-          name: masterLabel,
-          assignedCount: assignedRepairs.length,
-          liveCount: liveRepairs.length,
-          waitingPartsCount: liveRepairs.filter((repair) => repair.status === "waiting_parts").length,
-          latestJob: assignedRepairs[0]?.service_name ?? "No jobs yet",
-        };
-      }),
-    [filteredServiceBoardRepairs, staffUsers]
-  );
   const dashboardTabs: Array<{ id: DashboardTab; label: string; shortLabel: string }> = [
     { id: "moneyflow", label: "MoneyFlow", shortLabel: "Money" },
     { id: "warehouse", label: "Warehouse", shortLabel: "Stock" },
@@ -2523,6 +2491,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   function formatCount(value: number) {
     return new Intl.NumberFormat("pl-PL", {
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+
+  function formatPercent(value: number | null) {
+    if (value == null) {
+      return "—";
+    }
+    return new Intl.NumberFormat("pl-PL", {
+      style: "percent",
       maximumFractionDigits: 0,
     }).format(value);
   }
@@ -2606,16 +2584,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderDashboard() {
-    const recentRepairs = [...filteredServiceBoardRepairs]
-      .sort((left, right) => right.created_at.localeCompare(left.created_at))
-      .slice(0, 5);
-    const funnelStatuses: RepairStatus[] = ["new", "in_progress", "waiting_parts", "completed"];
-    const opAnalytics = dashboardAnalytics?.operational;
-    const activeWorkloadFromApi = opAnalytics?.active_workload_preview ?? [];
-    const recentlyCreatedFromApi = opAnalytics?.recently_created_preview ?? [];
-    const activeWorkloadRepairsFallback = [...activeRepairs].sort((left, right) =>
-      right.updated_at.localeCompare(left.updated_at)
-    );
     const pdfTotals = dashboardAnalytics?.pdf?.latest_act_totals;
     const serviceToActDelta = pdfTotals ? pdfTotals.labor_total - totalServiceSales : null;
     const partsToActDelta = pdfTotals ? pdfTotals.parts_client_total - totalPartsSales : null;
@@ -2623,6 +2591,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     const combinedToActDelta = pdfTotals ? pdfTotals.document_total - combinedLiveTotal : null;
     const pdfLag = dashboardAnalytics?.pdf?.completed_to_first_export_lag_days ?? null;
     const pdfAnalytics = dashboardAnalytics?.pdf ?? null;
+    const serviceBoardAnalytics = dashboardAnalytics?.service_board ?? null;
     const warehouseAnalytics = dashboardAnalytics?.warehouse ?? null;
     const warehouseToday = new Date();
     const warehouseTodayDay = String(warehouseToday.getDate()).padStart(2, "0");
@@ -3032,189 +3001,206 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
             {activeDashboardTab === "service_board" ? (
               <div className="workspace-stack">
-                <div className="metric-grid metric-grid-three">
-                  <article className="metric-card metric-card-accent">
-                    <span className="metric-label">Open Repairs</span>
-                    <strong>{activeRepairs.length}</strong>
-                    <p>Everything not yet moved to completed.</p>
-                  </article>
-                  <article className="metric-card">
-                    <span className="metric-label">Waiting Parts</span>
-                    <strong>{waitingPartsRepairs.length}</strong>
-                    <p>Jobs blocked on procurement delivery.</p>
-                  </article>
-                  <article className="metric-card">
-                    <span className="metric-label">Vehicles</span>
-                    <strong>{vehicles.length}</strong>
-                    <p>Active registry entries available for intake.</p>
-                  </article>
-                </div>
+                {serviceBoardAnalytics ? (
+                  <>
+                    <section className="dashboard-report-section" aria-label="Selected range">
+                      <div className="dashboard-report-head">
+                        <div>
+                          <p className="eyebrow">Selected range</p>
+                          <h3>Service Board KPIs</h3>
+                        </div>
+                      </div>
+                      <p className="workspace-copy">
+                        Range cards use the selected Service Board window. Open repairs are calculated as backlog at the
+                        end of that range.
+                      </p>
+                      <div className="dashboard-grid">
+                        <section className="panel dashboard-mini-panel">
+                          <div className="panel-header">
+                            <div>
+                              <p className="eyebrow">Operations in range</p>
+                              <h3>Repair flow</h3>
+                            </div>
+                          </div>
+                          <div className="metric-grid metric-grid-three">
+                            <article className="metric-card metric-card-accent">
+                              <span className="metric-label">Open repairs</span>
+                              <strong>{formatCount(serviceBoardAnalytics.range_summary.open_repairs_end_of_range)}</strong>
+                              <p>Repairs still not completed by the range end date.</p>
+                            </article>
+                            <article className="metric-card">
+                              <span className="metric-label">Waiting parts</span>
+                              <strong>{formatCount(serviceBoardAnalytics.current_snapshot.waiting_parts_current)}</strong>
+                              <p>Live-only metric based on the current status.</p>
+                            </article>
+                            <article className="metric-card">
+                              <span className="metric-label">Completed in range</span>
+                              <strong>{formatCount(serviceBoardAnalytics.range_summary.completed_repairs_in_range)}</strong>
+                              <p>Closed jobs used for range performance.</p>
+                            </article>
+                            <article className="metric-card">
+                              <span className="metric-label">Median cycle time</span>
+                              <strong>
+                                {serviceBoardAnalytics.range_summary.median_cycle_time_days != null
+                                  ? `${serviceBoardAnalytics.range_summary.median_cycle_time_days} d`
+                                  : "—"}
+                              </strong>
+                              <p>For repairs completed in the selected range.</p>
+                            </article>
+                          </div>
+                        </section>
 
-                {opAnalytics ? (
-                  <section className="dashboard-report-section">
-                    <div className="metric-grid metric-grid-three">
-                      <article className="metric-card">
-                        <span className="metric-label">Median cycle time</span>
-                        <strong>
-                          {opAnalytics.cycle_time_days.median != null
-                            ? `${opAnalytics.cycle_time_days.median} d`
-                            : "—"}
-                        </strong>
-                        <p>Create → complete for jobs finished in the ServiceBoard date range.</p>
-                      </article>
-                      <article className="metric-card">
-                        <span className="metric-label">Cycle p90</span>
-                        <strong>
-                          {opAnalytics.cycle_time_days.p90 != null ? `${opAnalytics.cycle_time_days.p90} d` : "—"}
-                        </strong>
-                        <p>Sample: {opAnalytics.cycle_time_days.sample_completed_in_range} completed.</p>
-                      </article>
-                      <article className="metric-card">
-                        <span className="metric-label">Created in range</span>
-                        <strong>{opAnalytics.repairs_created_in_range}</strong>
-                        <p>Repairs with created date inside the ServiceBoard period.</p>
-                      </article>
-                    </div>
-                    <p className="eyebrow" style={{ marginTop: "0.75rem" }}>
-                      Status funnel (created in period)
-                    </p>
-                    <div className="moneyflow-series-toggle-row" role="list">
-                      {funnelStatuses.map((status) => (
-                        <span key={status} className="moneyflow-series-toggle moneyflow-series-toggle-active" role="listitem">
-                          <span>{REPAIR_STATUS_LABELS[status]}</span>
-                          <span className="moneyflow-series-state">{opAnalytics.funnel_by_status[status] ?? 0}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </section>
+                        <section className="panel dashboard-mini-panel">
+                          <div className="panel-header">
+                            <div>
+                              <p className="eyebrow">Customer base in range</p>
+                              <h3>Vehicles and clients</h3>
+                            </div>
+                          </div>
+                          <div className="metric-grid metric-grid-three">
+                            <article className="metric-card">
+                              <span className="metric-label">Vehicles</span>
+                              <strong>{formatCount(serviceBoardAnalytics.range_summary.vehicles_in_range)}</strong>
+                              <p>Unique vehicles with repairs intersecting the range.</p>
+                            </article>
+                            <article className="metric-card">
+                              <span className="metric-label">Customers</span>
+                              <strong>{formatCount(serviceBoardAnalytics.range_summary.customers_in_range)}</strong>
+                              <p>Unique customers represented by those repairs.</p>
+                            </article>
+                          </div>
+                        </section>
+                      </div>
+                    </section>
+
+                    <section className="dashboard-report-section" aria-label="Masters">
+                      <div className="dashboard-report-head">
+                        <div>
+                          <p className="eyebrow">Masters</p>
+                          <h3>Current load and performance</h3>
+                          <p className="workspace-copy">
+                            {formatCount(serviceBoardAnalytics.all_time_totals.masters_total)} masters in the workshop roster.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="dashboard-grid">
+                        <section className="panel dashboard-mini-panel">
+                          <div className="panel-header">
+                            <div>
+                              <p className="eyebrow">Current load</p>
+                              <h3>Assigned now</h3>
+                            </div>
+                          </div>
+                          <div className="dashboard-worker-grid">
+                            {serviceBoardAnalytics.masters_current.length === 0 ? (
+                              <p className="workspace-note">No masters configured yet.</p>
+                            ) : null}
+                            {serviceBoardAnalytics.masters_current.map((master) => (
+                              <article className="dashboard-worker-card" key={`current-${master.master_id}`}>
+                                <div className="dashboard-worker-topline">
+                                  <strong>{master.display_name}</strong>
+                                  <span className="tag">{formatCount(master.assigned_open_current)} open</span>
+                                </div>
+                                <div className="dashboard-worker-stats">
+                                  <span>Waiting parts {formatCount(master.waiting_parts_current)}</span>
+                                  <span>Estimate {formatCurrency(master.estimated_assigned_value_current)}</span>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="panel dashboard-mini-panel">
+                          <div className="panel-header">
+                            <div>
+                              <p className="eyebrow">Range performance</p>
+                              <h3>Completed work</h3>
+                            </div>
+                          </div>
+                          <div className="dashboard-worker-grid">
+                            {serviceBoardAnalytics.masters_range.length === 0 ? (
+                              <p className="workspace-note">No range performance data available.</p>
+                            ) : null}
+                            {serviceBoardAnalytics.masters_range.map((master) => (
+                              <article className="dashboard-worker-card" key={`range-${master.master_id}`}>
+                                <div className="dashboard-worker-topline">
+                                  <strong>{master.display_name}</strong>
+                                  <span className="tag">{formatCount(master.completed_in_range)} done</span>
+                                </div>
+                                <div className="dashboard-worker-stats">
+                                  <span>
+                                    Median{" "}
+                                    {master.median_cycle_time_days != null ? `${master.median_cycle_time_days} d` : "—"}
+                                  </span>
+                                  <span>Actual {formatCurrency(master.actual_service_value_completed)}</span>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        </section>
+                      </div>
+                    </section>
+
+                    <section className="dashboard-report-section" aria-label="All-time totals">
+                      <div className="dashboard-report-head">
+                        <div>
+                          <p className="eyebrow">All-time totals</p>
+                          <h3>Registry baseline</h3>
+                        </div>
+                      </div>
+                      <div className="dashboard-grid">
+                        <section className="panel dashboard-mini-panel">
+                          <div className="panel-header">
+                            <div>
+                              <p className="eyebrow">Registry totals</p>
+                              <h3>Workshop objects</h3>
+                            </div>
+                          </div>
+                          <div className="metric-grid metric-grid-three">
+                            <article className="metric-card">
+                              <span className="metric-label">Repairs</span>
+                              <strong>{formatCount(serviceBoardAnalytics.all_time_totals.repairs_total)}</strong>
+                              <p>All repair records in the system.</p>
+                            </article>
+                            <article className="metric-card">
+                              <span className="metric-label">Vehicles</span>
+                              <strong>{formatCount(serviceBoardAnalytics.all_time_totals.vehicles_total)}</strong>
+                              <p>Total vehicles with at least one repair history entry.</p>
+                            </article>
+                            <article className="metric-card">
+                              <span className="metric-label">Customers</span>
+                              <strong>{formatCount(serviceBoardAnalytics.all_time_totals.customers_total)}</strong>
+                              <p>Total customers represented in repair history.</p>
+                            </article>
+                          </div>
+                        </section>
+
+                        <section className="panel dashboard-mini-panel">
+                          <div className="panel-header">
+                            <div>
+                              <p className="eyebrow">Customer totals</p>
+                              <h3>Loyalty split</h3>
+                            </div>
+                          </div>
+                          <div className="metric-grid metric-grid-three">
+                            <article className="metric-card">
+                              <span className="metric-label">Returning customers</span>
+                              <strong>{formatCount(serviceBoardAnalytics.all_time_totals.returning_customers_total)}</strong>
+                              <p>Customers with two or more repairs across the full history.</p>
+                            </article>
+                            <article className="metric-card">
+                              <span className="metric-label">Non-returning customers</span>
+                              <strong>{formatCount(serviceBoardAnalytics.all_time_totals.non_returning_customers_total)}</strong>
+                              <p>Customers with only one repair in the full history.</p>
+                            </article>
+                          </div>
+                        </section>
+                      </div>
+                    </section>
+                  </>
                 ) : (
-                  <p className="workspace-note">Operational analytics unavailable for this range.</p>
+                  <p className="workspace-note">Service Board analytics unavailable for this range.</p>
                 )}
-
-                <section className="panel dashboard-mini-panel">
-                  <div className="panel-header">
-                    <div>
-                      <p className="eyebrow">Repair Flow</p>
-                      <h3>Active workload</h3>
-                    </div>
-                    <div className="hero-actions">
-                      <button type="button" className="button button-secondary" onClick={() => onSelectSection("vehicles")}>
-                        Open Vehicles
-                      </button>
-                      <button type="button" className="button" onClick={() => onSelectSection("repairs")}>
-                        Open Repairs
-                      </button>
-                    </div>
-                  </div>
-                  <p className="workspace-copy">
-                    Non-completed jobs in the ServiceBoard period, ordered by last update (server) or the same filter
-                    client-side if offline.
-                  </p>
-                  <div className="dashboard-inline-list">
-                    {activeWorkloadFromApi.length === 0 && activeWorkloadRepairsFallback.length === 0 ? (
-                      <p className="workspace-note">No active jobs in this period.</p>
-                    ) : null}
-                    {activeWorkloadFromApi.length > 0
-                      ? activeWorkloadFromApi.map((row) => (
-                          <article className="dashboard-inline-card" key={`api-active-${row.id}`}>
-                            <div>
-                              <h4>{row.service_name}</h4>
-                              <p>{row.vehicle_label}</p>
-                            </div>
-                            <div className="dashboard-inline-meta">
-                              <span className={getRepairStatusClass(row.status as RepairStatus)}>
-                                {REPAIR_STATUS_LABELS[row.status as RepairStatus]}
-                              </span>
-                              <p>{row.tracking_code}</p>
-                            </div>
-                          </article>
-                        ))
-                      : activeWorkloadRepairsFallback.map((repair) => (
-                          <article className="dashboard-inline-card" key={`local-active-${repair.id}`}>
-                            <div>
-                              <h4>{repair.service_name}</h4>
-                              <p>{repair.vehicle_label}</p>
-                            </div>
-                            <div className="dashboard-inline-meta">
-                              <span className={getRepairStatusClass(repair.status)}>
-                                {REPAIR_STATUS_LABELS[repair.status]}
-                              </span>
-                              <p>{repair.master_name}</p>
-                            </div>
-                          </article>
-                        ))}
-                  </div>
-                </section>
-
-                <section className="panel dashboard-mini-panel">
-                  <div className="panel-header">
-                    <div>
-                      <p className="eyebrow">Intake</p>
-                      <h3>Recently created</h3>
-                    </div>
-                  </div>
-                  <div className="dashboard-inline-list">
-                    {recentlyCreatedFromApi.length === 0 && recentRepairs.length === 0 ? (
-                      <p className="workspace-note">No repair jobs inside this period.</p>
-                    ) : null}
-                    {recentlyCreatedFromApi.length > 0
-                      ? recentlyCreatedFromApi.map((row) => (
-                          <article className="dashboard-inline-card" key={`api-recent-${row.id}`}>
-                            <div>
-                              <h4>{row.service_name}</h4>
-                              <p>{row.vehicle_label}</p>
-                            </div>
-                            <div className="dashboard-inline-meta">
-                              <span className={getRepairStatusClass(row.status as RepairStatus)}>
-                                {REPAIR_STATUS_LABELS[row.status as RepairStatus]}
-                              </span>
-                              <p>{row.tracking_code}</p>
-                            </div>
-                          </article>
-                        ))
-                      : recentRepairs.map((repair) => (
-                          <article className="dashboard-inline-card" key={`local-recent-${repair.id}`}>
-                            <div>
-                              <h4>{repair.service_name}</h4>
-                              <p>{repair.vehicle_label}</p>
-                            </div>
-                            <div className="dashboard-inline-meta">
-                              <span className={getRepairStatusClass(repair.status)}>
-                                {REPAIR_STATUS_LABELS[repair.status]}
-                              </span>
-                              <p>{repair.master_name}</p>
-                            </div>
-                          </article>
-                        ))}
-                  </div>
-                </section>
-
-                <section className="panel dashboard-mini-panel">
-                  <div className="panel-header">
-                    <div>
-                      <p className="eyebrow">Crew Snapshot</p>
-                      <h3>Master Workload</h3>
-                    </div>
-                  </div>
-                  <div className="dashboard-worker-grid">
-                    {dashboardWorkerLoad.every((master) => master.assignedCount === 0) ? (
-                      <p className="workspace-note">No worker load inside this period.</p>
-                    ) : null}
-                    {dashboardWorkerLoad.map((master) => (
-                      <article className="dashboard-worker-card" key={master.id}>
-                        <div className="dashboard-worker-topline">
-                          <strong>{master.name}</strong>
-                          <span className="tag">{master.liveCount} live</span>
-                        </div>
-                        <p>{master.latestJob}</p>
-                        <div className="dashboard-worker-stats">
-                          <span>Assigned {master.assignedCount}</span>
-                          <span>Waiting parts {master.waitingPartsCount}</span>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
               </div>
             ) : null}
           </div>
