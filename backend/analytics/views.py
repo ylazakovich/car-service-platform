@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 
 from purchases.models import Purchase
 from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot
+from services.models import Service
 
 
 def _parse_iso_date(value: str) -> date | None:
@@ -64,6 +65,7 @@ class StaffDashboardAnalyticsView(APIView):
 
         pdf_payload = self._pdf_block(start, end)
         operational_payload = self._operational_block(op_start, op_end)
+        service_board_payload = self._service_board_block(op_start, op_end)
         moneyflow_payload = self._moneyflow_block(start, end)
         warehouse_payload = self._warehouse_block(start, end)
 
@@ -73,6 +75,7 @@ class StaffDashboardAnalyticsView(APIView):
                 "operational_range": {"start_date": str(op_start), "end_date": str(op_end)},
                 "pdf": pdf_payload,
                 "operational": operational_payload,
+                "service_board": service_board_payload,
                 "moneyflow": moneyflow_payload,
                 "warehouse": warehouse_payload,
             }
@@ -437,4 +440,174 @@ class StaffDashboardAnalyticsView(APIView):
             },
             "active_workload_preview": active_workload,
             "recently_created_preview": recently_created,
+        }
+
+    def _service_board_block(self, op_start: date, op_end: date) -> dict:
+        range_repairs = Repair.objects.filter(
+            created_at__date__lte=op_end,
+        ).filter(Q(completed_at__isnull=True) | Q(completed_at__gte=op_start))
+        open_repairs_end_of_range = range_repairs.filter(
+            Q(status__in=[Repair.Status.NEW, Repair.Status.IN_PROGRESS, Repair.Status.WAITING_PARTS])
+            & (Q(completed_at__isnull=True) | Q(completed_at__gt=op_end))
+        ).count()
+
+        range_vehicle_ids = list(range_repairs.order_by().values_list("vehicle_id", flat=True).distinct())
+        range_customer_ids = list(range_repairs.order_by().values_list("vehicle__customer_id", flat=True).distinct())
+
+        customer_repair_rows = (
+            Repair.objects.values("vehicle__customer_id")
+            .annotate(repair_count=Count("id"))
+        )
+        returning_customer_ids = {
+            row["vehicle__customer_id"]
+            for row in customer_repair_rows
+            if row["vehicle__customer_id"] is not None and row["repair_count"] >= 2
+        }
+        range_customer_id_set = set(range_customer_ids)
+        returning_customers_in_range = len(range_customer_id_set & returning_customer_ids)
+        non_returning_customers_in_range = len(range_customer_id_set) - returning_customers_in_range
+
+        completed_in_range_qs = Repair.objects.filter(
+            status=Repair.Status.COMPLETED,
+            completed_at__gte=op_start,
+            completed_at__lte=op_end,
+        )
+        cycle_days: list[int] = []
+        for repair in completed_in_range_qs:
+            if repair.completed_at is None:
+                continue
+            cycle_days.append((repair.completed_at - repair.created_at.date()).days)
+        median_cycle_time_days = float(statistics.median(cycle_days)) if cycle_days else None
+
+        current_open_qs = Repair.objects.exclude(status=Repair.Status.COMPLETED)
+        waiting_parts_current = current_open_qs.filter(status=Repair.Status.WAITING_PARTS).count()
+        open_repairs_current = current_open_qs.count()
+
+        services_by_name = {service.name: service for service in Service.objects.all()}
+        master_ids = set(Repair.objects.filter(master_id__isnull=False).values_list("master_id", flat=True))
+        master_ids.update(
+            get_user_model().objects.filter(role=get_user_model().Role.STAFF).values_list("id", flat=True)
+        )
+        masters = get_user_model().objects.filter(id__in=master_ids).order_by("first_name", "last_name", "email")
+
+        current_open_by_master = list(
+            current_open_qs.filter(master_id__isnull=False).values("master_id").annotate(
+                assigned_open_current=Count("id"),
+                waiting_parts_current=Count("id", filter=Q(status=Repair.Status.WAITING_PARTS)),
+            )
+        )
+        current_master_counts = {row["master_id"]: row for row in current_open_by_master}
+
+        estimated_value_by_master: dict[int, Decimal] = {}
+        for repair in current_open_qs.filter(master_id__isnull=False):
+            service = services_by_name.get(repair.service_name)
+            if service is None or service.price is None:
+                continue
+            estimated_value_by_master[repair.master_id] = estimated_value_by_master.get(repair.master_id, Decimal("0")) + service.price
+
+        completed_range_with_totals = list(completed_in_range_qs.filter(master_id__isnull=False))
+        completed_repair_ids = [repair.id for repair in completed_range_with_totals]
+        latest_doc_id_by_repair: dict[int, int] = {}
+        for row in (
+            RepairDocument.objects.filter(repair_id__in=completed_repair_ids)
+            .order_by("repair_id", "-version", "-id")
+            .values("repair_id", "id")
+        ):
+            latest_doc_id_by_repair.setdefault(row["repair_id"], row["id"])
+        snapshot_total_by_doc = {
+            row["document_id"]: row["document_total"]
+            for row in RepairFinancialSnapshot.objects.filter(document_id__in=latest_doc_id_by_repair.values()).values(
+                "document_id", "document_total"
+            )
+        }
+        completed_repairs_by_master = list(
+            completed_in_range_qs.filter(master_id__isnull=False).values("master_id").annotate(completed_in_range=Count("id"))
+        )
+        completed_counts_by_master = {row["master_id"]: row["completed_in_range"] for row in completed_repairs_by_master}
+
+        cycle_days_by_master: dict[int, list[int]] = {}
+        actual_value_by_master: dict[int, Decimal] = {}
+        for repair in completed_range_with_totals:
+            if repair.master_id is None or repair.completed_at is None:
+                continue
+            cycle_days_by_master.setdefault(repair.master_id, []).append(
+                (repair.completed_at - repair.created_at.date()).days
+            )
+            latest_doc_id = latest_doc_id_by_repair.get(repair.id)
+            latest_document_total = snapshot_total_by_doc.get(latest_doc_id) if latest_doc_id is not None else None
+            if latest_document_total is not None:
+                actual_value_by_master[repair.master_id] = actual_value_by_master.get(
+                    repair.master_id, Decimal("0")
+                ) + latest_document_total
+
+        returning_customers_total = len(returning_customer_ids)
+        customers_total = len(
+            set(
+                Repair.objects.values_list("vehicle__customer_id", flat=True)
+            )
+        )
+        non_returning_customers_total = max(customers_total - returning_customers_total, 0)
+
+        masters_current = []
+        masters_range = []
+        for master in masters:
+            display_name = master.full_name or master.email or f"User {master.id}"
+            current_counts = current_master_counts.get(master.id, {})
+            masters_current.append(
+                {
+                    "master_id": master.id,
+                    "display_name": display_name,
+                    "assigned_open_current": current_counts.get("assigned_open_current", 0),
+                    "waiting_parts_current": current_counts.get("waiting_parts_current", 0),
+                    "estimated_assigned_value_current": _decimal_to_float(estimated_value_by_master.get(master.id)),
+                }
+            )
+            master_cycle_days = cycle_days_by_master.get(master.id, [])
+            masters_range.append(
+                {
+                    "master_id": master.id,
+                    "display_name": display_name,
+                    "completed_in_range": completed_counts_by_master.get(master.id, 0),
+                    "median_cycle_time_days": float(statistics.median(master_cycle_days)) if master_cycle_days else None,
+                    "actual_service_value_completed": _decimal_to_float(actual_value_by_master.get(master.id)),
+                }
+            )
+
+        masters_current.sort(key=lambda row: (-row["assigned_open_current"], row["display_name"]))
+        masters_range.sort(key=lambda row: (-row["completed_in_range"], row["display_name"]))
+
+        total_customer_ids = set(
+            Repair.objects.values_list("vehicle__customer_id", flat=True)
+        )
+        total_customer_ids.discard(None)
+
+        returning_ratio = None
+        if range_customer_id_set:
+            returning_ratio = round(returning_customers_in_range / len(range_customer_id_set), 4)
+
+        return {
+            "range_summary": {
+                "open_repairs_end_of_range": open_repairs_end_of_range,
+                "vehicles_in_range": len(range_vehicle_ids),
+                "customers_in_range": len(range_customer_id_set),
+                "returning_customers_in_range": returning_customers_in_range,
+                "non_returning_customers_in_range": non_returning_customers_in_range,
+                "returning_ratio": returning_ratio,
+                "median_cycle_time_days": median_cycle_time_days,
+                "completed_repairs_in_range": completed_in_range_qs.count(),
+            },
+            "current_snapshot": {
+                "waiting_parts_current": waiting_parts_current,
+                "open_repairs_current": open_repairs_current,
+            },
+            "all_time_totals": {
+                "repairs_total": Repair.objects.count(),
+                "vehicles_total": len(set(Repair.objects.values_list("vehicle_id", flat=True))),
+                "customers_total": len(total_customer_ids),
+                "returning_customers_total": returning_customers_total,
+                "non_returning_customers_total": non_returning_customers_total,
+                "masters_total": masters.count(),
+            },
+            "masters_current": masters_current,
+            "masters_range": masters_range,
         }

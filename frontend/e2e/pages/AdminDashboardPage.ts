@@ -21,7 +21,8 @@ export class AdminDashboardPage {
   }
 
   async expectServiceBoardTab(): Promise<void> {
-    await expect(this.page.getByRole("heading", { name: "Operations Dashboard" })).toBeVisible();
+    await expect(this.page.getByRole("heading", { name: "Service Board KPIs" })).toBeVisible();
+    await expect(this.page.getByRole("heading", { name: "Registry baseline" })).toBeVisible();
   }
 
   async expectWarehouseSuppliersSummary(): Promise<void> {
