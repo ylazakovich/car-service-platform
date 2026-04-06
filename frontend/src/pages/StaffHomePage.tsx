@@ -314,7 +314,9 @@ const calendarMonthFormatter = new Intl.DateTimeFormat("en-GB", {
 const calendarMonthLabelFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
 });
-
+const warehouseWeekdayFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+});
 function parseIsoDate(value: string): Date | null {
   const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) {
@@ -2061,13 +2063,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const purchaseModalRepairOptions = purchaseModalForm.vehicle_id
     ? repairs.filter((repair) => String(repair.vehicle_id) === purchaseModalForm.vehicle_id)
     : repairs;
-  const filteredMoneyflowPurchases = useMemo(
-    () =>
-      purchases.filter((entry) =>
-        isDateWithinRange(entry.order_date, moneyflowDateRange.start_date, moneyflowDateRange.end_date)
-      ),
-    [moneyflowDateRange.end_date, moneyflowDateRange.start_date, purchases]
-  );
   const completedRepairsForServiceSales = useMemo(
     () =>
       repairs.filter(
@@ -2251,10 +2246,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () => filteredServiceBoardRepairs.filter((repair) => repair.status === "waiting_parts"),
     [filteredServiceBoardRepairs]
   );
-  const totalPurchaseCost = useMemo(
-    () => filteredMoneyflowPurchases.reduce((sum, entry) => sum + entry.purchase_price * entry.quantity, 0),
-    [filteredMoneyflowPurchases]
-  );
   const totalPartsSales = useMemo(
     () =>
       purchases.reduce(
@@ -2274,7 +2265,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       ),
     [completedRepairsForServiceSales, servicePriceByName]
   );
-  const projectedMargin = totalPartsSales - totalPurchaseCost;
   const visibleMoneyflowCalendarLanes = useMemo(
     () =>
       showMoneyflowRepairLayer || !showMoneyflowPartsLayer
@@ -2531,6 +2521,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     return `${value > 0 ? "+" : ""}${formatCurrency(value)}`;
   }
 
+  function formatCount(value: number) {
+    return new Intl.NumberFormat("pl-PL", {
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+
+  function formatDateTimeLabel(value: string) {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return "now";
+    }
+    return new Intl.DateTimeFormat("pl-PL", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(parsed);
+  }
+
   function renderStaffMobileTaskRail({
     title,
     summary,
@@ -2616,6 +2623,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     const combinedToActDelta = pdfTotals ? pdfTotals.document_total - combinedLiveTotal : null;
     const pdfLag = dashboardAnalytics?.pdf?.completed_to_first_export_lag_days ?? null;
     const pdfAnalytics = dashboardAnalytics?.pdf ?? null;
+    const warehouseAnalytics = dashboardAnalytics?.warehouse ?? null;
+    const warehouseToday = new Date();
+    const warehouseTodayDay = String(warehouseToday.getDate()).padStart(2, "0");
+    const warehouseTodayMonth = calendarMonthLabelFormatter.format(warehouseToday).toUpperCase();
+    const warehouseTodayYear = String(warehouseToday.getFullYear());
+    const warehouseTodayWeekday = warehouseWeekdayFormatter.format(warehouseToday).toUpperCase();
     const completedInRange = pdfAnalytics?.coverage.completed_in_range ?? 0;
     const missingActs = pdfAnalytics?.coverage.completed_without_pdf ?? 0;
     const repairsWithLatestAct = pdfAnalytics?.latest_act_totals.repairs_with_latest_act ?? 0;
@@ -2685,7 +2698,33 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         </div>
       );
     };
-
+    const renderWarehouseValuePanel = (
+      title: string,
+      description: string,
+      values: { buy_total: number; sale_total: number; margin_total: number },
+      toneClassName: string
+    ) => (
+      <article className={`dashboard-warehouse-value-card ${toneClassName}`}>
+        <div className="dashboard-warehouse-value-head">
+          <span className="metric-label">{title}</span>
+          <p>{description}</p>
+        </div>
+        <dl className="dashboard-warehouse-value-list">
+          <div>
+            <dt>Buy</dt>
+            <dd>{formatCurrency(values.buy_total)}</dd>
+          </div>
+          <div>
+            <dt>Sale</dt>
+            <dd>{formatCurrency(values.sale_total)}</dd>
+          </div>
+          <div>
+            <dt>Margin</dt>
+            <dd>{formatCurrency(values.margin_total)}</dd>
+          </div>
+        </dl>
+      </article>
+    );
     return (
       <div className="workspace-stack dashboard-workspace">
         <section className="dashboard-shell">
@@ -2719,16 +2758,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           </div>
 
           <div className="dashboard-folder-panel">
-            <div className="dashboard-date-bar">
-              <label className="dashboard-date-field dashboard-date-range-field">
-                <span>Date range</span>
-                <FriendlyDateRangeInput
-                  startValue={activeDateRange.start_date}
-                  endValue={activeDateRange.end_date}
-                  onChange={replaceActiveDateRange}
-                />
-              </label>
-            </div>
+            {activeDashboardTab !== "warehouse" ? (
+              <div className="dashboard-date-bar">
+                <label className="dashboard-date-field dashboard-date-range-field">
+                  <span>Date range</span>
+                  <FriendlyDateRangeInput
+                    startValue={activeDateRange.start_date}
+                    endValue={activeDateRange.end_date}
+                    onChange={replaceActiveDateRange}
+                  />
+                </label>
+              </div>
+            ) : null}
             {dashboardAnalyticsLoading ? (
               <p className="workspace-note" aria-live="polite">
                 Loading analytics…
@@ -2832,97 +2873,160 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
             {activeDashboardTab === "warehouse" ? (
               <div className="workspace-stack">
-                <section className="dashboard-report-section dashboard-report-section-warehouse">
+                <section className="dashboard-report-section dashboard-report-section-warehouse dashboard-report-section-warehouse-open">
                   <div className="dashboard-report-head">
                     <div>
-                      <p className="eyebrow">Mini stock</p>
-                      <h3>Parts Results</h3>
+                      <p className="eyebrow">Live stock</p>
+                      <h3>Current Stock Position</h3>
+                    </div>
+                    <div className="dashboard-warehouse-date-window" aria-label="Current date">
+                      <div className="dashboard-warehouse-date-window-main">
+                        <strong className="dashboard-warehouse-date-window-day">{warehouseTodayDay}</strong>
+                        <div className="dashboard-warehouse-date-window-copy">
+                          <span>{warehouseTodayMonth}. {warehouseTodayYear}</span>
+                          <small>{warehouseTodayWeekday}</small>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <p className="workspace-copy">
-                    Purchase movement and resale view for the same date range as MoneyFlow, grouped as a lightweight
-                    warehouse workspace.
+                    Live stock snapshot for the full purchase portfolio, independent from the paginated Purchases list
+                    and the currently selected date range.
                   </p>
 
-                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                    <article className="metric-card metric-card-warehouse">
-                      <span className="metric-label">Purchase spend</span>
-                      <strong>{formatCurrency(totalPurchaseCost)}</strong>
-                      <p>Sum of purchase orders by order date in the period.</p>
-                    </article>
-                    <article className="metric-card metric-card-warehouse">
-                      <span className="metric-label">Parts sales to client</span>
-                      <strong>{formatCurrency(totalPartsSales)}</strong>
-                      <p>Purchase lines tied to completed repairs in range.</p>
-                    </article>
-                    <article className="metric-card metric-card-warehouse">
-                      <span className="metric-label">Parts margin</span>
-                      <strong>{formatCurrency(projectedMargin)}</strong>
-                      <p>Parts sales minus purchase spend in the period.</p>
-                    </article>
-                  </div>
-                </section>
+                  {warehouseAnalytics ? (
+                    <div className="dashboard-report-stack">
+                      <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-warehouse-hero">
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card">
+                          <span className="metric-label">On stock total</span>
+                          <strong>{formatCount(warehouseAnalytics.stock_totals.delivered_quantity_total)}</strong>
+                          <p>All delivered units currently in the live stock snapshot.</p>
+                        </article>
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card">
+                          <span className="metric-label">Assigned</span>
+                          <strong>{formatCount(warehouseAnalytics.stock_totals.assigned_quantity_total)}</strong>
+                          <p>Delivered units already linked to a repair via repair code.</p>
+                        </article>
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card">
+                          <span className="metric-label">Free / unassigned</span>
+                          <strong>{formatCount(warehouseAnalytics.stock_totals.free_quantity_total)}</strong>
+                          <p>Delivered units still free from any repair assignment.</p>
+                        </article>
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card dashboard-warehouse-hero-card-transit">
+                          <span className="metric-label">In transit</span>
+                          <strong>{formatCount(warehouseAnalytics.stock_totals.in_transit_quantity_total)}</strong>
+                          <p>Ordered units that have not been marked as delivered yet.</p>
+                        </article>
+                      </div>
 
-                <section className="dashboard-report-section">
-                  <div className="dashboard-report-head">
-                    <div>
-                      <p className="eyebrow">Purchasing</p>
-                      <h3>Top suppliers by spend</h3>
+                      <div className="dashboard-warehouse-value-grid">
+                        {renderWarehouseValuePanel(
+                          "In stock value",
+                          "Delivered lines valued by purchase and resale totals.",
+                          warehouseAnalytics.valuations.in_stock,
+                          "dashboard-warehouse-value-card-stock"
+                        )}
+                        {renderWarehouseValuePanel(
+                          "In transit value",
+                          "Open incoming lines valued before they land on stock.",
+                          warehouseAnalytics.valuations.in_transit,
+                          "dashboard-warehouse-value-card-transit"
+                        )}
+                      </div>
+
+                      <div className="dashboard-warehouse-cumulative-strip" aria-label="Cumulative totals">
+                        <div className="dashboard-warehouse-cumulative-cell">
+                          <span className="metric-label">All-time buy</span>
+                          <strong>{formatCurrency(warehouseAnalytics.valuations.cumulative.buy_total)}</strong>
+                        </div>
+                        <div className="dashboard-warehouse-cumulative-cell">
+                          <span className="metric-label">All-time sale</span>
+                          <strong>{formatCurrency(warehouseAnalytics.valuations.cumulative.sale_total)}</strong>
+                        </div>
+                        <div className="dashboard-warehouse-cumulative-cell">
+                          <span className="metric-label">All-time margin</span>
+                          <strong>{formatCurrency(warehouseAnalytics.valuations.cumulative.margin_total)}</strong>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <p className="workspace-copy">
-                    Sum of <code>purchase price × quantity</code> by order date in the selected range (same window as
-                    the MoneyFlow tab).
-                  </p>
-                  {dashboardAnalytics?.moneyflow?.supplier_spend_top?.length ? (
-                    <table className="dashboard-table">
-                      <thead>
-                        <tr>
-                          <th>Supplier</th>
-                          <th>Lines</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboardAnalytics.moneyflow.supplier_spend_top.map((row) => (
-                          <tr key={`${row.supplier_id}-${row.supplier_name}`}>
-                            <td>{row.supplier_name || `ID ${row.supplier_id}`}</td>
-                            <td>{row.line_count}</td>
-                            <td>{formatCurrency(row.total_spend)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
                   ) : (
-                    <p className="workspace-note">No purchases in this period.</p>
+                    <p className="workspace-note">Warehouse snapshot unavailable (check connection or sign-in).</p>
                   )}
                 </section>
 
                 <section className="dashboard-report-section">
                   <div className="dashboard-report-head">
                     <div>
-                      <p className="eyebrow">Data quality</p>
-                      <h3>Unlinked purchases</h3>
+                      <p className="eyebrow">Invoice split</p>
+                      <h3>Invoice Coverage</h3>
                     </div>
                   </div>
-                  <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                    <article className="metric-card">
-                      <span className="metric-label">Lines without repair_code</span>
-                      <strong>{dashboardAnalytics?.moneyflow?.purchases_unlinked.count ?? "—"}</strong>
-                      <p>Orders in range with no repair code.</p>
-                    </article>
-                    <article className="metric-card">
-                      <span className="metric-label">Unlinked spend</span>
-                      <strong>
-                        {dashboardAnalytics?.moneyflow
-                          ? formatCurrency(dashboardAnalytics.moneyflow.purchases_unlinked.total_spend)
-                          : "—"}
-                      </strong>
-                      <p>Same date range as MoneyFlow.</p>
-                    </article>
-                  </div>
+                  <p className="workspace-copy">
+                    Invoice presence is based on either an uploaded invoice name or an invoice URL on the purchase line.
+                  </p>
+                  {warehouseAnalytics ? (
+                    <div className="dashboard-warehouse-invoice-grid">
+                      <article className="metric-card dashboard-warehouse-invoice-card dashboard-warehouse-invoice-card-covered">
+                        <span className="metric-label">With invoice</span>
+                        <strong>{formatCount(warehouseAnalytics.invoice_split.with_invoice.line_count)} lines</strong>
+                        <p>
+                          Qty {formatCount(warehouseAnalytics.invoice_split.with_invoice.quantity_total)} • Buy{" "}
+                          {formatCurrency(warehouseAnalytics.invoice_split.with_invoice.buy_total)}
+                        </p>
+                      </article>
+                      <article className="metric-card dashboard-warehouse-invoice-card dashboard-warehouse-invoice-card-missing">
+                        <span className="metric-label">Without invoice</span>
+                        <strong>{formatCount(warehouseAnalytics.invoice_split.without_invoice.line_count)} lines</strong>
+                        <p>
+                          Qty {formatCount(warehouseAnalytics.invoice_split.without_invoice.quantity_total)} • Buy{" "}
+                          {formatCurrency(warehouseAnalytics.invoice_split.without_invoice.buy_total)}
+                        </p>
+                      </article>
+                    </div>
+                  ) : (
+                    <p className="workspace-note">Invoice coverage unavailable.</p>
+                  )}
                 </section>
+
+                <section className="dashboard-report-section">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">Current portfolio</p>
+                      <h3>Top suppliers</h3>
+                    </div>
+                  </div>
+                  <p className="workspace-copy">
+                    Top 5 suppliers ranked by current stock portfolio value, split between on-stock and in-transit buy totals.
+                  </p>
+                  {warehouseAnalytics?.suppliers_top_current?.length ? (
+                    <table className="dashboard-table">
+                      <thead>
+                        <tr>
+                          <th>Supplier</th>
+                          <th>Qty</th>
+                          <th>On stock</th>
+                          <th>In transit</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {warehouseAnalytics.suppliers_top_current.map((row) => (
+                          <tr key={`${row.supplier_id}-${row.supplier_name}`}>
+                            <td>{row.supplier_name || `ID ${row.supplier_id}`}</td>
+                            <td>{formatCount(row.quantity_total)}</td>
+                            <td>{formatCurrency(row.in_stock_buy_total)}</td>
+                            <td>{formatCurrency(row.in_transit_buy_total)}</td>
+                            <td>{formatCurrency(row.current_buy_total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="workspace-note">No suppliers in the current stock portfolio.</p>
+                  )}
+                </section>
+
               </div>
             ) : null}
 

@@ -9,6 +9,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import TruncDate
+from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -64,6 +65,7 @@ class StaffDashboardAnalyticsView(APIView):
         pdf_payload = self._pdf_block(start, end)
         operational_payload = self._operational_block(op_start, op_end)
         moneyflow_payload = self._moneyflow_block(start, end)
+        warehouse_payload = self._warehouse_block(start, end)
 
         return Response(
             {
@@ -72,6 +74,7 @@ class StaffDashboardAnalyticsView(APIView):
                 "pdf": pdf_payload,
                 "operational": operational_payload,
                 "moneyflow": moneyflow_payload,
+                "warehouse": warehouse_payload,
             }
         )
 
@@ -146,6 +149,92 @@ class StaffDashboardAnalyticsView(APIView):
             "supplier_spend_top": supplier_spend_top,
             "purchases_unlinked": purchases_unlinked,
             "exports_by_exporter": exports_by_exporter,
+        }
+
+    def _warehouse_block(self, start: date, end: date) -> dict:
+        line_buy_amount = ExpressionWrapper(
+            F("purchase_price") * F("quantity"),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
+        line_sale_amount = ExpressionWrapper(
+            F("sale_price") * F("quantity"),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
+        missing_repair_code = Q(repair_code="") | Q(repair_code__isnull=True)
+        missing_invoice = Q(invoice_name="") & Q(invoice_url="")
+
+        def _value_triplet(queryset) -> dict:
+            agg = queryset.aggregate(
+                buy_total=Sum(line_buy_amount),
+                sale_total=Sum(line_sale_amount),
+            )
+            buy_total = _decimal_to_float(agg["buy_total"])
+            sale_total = _decimal_to_float(agg["sale_total"])
+            return {
+                "buy_total": buy_total,
+                "sale_total": sale_total,
+                "margin_total": sale_total - buy_total,
+            }
+
+        delivered_qs = Purchase.objects.filter(delivered=True)
+        in_transit_qs = Purchase.objects.filter(delivered=False)
+        all_purchases_qs = Purchase.objects.all()
+
+        stock_totals = {
+            "delivered_quantity_total": delivered_qs.aggregate(total=Sum("quantity"))["total"] or 0,
+            "assigned_quantity_total": delivered_qs.exclude(missing_repair_code).aggregate(total=Sum("quantity"))["total"] or 0,
+            "free_quantity_total": delivered_qs.filter(missing_repair_code).aggregate(total=Sum("quantity"))["total"] or 0,
+            "in_transit_quantity_total": in_transit_qs.aggregate(total=Sum("quantity"))["total"] or 0,
+        }
+
+        with_invoice_qs = all_purchases_qs.exclude(missing_invoice)
+        without_invoice_qs = all_purchases_qs.filter(missing_invoice)
+
+        def _invoice_split(queryset) -> dict:
+            agg = queryset.aggregate(
+                line_count=Count("id"),
+                quantity_total=Sum("quantity"),
+                buy_total=Sum(line_buy_amount),
+            )
+            return {
+                "line_count": agg["line_count"] or 0,
+                "quantity_total": agg["quantity_total"] or 0,
+                "buy_total": _decimal_to_float(agg["buy_total"]),
+            }
+
+        supplier_rows = (
+            all_purchases_qs.values("supplier_id", "supplier__name")
+            .annotate(
+                current_buy_total=Sum(line_buy_amount),
+                in_stock_buy_total=Sum(line_buy_amount, filter=Q(delivered=True)),
+                in_transit_buy_total=Sum(line_buy_amount, filter=Q(delivered=False)),
+                quantity_total=Sum("quantity"),
+            )
+            .order_by("-current_buy_total", "supplier__name")[:5]
+        )
+        return {
+            "snapshot_as_of": timezone.now().isoformat(),
+            "stock_totals": stock_totals,
+            "valuations": {
+                "in_stock": _value_triplet(delivered_qs),
+                "in_transit": _value_triplet(in_transit_qs),
+                "cumulative": _value_triplet(all_purchases_qs),
+            },
+            "invoice_split": {
+                "with_invoice": _invoice_split(with_invoice_qs),
+                "without_invoice": _invoice_split(without_invoice_qs),
+            },
+            "suppliers_top_current": [
+                {
+                    "supplier_id": row["supplier_id"],
+                    "supplier_name": row["supplier__name"] or "",
+                    "current_buy_total": _decimal_to_float(row["current_buy_total"]),
+                    "in_stock_buy_total": _decimal_to_float(row["in_stock_buy_total"]),
+                    "in_transit_buy_total": _decimal_to_float(row["in_transit_buy_total"]),
+                    "quantity_total": row["quantity_total"] or 0,
+                }
+                for row in supplier_rows
+            ],
         }
 
     def _pdf_block(self, start: date, end: date) -> dict:

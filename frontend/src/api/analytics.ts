@@ -44,6 +44,47 @@ export type DashboardMoneyflowPayload = {
   exports_by_exporter: DashboardMoneyflowExporterRow[];
 };
 
+export type DashboardWarehouseValueTriplet = {
+  buy_total: number;
+  sale_total: number;
+  margin_total: number;
+};
+
+export type DashboardWarehouseInvoiceSplit = {
+  line_count: number;
+  quantity_total: number;
+  buy_total: number;
+};
+
+export type DashboardWarehouseSupplierRow = {
+  supplier_id: number;
+  supplier_name: string;
+  current_buy_total: number;
+  in_stock_buy_total: number;
+  in_transit_buy_total: number;
+  quantity_total: number;
+};
+
+export type DashboardWarehousePayload = {
+  snapshot_as_of: string;
+  stock_totals: {
+    delivered_quantity_total: number;
+    assigned_quantity_total: number;
+    free_quantity_total: number;
+    in_transit_quantity_total: number;
+  };
+  valuations: {
+    in_stock: DashboardWarehouseValueTriplet;
+    in_transit: DashboardWarehouseValueTriplet;
+    cumulative: DashboardWarehouseValueTriplet;
+  };
+  invoice_split: {
+    with_invoice: DashboardWarehouseInvoiceSplit;
+    without_invoice: DashboardWarehouseInvoiceSplit;
+  };
+  suppliers_top_current: DashboardWarehouseSupplierRow[];
+};
+
 export type DashboardAnalyticsResponse = {
   moneyflow_range: { start_date: string; end_date: string };
   operational_range: { start_date: string; end_date: string };
@@ -86,6 +127,7 @@ export type DashboardAnalyticsResponse = {
     }>;
   };
   moneyflow: DashboardMoneyflowPayload;
+  warehouse: DashboardWarehousePayload;
 };
 
 export async function fetchDashboardAnalytics(params: {
@@ -111,14 +153,18 @@ export async function fetchDashboardAnalytics(params: {
     !("pdf" in data) ||
     !("operational" in data) ||
     !("moneyflow" in data) ||
+    !("warehouse" in data) ||
     data.pdf == null ||
     typeof data.pdf !== "object" ||
     data.moneyflow == null ||
-    typeof data.moneyflow !== "object"
+    typeof data.moneyflow !== "object" ||
+    data.warehouse == null ||
+    typeof data.warehouse !== "object"
   ) {
     throw new Error("Invalid dashboard analytics response");
   }
   const mf = data.moneyflow as Record<string, unknown>;
+  const warehouse = data.warehouse as Record<string, unknown>;
   if (
     !Array.isArray(mf.supplier_spend_top) ||
     mf.purchases_unlinked == null ||
@@ -126,6 +172,18 @@ export async function fetchDashboardAnalytics(params: {
     !Array.isArray(mf.exports_by_exporter)
   ) {
     throw new Error("Invalid dashboard analytics moneyflow payload");
+  }
+  if (
+    typeof warehouse.snapshot_as_of !== "string" ||
+    warehouse.stock_totals == null ||
+    typeof warehouse.stock_totals !== "object" ||
+    warehouse.valuations == null ||
+    typeof warehouse.valuations !== "object" ||
+    warehouse.invoice_split == null ||
+    typeof warehouse.invoice_split !== "object" ||
+    !Array.isArray(warehouse.suppliers_top_current)
+  ) {
+    throw new Error("Invalid dashboard analytics warehouse payload");
   }
   return data as DashboardAnalyticsResponse;
 }
