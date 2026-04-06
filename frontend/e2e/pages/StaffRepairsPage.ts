@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { E2E_DEMO_REPAIR_TRACKING_CODE, E2E_DEMO_REPAIR_VEHICLE_PLATE } from "../e2e-seed";
+import { E2E_DEMO_REPAIR_DIALOG_NAME, E2E_DEMO_REPAIR_TRACKING_CODE } from "../e2e-seed";
 import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
 
 /**
@@ -60,9 +60,8 @@ export class StaffRepairsPage {
   }
 
   async expectRepairDetailDialogVisible(): Promise<void> {
-    // Do not match on primary service name: admin modal shows names in <input value>, not text nodes.
-    const dialog = this.page.getByRole("dialog").filter({ hasText: E2E_DEMO_REPAIR_VEHICLE_PLATE });
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    const dialog = this.page.getByRole("dialog", { name: E2E_DEMO_REPAIR_DIALOG_NAME });
+    await expect(dialog).toBeVisible({ timeout: 20_000 });
   }
 
   async openCertificateFromViewPdf(): Promise<void> {

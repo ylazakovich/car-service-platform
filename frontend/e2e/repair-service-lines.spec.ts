@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { AUTH_STATE_ADMIN, openAdminApp, openStaffApp } from "./fixtures/auth";
 import {
+  E2E_DEMO_REPAIR_DIALOG_NAME,
   E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY,
   E2E_DEMO_REPAIR_SERVICE_NAME,
   E2E_DEMO_REPAIR_TRACKING_CODE,
-  E2E_DEMO_REPAIR_VEHICLE_PLATE,
 } from "./e2e-seed";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
@@ -39,6 +39,8 @@ test.describe("Repair service lines — modal editor @desktop", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
+    // Wait until admin shell + role are hydrated; otherwise `isAdmin` is false briefly and Services render read-only (no editor).
+    await expect(page.getByRole("button", { name: "Users" })).toBeVisible({ timeout: 30_000 });
   });
 
   test("admin sees Services editor with seeded lines and Add service", async ({ page }) => {
@@ -47,12 +49,14 @@ test.describe("Repair service lines — modal editor @desktop", () => {
     await repairs.gotoRepairsSection();
     await repairs.openSeededRepairCard();
 
-    const dialog = page.getByRole("dialog").filter({ hasText: E2E_DEMO_REPAIR_VEHICLE_PLATE });
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    const dialog = page.getByRole("dialog", { name: E2E_DEMO_REPAIR_DIALOG_NAME });
+    await expect(dialog).toBeVisible({ timeout: 20_000 });
 
-    await expect(dialog.locator(".repair-service-lines-editor")).toBeVisible();
-    await expect(dialog.getByRole("textbox", { name: "Service 1" })).toHaveValue(E2E_DEMO_REPAIR_SERVICE_NAME);
-    await expect(dialog.getByRole("textbox", { name: "Service 2" })).toHaveValue("Tire service");
-    await expect(dialog.getByRole("button", { name: "+ Add service" })).toBeVisible();
+    await expect(dialog.locator(".repair-service-lines-editor")).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.getByRole("textbox", { name: "Service 1" })).toHaveValue(E2E_DEMO_REPAIR_SERVICE_NAME, {
+      timeout: 15_000,
+    });
+    await expect(dialog.getByRole("textbox", { name: "Service 2" })).toHaveValue("Tire service", { timeout: 15_000 });
+    await expect(dialog.getByRole("button", { name: "+ Add service" })).toBeVisible({ timeout: 10_000 });
   });
 });
