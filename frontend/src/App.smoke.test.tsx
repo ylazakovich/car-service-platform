@@ -1152,7 +1152,8 @@ describe("bootstrap application", () => {
     expect(await screen.findByRole("button", { name: "Edit Vehicle" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
     expect(screen.getByText("Date Added: 04-11-2024")).toBeInTheDocument();
-    expect(screen.getAllByText("Brake Inspection")).toHaveLength(2);
+    // Vehicle modal: repair title may appear once (e.g. mobile list) or again on History tab (table); not duplicated as former desktop cards + list.
+    expect(screen.getAllByText("Brake Inspection").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows the ordered parts linked to the selected repair", async () => {
@@ -2070,6 +2071,33 @@ describe("bootstrap application", () => {
               updated_at: "2025-03-06T10:00:00Z",
             },
           ],
+        });
+      }
+      if (url === "/repairs/11/") {
+        return Promise.resolve({
+          data: {
+            id: 11,
+            vehicle_id: 1,
+            vehicle_label: "WB 1234K • Toyota Corolla",
+            owner_name: "Alex Johnson",
+            master_id: null,
+            master_name: "",
+            service_name: "First Act Repair",
+            issue_notes: "First completed repair without act.",
+            status: "completed",
+            tracking_code: "TOR-1011",
+            portal_token: "test-portal-token-1011",
+            has_pdf: true,
+            latest_act_document_total: 299,
+            estimated_date: null,
+            completed_at: "2025-03-05",
+            repair_notes: [],
+            before_photos: [],
+            during_photos: [],
+            after_photos: [],
+            created_at: "2025-03-05T10:00:00Z",
+            updated_at: "2025-03-05T10:00:00Z",
+          },
         });
       }
       if (url === "/services/") {

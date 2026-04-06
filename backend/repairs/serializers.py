@@ -55,6 +55,7 @@ class RepairSerializer(serializers.ModelSerializer):
         required=False,
     )
     service_lines = RepairServiceLineSerializer(many=True, required=False)
+    latest_act_document_total = serializers.SerializerMethodField()
 
     class Meta:
         model = Repair
@@ -74,6 +75,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "tracking_code",
             "portal_token",
             "has_pdf",
+            "latest_act_document_total",
             "completed_at",
             "estimated_date",
             "repair_notes",
@@ -111,6 +113,18 @@ class RepairSerializer(serializers.ModelSerializer):
         if annotated is not None:
             return bool(annotated)
         return obj.documents.exists()
+
+    def get_latest_act_document_total(self, obj):
+        annotated = getattr(obj, "latest_act_document_total", None)
+        if annotated is not None:
+            return float(annotated)
+        snap = (
+            obj.financial_snapshots.select_related("document")
+            .order_by("-document__version")
+            .values_list("document_total", flat=True)
+            .first()
+        )
+        return float(snap) if snap is not None else None
 
     def get_before_photos(self, obj):
         return []

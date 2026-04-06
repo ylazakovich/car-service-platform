@@ -28,9 +28,12 @@ export interface RepairItem {
   service_lines?: RepairServiceLineItem[];
   issue_notes: string;
   status: RepairStatus;
+  mileage_at_service?: number | null;
   tracking_code: string;
   portal_token: string;
   has_pdf: boolean;
+  /** Latest completion act total (PLN); null until a PDF act is exported. */
+  latest_act_document_total?: number | null;
   completed_at: string | null;
   estimated_date: string | null;
   repair_notes: RepairNoteItem[];
@@ -64,6 +67,8 @@ export interface RepairWritePayload {
   status: RepairStatus;
   completed_at?: string | null;
   estimated_date?: string | null;
+  /** Odometer (km) when the vehicle was returned; omit or null when not completed. */
+  mileage_at_service?: number | null;
   service_lines?: RepairServiceLineWrite[];
 }
 
@@ -74,6 +79,11 @@ export async function fetchRepairs(q?: string, masterId?: number): Promise<Repai
   const response = await api.get<RepairItem[]>("/repairs/", {
     params: Object.keys(params).length ? params : undefined,
   });
+  return response.data;
+}
+
+export async function fetchRepair(id: number): Promise<RepairItem> {
+  const response = await api.get<RepairItem>(`/repairs/${id}/`);
   return response.data;
 }
 
