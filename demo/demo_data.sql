@@ -16,6 +16,9 @@ WHERE repair_id IN (SELECT id FROM repairs WHERE tracking_code LIKE 'TOR-%');
 DELETE FROM repair_documents
 WHERE repair_id IN (SELECT id FROM repairs WHERE tracking_code LIKE 'TOR-%');
 
+DELETE FROM repair_service_lines
+WHERE repair_id IN (SELECT id FROM repairs WHERE tracking_code LIKE 'TOR-%');
+
 DELETE FROM repairs
 WHERE tracking_code LIKE 'TOR-%';
 
@@ -666,6 +669,13 @@ VALUES
 ON CONFLICT (tracking_code) DO NOTHING;
 
 UPDATE repairs SET portal_token = 'demo-' || tracking_code WHERE portal_token IS NULL;
+
+-- Service lines (one per demo repair; link catalog row when service name matches)
+INSERT INTO repair_service_lines (repair_id, name, catalog_service_id, sort_order)
+SELECT r.id, r.service_name, s.id, 0
+FROM repairs r
+LEFT JOIN services s ON s.name = r.service_name
+WHERE r.tracking_code LIKE 'TOR-%';
 
 -- Suppliers
 INSERT INTO suppliers (name, nip, phone, email, notes, created_at, updated_at)

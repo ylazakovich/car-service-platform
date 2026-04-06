@@ -10,6 +10,24 @@ export type RepairNote = {
   text: string;
 };
 
+export type RepairServiceLineEntry = {
+  id: string | null;
+  name: string;
+  catalog_service_id: number | null;
+  sort_order: number;
+};
+
+/** Local row for forms (React key + draft fields). */
+export type RepairServiceLineDraft = {
+  key: string;
+  name: string;
+  catalog_service_id: number | null;
+};
+
+export function newRepairServiceLineDraft(): RepairServiceLineDraft {
+  return { key: crypto.randomUUID(), name: "", catalog_service_id: null };
+}
+
 export type RepairEntry = {
   id: number;
   created_at: string;
@@ -21,6 +39,7 @@ export type RepairEntry = {
   master_id: string;
   master_name: string;
   service_name: string;
+  service_lines: RepairServiceLineEntry[];
   issue_notes: string;
   repair_notes: RepairNote[];
   status: RepairStatus;
@@ -66,6 +85,18 @@ export function formatRepairDisplayDate(value: string) {
 
 export function getRepairStatusClass(status: RepairStatus) {
   return `repair-status-chip repair-status-${status}`;
+}
+
+/** Short label for Kanban / list: first service, or "+N" when multiple. */
+export function formatRepairServicesSummary(repair: RepairEntry): string {
+  const lines = repair.service_lines.filter((l) => l.name.trim());
+  if (lines.length === 0) {
+    return repair.service_name.trim() || "—";
+  }
+  if (lines.length === 1) {
+    return lines[0].name;
+  }
+  return `${lines[0].name} +${lines.length - 1}`;
 }
 
 export function formatRepairCardDateRow(repair: RepairEntry) {

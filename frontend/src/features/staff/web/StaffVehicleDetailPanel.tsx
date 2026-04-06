@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { RepairEntry } from "../shared/repairs";
+import { formatRepairServicesSummary, type RepairEntry } from "../shared/repairs";
 import {
   formatVehicleDisplayDate,
   formatVehicleTitle,
@@ -116,7 +116,7 @@ export function StaffVehicleDetailPanel({
               <div className="detail-list">
                 {repairs.map((repair) => (
                   <article className="detail-item" key={repair.id}>
-                    <h4>{repair.service_name}</h4>
+                    <h4>{formatRepairServicesSummary(repair)}</h4>
                     <p>Owner: {repair.owner_name}</p>
                     <p>Master: {repair.master_name}</p>
                     <div className="tracking-chip-row">

@@ -9,11 +9,13 @@ import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from "../api
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
-import { useRepairs, customRepairServiceOption, sanitizeImageUrl } from "../features/staff/hooks/useRepairs";
+import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
+import { useRepairs, sanitizeImageUrl } from "../features/staff/hooks/useRepairs";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
 import { StaffVehiclesMobileList } from "../features/staff/mobile/StaffVehiclesMobileList";
 import {
+  formatRepairServicesSummary,
   getRepairStatusClass,
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
@@ -298,11 +300,12 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
   return true;
 }
 
-function getRepairServiceSaleValue(serviceName: string, priceByName: Map<string, number>) {
-  if (serviceName === customRepairServiceOption) {
-    return 0;
+function getRepairLaborSaleTotal(repair: RepairEntry, priceByName: Map<string, number>): number {
+  const lines = repair.service_lines.filter((l) => l.name.trim());
+  if (lines.length === 0) {
+    return priceByName.get(repair.service_name.trim()) ?? 0;
   }
-  return priceByName.get(serviceName) ?? 0;
+  return lines.reduce((sum, l) => sum + (priceByName.get(l.name.trim()) ?? 0), 0);
 }
 
 const calendarWeekdayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -1170,6 +1173,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairModalCompletedAt,
     repairModalNewNote,
     setRepairModalNewNote,
+    repairModalServiceLines,
+    setRepairModalServiceLines,
+    repairModalIssueNotes,
+    setRepairModalIssueNotes,
+    prefillHandoffRepairCreate,
     repairBeforePhotos,
     repairDuringPhotos,
     repairAfterPhotos,
@@ -1206,10 +1214,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairModalEstimatedDate,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
-  const repairServiceOptions = useMemo(
-    () => [...apiServices.map((s) => s.name), customRepairServiceOption],
-    [apiServices]
-  );
   const servicePriceByName = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of apiServices) {
@@ -2245,7 +2249,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const totalServiceSales = useMemo(
     () =>
       completedRepairsForServiceSales.reduce(
-        (sum, repair) => sum + getRepairServiceSaleValue(repair.service_name, servicePriceByName),
+        (sum, repair) => sum + getRepairLaborSaleTotal(repair, servicePriceByName),
         0
       ),
     [completedRepairsForServiceSales, servicePriceByName]
@@ -4061,45 +4065,46 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         </option>
                       ))}
                     </select>
-                  ) : (
+                  ) : repairForm.master_id ? (
                     <input
                       type="text"
-                      value={getStaffUserLabel(staffUsers.find((m) => m.id === user?.id) ?? { id: 0, email: user?.email ?? "", first_name: user?.first_name ?? "", last_name: user?.last_name ?? "", role: "staff" })}
+                      value={getStaffUserLabel(
+                        staffUsers.find((m) => String(m.id) === repairForm.master_id) ?? {
+                          id: 0,
+                          email: user?.email ?? "",
+                          first_name: user?.first_name ?? "",
+                          last_name: user?.last_name ?? "",
+                          role: "staff",
+                        }
+                      )}
                       readOnly
                     />
+                  ) : (
+                    <select
+                      value={repairForm.master_id}
+                      onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
+                      required
+                      aria-label="Assign master for this repair"
+                    >
+                      <option value="">Select master (e.g. handoff)</option>
+                      {staffUsers.map((master) => (
+                        <option key={master.id} value={master.id}>
+                          {getStaffUserLabel(master)}
+                        </option>
+                      ))}
+                    </select>
                   )}
                 </label>
 
-                <label>
-                  <span>Service</span>
-                  <select
-                    value={repairForm.service_key}
-                    onChange={(event) => setRepairForm((current) => ({ ...current, service_key: event.target.value }))}
-                    required
-                  >
-                    <option value="">Select service</option>
-                    {repairServiceOptions.map((service) => (
-                      <option key={service} value={service}>
-                        {service}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                {repairForm.service_key === customRepairServiceOption ? (
-                  <label>
-                    <span>Custom Service</span>
-                    <input
-                      value={repairForm.custom_service}
-                      onChange={(event) =>
-                        setRepairForm((current) => ({ ...current, custom_service: event.target.value }))
-                      }
-                      type="text"
-                      placeholder="Write your own service"
-                      required
-                    />
-                  </label>
-                ) : null}
+                <div className="repair-form-services-block">
+                  <span className="repair-form-services-label">Services</span>
+                  <RepairServiceLinesEditor
+                    idPrefix="repair-create"
+                    lines={repairForm.service_lines}
+                    onChange={(next) => setRepairForm((current) => ({ ...current, service_lines: next }))}
+                    catalog={apiServices}
+                  />
+                </div>
 
                 <div className="form-grid">
                   <label>
@@ -4174,29 +4179,36 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <p className="eyebrow">Repair Update</p>
                   <h3 id="repair-modal-title">{selectedRepair.vehicle_label}</h3>
                 </div>
-                {(selectedRepair.status === "completed" || !isStaff) && (
-                  <div className="inline-actions">
-                    {selectedRepair.status === "completed" && (
-                      <button
-                        type="button"
-                        className="button button-primary"
-                        disabled={repairPdfLoading}
-                        onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
-                      >
-                        {repairPdfLoading ? "Loading…" : selectedRepair.has_pdf ? "View PDF" : "Make Act"}
-                      </button>
-                    )}
-                    {!isStaff && (
-                      <button
-                        type="button"
-                        className="button button-danger"
-                        onClick={() => void handleRepairDelete(selectedRepair)}
-                      >
-                        Delete Repair
-                      </button>
-                    )}
-                  </div>
-                )}
+                <div className="inline-actions">
+                  {(isAdmin || (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id))) && (
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => prefillHandoffRepairCreate(selectedRepair)}
+                    >
+                      New card for another master
+                    </button>
+                  )}
+                  {selectedRepair.status === "completed" && (
+                    <button
+                      type="button"
+                      className="button button-primary"
+                      disabled={repairPdfLoading}
+                      onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
+                    >
+                      {repairPdfLoading ? "Loading…" : selectedRepair.has_pdf ? "View PDF" : "Make Act"}
+                    </button>
+                  )}
+                  {!isStaff && (
+                    <button
+                      type="button"
+                      className="button button-danger"
+                      onClick={() => void handleRepairDelete(selectedRepair)}
+                    >
+                      Delete Repair
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* ── Status Switcher ────────────────────────────── */}
@@ -4298,9 +4310,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <span className="repair-info-label">Owner</span>
                       <p>{selectedRepair.owner_name}</p>
                     </div>
-                    <div className="repair-info-row">
-                      <span className="repair-info-label">Service</span>
-                      <p>{selectedRepair.service_name}</p>
+                    <div className="repair-info-row repair-info-row-block">
+                      <span className="repair-info-label">Services</span>
+                      {isAdmin || (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id)) ? (
+                        <RepairServiceLinesEditor
+                          idPrefix="repair-modal"
+                          lines={repairModalServiceLines}
+                          onChange={setRepairModalServiceLines}
+                          catalog={apiServices}
+                        />
+                      ) : (
+                        <p>{formatRepairServicesSummary(selectedRepair)}</p>
+                      )}
                     </div>
                     <div className="repair-info-row">
                       <span className="repair-info-label">Client Link</span>
@@ -4342,8 +4363,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       </div>
                     </div>
                     <div className="repair-info-row repair-info-row-block">
-                      <span className="repair-info-label">Issue</span>
-                      <p className="repair-info-issue">{selectedRepair.issue_notes}</p>
+                      <span className="repair-info-label">Issue / details</span>
+                      {isAdmin || (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id)) ? (
+                        <textarea
+                          className="repair-info-issue-input"
+                          value={repairModalIssueNotes}
+                          onChange={(e) => setRepairModalIssueNotes(e.target.value)}
+                          rows={4}
+                          aria-label="Issue and repair details"
+                        />
+                      ) : (
+                        <p className="repair-info-issue">{selectedRepair.issue_notes}</p>
+                      )}
                     </div>
                   </div>
                 </div>

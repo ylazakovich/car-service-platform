@@ -14,10 +14,13 @@ import {
   type RepairWritePayload,
   type StaffUser,
 } from "../../../api/repairs";
+import { repairDraftsFromEntryLines } from "../components/RepairServiceLinesEditor";
 import {
   REPAIR_STATUS_LABELS,
+  newRepairServiceLineDraft,
   type RepairEntry,
   type RepairNote,
+  type RepairServiceLineDraft,
   type RepairStatus,
   type RepairStatusFilter,
 } from "../shared/repairs";
@@ -26,8 +29,7 @@ import type { Vehicle } from "../shared/vehicles";
 export type RepairFormState = {
   vehicle_id: string;
   master_id: string;
-  service_key: string;
-  custom_service: string;
+  service_lines: RepairServiceLineDraft[];
   issue_notes: string;
   status: RepairStatus;
 };
@@ -35,15 +37,25 @@ export type RepairFormState = {
 export const emptyRepairForm: RepairFormState = {
   vehicle_id: "",
   master_id: "",
-  service_key: "",
-  custom_service: "",
+  service_lines: [newRepairServiceLineDraft()],
   issue_notes: "",
   status: "new",
 };
 
+/** @deprecated Intake form uses multi-line services; kept for any legacy imports. */
 export const customRepairServiceOption = "Custom Service";
 
 function mapApiRepairToEntry(item: RepairItem): RepairEntry {
+  const sl =
+    item.service_lines && item.service_lines.length > 0
+      ? item.service_lines.map((l) => ({
+          id: l.id != null ? String(l.id) : null,
+          name: l.name,
+          catalog_service_id: l.catalog_service_id,
+          sort_order: l.sort_order ?? 0,
+        }))
+      : [{ id: null, name: item.service_name, catalog_service_id: null, sort_order: 0 }];
+
   return {
     id: item.id,
     created_at: item.created_at.slice(0, 10),
@@ -55,6 +67,7 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
     master_id: item.master_id != null ? String(item.master_id) : "",
     master_name: item.master_name,
     service_name: item.service_name,
+    service_lines: sl,
     issue_notes: item.issue_notes,
     repair_notes: item.repair_notes.map((n) => ({
       id: String(n.id),
@@ -137,6 +150,10 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [repairModalCompletedAt, setRepairModalCompletedAt] = useState("");
   const [repairModalEstimatedDate, setRepairModalEstimatedDate] = useState("");
   const [repairModalNewNote, setRepairModalNewNote] = useState("");
+  const [repairModalServiceLines, setRepairModalServiceLines] = useState<RepairServiceLineDraft[]>([
+    newRepairServiceLineDraft(),
+  ]);
+  const [repairModalIssueNotes, setRepairModalIssueNotes] = useState("");
   const [repairBeforePhotos, setRepairBeforePhotos] = useState<string[]>([]);
   const [repairDuringPhotos, setRepairDuringPhotos] = useState<string[]>([]);
   const [repairAfterPhotos, setRepairAfterPhotos] = useState<string[]>([]);
@@ -173,6 +190,8 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalCompletedAt("");
     setRepairModalEstimatedDate("");
     setRepairModalNewNote("");
+    setRepairModalServiceLines([newRepairServiceLineDraft()]);
+    setRepairModalIssueNotes("");
     setRepairBeforePhotos([]);
     setRepairDuringPhotos([]);
     setRepairAfterPhotos([]);
@@ -195,9 +214,31 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalCompletedAt(repair.completed_at);
     setRepairModalEstimatedDate(repair.estimated_date);
     setRepairModalNewNote("");
+    setRepairModalServiceLines(repairDraftsFromEntryLines(repair.service_lines));
+    setRepairModalIssueNotes(repair.issue_notes);
     setRepairBeforePhotos(repair.before_photos);
     setRepairDuringPhotos(repair.during_photos);
     setRepairAfterPhotos(repair.after_photos);
+  }
+
+  function prefillHandoffRepairCreate(source: RepairEntry) {
+    const copied = source.service_lines
+      .filter((l) => l.name.trim())
+      .map((l) => ({
+        key: crypto.randomUUID(),
+        name: l.name,
+        catalog_service_id: l.catalog_service_id,
+      }));
+    setRepairForm({
+      vehicle_id: String(source.vehicle_id),
+      master_id: "",
+      service_lines: copied.length > 0 ? copied : [newRepairServiceLineDraft()],
+      issue_notes: source.issue_notes,
+      status: "new",
+    });
+    setRepairError("");
+    closeRepairModal();
+    setIsRepairFormOpen(true);
   }
 
   async function handleRepairSubmit(event: FormEvent<HTMLFormElement>) {
@@ -206,9 +247,11 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setIsSavingRepair(true);
 
     const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id);
-    const serviceName =
-      repairForm.service_key === customRepairServiceOption ? repairForm.custom_service.trim() : repairForm.service_key;
     const selectedMaster = staffUsers.find((master) => String(master.id) === repairForm.master_id);
+
+    const trimmedLines = repairForm.service_lines
+      .map((l) => ({ ...l, name: l.name.trim() }))
+      .filter((l) => l.name.length > 0);
 
     if (!selectedVehicle) {
       setRepairError("Select a vehicle for this repair.");
@@ -222,16 +265,23 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       return;
     }
 
-    if (!serviceName) {
-      setRepairError("Choose a service or write your own.");
+    if (trimmedLines.length === 0) {
+      setRepairError("Add at least one service.");
       setIsSavingRepair(false);
       return;
     }
 
+    const service_lines = trimmedLines.map((l, i) => ({
+      name: l.name,
+      catalog_service_id: l.catalog_service_id,
+      sort_order: i,
+    }));
+
     const payload: RepairWritePayload = {
       vehicle_id: Number(repairForm.vehicle_id),
       master_id: repairForm.master_id ? Number(repairForm.master_id) : null,
-      service_name: serviceName,
+      service_name: trimmedLines[0].name,
+      service_lines,
       issue_notes: repairForm.issue_notes.trim() || "No issue notes provided yet.",
       status: repairForm.status,
     };
@@ -310,12 +360,35 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       }
     }
 
-    const updated = await updateRepair(selectedRepairId, {
+    const canEditServicesAndNotes =
+      user?.role === "admin" ||
+      (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id));
+
+    const payload: Partial<RepairWritePayload> = {
       status: repairModalStatus,
       master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
       completed_at: repairModalStatus === "completed" ? repairModalCompletedAt || null : null,
       estimated_date: repairModalEstimatedDate || null,
-    });
+    };
+
+    if (canEditServicesAndNotes) {
+      const trimmedLines = repairModalServiceLines
+        .map((l) => ({ ...l, name: l.name.trim() }))
+        .filter((l) => l.name.length > 0);
+      if (trimmedLines.length === 0) {
+        window.alert("Add at least one service.");
+        return;
+      }
+      payload.service_lines = trimmedLines.map((l, i) => ({
+        name: l.name,
+        catalog_service_id: l.catalog_service_id,
+        sort_order: i,
+      }));
+      payload.service_name = trimmedLines[0].name;
+      payload.issue_notes = repairModalIssueNotes.trim() || selectedRepair.issue_notes;
+    }
+
+    const updated = await updateRepair(selectedRepairId, payload);
 
     setRepairs((current) =>
       current.map((repair) =>
@@ -384,6 +457,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     setDragOverColumn(status);
+    setDragOverCardId(null);
   }
 
   function handleColumnDragLeave(event: React.DragEvent<HTMLDivElement>) {
@@ -531,6 +605,11 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalEstimatedDate,
     repairModalNewNote,
     setRepairModalNewNote,
+    repairModalServiceLines,
+    setRepairModalServiceLines,
+    repairModalIssueNotes,
+    setRepairModalIssueNotes,
+    prefillHandoffRepairCreate,
     repairBeforePhotos,
     repairDuringPhotos,
     repairAfterPhotos,
