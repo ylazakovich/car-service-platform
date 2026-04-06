@@ -645,15 +645,18 @@ describe("bootstrap application", () => {
 
     const salesPlan = screen.getByRole("heading", { name: "Sales Plan", level: 3 }).closest("section");
     const actsFact = screen.getByRole("heading", { name: "Acts Coverage", level: 3 }).closest("section");
-    const repairCalendar = screen.getByRole("heading", { name: "Repair Calendar", level: 3 }).closest("section");
 
     expect(salesPlan).not.toBeNull();
     expect(actsFact).not.toBeNull();
-    expect(repairCalendar).not.toBeNull();
     expect(screen.queryByRole("heading", { name: "Parts Results", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Live estimate vs latest act", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Exports by staff", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Flow Timeline", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Repair Calendar", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Money Summary", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Live vs Act Delta", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Money Risks / Alerts", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Financial Trend", level: 3 })).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(within(salesPlan as HTMLElement).getAllByText(/610,00\s*zł/).length).toBeGreaterThan(0);
@@ -674,11 +677,6 @@ describe("bootstrap application", () => {
       expect(within(actsFact as HTMLElement).getByText("Median time to first act")).toBeInTheDocument();
       expect(within(actsFact as HTMLElement).getByText("Re-exported repairs")).toBeInTheDocument();
       expect(within(actsFact as HTMLElement).getByText("Act exports in period:")).toBeInTheDocument();
-      const calEl = repairCalendar as HTMLElement;
-      expect(within(calEl).getAllByText("TOR-1015").length).toBeGreaterThan(0);
-      expect(calEl.textContent).toContain("Chris Mason");
-      expect(calEl.textContent).toContain("Waiting for Parts");
-      expect(calEl.textContent).toContain("March waiting for parts.");
     });
 
     await user.click(screen.getByRole("tab", { name: "Warehouse" }));
@@ -858,7 +856,7 @@ describe("bootstrap application", () => {
     });
   });
 
-  it("shows a clickable repair calendar strip on moneyflow", async () => {
+  it("temporarily hides the repair calendar on moneyflow", async () => {
     const user = userEvent.setup();
     renderApp("/app");
 
@@ -871,18 +869,12 @@ describe("bootstrap application", () => {
     await user.type(endInput, "30-04-2025");
     await user.tab();
 
-    const calendarSection = await screen.findByRole("heading", { name: "Repair Calendar", level: 3 });
-
+    expect(await screen.findByRole("heading", { name: "Sales Plan", level: 3 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Acts Coverage", level: 3 })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Repair Calendar", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Flow Timeline", level: 3 })).not.toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "MoneyFlow trend chart" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "MoneyFlow financial trend chart" })).not.toBeInTheDocument();
     expect(screen.queryByText("Turn on at least one line to display the chart.")).not.toBeInTheDocument();
-
-    const openButtons = within(calendarSection.closest("section") as HTMLElement).getAllByRole("button", {
-      name: "Open repair TOR-1011",
-    });
-    await user.click(openButtons[0]);
-
-    expect(await screen.findByText("Customer reported vibration while braking.")).toBeInTheDocument();
   });
 
   it("opens detail dialogs for customer and vehicle cards", async () => {
