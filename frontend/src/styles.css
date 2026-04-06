@@ -1308,6 +1308,17 @@ textarea { resize: vertical; }
   background: linear-gradient(90deg, rgba(255, 155, 92, 0.5), rgba(255, 155, 92, 0.08));
 }
 
+.dashboard-report-section-warehouse-open {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.dashboard-report-section-warehouse-open::before {
+  display: none;
+}
+
 .dashboard-report-head {
   display: flex;
   align-items: end;
@@ -1318,6 +1329,102 @@ textarea { resize: vertical; }
 .dashboard-report-head h3 {
   margin: 0.2rem 0 0;
   font-size: 1rem;
+}
+
+.dashboard-warehouse-date-window {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.56rem 0.7rem;
+  border: 1px solid rgba(205, 216, 58, 0.16);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top left, rgba(205, 216, 58, 0.12), transparent 34%),
+    radial-gradient(circle at left center, rgba(205, 216, 58, 0.08), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    rgba(21, 21, 28, 0.96);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(205, 216, 58, 0.05),
+    0 10px 22px rgba(0, 0, 0, 0.14);
+}
+
+.dashboard-warehouse-date-window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+}
+
+.dashboard-warehouse-date-window-day,
+.dashboard-warehouse-date-window-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-warehouse-date-window-main {
+  display: inline-grid;
+  grid-template-columns: max-content max-content;
+  align-items: center;
+  justify-content: start;
+  gap: 0.58rem;
+}
+
+.dashboard-warehouse-date-window-day {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  min-width: 3.15rem;
+  padding-right: 0.56rem;
+  border-right: 1px solid rgba(205, 216, 58, 0.14);
+  color: var(--accent);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: clamp(1.95rem, 3vw, 2.35rem);
+  font-weight: 700;
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  font-variant-numeric: lining-nums tabular-nums;
+  text-shadow:
+    0 0 10px rgba(205, 216, 58, 0.18),
+    0 0 22px rgba(205, 216, 58, 0.08);
+}
+
+.dashboard-warehouse-date-window-copy {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0;
+}
+
+.dashboard-warehouse-date-window-copy > span {
+  color: #eef1fb;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.dashboard-warehouse-date-window-copy small {
+  color: rgba(194, 203, 232, 0.72);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .dashboard-warehouse-date-window {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .dashboard-mini-panel {
@@ -2102,6 +2209,129 @@ textarea { resize: vertical; }
 .metric-card-warehouse {
   background:
     linear-gradient(180deg, rgba(255, 155, 92, 0.06), rgba(255, 255, 255, 0)),
+    var(--surface);
+}
+
+.dashboard-metric-grid-warehouse-hero {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dashboard-warehouse-hero-card {
+  border-color: rgba(255, 155, 92, 0.14);
+}
+
+.dashboard-warehouse-hero-card-transit {
+  background:
+    linear-gradient(180deg, rgba(91, 156, 246, 0.08), rgba(255, 255, 255, 0)),
+    var(--surface);
+  border-color: rgba(91, 156, 246, 0.16);
+}
+
+.dashboard-warehouse-value-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+}
+
+.dashboard-warehouse-value-card {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    rgba(12, 16, 24, 0.82);
+}
+
+.dashboard-warehouse-value-card-stock {
+  border-color: rgba(255, 155, 92, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 155, 92, 0.08);
+}
+
+.dashboard-warehouse-value-card-transit {
+  border-color: rgba(91, 156, 246, 0.22);
+  box-shadow: inset 0 1px 0 rgba(91, 156, 246, 0.08);
+}
+
+.dashboard-warehouse-value-head {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.dashboard-warehouse-value-head p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+.dashboard-warehouse-value-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+  margin: 0;
+}
+
+.dashboard-warehouse-value-list div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.dashboard-warehouse-value-list dt {
+  color: var(--text-mid);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-warehouse-value-list dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.dashboard-warehouse-cumulative-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, rgba(255, 155, 92, 0.06), rgba(91, 156, 246, 0.05)),
+    rgba(255, 255, 255, 0.015);
+}
+
+.dashboard-warehouse-cumulative-cell {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.dashboard-warehouse-cumulative-cell strong {
+  font-size: 1rem;
+}
+
+.dashboard-warehouse-invoice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+}
+
+.dashboard-warehouse-invoice-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-warehouse-invoice-card-covered {
+  border-color: rgba(78, 201, 148, 0.18);
+  background:
+    linear-gradient(180deg, rgba(78, 201, 148, 0.07), rgba(255, 255, 255, 0)),
+    var(--surface);
+}
+
+.dashboard-warehouse-invoice-card-missing {
+  border-color: rgba(255, 155, 92, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 155, 92, 0.07), rgba(255, 255, 255, 0)),
     var(--surface);
 }
 
@@ -4931,7 +5161,11 @@ button.moneyflow-series-toggle {
   .metric-grid,
   .dashboard-metric-grid-single,
   .dashboard-metric-grid-triple,
+  .dashboard-metric-grid-warehouse-hero,
   .dashboard-grid,
+  .dashboard-warehouse-value-grid,
+  .dashboard-warehouse-invoice-grid,
+  .dashboard-warehouse-cumulative-strip,
   .section-split,
   .customer-layout {
     grid-template-columns: 1fr;

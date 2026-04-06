@@ -132,6 +132,25 @@ function createStubDashboardAnalyticsResponse() {
       purchases_unlinked: { count: 0, total_spend: 0 },
       exports_by_exporter: [],
     },
+    warehouse: {
+      snapshot_as_of: "2025-03-31T12:30:00Z",
+      stock_totals: {
+        delivered_quantity_total: 0,
+        assigned_quantity_total: 0,
+        free_quantity_total: 0,
+        in_transit_quantity_total: 0,
+      },
+      valuations: {
+        in_stock: { buy_total: 0, sale_total: 0, margin_total: 0 },
+        in_transit: { buy_total: 0, sale_total: 0, margin_total: 0 },
+        cumulative: { buy_total: 0, sale_total: 0, margin_total: 0 },
+      },
+      invoice_split: {
+        with_invoice: { line_count: 0, quantity_total: 0, buy_total: 0 },
+        without_invoice: { line_count: 0, quantity_total: 0, buy_total: 0 },
+      },
+      suppliers_top_current: [],
+    },
   };
 }
 
@@ -404,60 +423,88 @@ describe("bootstrap application", () => {
         });
       }
       if (url.startsWith("/analytics/dashboard/")) {
-        return Promise.resolve({
-          data: {
-            moneyflow_range: { start_date: "2025-03-01", end_date: "2025-03-31" },
-            operational_range: { start_date: "2025-03-01", end_date: "2025-03-31" },
-            pdf: {
-              latest_act_totals: {
-                labor_total: 640,
-                parts_client_total: 210,
-                parts_purchase_total: 150,
-                other_expenses_total: 0,
-                document_total: 850,
-                repairs_with_latest_act: 2,
-              },
-              coverage: { completed_in_range: 2, completed_without_pdf: 0 },
-              exports_in_period: 0,
-              completed_repairs_with_multiple_exports: 0,
-              completed_to_first_export_lag_days: {
-                average: 2,
-                median: 2,
-                p90: 2,
-                sample_size: 2,
-              },
-              series_by_export_day: [],
-            },
-            operational: {
-              funnel_by_status: { new: 0, in_progress: 0, waiting_parts: 0, completed: 0 },
-              repairs_created_in_range: 0,
-              cycle_time_days: { median: 4, p90: 10, sample_completed_in_range: 2 },
-              active_workload_preview: [],
-              recently_created_preview: [],
-            },
-            moneyflow: {
-              supplier_spend_top: [
-                {
-                  supplier_id: 1,
-                  supplier_name: "AutoParts Pro",
-                  total_spend: 120,
-                  line_count: 2,
-                },
-              ],
-              purchases_unlinked: {
-                count: 1,
-                total_spend: 70,
-              },
-              exports_by_exporter: [
-                {
-                  user_id: 7,
-                  email: "manager@test.local",
-                  display_name: "Test Manager",
-                  export_count: 2,
-                },
-              ],
-            },
+        const analytics = createStubDashboardAnalyticsResponse();
+        analytics.moneyflow_range = { start_date: "2025-03-01", end_date: "2025-03-31" };
+        analytics.operational_range = { start_date: "2025-03-01", end_date: "2025-03-31" };
+        analytics.pdf = {
+          latest_act_totals: {
+            labor_total: 640,
+            parts_client_total: 210,
+            parts_purchase_total: 150,
+            other_expenses_total: 0,
+            document_total: 850,
+            repairs_with_latest_act: 2,
           },
+          coverage: { completed_in_range: 2, completed_without_pdf: 0 },
+          exports_in_period: 0,
+          completed_repairs_with_multiple_exports: 0,
+          completed_to_first_export_lag_days: {
+            average: 2,
+            median: 2,
+            p90: 2,
+            sample_size: 2,
+          },
+          series_by_export_day: [],
+        };
+        analytics.operational = {
+          funnel_by_status: { new: 0, in_progress: 0, waiting_parts: 0, completed: 0 },
+          repairs_created_in_range: 0,
+          cycle_time_days: { median: 4, p90: 10, sample_completed_in_range: 2 },
+          active_workload_preview: [],
+          recently_created_preview: [],
+        };
+        analytics.moneyflow = {
+          supplier_spend_top: [
+            {
+              supplier_id: 1,
+              supplier_name: "AutoParts Pro",
+              total_spend: 120,
+              line_count: 2,
+            },
+          ],
+          purchases_unlinked: {
+            count: 1,
+            total_spend: 70,
+          },
+          exports_by_exporter: [
+            {
+              user_id: 7,
+              email: "manager@test.local",
+              display_name: "Test Manager",
+              export_count: 2,
+            },
+          ],
+        };
+        analytics.warehouse = {
+          snapshot_as_of: "2025-03-31T09:15:00Z",
+          stock_totals: {
+            delivered_quantity_total: 9,
+            assigned_quantity_total: 4,
+            free_quantity_total: 5,
+            in_transit_quantity_total: 3,
+          },
+          valuations: {
+            in_stock: { buy_total: 120, sale_total: 230, margin_total: 110 },
+            in_transit: { buy_total: 80, sale_total: 120, margin_total: 40 },
+            cumulative: { buy_total: 200, sale_total: 350, margin_total: 150 },
+          },
+          invoice_split: {
+            with_invoice: { line_count: 2, quantity_total: 6, buy_total: 120 },
+            without_invoice: { line_count: 1, quantity_total: 3, buy_total: 80 },
+          },
+          suppliers_top_current: [
+            {
+              supplier_id: 1,
+              supplier_name: "AutoParts Pro",
+              current_buy_total: 200,
+              in_stock_buy_total: 120,
+              in_transit_buy_total: 80,
+              quantity_total: 9,
+            },
+          ],
+        };
+        return Promise.resolve({
+          data: analytics,
         });
       }
       if (url === "/repairs/") {
@@ -721,18 +768,25 @@ describe("bootstrap application", () => {
 
     await user.click(screen.getByRole("tab", { name: "Warehouse" }));
 
-    const warehouseParts = await screen.findByRole("heading", { name: "Parts Results", level: 3 });
+    const warehouseParts = await screen.findByRole("heading", { name: "Current Stock Position", level: 3 });
     const warehouseSection = warehouseParts.closest("section");
 
     expect(warehouseSection).not.toBeNull();
-    expect(screen.getByRole("heading", { name: "Top suppliers by spend", level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Unlinked purchases", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Invoice Coverage", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Top suppliers", level: 3 })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Exports by staff", level: 3 })).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(within(warehouseSection as HTMLElement).getByText(/120,00\s*zł/)).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText("9")).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText("4")).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText("5")).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText("3")).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getAllByText(/120,00\s*zł/).length).toBeGreaterThan(0);
       expect(within(warehouseSection as HTMLElement).getByText(/230,00\s*zł/)).toBeInTheDocument();
       expect(within(warehouseSection as HTMLElement).getByText(/110,00\s*zł/)).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText(/200,00\s*zł/)).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText(/350,00\s*zł/)).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText(/150,00\s*zł/)).toBeInTheDocument();
     });
   });
 

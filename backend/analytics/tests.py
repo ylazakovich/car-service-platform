@@ -195,3 +195,95 @@ class StaffDashboardAnalyticsTests(TestCase):
         self.assertEqual(len(mf["exports_by_exporter"]), 1)
         self.assertEqual(mf["exports_by_exporter"][0]["user_id"], self.user.id)
         self.assertEqual(mf["exports_by_exporter"][0]["export_count"], 1)
+
+    def test_warehouse_live_stock_payload(self):
+        sup_a = Supplier.objects.create(name="PartsCo")
+        sup_b = Supplier.objects.create(name="TransitOnly")
+
+        Purchase.objects.create(
+            order_date=date(2026, 1, 5),
+            supplier=sup_a,
+            part_name="Filter",
+            quantity=2,
+            purchase_price=Decimal("10.00"),
+            sale_price=Decimal("15.00"),
+            repair_code="TOR-1001",
+            invoice_name="invoice-filter.pdf",
+            delivered=True,
+        )
+        Purchase.objects.create(
+            order_date=date(2026, 1, 6),
+            supplier=sup_a,
+            part_name="Bolt",
+            quantity=3,
+            purchase_price=Decimal("5.00"),
+            sale_price=Decimal("9.00"),
+            repair_code="",
+            invoice_url="https://files.test/invoice-bolt.pdf",
+            delivered=True,
+        )
+        Purchase.objects.create(
+            order_date=date(2026, 1, 7),
+            supplier=sup_b,
+            part_name="Turbo",
+            quantity=4,
+            purchase_price=Decimal("20.00"),
+            sale_price=Decimal("30.00"),
+            repair_code="",
+            delivered=False,
+        )
+        Purchase.objects.create(
+            order_date=date(2026, 2, 1),
+            supplier=sup_b,
+            part_name="Late order",
+            quantity=1,
+            purchase_price=Decimal("100.00"),
+            sale_price=Decimal("140.00"),
+            repair_code="TOR-2000",
+            delivered=False,
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.get("/api/analytics/dashboard/?start_date=2026-01-01&end_date=2026-01-31")
+        self.assertEqual(response.status_code, 200)
+
+        warehouse = response.json()["warehouse"]
+        self.assertTrue(warehouse["snapshot_as_of"])
+
+        stock_totals = warehouse["stock_totals"]
+        self.assertEqual(stock_totals["delivered_quantity_total"], 5)
+        self.assertEqual(stock_totals["assigned_quantity_total"], 2)
+        self.assertEqual(stock_totals["free_quantity_total"], 3)
+        self.assertEqual(stock_totals["in_transit_quantity_total"], 5)
+
+        valuations = warehouse["valuations"]
+        self.assertEqual(valuations["in_stock"]["buy_total"], 35.0)
+        self.assertEqual(valuations["in_stock"]["sale_total"], 57.0)
+        self.assertEqual(valuations["in_stock"]["margin_total"], 22.0)
+        self.assertEqual(valuations["in_transit"]["buy_total"], 180.0)
+        self.assertEqual(valuations["in_transit"]["sale_total"], 260.0)
+        self.assertEqual(valuations["in_transit"]["margin_total"], 80.0)
+        self.assertEqual(valuations["cumulative"]["buy_total"], 215.0)
+        self.assertEqual(valuations["cumulative"]["sale_total"], 317.0)
+        self.assertEqual(valuations["cumulative"]["margin_total"], 102.0)
+
+        invoice_split = warehouse["invoice_split"]
+        self.assertEqual(invoice_split["with_invoice"]["line_count"], 2)
+        self.assertEqual(invoice_split["with_invoice"]["quantity_total"], 5)
+        self.assertEqual(invoice_split["with_invoice"]["buy_total"], 35.0)
+        self.assertEqual(invoice_split["without_invoice"]["line_count"], 2)
+        self.assertEqual(invoice_split["without_invoice"]["quantity_total"], 5)
+        self.assertEqual(invoice_split["without_invoice"]["buy_total"], 180.0)
+
+        suppliers = warehouse["suppliers_top_current"]
+        self.assertEqual(len(suppliers), 2)
+        self.assertEqual(suppliers[0]["supplier_name"], "TransitOnly")
+        self.assertEqual(suppliers[0]["current_buy_total"], 180.0)
+        self.assertEqual(suppliers[0]["in_stock_buy_total"], 0.0)
+        self.assertEqual(suppliers[0]["in_transit_buy_total"], 180.0)
+        self.assertEqual(suppliers[0]["quantity_total"], 5)
+        self.assertEqual(suppliers[1]["supplier_name"], "PartsCo")
+        self.assertEqual(suppliers[1]["current_buy_total"], 35.0)
+        self.assertEqual(suppliers[1]["in_stock_buy_total"], 35.0)
+        self.assertEqual(suppliers[1]["in_transit_buy_total"], 0.0)
+        self.assertEqual(suppliers[1]["quantity_total"], 5)
