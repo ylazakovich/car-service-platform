@@ -1,1 +1,1 @@
-{"id":"0dae2a00a042ba1608738612ab902f9e","fullName":"admin-dashboard-visit.spec.ts:10:3","name":"signs in as admin and opens Dashboard tabs","status":"failed","testResultsByEnv":{"default":"d43fd3d8f5c1021b357a048ba9efda4e"}}
+{"id":"0dae2a00a042ba1608738612ab902f9e","fullName":"admin-dashboard-visit.spec.ts:10:3","name":"signs in as admin and opens Dashboard tabs","status":"passed","testResultsByEnv":{"default":"1bf554e94069a6a5a14d14b392ed3a84"}}
