@@ -46,6 +46,55 @@ function formatExpectedDateInput(value: Date) {
   return `${day}-${month}-${year}`;
 }
 
+function getCalendarMonthIndex(label: string) {
+  const [monthToken, yearToken] = label.trim().split(/\s+/);
+  const normalizedMonthToken = monthToken === "Sept" ? "Sep" : monthToken;
+  const monthIndex = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(
+    normalizedMonthToken
+  );
+  return Number(yearToken) * 12 + monthIndex;
+}
+
+function getIsoMonthIndex(iso: string) {
+  const [year, month] = iso.split("-").map(Number);
+  return year * 12 + (month - 1);
+}
+
+async function chooseDateInDashboardCalendar(
+  user: ReturnType<typeof userEvent.setup>,
+  calendar: HTMLElement,
+  iso: string
+) {
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const targetButton = within(calendar).queryByRole("button", { name: `Choose ${iso}` });
+    if (targetButton) {
+      await user.click(targetButton);
+      return;
+    }
+
+    const visibleLabel = calendar.querySelector(".friendly-date-header strong")?.textContent ?? "";
+    const targetMonthIndex = getIsoMonthIndex(iso);
+    const visibleMonthIndex = getCalendarMonthIndex(visibleLabel);
+    await user.click(
+      within(calendar).getByRole("button", {
+        name: targetMonthIndex < visibleMonthIndex ? "Previous month" : "Next month",
+      })
+    );
+  }
+
+  throw new Error(`Unable to navigate calendar to ${iso}`);
+}
+
+async function pickDashboardDateRange(user: ReturnType<typeof userEvent.setup>, startIso: string, endIso: string) {
+  await user.click(await screen.findByLabelText("Date range"));
+  const calendar = await screen.findByRole("dialog", { name: "Date range calendar" });
+  await chooseDateInDashboardCalendar(user, calendar, startIso);
+  await chooseDateInDashboardCalendar(user, calendar, endIso);
+  await waitFor(() => {
+    expect(screen.queryByRole("dialog", { name: "Date range calendar" })).not.toBeInTheDocument();
+  });
+}
+
 /** Minimal valid `/api/analytics/dashboard/` payload for tests that override `mockApi.get`. */
 function createStubDashboardAnalyticsResponse() {
   return {
@@ -633,52 +682,41 @@ describe("bootstrap application", () => {
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+    await pickDashboardDateRange(user, "2025-03-01", "2025-03-31");
 
-    const [startInput, endInput] = await screen.findAllByPlaceholderText("dd-mm-yyyy");
-    await user.clear(startInput);
-    await user.type(startInput, "01-03-2025");
-    await user.tab();
+    const salesPlan = screen.getByRole("region", { name: "Sales Plan" });
+    const actsFact = screen.getByRole("region", { name: "Acts Coverage" });
 
-    await user.clear(endInput);
-    await user.type(endInput, "31-03-2025");
-    await user.tab();
-
-    const salesPlan = screen.getByRole("heading", { name: "Sales Plan", level: 3 }).closest("section");
-    const actsFact = screen.getByRole("heading", { name: "Acts Coverage", level: 3 }).closest("section");
-    const repairCalendar = screen.getByRole("heading", { name: "Repair Calendar", level: 3 }).closest("section");
-
-    expect(salesPlan).not.toBeNull();
-    expect(actsFact).not.toBeNull();
-    expect(repairCalendar).not.toBeNull();
     expect(screen.queryByRole("heading", { name: "Parts Results", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Live estimate vs latest act", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Exports by staff", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Flow Timeline", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Repair Calendar", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Money Summary", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Live vs Act Delta", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Money Risks / Alerts", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Financial Trend", level: 3 })).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(within(salesPlan as HTMLElement).getAllByText(/610,00\s*zł/).length).toBeGreaterThan(0);
-      expect(within(salesPlan as HTMLElement).getAllByText(/230,00\s*zł/).length).toBeGreaterThan(0);
-      expect(within(salesPlan as HTMLElement).getAllByText(/840,00\s*zł/).length).toBeGreaterThan(0);
-      expect(within(salesPlan as HTMLElement).getByText("Δ +30,00 zł")).toBeInTheDocument();
-      expect(within(salesPlan as HTMLElement).getByText("Δ -20,00 zł")).toBeInTheDocument();
-      expect(within(salesPlan as HTMLElement).getByText("Δ +10,00 zł")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Coverage status")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Fully covered")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("100%")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("2 of 2 completed repairs have an act.")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("2 d")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).queryByText("Labor (acts)")).not.toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).queryByText("Parts to client (acts)")).not.toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).queryByText("Document total (acts)")).not.toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Missing acts")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Median time to first act")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Re-exported repairs")).toBeInTheDocument();
-      expect(within(actsFact as HTMLElement).getByText("Act exports in period:")).toBeInTheDocument();
-      const calEl = repairCalendar as HTMLElement;
-      expect(within(calEl).getAllByText("TOR-1015").length).toBeGreaterThan(0);
-      expect(calEl.textContent).toContain("Chris Mason");
-      expect(calEl.textContent).toContain("Waiting for Parts");
-      expect(calEl.textContent).toContain("March waiting for parts.");
+      expect(within(salesPlan).getAllByText(/610,00\s*zł/).length).toBeGreaterThan(0);
+      expect(within(salesPlan).getAllByText(/230,00\s*zł/).length).toBeGreaterThan(0);
+      expect(within(salesPlan).getAllByText(/840,00\s*zł/).length).toBeGreaterThan(0);
+      expect(within(salesPlan).getByText("Δ +30,00 zł")).toBeInTheDocument();
+      expect(within(salesPlan).getByText("Δ -20,00 zł")).toBeInTheDocument();
+      expect(within(salesPlan).getByText("Δ +10,00 zł")).toBeInTheDocument();
+      expect(within(actsFact).getByText("Coverage status")).toBeInTheDocument();
+      expect(within(actsFact).getByText("Fully covered")).toBeInTheDocument();
+      expect(within(actsFact).getByText("100%")).toBeInTheDocument();
+      expect(within(actsFact).getByText("2 of 2 completed repairs have an act.")).toBeInTheDocument();
+      expect(within(actsFact).getByText("2 d")).toBeInTheDocument();
+      expect(within(actsFact).queryByText("Labor (acts)")).not.toBeInTheDocument();
+      expect(within(actsFact).queryByText("Parts to client (acts)")).not.toBeInTheDocument();
+      expect(within(actsFact).queryByText("Document total (acts)")).not.toBeInTheDocument();
+      expect(within(actsFact).getByText("Missing acts")).toBeInTheDocument();
+      expect(within(actsFact).getByText("Median time to first act")).toBeInTheDocument();
+      expect(within(actsFact).getByText("Re-exported repairs")).toBeInTheDocument();
+      expect(within(actsFact).getByText("Act exports in period")).toBeInTheDocument();
+      expect(within(actsFact).queryByText("Act exports in period:")).not.toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("tab", { name: "Warehouse" }));
@@ -709,29 +747,22 @@ describe("bootstrap application", () => {
     const startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - 30);
 
-    const startInput = await screen.findByLabelText("Start date");
-    const endInput = await screen.findByLabelText("End date");
+    const rangeInput = await screen.findByLabelText("Date range");
 
-    expect(startInput).toHaveValue(formatExpectedDateInput(startDate));
-    expect(endInput).toHaveValue(formatExpectedDateInput(endDate));
+    expect(rangeInput).toHaveValue(`${formatExpectedDateInput(startDate)} - ${formatExpectedDateInput(endDate)}`);
 
-    await user.clear(startInput);
-    await user.type(startInput, "01-01-2025");
-    await user.tab();
-    await user.clear(endInput);
-    await user.type(endInput, "31-01-2025");
-    await user.tab();
+    await pickDashboardDateRange(user, "2025-01-01", "2025-01-31");
 
-    expect(startInput).toHaveValue("01-01-2025");
-    expect(endInput).toHaveValue("31-01-2025");
+    expect(rangeInput).toHaveValue("01-01-2025 - 31-01-2025");
 
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     expect(await screen.findByRole("heading", { name: "Purchases", level: 2 })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Dashboard" }));
     await waitFor(() => {
-      expect(screen.getByLabelText("Start date")).toHaveValue(formatExpectedDateInput(startDate));
-      expect(screen.getByLabelText("End date")).toHaveValue(formatExpectedDateInput(endDate));
+      expect(screen.getByLabelText("Date range")).toHaveValue(
+        `${formatExpectedDateInput(startDate)} - ${formatExpectedDateInput(endDate)}`
+      );
     });
   });
 
@@ -780,27 +811,22 @@ describe("bootstrap application", () => {
 
     renderApp("/app");
 
-    const actsFact = await screen.findByRole("heading", { name: "Acts Coverage", level: 3 });
-    const section = actsFact.closest("section");
-
-    expect(section).not.toBeNull();
+    const section = await screen.findByRole("region", { name: "Acts Coverage" });
 
     await waitFor(() => {
-      expect(within(section as HTMLElement).getByText("Partial coverage")).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("25%")).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("1 of 4 completed repairs have an act.")).toBeInTheDocument();
-      expect(
-        within(section as HTMLElement).getByText("3 completed repairs are still waiting for their first act.")
-      ).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("Missing acts")).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("3")).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("Median time to first act")).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("—")).toBeInTheDocument();
-      expect(
-        within(section as HTMLElement).getByText("No completed repairs with an exported act yet.")
-      ).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("Re-exported repairs")).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("1")).toBeInTheDocument();
+      expect(within(section).getByText("Partial coverage")).toBeInTheDocument();
+      expect(within(section).getByText("25%")).toBeInTheDocument();
+      expect(within(section).getByText("1 of 4 completed repairs have an act.")).toBeInTheDocument();
+      expect(within(section).getByText("3 completed repairs are still waiting for their first act.")).toBeInTheDocument();
+      expect(within(section).getByText("Missing acts")).toBeInTheDocument();
+      expect(within(section).getByText("3")).toBeInTheDocument();
+      expect(within(section).getByText("Median time to first act")).toBeInTheDocument();
+      expect(within(section).getByText("—")).toBeInTheDocument();
+      expect(within(section).getByText("No completed repairs with an exported act yet.")).toBeInTheDocument();
+      expect(within(section).getByText("Re-exported repairs")).toBeInTheDocument();
+      expect(within(section).getByText("Act exports in period")).toBeInTheDocument();
+      expect(within(section).getByText("1")).toBeInTheDocument();
+      expect(within(section).queryByText("Act exports in period:")).not.toBeInTheDocument();
     });
   });
 
@@ -843,46 +869,29 @@ describe("bootstrap application", () => {
 
     renderApp("/app");
 
-    const actsFact = await screen.findByRole("heading", { name: "Acts Coverage", level: 3 });
-    const section = actsFact.closest("section");
-
-    expect(section).not.toBeNull();
+    const section = await screen.findByRole("region", { name: "Acts Coverage" });
 
     await waitFor(() => {
-      expect(within(section as HTMLElement).getByText("No completed repairs")).toBeInTheDocument();
-      expect(within(section as HTMLElement).getByText("No completed repairs in this period.")).toBeInTheDocument();
-      expect(
-        within(section as HTMLElement).getByText("Pick a date range with completed work to review act coverage.")
-      ).toBeInTheDocument();
-      expect(within(section as HTMLElement).queryByText("0 / 0")).not.toBeInTheDocument();
+      expect(within(section).getByText("No completed repairs")).toBeInTheDocument();
+      expect(within(section).getByText("No completed repairs in this period.")).toBeInTheDocument();
+      expect(within(section).getByText("Pick a date range with completed work to review act coverage.")).toBeInTheDocument();
+      expect(within(section).queryByText("0 / 0")).not.toBeInTheDocument();
     });
   });
 
-  it("shows a clickable repair calendar strip on moneyflow", async () => {
+  it("temporarily hides the repair calendar on moneyflow", async () => {
     const user = userEvent.setup();
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
-    const [startInput, endInput] = await screen.findAllByPlaceholderText("dd-mm-yyyy");
-    await user.clear(startInput);
-    await user.type(startInput, "01-04-2025");
-    await user.tab();
-    await user.clear(endInput);
-    await user.type(endInput, "30-04-2025");
-    await user.tab();
+    await pickDashboardDateRange(user, "2025-04-01", "2025-04-30");
 
-    const calendarSection = await screen.findByRole("heading", { name: "Repair Calendar", level: 3 });
-
+    expect(await screen.findByRole("region", { name: "Sales Plan" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Acts Coverage" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Repair Calendar", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Flow Timeline", level: 3 })).not.toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "MoneyFlow trend chart" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "MoneyFlow financial trend chart" })).not.toBeInTheDocument();
     expect(screen.queryByText("Turn on at least one line to display the chart.")).not.toBeInTheDocument();
-
-    const openButtons = within(calendarSection.closest("section") as HTMLElement).getAllByRole("button", {
-      name: "Open repair TOR-1011",
-    });
-    await user.click(openButtons[0]);
-
-    expect(await screen.findByText("Customer reported vibration while braking.")).toBeInTheDocument();
   });
 
   it("opens detail dialogs for customer and vehicle cards", async () => {
