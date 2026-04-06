@@ -8,6 +8,12 @@ export const E2E_DEMO_REPAIR_TRACKING_CODE = "TOR-1001";
 /** Substring of API `vehicle_label` for this repair (`{plate} • {make} {model}`) — stable in modal title. */
 export const E2E_DEMO_REPAIR_VEHICLE_PLATE = "AA 1234 BB";
 
+/**
+ * Repair Update modal `aria-labelledby` → accessible name of `role="dialog"` (matches `get_vehicle_label` on backend).
+ * Prefer this over `filter({ hasText: plate })` to avoid matching multiple dialogs / non-dialog nodes.
+ */
+export const E2E_DEMO_REPAIR_DIALOG_NAME = /AA 1234 BB\s*•\s*Toyota Camry/;
+
 export const E2E_DEMO_REPAIR_SERVICE_NAME = "Oil change + filter replacement";
 
 /** Kanban / list summary when demo repair has multiple `repair_service_lines` (first line + count). */
