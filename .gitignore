@@ -37,3 +37,7 @@ mcp/local.overrides.json
 .idea/
 *.swp
 *.swo
+
+# Django MEDIA_ROOT: PDF exports, invoices, uploads — not versioned (backup: scripts/media-backup.sh)
+backend/media/*
+!backend/media/.gitkeep
