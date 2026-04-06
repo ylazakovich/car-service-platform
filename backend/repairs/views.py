@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, OuterRef, Prefetch, Q
 import secrets
 
 from django.http import HttpResponse
@@ -9,15 +9,16 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from .models import Repair, RepairDocument, RepairNote
+from .models import Repair, RepairDocument, RepairNote, RepairServiceLine
 from .serializers import PortalRepairSerializer, RepairNoteSerializer, RepairSerializer
 
 
 def build_repair_queryset():
     has_pdf_subquery = RepairDocument.objects.filter(repair_id=OuterRef("pk"))
+    line_qs = RepairServiceLine.objects.select_related("catalog_service").order_by("sort_order", "id")
     return (
         Repair.objects.select_related("vehicle", "vehicle__customer", "master")
-        .prefetch_related("notes")
+        .prefetch_related("notes", Prefetch("service_lines", queryset=line_qs))
         .annotate(has_pdf=Exists(has_pdf_subquery))
     )
 
@@ -34,7 +35,10 @@ class PortalRepairLookupView(generics.RetrieveAPIView):
     lookup_url_kwarg = "token"
 
     def get_queryset(self):
-        return Repair.objects.select_related("vehicle", "master")
+        line_qs = RepairServiceLine.objects.select_related("catalog_service").order_by("sort_order", "id")
+        return Repair.objects.select_related("vehicle", "master").prefetch_related(
+            Prefetch("service_lines", queryset=line_qs)
+        )
 
 
 class RepairListCreateView(generics.ListCreateAPIView):
@@ -47,9 +51,10 @@ class RepairListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(
                 Q(tracking_code__icontains=q)
                 | Q(service_name__icontains=q)
+                | Q(service_lines__name__icontains=q)
                 | Q(vehicle__license_plate__icontains=q)
                 | Q(vehicle__customer__full_name__icontains=q)
-            )
+            ).distinct()
         master_id = self.request.query_params.get("master_id", "").strip()
         if master_id:
             qs = qs.filter(master_id=master_id)

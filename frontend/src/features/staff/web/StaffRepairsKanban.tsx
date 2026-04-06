@@ -1,6 +1,7 @@
 import { useState, type DragEvent } from "react";
 import {
   formatRepairCardDateRow,
+  formatRepairServicesSummary,
   getRepairStatusClass,
   REPAIR_KANBAN_COLUMNS,
   type RepairEntry,
@@ -123,7 +124,7 @@ export function StaffRepairsKanban({
                     <p className="kanban-card-owner">
                       <span className="kanban-card-label">Client:</span> {repair.owner_name}
                     </p>
-                    <p className="kanban-card-service">{repair.service_name}</p>
+                    <p className="kanban-card-service">{formatRepairServicesSummary(repair)}</p>
 
                     {repair.issue_notes ? <p className="kanban-card-issue">{repair.issue_notes}</p> : null}
 

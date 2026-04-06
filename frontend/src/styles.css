@@ -3440,6 +3440,87 @@ button.moneyflow-series-toggle {
 
 .repair-info-issue { max-width: 60ch; }
 
+.repair-info-issue-input {
+  width: 100%;
+  max-width: 60ch;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--s3);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.repair-form-services-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.repair-form-services-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-soft);
+}
+
+.repair-service-lines-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.repair-service-line-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+}
+
+.repair-service-line-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+}
+
+.repair-service-line-label input {
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+.repair-service-line-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.repair-service-line-hint-catalog { color: var(--accent); }
+
+.repair-service-line-hint-custom { color: var(--text-soft); }
+
+.repair-service-line-add {
+  align-self: flex-start;
+}
+
+.repair-service-line-remove {
+  align-self: flex-start;
+  font-size: 0.8rem;
+}
+
 .repairs-surface-stack {
   display: grid;
   gap: var(--s4);

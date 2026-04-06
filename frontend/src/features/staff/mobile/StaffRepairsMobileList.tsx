@@ -1,6 +1,7 @@
 import {
   formatRepairCardDateRow,
   formatRepairDisplayDate,
+  formatRepairServicesSummary,
   getRepairStatusClass,
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
@@ -105,7 +106,7 @@ export function StaffRepairsMobileList({
                     <div className="repair-mobile-main">
                       <strong>{repair.vehicle_label}</strong>
                       <p>{repair.owner_name}</p>
-                      <p>{repair.service_name}</p>
+                      <p>{formatRepairServicesSummary(repair)}</p>
                       {repair.issue_notes ? <p className="repair-mobile-issue">{repair.issue_notes}</p> : null}
                     </div>
 
