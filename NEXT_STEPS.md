@@ -2,7 +2,7 @@
 
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
-- Last updated: `2026-04-05`
+- Last updated: `2026-04-06`
 - Status: `m3 продуктовый контур pdf/snapshot/dashboard в работе; усиление E2E+CI (без ретраев) вынесено в активный трек — см. docs/testing/playwright-e2e-framework.md и NOW ниже`
 
 ## NOW
@@ -25,6 +25,7 @@
 - [ ] Спроектировать сценарий исторического просмотра аналитики: как выбирать период, активную версию snapshot и как отображать архивные данные без пересчета задним числом.
 - [ ] Согласовать source of truth для supplier/monthly analytics с новым snapshot-слоем, чтобы отчеты не расходились между собой.
 - [ ] Полный контур: `… -> dashboard totals -> historical lookup` (частично: backend persist + Playwright `frontend/e2e/repair-pdf-view.spec.ts` для просмотра без лишнего POST export).
+- [ ] **Хранение PDF актов (object storage):** спроектировать и доработать контур сохранения/выдачи актов завершения — вынести файлы `RepairDocument` с локального `MEDIA_ROOT`/volume в **S3-compatible** хранилище (AWS S3, MinIO, Cloudflare R2 и т.п.): загрузка при export, чтение для `GET …/pdf/`, опционально presigned URLs; миграция существующих файлов и политика бэкапа (bucket lifecycle / совместимость с `scripts/media-backup.sh` или отдельный snapshot бакета).
 
 ### QuickFocus / VPR Creation Flow
 - [ ] Исправить `QuickFocus` / создание нового VPR: если нужный `Vehicle` не найден, дать inline-создание нового `Vehicle` прямо из repair flow.
