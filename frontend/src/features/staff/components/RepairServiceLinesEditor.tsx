@@ -72,10 +72,13 @@ export function RepairServiceLinesEditor({
 
         return (
           <div key={line.key} className="repair-service-line-row">
-            <label className="repair-service-line-label">
-              <span>Service {index + 1}</span>
+            <span className="repair-service-line-index" aria-hidden="true">
+              {index + 1}
+            </span>
+            <div className="repair-service-line-field">
               <input
                 type="text"
+                className="repair-service-line-input"
                 list={datalistId}
                 value={line.name}
                 disabled={disabled}
@@ -83,17 +86,26 @@ export function RepairServiceLinesEditor({
                 onBlur={() => onNameBlur(index)}
                 placeholder="Type or pick from catalog"
                 aria-label={`Service ${index + 1}`}
+                title={
+                  custom
+                    ? "Not in catalog — will be saved as a custom service name"
+                    : matched
+                      ? "Matches catalog (PDF uses catalog price when set)"
+                      : undefined
+                }
               />
-            </label>
-            {matched ? (
-              <p className="repair-service-line-hint repair-service-line-hint-catalog">Linked to catalog (pricing in PDF)</p>
-            ) : null}
-            {custom ? (
-              <p className="repair-service-line-hint repair-service-line-hint-custom">Not in catalog — saved as a new custom service name</p>
-            ) : null}
+              {custom ? (
+                <span className="repair-service-line-hint-custom">Custom service (not in catalog)</span>
+              ) : null}
+            </div>
             {!disabled && lines.length > 1 ? (
-              <button type="button" className="button button-secondary repair-service-line-remove" onClick={() => removeLine(index)}>
-                Remove
+              <button
+                type="button"
+                className="button button-secondary button-sm repair-service-line-remove"
+                onClick={() => removeLine(index)}
+                aria-label={`Remove service ${index + 1}`}
+              >
+                Delete
               </button>
             ) : null}
           </div>

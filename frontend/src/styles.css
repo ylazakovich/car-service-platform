@@ -3248,13 +3248,42 @@ button.moneyflow-series-toggle {
   }
 
   .purchase-detail-modal.modal-card-large {
+    display: flex;
+    flex-direction: column;
     width: min(460px, 100vw);
     max-height: 100vh;
     height: 100%;
     margin: 0;
     border-radius: 0;
     border-left: 1px solid var(--border);
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .purchase-detail-modal.modal-card-large .panel-header {
+    flex-shrink: 0;
+    margin: 0;
+    position: relative;
+    top: auto;
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .purchase-detail-modal.modal-card-large .purchase-modal-tabs {
+    flex-shrink: 0;
+    margin: var(--s3) var(--s6) var(--s2);
+  }
+
+  .purchase-detail-modal.modal-card-large .purchase-detail-modal-scroll {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    padding: 0 var(--s6) var(--s4);
+  }
+
+  .purchase-detail-modal.modal-card-large .repair-modal-footer-bar {
+    flex-shrink: 0;
   }
 
   /* Боковая панель без скругления — шапка без radius */
@@ -3438,6 +3467,28 @@ button.moneyflow-series-toggle {
   text-transform: uppercase;
 }
 
+/* Section label styled like .button-secondary (e.g. Services — matches "New card for another master") */
+.repair-info-label--pill {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: var(--s1);
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  background: var(--surface-high);
+  border: 1px solid var(--border);
+}
+
+.repair-form-services-label.repair-info-label--pill {
+  margin-bottom: 0;
+}
+
 .repair-info-issue { max-width: 60ch; }
 
 .repair-info-issue-input {
@@ -3474,32 +3525,66 @@ button.moneyflow-series-toggle {
   gap: var(--s3);
 }
 
+.repair-info-row-services {
+  align-items: stretch;
+}
+
 .repair-service-line-row {
   display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  padding: var(--s3);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-mid);
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
 }
 
-.repair-service-line-label {
+.repair-service-line-row:last-of-type {
+  border-bottom: none;
+}
+
+.repair-service-line-index {
+  flex-shrink: 0;
+  width: 1.35rem;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 2.35rem;
+  color: var(--text-mid);
+}
+
+.repair-service-line-field {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--s2);
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-soft);
+  gap: var(--s1);
 }
 
-.repair-service-line-label input {
+.repair-service-line-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 2.35rem;
+  padding: 0.55rem var(--s3);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-mid);
+  color: var(--text);
   font-size: 0.95rem;
-  text-transform: none;
-  letter-spacing: normal;
   font-weight: 500;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.repair-service-line-input:hover {
+  border-color: var(--border-strong);
+}
+
+.repair-service-line-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .repair-service-line-hint {
@@ -3517,8 +3602,9 @@ button.moneyflow-series-toggle {
 }
 
 .repair-service-line-remove {
-  align-self: flex-start;
-  font-size: 0.8rem;
+  flex-shrink: 0;
+  align-self: center;
+  margin-top: 0;
 }
 
 .repairs-surface-stack {
@@ -4458,6 +4544,194 @@ button.moneyflow-series-toggle {
   gap: var(--s3);
 }
 
+.vehicle-detail-modal .vehicle-modal-actions.staff-modal-footer-bar--center,
+.vehicle-form-modal .vehicle-modal-actions.staff-modal-footer-bar--center {
+  justify-content: center;
+}
+
+/* ── Desktop staff modals: opaque header + scroll body + pinned footer (match mobile sheet) ── */
+.repair-modal-footer-bar {
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--s4) var(--s6);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.repair-update-modal-scroll,
+.repair-form-modal-scroll,
+.vehicle-form-modal-scroll,
+.customer-form-modal-scroll,
+.modal-body-scroll,
+.purchase-detail-modal-scroll,
+.purchase-form-modal-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 821px) {
+  .repair-update-modal.modal-card,
+  .repair-form-modal.modal-card,
+  .vehicle-detail-modal.modal-card,
+  .vehicle-form-modal.modal-card,
+  .customer-form-modal.modal-card,
+  .customer-detail-modal.modal-card,
+  .purchase-form-modal.modal-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+    max-height: min(92vh, 960px);
+  }
+
+  .repair-update-modal .panel-header,
+  .repair-form-modal .panel-header,
+  .vehicle-detail-modal .panel-header,
+  .vehicle-form-modal .panel-header,
+  .customer-form-modal .panel-header,
+  .customer-detail-modal .panel-header,
+  .purchase-detail-modal .panel-header,
+  .purchase-form-modal .panel-header {
+    position: relative;
+    top: auto;
+    flex-shrink: 0;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 17px 17px 0 0;
+    padding: var(--s5) var(--s6);
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions),
+  .vehicle-detail-modal .panel-header:has(.inline-actions),
+  .customer-detail-modal .panel-header:has(.inline-actions) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s3);
+    text-align: start;
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) > div:first-child,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) > div:first-child,
+  .customer-detail-modal .panel-header:has(.inline-actions) > div:first-child {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) .inline-actions,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) .inline-actions,
+  .customer-detail-modal .panel-header:has(.inline-actions) .inline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--s2);
+    flex: 1 1 auto;
+  }
+
+  .repair-update-modal > .status-switcher {
+    flex-shrink: 0;
+    margin: var(--s3) var(--s6) var(--s2);
+  }
+
+  /* Taller repair modal — more of the form visible without feeling cramped */
+  .repair-update-modal.modal-card.modal-card-large {
+    max-height: min(96vh, 1180px);
+  }
+
+  .repair-update-modal-scroll {
+    padding: 0 var(--s6) var(--s5);
+  }
+
+  .repair-form-modal > form.stack-form,
+  .vehicle-form-modal > form.stack-form,
+  .customer-form-modal > form.stack-form,
+  .purchase-form-modal > form.stack-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  .repair-form-modal-scroll,
+  .vehicle-form-modal-scroll,
+  .customer-form-modal-scroll,
+  .purchase-form-modal-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    padding: var(--s4) var(--s6) var(--s5);
+  }
+
+  .vehicle-detail-modal > .modal-body-scroll,
+  .customer-detail-modal > .modal-body-scroll {
+    padding: var(--s4) var(--s6) var(--s5);
+  }
+
+  .purchase-detail-modal .purchase-modal-tabs {
+    flex-shrink: 0;
+    margin: 0 var(--s6);
+    margin-bottom: var(--s2);
+  }
+
+  .purchase-detail-modal-scroll {
+    padding: 0 var(--s6) var(--s4);
+  }
+
+  .repair-modal-footer-bar .repair-modal-actions,
+  .repair-modal-footer-bar.vehicle-modal-actions,
+  .repair-modal-footer-bar.purchase-modal-actions {
+    padding-top: 0;
+  }
+}
+
+/* Centered purchase detail (821px–899px): same shell as other staff modals */
+@media (min-width: 821px) and (max-width: 899px) {
+  .purchase-detail-modal.modal-card-large {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+    max-height: min(92vh, 960px);
+  }
+
+  .purchase-detail-modal .panel-header {
+    position: relative;
+    top: auto;
+    flex-shrink: 0;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 17px 17px 0 0;
+    padding: var(--s5) var(--s6);
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .purchase-detail-modal .purchase-modal-tabs {
+    flex-shrink: 0;
+    margin: var(--s3) var(--s6) var(--s2);
+  }
+
+  .purchase-detail-modal .purchase-detail-modal-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 var(--s6) var(--s4);
+  }
+}
+
 /* ═══════════════════════════════════════════════
    TOAST
    ═══════════════════════════════════════════════ */
@@ -5097,6 +5371,47 @@ button.moneyflow-series-toggle {
   min-height: 0;
 }
 
+/* Repair Update modal only: no "Status" caption, tighter chrome */
+.status-switcher.status-switcher--repair-modal {
+  gap: var(--s1);
+  padding: var(--s2) var(--s3);
+  margin-bottom: var(--s3);
+  border-radius: 10px;
+}
+
+.status-switcher.status-switcher--repair-modal .status-switcher-options-stacked {
+  gap: var(--s1);
+}
+
+.status-switcher.status-switcher--repair-modal .status-switcher-row {
+  gap: var(--s1);
+}
+
+.status-switcher.status-switcher--repair-modal .status-switcher-final {
+  margin-top: 0;
+  padding-top: var(--s2);
+}
+
+.status-switcher.status-switcher--repair-modal .status-btn {
+  min-height: 2.05rem;
+  padding: 0.32rem var(--s2);
+  font-size: 0.76rem;
+  border-radius: 7px;
+  gap: 0.35rem;
+}
+
+.status-switcher.status-switcher--repair-modal .status-btn.status-btn-completed-final {
+  min-height: 2.3rem;
+  padding: var(--s2) var(--s3);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.status-switcher.status-switcher--repair-modal .status-btn-dot {
+  width: 6px;
+  height: 6px;
+}
+
 .status-switcher-label {
   font-size: 0.72rem;
   font-weight: 600;
@@ -5171,16 +5486,22 @@ button.moneyflow-series-toggle {
   border-style: solid;
 }
 
+/* Inactive "Completed" should read as a goal, not already-done (green chrome only when active) */
 .status-btn.status-btn-completed-final:not(.status-btn-active) {
-  border-color: rgba(78, 201, 148, 0.35);
-  background: rgba(78, 201, 148, 0.06);
-  color: var(--text);
+  border-width: 1px;
+  border-color: transparent;
+  background: var(--surface-high);
+  color: var(--text-mid);
 }
 
 .status-btn.status-btn-completed-final:not(.status-btn-active):hover {
-  background: rgba(78, 201, 148, 0.12);
-  border-color: rgba(78, 201, 148, 0.45);
+  background: var(--surface);
+  border-color: var(--border);
   color: var(--text);
+}
+
+.status-btn.status-btn-completed-final.status-btn-active {
+  border-width: 2px;
 }
 
 .status-btn-dot {
@@ -6305,15 +6626,23 @@ button.moneyflow-series-toggle {
   .modal-card.repair-form-modal,
   .modal-card.vehicle-detail-modal,
   .modal-card.vehicle-form-modal,
+  .modal-card.customer-form-modal,
+  .modal-card.customer-detail-modal,
   .modal-card.purchase-detail-modal,
   .modal-card.purchase-form-modal {
     padding-top: 0;
     padding-bottom: 0;
   }
 
+  .modal-card.repair-update-modal.modal-card-large {
+    max-height: min(97vh, 1200px);
+  }
+
   .repair-update-modal .panel-header,
   .vehicle-detail-modal .panel-header,
   .vehicle-form-modal .panel-header,
+  .customer-form-modal .panel-header,
+  .customer-detail-modal .panel-header,
   .purchase-detail-modal .panel-header,
   .purchase-form-modal .panel-header {
     margin-top: 0;
@@ -6341,7 +6670,8 @@ button.moneyflow-series-toggle {
    * и шапка модалки выглядит «жирной». Как у Purchases: ряд title | actions, плотнее padding.
    */
   .repair-update-modal .panel-header:has(.inline-actions),
-  .vehicle-detail-modal .panel-header:has(.inline-actions) {
+  .vehicle-detail-modal .panel-header:has(.inline-actions),
+  .customer-detail-modal .panel-header:has(.inline-actions) {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
@@ -6353,20 +6683,23 @@ button.moneyflow-series-toggle {
   }
 
   .repair-update-modal .panel-header:has(.inline-actions) > div:first-child,
-  .vehicle-detail-modal .panel-header:has(.inline-actions) > div:first-child {
+  .vehicle-detail-modal .panel-header:has(.inline-actions) > div:first-child,
+  .customer-detail-modal .panel-header:has(.inline-actions) > div:first-child {
     text-align: start;
     flex: 1 1 auto;
     min-width: min(100%, 11rem);
   }
 
   .repair-update-modal .panel-header:has(.inline-actions) .inline-actions,
-  .vehicle-detail-modal .panel-header:has(.inline-actions) .inline-actions {
+  .vehicle-detail-modal .panel-header:has(.inline-actions) .inline-actions,
+  .customer-detail-modal .panel-header:has(.inline-actions) .inline-actions {
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: var(--s2);
   }
 
-  .repair-form-modal .panel-header {
+  .repair-form-modal .panel-header,
+  .customer-form-modal .panel-header {
     position: sticky;
     top: 0;
     z-index: 2;
@@ -6388,7 +6721,8 @@ button.moneyflow-series-toggle {
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .repair-form-modal .panel-header > div:first-child {
+  .repair-form-modal .panel-header > div:first-child,
+  .customer-form-modal .panel-header > div:first-child {
     text-align: start;
     flex: 1 1 auto;
     min-width: 0;
@@ -6396,7 +6730,8 @@ button.moneyflow-series-toggle {
 
   .repair-modal-actions,
   .vehicle-modal-actions,
-  .purchase-modal-actions {
+  .purchase-modal-actions,
+  .repair-modal-footer-bar {
     position: sticky;
     bottom: 0;
     margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
