@@ -71,7 +71,7 @@ class VehicleRepairHistoryView(generics.ListAPIView):
     def get_queryset(self):
         get_object_or_404(Vehicle, pk=self.kwargs["pk"])
         return (
-            Repair.objects.select_related("master")
+            Repair.objects.select_related("master", "visit")
             .filter(vehicle_id=self.kwargs["pk"])
             .order_by("-created_at")
         )

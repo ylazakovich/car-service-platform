@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 
 from customers.models import Customer
 from purchases.models import Purchase, Supplier
-from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot
+from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot, RepairVisit
 from vehicles.models import Vehicle
 
 
@@ -36,7 +36,10 @@ class StaffDashboardAnalyticsTests(TestCase):
         )
 
     def _completed_repair(self, completed_on: date):
+        visit = RepairVisit.objects.create(vehicle=self.vehicle)
+        visit.save()
         r = Repair.objects.create(
+            visit=visit,
             vehicle=self.vehicle,
             service_name="Oil Change",
             status="new",
@@ -48,15 +51,16 @@ class StaffDashboardAnalyticsTests(TestCase):
 
     def _attach_snapshot(self, repair: Repair, version: int, totals: tuple[Decimal, Decimal, Decimal, Decimal, Decimal]):
         labor, parts_c, parts_p, other, doc_total = totals
+        visit = repair.visit
         doc = RepairDocument.objects.create(
-            repair=repair,
+            visit=visit,
             version=version,
-            original_filename=f"act_{repair.tracking_code}.pdf",
+            original_filename=f"act_{visit.tracking_code}.pdf",
             exported_by=self.user,
         )
         doc.file.save(f"v{version}.pdf", ContentFile(b"%PDF-1.4 minimal"), save=True)
         RepairFinancialSnapshot.objects.create(
-            repair=repair,
+            visit=visit,
             document=doc,
             labor_total=labor,
             parts_client_total=parts_c,
@@ -120,8 +124,12 @@ class StaffDashboardAnalyticsTests(TestCase):
         self.assertEqual(pdf["latest_act_totals"]["document_total"], 0.0)
 
     def test_operational_funnel_uses_created_range(self):
-        Repair.objects.create(vehicle=self.vehicle, service_name="A", status="new")
-        r2 = Repair.objects.create(vehicle=self.vehicle, service_name="B", status="new")
+        v1 = RepairVisit.objects.create(vehicle=self.vehicle)
+        v1.save()
+        Repair.objects.create(visit=v1, vehicle=self.vehicle, service_name="A", status="new")
+        v2 = RepairVisit.objects.create(vehicle=self.vehicle)
+        v2.save()
+        r2 = Repair.objects.create(visit=v2, vehicle=self.vehicle, service_name="B", status="new")
         r2.status = Repair.Status.IN_PROGRESS
         r2.save()
 
@@ -135,7 +143,9 @@ class StaffDashboardAnalyticsTests(TestCase):
         self.assertEqual(op["repairs_created_in_range"], 0)
 
         today = date.today()
-        Repair.objects.create(vehicle=self.vehicle, service_name="C", status="waiting_parts")
+        v3 = RepairVisit.objects.create(vehicle=self.vehicle)
+        v3.save()
+        Repair.objects.create(visit=v3, vehicle=self.vehicle, service_name="C", status="waiting_parts")
         r = self.client.get(
             f"/api/analytics/dashboard/?start_date=2026-01-01&end_date=2026-12-31"
             f"&operational_start_date={today.isoformat()}&operational_end_date={today.isoformat()}"

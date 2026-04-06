@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from purchases.models import Purchase
-from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot
+from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot, RepairVisit
 
 
 def _parse_iso_date(value: str) -> date | None:
@@ -239,15 +239,15 @@ class StaffDashboardAnalyticsView(APIView):
 
     def _pdf_block(self, start: date, end: date) -> dict:
         latest_doc_pk = (
-            RepairDocument.objects.filter(repair_id=OuterRef("pk"))
+            RepairDocument.objects.filter(visit_id=OuterRef("pk"))
             .order_by("-version", "-id")
             .values("pk")[:1]
         )
 
-        completed_in_range = Repair.objects.filter(
-            status=Repair.Status.COMPLETED,
+        completed_in_range = RepairVisit.objects.filter(
             completed_at__gte=start,
             completed_at__lte=end,
+            completed_at__isnull=False,
         )
 
         annotated = completed_in_range.annotate(latest_doc_id=Subquery(latest_doc_pk))
@@ -298,9 +298,9 @@ class StaffDashboardAnalyticsView(APIView):
                 }
             )
 
-        completed_ids = list(completed_in_range.values_list("pk", flat=True))
+        visit_ids_in_range = list(completed_in_range.values_list("pk", flat=True))
         multi_export_repairs = (
-            Repair.objects.filter(pk__in=completed_ids)
+            RepairVisit.objects.filter(pk__in=visit_ids_in_range)
             .annotate(dc=Count("documents"))
             .filter(dc__gt=1)
             .count()
@@ -312,14 +312,14 @@ class StaffDashboardAnalyticsView(APIView):
         ).count()
 
         export_lag_days: list[int] = []
-        for repair in completed_in_range:
+        for visit in completed_in_range:
             docs = list(
-                RepairDocument.objects.filter(repair_id=repair.pk).order_by("version", "id")
+                RepairDocument.objects.filter(visit_id=visit.pk).order_by("version", "id")
             )
-            if not docs or repair.completed_at is None:
+            if not docs or visit.completed_at is None:
                 continue
             first_created = docs[0].created_at.date()
-            export_lag_days.append((first_created - repair.completed_at).days)
+            export_lag_days.append((first_created - visit.completed_at).days)
 
         avg_lag = None
         median_lag = None
@@ -396,7 +396,7 @@ class StaffDashboardAnalyticsView(APIView):
                 created_at__date__lte=op_end,
             )
             .exclude(status=Repair.Status.COMPLETED)
-            .select_related("vehicle")
+            .select_related("vehicle", "visit")
             .order_by("-updated_at")[:8]
         )
         active_workload = []
@@ -404,7 +404,7 @@ class StaffDashboardAnalyticsView(APIView):
             active_workload.append(
                 {
                     "id": r.id,
-                    "tracking_code": r.tracking_code,
+                    "tracking_code": r.visit.tracking_code,
                     "service_name": r.service_name,
                     "status": r.status,
                     "vehicle_label": _vehicle_label(r.vehicle),
@@ -414,12 +414,12 @@ class StaffDashboardAnalyticsView(APIView):
 
         recently_created = []
         for r in (
-            created_in_range.select_related("vehicle").order_by("-created_at")[:5]
+            created_in_range.select_related("vehicle", "visit").order_by("-created_at")[:5]
         ):
             recently_created.append(
                 {
                     "id": r.id,
-                    "tracking_code": r.tracking_code,
+                    "tracking_code": r.visit.tracking_code,
                     "service_name": r.service_name,
                     "status": r.status,
                     "vehicle_label": _vehicle_label(r.vehicle),

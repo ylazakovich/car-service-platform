@@ -12,6 +12,7 @@ export type RepairNote = {
 
 export type RepairEntry = {
   id: number;
+  visit_id: number;
   created_at: string;
   updated_at: string;
   completed_at: string;
@@ -39,6 +40,15 @@ export type RepairPartsSummary = {
   totalQuantity: number;
   preview: string[];
 };
+
+/** How many repair rows (kanban tasks) exist per visit in the current list (client-side). */
+export function countRepairTasksPerVisit(repairs: RepairEntry[]): Map<number, number> {
+  const map = new Map<number, number>();
+  for (const r of repairs) {
+    map.set(r.visit_id, (map.get(r.visit_id) ?? 0) + 1);
+  }
+  return map;
+}
 
 export const REPAIR_STATUS_LABELS: Record<RepairStatus, string> = {
   new: "New",

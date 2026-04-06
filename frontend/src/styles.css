@@ -3430,6 +3430,19 @@ button.moneyflow-series-toggle {
 .repair-info-row p           { margin: 0; color: var(--text); font-size: 0.95rem; line-height: 1.5; }
 .repair-info-row-block       { gap: var(--s2); }
 
+.repair-visit-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+
+.repair-form-visit-hint {
+  margin: var(--s2) 0 0;
+  max-width: 44ch;
+  font-size: 0.85rem;
+}
+
 .repair-info-label {
   color: var(--text-soft);
   font-size: 0.68rem;
@@ -3585,6 +3598,16 @@ button.moneyflow-series-toggle {
   justify-content: space-between;
   gap: var(--s2);
   flex-wrap: wrap;
+}
+
+.repair-mobile-visit-badge {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1.3;
 }
 
 .repair-mobile-main {
@@ -4802,6 +4825,164 @@ button.moneyflow-series-toggle {
   gap: var(--s3);
 }
 
+.kanban-visit-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-mid);
+}
+
+.kanban-visit-group-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  row-gap: var(--s1);
+}
+
+.kanban-visit-group-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-soft);
+}
+
+.kanban-visit-group-code {
+  font-size: 0.75rem;
+}
+
+.kanban-visit-group-count {
+  font-size: 0.72rem;
+  color: var(--text-mid);
+}
+
+.kanban-visit-group-portal {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  margin-left: auto;
+}
+
+.kanban-visit-add-task {
+  flex-shrink: 0;
+}
+
+.kanban-visit-group-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.kanban-visit-group-cards .kanban-card {
+  margin: 0;
+}
+
+.kanban-visit-group {
+  transition:
+    opacity 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    filter 0.18s ease;
+}
+
+.kanban-visit-group-linked {
+  opacity: 1;
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px rgba(205, 216, 58, 0.42),
+    0 10px 28px rgba(0, 0, 0, 0.12);
+  filter: none;
+  z-index: 2;
+  position: relative;
+}
+
+.kanban-visit-group-dimmed {
+  opacity: 0.4;
+  filter: saturate(0.65);
+}
+
+.kanban-visit-task-badge {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1.3;
+}
+
+.kanban-card-visit-linked {
+  border-color: rgba(205, 216, 58, 0.55);
+  box-shadow:
+    0 0 0 2px rgba(205, 216, 58, 0.4),
+    0 8px 22px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  position: relative;
+  opacity: 1;
+  filter: none;
+}
+
+.kanban-card-visit-linked:hover {
+  border-color: var(--accent);
+  background: var(--surface-mid);
+  transform: translateY(-1px);
+}
+
+/* Same visit, not under cursor — subtle tie-in without a second “primary” ring */
+.kanban-card-visit-sibling {
+  border-left: 3px solid rgba(205, 216, 58, 0.55);
+  opacity: 1;
+  filter: none;
+  box-shadow: none;
+}
+
+.kanban-card-visit-sibling:hover {
+  border-color: var(--border-strong);
+  border-left-color: rgba(205, 216, 58, 0.75);
+  background: var(--surface-mid);
+  transform: translateY(-1px);
+}
+
+.kanban-card-visit-dimmed {
+  opacity: 0.4;
+  filter: saturate(0.65);
+  transform: none;
+}
+
+/* Beat later `.kanban-card:hover` so dimmed cards stay visually recessive */
+.kanban-card.kanban-card-visit-dimmed:hover {
+  transform: none;
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+/*
+ * Visit link hover: parent uses opacity/filter so body text fades, but accent-colored
+ * chips/badges still read as “hot”. Force neutral chrome so dimmed cards don’t scatter
+ * bright yellow pills across the board.
+ */
+.kanban-card-visit-dimmed .kanban-visit-task-badge,
+.kanban-card-visit-dimmed .tracking-chip,
+.kanban-card.kanban-card-visit-dimmed:hover .tracking-chip,
+.kanban-card.kanban-card-visit-dimmed:hover .kanban-visit-task-badge,
+.kanban-visit-group-dimmed .kanban-visit-task-badge,
+.kanban-visit-group-dimmed .tracking-chip {
+  color: var(--text-mid);
+  border-color: var(--border);
+  background: var(--surface-mid);
+}
+
+.kanban-card-visit-dimmed .repair-parts-badge,
+.kanban-card.kanban-card-visit-dimmed:hover .repair-parts-badge,
+.kanban-visit-group-dimmed .repair-parts-badge {
+  color: var(--text-mid);
+  border-color: var(--border);
+  background: var(--surface-mid);
+}
+
 .kanban-card {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -4811,7 +4992,13 @@ button.moneyflow-series-toggle {
   display: flex;
   flex-direction: column;
   gap: var(--s2);
-  transition: border-color 0.14s, background 0.14s, transform 0.12s;
+  transition:
+    border-color 0.14s,
+    background 0.14s,
+    transform 0.12s,
+    opacity 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
 }
 
 .kanban-card:hover {

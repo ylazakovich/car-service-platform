@@ -24,6 +24,8 @@ import {
 import type { Vehicle } from "../shared/vehicles";
 
 export type RepairFormState = {
+  /** When set, POST creates another Repair row on this visit (shared tracking / portal). */
+  visit_id: string;
   vehicle_id: string;
   master_id: string;
   service_key: string;
@@ -33,6 +35,7 @@ export type RepairFormState = {
 };
 
 export const emptyRepairForm: RepairFormState = {
+  visit_id: "",
   vehicle_id: "",
   master_id: "",
   service_key: "",
@@ -46,6 +49,7 @@ export const customRepairServiceOption = "Custom Service";
 function mapApiRepairToEntry(item: RepairItem): RepairEntry {
   return {
     id: item.id,
+    visit_id: item.visit_id,
     created_at: item.created_at.slice(0, 10),
     updated_at: item.updated_at.slice(0, 10),
     completed_at: item.completed_at ?? "",
@@ -183,6 +187,17 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setIsRepairFormOpen(true);
   }
 
+  function openRepairCreateModalForVisit(visitId: number, vehicleId: number) {
+    setRepairError("");
+    setRepairPhotoPreviews([]);
+    setRepairForm({
+      ...emptyRepairForm,
+      vehicle_id: String(vehicleId),
+      visit_id: String(visitId),
+    });
+    setIsRepairFormOpen(true);
+  }
+
   function closeRepairCreateModal() {
     resetRepairForm();
     setIsRepairFormOpen(false);
@@ -235,6 +250,10 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       issue_notes: repairForm.issue_notes.trim() || "No issue notes provided yet.",
       status: repairForm.status,
     };
+
+    if (repairForm.visit_id.trim()) {
+      payload.visit_id = Number(repairForm.visit_id);
+    }
 
     try {
       const created = await createRepair(payload);
@@ -541,6 +560,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     resetRepairForm,
     closeRepairModal,
     openRepairCreateModal,
+    openRepairCreateModalForVisit,
     closeRepairCreateModal,
     openRepairModal,
     handleRepairSubmit,

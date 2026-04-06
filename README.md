@@ -29,6 +29,16 @@ Backend and frontend pick up code changes without rebuilding images (bind mounts
 
 ```bash
 bash scripts/start.sh
+
+**Demo dataset (customers, vehicles, repairs, purchases, multi-task visits `TOR-MV-*`):**
+
+```bash
+bash scripts/start-with-demo.sh   # starts stack, then loads demo without prompts
+# or after a normal start:
+bash scripts/load-demo.sh --yes
+```
+
+See `scripts/load-demo.sh` for the full list of seeded entities.
 ```
 
 - App (Vite): `http://localhost:4173` by default (same host port as prod static build; override with `FRONTEND_DEV_PORT` in `.env`)

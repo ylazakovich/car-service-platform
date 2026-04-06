@@ -9,17 +9,22 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from .models import Repair, RepairDocument, RepairNote
+from .models import Repair, RepairDocument, RepairNote, RepairVisit
 from .serializers import PortalRepairSerializer, RepairNoteSerializer, RepairSerializer
 
 
 def build_repair_queryset():
-    has_pdf_subquery = RepairDocument.objects.filter(repair_id=OuterRef("pk"))
+    has_pdf_subquery = RepairDocument.objects.filter(visit_id=OuterRef("visit_id"))
     return (
-        Repair.objects.select_related("vehicle", "vehicle__customer", "master")
+        Repair.objects.select_related("vehicle", "vehicle__customer", "master", "visit")
         .prefetch_related("notes")
         .annotate(has_pdf=Exists(has_pdf_subquery))
     )
+
+
+def _visit_tasks_all_completed(visit: RepairVisit) -> bool:
+    tasks = list(visit.repairs.all())
+    return bool(tasks) and all(t.status == Repair.Status.COMPLETED for t in tasks)
 
 
 class PortalLookupThrottle(AnonRateThrottle):
@@ -34,7 +39,9 @@ class PortalRepairLookupView(generics.RetrieveAPIView):
     lookup_url_kwarg = "token"
 
     def get_queryset(self):
-        return Repair.objects.select_related("vehicle", "master")
+        return RepairVisit.objects.select_related("vehicle", "vehicle__customer").prefetch_related(
+            "repairs__master",
+        )
 
 
 class RepairListCreateView(generics.ListCreateAPIView):
@@ -45,7 +52,7 @@ class RepairListCreateView(generics.ListCreateAPIView):
         q = self.request.query_params.get("q", "").strip()
         if q:
             qs = qs.filter(
-                Q(tracking_code__icontains=q)
+                Q(visit__tracking_code__icontains=q)
                 | Q(service_name__icontains=q)
                 | Q(vehicle__license_plate__icontains=q)
                 | Q(vehicle__customer__full_name__icontains=q)
@@ -92,34 +99,35 @@ class RepairNoteDeleteView(APIView):
 
 
 class RepairPdfView(APIView):
-    """GET latest exported PDF only — does not create a new version."""
+    """GET latest exported PDF only — does not create a new version (visit-scoped)."""
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         repair = generics.get_object_or_404(
-            Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
+            Repair.objects.select_related("vehicle", "vehicle__customer", "master", "visit"),
             pk=pk,
         )
-        if repair.status != Repair.Status.COMPLETED:
+        visit = repair.visit
+        if not _visit_tasks_all_completed(visit):
             return Response(
-                {"detail": "PDF is only available for completed repairs."},
+                {"detail": "PDF is only available when every task in the visit is completed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        from .pdf_export import get_latest_repair_document
+        from .pdf_export import get_latest_visit_document
 
-        doc = get_latest_repair_document(repair)
+        doc = get_latest_visit_document(visit)
         if doc is None:
             return Response(
                 {
                     "detail": (
-                        f"No PDF has been exported for this repair yet. "
+                        f"No PDF has been exported for this visit yet. "
                         f"Use POST /api/repairs/{repair.pk}/pdf/export/ to create one."
                     ),
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-        filename = doc.original_filename or f"act_{repair.tracking_code}.pdf"
+        filename = doc.original_filename or f"act_{visit.tracking_code}.pdf"
         with doc.file.open("rb") as fh:
             pdf_bytes = fh.read()
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
@@ -128,24 +136,23 @@ class RepairPdfView(APIView):
 
 
 class RepairPdfExportView(APIView):
-    """POST generates PDF, persists a new document version + financial snapshot."""
+    """POST generates PDF for the visit, persists a new document version + financial snapshot."""
 
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
         repair = generics.get_object_or_404(
-            Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
+            Repair.objects.select_related("vehicle", "vehicle__customer", "master", "visit"),
             pk=pk,
         )
-        if repair.status != Repair.Status.COMPLETED:
-            return Response(
-                {"detail": "PDF export is only available for completed repairs."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        from .pdf_export import export_repair_pdf_and_snapshot
+        visit = repair.visit
+        from .pdf_export import export_visit_pdf_and_snapshot
 
-        pdf_bytes, doc = export_repair_pdf_and_snapshot(repair, request.user)
-        filename = doc.original_filename or f"act_{repair.tracking_code}.pdf"
+        try:
+            pdf_bytes, doc = export_visit_pdf_and_snapshot(visit, request.user)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        filename = doc.original_filename or f"act_{visit.tracking_code}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
@@ -155,10 +162,14 @@ class RepairRegeneratePortalTokenView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request, pk):
-        repair = generics.get_object_or_404(Repair, pk=pk)
-        repair.portal_token = secrets.token_urlsafe(20)
-        repair.save(update_fields=["portal_token"])
-        return Response({"portal_token": repair.portal_token})
+        repair = generics.get_object_or_404(
+            Repair.objects.select_related("visit"),
+            pk=pk,
+        )
+        visit = repair.visit
+        visit.portal_token = secrets.token_urlsafe(20)
+        visit.save(update_fields=["portal_token"])
+        return Response({"portal_token": visit.portal_token})
 
 
 class RepairReorderView(APIView):

@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import {
+  countRepairTasksPerVisit,
   formatRepairCardDateRow,
   formatRepairDisplayDate,
   getRepairStatusClass,
@@ -46,6 +48,8 @@ export function StaffRepairsMobileList({
   onCopyTrackingCode,
   repairPartSummaries,
 }: StaffRepairsMobileListProps) {
+  const visitTaskCounts = useMemo(() => countRepairTasksPerVisit(repairs), [repairs]);
+
   const filteredRepairs =
     activeFilter === "all" ? repairs : repairs.filter((repair) => repair.status === activeFilter);
 
@@ -94,6 +98,7 @@ export function StaffRepairsMobileList({
           {filteredRepairs.map((repair) => (
             (() => {
               const partsSummary = repairPartSummaries[repair.tracking_code];
+              const visitTotal = visitTaskCounts.get(repair.visit_id) ?? 1;
               return (
                 <article key={repair.id} className="repair-mobile-card">
                   <button type="button" className="repair-mobile-open" onClick={() => onOpenRepair(repair)}>
@@ -101,6 +106,12 @@ export function StaffRepairsMobileList({
                       <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>
                       <span className="repair-mobile-date">{formatRepairDisplayDate(repair.created_at)}</span>
                     </div>
+
+                    {visitTotal > 1 ? (
+                      <p className="repair-mobile-visit-badge" title="Several jobs share this visit.">
+                        Visit · {visitTotal} tasks
+                      </p>
+                    ) : null}
 
                     <div className="repair-mobile-main">
                       <strong>{repair.vehicle_label}</strong>

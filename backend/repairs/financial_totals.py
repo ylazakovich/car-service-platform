@@ -23,7 +23,23 @@ def compute_completion_financial_totals(
     """
     Mirrors logic in pdf_generator line items: one labor line + parts at client sale prices.
     """
-    labor = service_price if service_price is not None else Decimal("0")
+    return compute_completion_financial_totals_multi(
+        [service_price] if service_price is not None else [None],
+        purchases,
+    )
+
+
+def compute_completion_financial_totals_multi(
+    service_prices: Sequence[Decimal | None],
+    purchases: Sequence[Any],
+) -> CompletionFinancialTotals:
+    """
+    Sum multiple labor lines (one per task line) + parts at client sale prices.
+    """
+    labor = Decimal("0")
+    for p in service_prices:
+        if p is not None:
+            labor += Decimal(p)
     parts_client = Decimal("0")
     parts_purchase = Decimal("0")
     for p in purchases:

@@ -19,7 +19,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from .financial_totals import compute_completion_financial_totals
+from .financial_totals import compute_completion_financial_totals_multi
 
 BLACK = colors.HexColor("#111111")
 DARK_GRAY = colors.HexColor("#333333")
@@ -76,10 +76,6 @@ def _styles(font: str) -> dict[str, ParagraphStyle]:
             "td_right", fontName=font, fontSize=10, leading=14,
             textColor=BLACK, alignment=2,
         ),
-        "subtotal": ParagraphStyle(
-            "subtotal", fontName=font, fontSize=10, leading=14,
-            textColor=BLACK, alignment=2,
-        ),
         "total": ParagraphStyle(
             "total", fontName=font, fontSize=13, leading=17,
             textColor=BLACK, alignment=2,
@@ -97,22 +93,31 @@ def _format_date(val: Any) -> str:
     return val.strftime("%d.%m.%Y")
 
 
-def _master_name(repair: Any) -> str:
-    if repair.master is None:
+def _master_name(task: Any) -> str:
+    if task.master is None:
         return "—"
-    parts = [repair.master.first_name, repair.master.last_name]
+    parts = [task.master.first_name, task.master.last_name]
     name = " ".join(p for p in parts if p).strip()
-    return name or repair.master.email
+    return name or task.master.email
+
+
+def _masters_label(tasks: Sequence[Any]) -> str:
+    seen: list[str] = []
+    for t in tasks:
+        m = _master_name(t)
+        if m != "—" and m not in seen:
+            seen.append(m)
+    return ", ".join(seen) if seen else "—"
 
 
 def _fmt(amount: Any) -> str:
     return f"{amount:,.2f} PLN"
 
 
-def _top_block(repair: Any, font: str, width: float) -> Table:
+def _top_block(visit: Any, font: str, width: float) -> Table:
     s = _styles(font)
     left = Paragraph("CERTIFICATE<br/>OF COMPLETION", s["title"])
-    right = Paragraph(f"<b>{repair.tracking_code}</b>", s["doc_id"])
+    right = Paragraph(f"<b>{visit.tracking_code}</b>", s["doc_id"])
     t = Table([[left, right]], colWidths=[width * 0.6, width * 0.4])
     t.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
@@ -132,9 +137,9 @@ def _divider(width: float) -> Table:
     return t
 
 
-def _info_block(repair: Any, font: str, width: float) -> Table:
+def _info_block(visit: Any, tasks: Sequence[Any], font: str, width: float) -> Table:
     s = _styles(font)
-    vehicle = repair.vehicle
+    vehicle = visit.vehicle
     vehicle_text = f"{vehicle.license_plate} \u2022 {vehicle.make} {vehicle.model}"
 
     def row(label: str, value: str) -> list:
@@ -143,9 +148,9 @@ def _info_block(repair: Any, font: str, width: float) -> Table:
     data = [
         row("VEHICLE", vehicle_text),
         row("CLIENT", vehicle.customer.full_name),
-        row("MASTER", _master_name(repair)),
-        row("DATE CREATED", _format_date(repair.created_at)),
-        row("DATE COMPLETED", _format_date(repair.completed_at)),
+        row("MASTER(S)", _masters_label(tasks)),
+        row("DATE CREATED", _format_date(visit.created_at)),
+        row("DATE COMPLETED", _format_date(visit.completed_at)),
     ]
 
     col_l = 32 * mm
@@ -164,8 +169,7 @@ def _info_block(repair: Any, font: str, width: float) -> Table:
 
 
 def _items_table(
-    service_name: str,
-    service_price: Decimal | None,
+    labor_lines: Sequence[tuple[str, Decimal | None]],
     purchases: Sequence[Any],
     font: str,
     width: float,
@@ -185,16 +189,19 @@ def _items_table(
     data = [headers]
 
     purchase_list = list(purchases)
-    totals = compute_completion_financial_totals(service_price, purchase_list)
+    prices = [p for _, p in labor_lines]
+    totals = compute_completion_financial_totals_multi(prices, purchase_list)
     grand_total = totals.document_total
 
-    if service_price is not None:
-        svc_price_str = _fmt(service_price)
-        svc_total_str = _fmt(service_price)
-    else:
-        svc_price_str = "—"
-        svc_total_str = "—"
-    data.append([td(service_name or "—"), td_r("1"), td_r(svc_price_str), td_r(svc_total_str)])
+    for name, price in labor_lines:
+        if price is not None:
+            price_str = _fmt(price)
+            total_str = _fmt(price)
+        else:
+            price_str = "—"
+            total_str = "—"
+        data.append([td(name or "—"), td_r("1"), td_r(price_str), td_r(total_str)])
+
     for p in purchase_list:
         line_total = p.quantity * p.sale_price
         data.append([
@@ -238,7 +245,11 @@ def _total_block(total: Decimal, font: str, width: float) -> Table:
     return t
 
 
-def generate_completion_act_pdf(repair: Any, purchases: Sequence[Any], service_price: Decimal | None = None) -> bytes:
+def generate_completion_act_pdf(
+    visit: Any,
+    labor_lines: Sequence[tuple[str, Decimal | None]],
+    purchases: Sequence[Any],
+) -> bytes:
     buffer = BytesIO()
     font = _register_font()
 
@@ -255,24 +266,19 @@ def generate_completion_act_pdf(repair: Any, purchases: Sequence[Any], service_p
         bottomMargin=margin,
     )
 
+    tasks = list(visit.repairs.all().order_by("id"))
     s = _styles(font)
     story = [
-        _top_block(repair, font, width),
+        _top_block(visit, font, width),
         Spacer(1, 3 * mm),
         _divider(width),
         Spacer(1, 6 * mm),
-        _info_block(repair, font, width),
+        _info_block(visit, tasks, font, width),
         Spacer(1, 8 * mm),
         Paragraph("SERVICES &amp; PARTS", s["section"]),
     ]
 
-    items_tbl, grand_total = _items_table(
-        repair.service_name,
-        service_price,
-        list(purchases),
-        font,
-        width,
-    )
+    items_tbl, grand_total = _items_table(labor_lines, list(purchases), font, width)
     story.append(items_tbl)
     story.append(Spacer(1, 5 * mm))
     story.append(_total_block(grand_total, font, width))

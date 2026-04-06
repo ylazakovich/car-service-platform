@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 from customers.models import Customer
-from repairs.models import Repair
+from repairs.models import Repair, RepairVisit
 from vehicles.models import Vehicle
 
 User = get_user_model()
@@ -36,7 +36,10 @@ class Command(BaseCommand):
             year=2022,
             vin="E2EVINCI00000001",
         )
+        visit = RepairVisit.objects.create(vehicle=vehicle)
+        visit.save()
         Repair.objects.create(
+            visit=visit,
             vehicle=vehicle,
             master=master,
             service_name="E2E completed service",

@@ -11,6 +11,7 @@ export interface RepairNoteItem {
 
 export interface RepairItem {
   id: number;
+  visit_id: number;
   vehicle_id: number;
   vehicle_label: string;
   owner_name: string;
@@ -43,6 +44,8 @@ export interface StaffUser {
 
 export interface RepairWritePayload {
   vehicle_id: number;
+  /** Add task to an existing visit (same vehicle). Omit to start a new visit. */
+  visit_id?: number;
   master_id: number | null;
   service_name: string;
   issue_notes: string;

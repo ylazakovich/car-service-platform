@@ -2,7 +2,7 @@
 
 Этот файл является source of truth для критичной доменной логики `car-service-platform`.
 
-- Last updated: `2026-04-04`
+- Last updated: `2026-04-06`
 - Status: `repair operations + pdf-backed analytics baseline`
 
 ## 1) Core Entities
@@ -15,6 +15,7 @@
 - `Supplier`
 - `RepairPhoto`
 - `CompletionAct`
+- `RepairVisit` (визит: общий tracking / портал / PDF)
 - `RepairDocument`
 - `RepairFinancialSnapshot`
 
@@ -32,11 +33,12 @@
 - Один `RepairOrder` относится к одному `Vehicle` и одному `Customer`.
 - Создание `RepairOrder` через QuickFocus / VPR flow может инициировать inline-создание `Vehicle` и `Customer`, но итоговая связь все равно должна быть `RepairOrder -> Vehicle -> Customer` без обходных или временных сущностей.
 - Один `RepairOrder` может содержать несколько `RepairWork`, `RepairPart` и `RepairPhoto`.
-- Каждый `RepairOrder` должен иметь отдельный публичный `tracking code` формата `TOR-*` для клиента.
-- Каждый `RepairOrder` должен иметь назначенного `master`, отвечающего за текущую работу.
+- Каждый **`RepairVisit`** (визит) имеет один публичный `tracking code` формата `TOR-*` и один `portal_token` для клиента; несколько операционных подзадач (`Repair` в Django) делят один визит.
+- Каждая операционная подзадача `Repair` должна иметь назначенного `master` (или null до назначения), отвечающего за эту линию работ.
 - `CompletionAct` формируется на основании завершенного `RepairOrder`.
-- `RepairDocument` хранит выгруженный PDF и его метаданные.
-- `RepairFinancialSnapshot` хранит versioned финансовое состояние ремонта на момент выгрузки документа.
+- `RepairDocument` хранит выгруженный PDF и его метаданные (**привязка к `RepairVisit`**).
+- `RepairFinancialSnapshot` хранит versioned финансовое состояние **визита** на момент выгрузки документа.
+- Экспорт акта (PDF) допускается только когда **все** подзадачи `Repair` данного визита в статусе `completed`; строки закупок в акт включаются по `Purchase.repair_code == RepairVisit.tracking_code`.
 
 ## 2) Lifecycle Rules
 Базовый lifecycle ремонта для текущего prototype baseline:
@@ -84,10 +86,10 @@
 ### 3.1) Dashboard analytics: snapshot и даты
 Правила для staff Operations Dashboard (MoneyFlow / Billing / ServiceBoard):
 
-- **Официальные суммы «по акту (PDF)» для завершённых работ в периоде:** для каждого `RepairOrder` со `status=completed` и `completed_at` в выбранном диапазоне дат берётся **последняя** версия `RepairDocument` (максимальный `version`, при равенстве — больший `id`) и связанный с ней **ровно один** `RepairFinancialSnapshot`. Суммы полей snapshot (`labor_total`, `parts_client_total`, `parts_purchase_total`, `other_expenses_total`, `document_total`) агрегируются по множеству таких ремонтов. Ремонты без ни одного `RepairDocument` в эту сумму **не** входят (но учитываются в KPI покрытия).
+- **Официальные суммы «по акту (PDF)» для завершённых работ в периоде:** для каждого **`RepairVisit`**, у которого `completed_at` в выбранном диапазоне дат, берётся **последняя** версия `RepairDocument` (максимальный `version`, при равенстве — больший `id`) и связанный с ней **ровно один** `RepairFinancialSnapshot`. Суммы полей snapshot (`labor_total`, `parts_client_total`, `parts_purchase_total`, `other_expenses_total`, `document_total`) агрегируются по множеству таких визитов. Визиты без ни одного `RepairDocument` в эту сумму **не** входят (но учитываются в KPI покрытия).
 - **Ряд по дням «выгрузки актов»:** для графика активности экспорта в периоде по оси времени используется дата `RepairFinancialSnapshot.created_at` (календарный день в часовом поясе сервера); **каждая** строка snapshot (каждая выгрузка PDF) учитывается отдельно — повторный экспорт того же ремонта даёт дополнительный вклад в день выгрузки.
 - **Живая оценка MoneyFlow** (расчёт на клиенте из текущих ремонтов и закупок без snapshot) остаётся **предпросмотром** до выгрузки акта; источник цен услуг для этой оценки — справочник `Service.price` с API, без произвольных захардкоженных fallback-цен.
-- **KPI покрытия:** число ремонтов со `completed_at` в периоде без единого `RepairDocument` фиксируется отдельно как «закрыто в системе, акт не сформирован».
+- **KPI покрытия:** число **`RepairVisit`** с `completed_at` в периоде без единого `RepairDocument` фиксируется отдельно как «закрыто в системе, акт не сформирован».
 - **Операционные метрики ServiceBoard** (cycle time, воронка по статусам): считаются по ремонтам, у которых дата `created_at` попадает в выбранный для вкладки диапазон (тот же фильтр, что и для списка ремонтов на ServiceBoard), если в UI не указано иное.
 - **Блок MoneyFlow API (`moneyflow`):** топ поставщиков по сумме `purchase_price * quantity` за период (фильтр `Purchase.order_date`); **несвязанные закупки** — строки без привязки к ремонту (`repair_code` пустой или NULL) в том же периоде; **экспорты по сотруднику** — число `RepairDocument` с датой `created_at` в периоде, группировка по `exported_by` (без пользователя — отдельная строка).
 

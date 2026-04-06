@@ -10,7 +10,14 @@ from purchases.models import Purchase, Supplier
 from services.models import Service
 from vehicles.models import Vehicle
 
-from .models import Repair, RepairDocument, RepairFinancialSnapshot, RepairNote
+from .models import Repair, RepairDocument, RepairFinancialSnapshot, RepairNote, RepairVisit
+
+
+def create_task(vehicle, visit=None, **kwargs):
+    if visit is None:
+        visit = RepairVisit.objects.create(vehicle=vehicle)
+        visit.save()
+    return Repair.objects.create(visit=visit, vehicle=vehicle, **kwargs)
 
 
 class RepairApiTests(TestCase):
@@ -96,13 +103,13 @@ class RepairApiTests(TestCase):
 
     def test_list_repairs(self):
         self.client.force_authenticate(self.staff_user)
-        Repair.objects.create(
-            vehicle=self.vehicle,
+        create_task(
+            self.vehicle,
             service_name="Oil Change",
             status="new",
         )
-        Repair.objects.create(
-            vehicle=self.vehicle,
+        create_task(
+            self.vehicle,
             service_name="Tire Rotation",
             status="new",
         )
@@ -115,13 +122,13 @@ class RepairApiTests(TestCase):
 
     def test_search_repairs(self):
         self.client.force_authenticate(self.staff_user)
-        Repair.objects.create(
-            vehicle=self.vehicle,
+        create_task(
+            self.vehicle,
             service_name="Engine Diagnostic",
             status="new",
         )
-        Repair.objects.create(
-            vehicle=self.vehicle,
+        create_task(
+            self.vehicle,
             service_name="Windshield Replacement",
             status="new",
         )
@@ -134,8 +141,8 @@ class RepairApiTests(TestCase):
 
     def test_update_repair_status(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Clutch Repair",
             status="new",
         )
@@ -152,8 +159,8 @@ class RepairApiTests(TestCase):
 
     def test_completed_at_is_set_when_repair_is_completed(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Clutch Repair",
             status="in_progress",
         )
@@ -170,8 +177,8 @@ class RepairApiTests(TestCase):
 
     def test_completed_at_can_be_overridden_manually(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Alignment",
             status="completed",
             completed_at="2025-03-05",
@@ -188,8 +195,8 @@ class RepairApiTests(TestCase):
 
     def test_completed_at_is_cleared_when_repair_leaves_completed(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Alignment",
             status="completed",
             completed_at="2025-03-05",
@@ -207,8 +214,8 @@ class RepairApiTests(TestCase):
 
     def test_delete_repair(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Battery Replacement",
             status="new",
         )
@@ -220,8 +227,8 @@ class RepairApiTests(TestCase):
 
     def test_add_note_to_repair(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Suspension Check",
             status="new",
         )
@@ -239,8 +246,8 @@ class RepairApiTests(TestCase):
 
     def test_delete_own_note(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Exhaust Repair",
             status="new",
         )
@@ -261,8 +268,8 @@ class RepairApiTests(TestCase):
 
     def test_cannot_delete_other_users_note(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="AC Service",
             status="new",
         )
@@ -288,8 +295,8 @@ class RepairApiTests(TestCase):
             role="staff",
         )
         self.client.force_authenticate(self.staff_user)
-        Repair.objects.create(
-            vehicle=self.vehicle,
+        create_task(
+            self.vehicle,
             service_name="Wheel Alignment",
             status="new",
             master=master,
@@ -305,8 +312,8 @@ class RepairApiTests(TestCase):
 
     def test_master_id_null_when_unassigned(self):
         self.client.force_authenticate(self.staff_user)
-        Repair.objects.create(
-            vehicle=self.vehicle,
+        create_task(
+            self.vehicle,
             service_name="Wheel Alignment",
             status="new",
         )
@@ -337,8 +344,8 @@ class RepairApiTests(TestCase):
         self.assertEqual(data["master_name"], self.staff_user.email)
 
     def test_update_master_via_patch_reflects_in_response(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Timing Belt",
             status="new",
         )
@@ -374,12 +381,12 @@ class RepairApiTests(TestCase):
 
     def test_portal_token_is_readonly(self):
         self.client.force_authenticate(self.staff_user)
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Wheel Bearing",
             status="new",
         )
-        original_token = repair.portal_token
+        original_token = repair.visit.portal_token
 
         self.client.patch(
             f"/api/repairs/{repair.id}",
@@ -387,17 +394,17 @@ class RepairApiTests(TestCase):
             format="json",
         )
 
-        repair.refresh_from_db()
-        self.assertEqual(repair.portal_token, original_token)
+        repair.visit.refresh_from_db()
+        self.assertEqual(repair.visit.portal_token, original_token)
 
     def test_portal_lookup_returns_repair_for_valid_token(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="AC Recharge",
             status="in_progress",
         )
 
-        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+        response = self.client.get(f"/api/portal/{repair.visit.portal_token}/")
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -410,25 +417,25 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_portal_lookup_requires_no_authentication(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Fuel Filter",
             status="new",
         )
         self.client.force_authenticate(None)
 
-        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+        response = self.client.get(f"/api/portal/{repair.visit.portal_token}/")
 
         self.assertEqual(response.status_code, 200)
 
     def test_portal_lookup_does_not_expose_internal_fields(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Injector Clean",
             status="new",
         )
 
-        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+        response = self.client.get(f"/api/portal/{repair.visit.portal_token}/")
 
         data = response.json()
         self.assertNotIn("portal_token", data)
@@ -437,21 +444,21 @@ class RepairApiTests(TestCase):
         self.assertNotIn("master_id", data)
 
     def test_portal_lookup_includes_vehicle_info(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Suspension",
             status="new",
         )
 
-        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+        response = self.client.get(f"/api/portal/{repair.visit.portal_token}/")
 
         data = response.json()
         self.assertIn("vehicle_info", data)
         self.assertEqual(data["vehicle_info"]["license_plate"], self.vehicle.license_plate)
 
     def test_regenerate_portal_token_requires_authentication(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Coolant Flush",
             status="new",
         )
@@ -462,12 +469,12 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_regenerate_portal_token_generates_new_token(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Power Steering",
             status="new",
         )
-        original_token = repair.portal_token
+        original_token = repair.visit.portal_token
         self.client.force_authenticate(self.admin_user)
 
         response = self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
@@ -478,12 +485,12 @@ class RepairApiTests(TestCase):
         self.assertTrue(len(new_token) >= 20)
 
     def test_regenerate_portal_token_old_token_becomes_invalid(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="ABS Module",
             status="new",
         )
-        old_token = repair.portal_token
+        old_token = repair.visit.portal_token
         self.client.force_authenticate(self.admin_user)
         self.client.post(f"/api/repairs/{repair.id}/regenerate-portal-token/")
         self.client.force_authenticate(None)
@@ -493,8 +500,8 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_regenerate_portal_token_staff_forbidden(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Fuel Filter",
             status="new",
         )
@@ -505,8 +512,8 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_estimated_date_can_be_set_and_returned(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Transmission",
             status="in_progress",
         )
@@ -522,14 +529,14 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.json()["estimated_date"], "2025-12-31")
 
     def test_estimated_date_visible_on_portal(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Camshaft",
             status="in_progress",
             estimated_date="2025-12-31",
         )
 
-        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+        response = self.client.get(f"/api/portal/{repair.visit.portal_token}/")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["estimated_date"], "2025-12-31")
@@ -562,8 +569,8 @@ class RepairPdfViewTests(TestCase):
         )
 
     def _create_completed_repair(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Full Service",
             status="new",
         )
@@ -578,8 +585,8 @@ class RepairPdfViewTests(TestCase):
         self.assertEqual(self.client.post(f"/api/repairs/{repair.id}/pdf/export/").status_code, 403)
 
     def test_pdf_returns_400_for_non_completed_repair(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Oil Change",
             status="new",
         )
@@ -590,8 +597,8 @@ class RepairPdfViewTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_pdf_returns_400_for_in_progress_repair(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Brake Check",
             status="in_progress",
         )
@@ -635,11 +642,11 @@ class RepairPdfViewTests(TestCase):
         self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
         self.client.get(f"/api/repairs/{repair.id}/pdf/")
         self.client.get(f"/api/repairs/{repair.id}/pdf/")
-        self.assertEqual(RepairDocument.objects.filter(repair=repair).count(), 1)
+        self.assertEqual(RepairDocument.objects.filter(visit=repair.visit).count(), 1)
 
     def test_pdf_export_post_400_for_non_completed(self):
-        repair = Repair.objects.create(
-            vehicle=self.vehicle,
+        repair = create_task(
+            self.vehicle,
             service_name="Oil",
             status="new",
         )
@@ -658,16 +665,16 @@ class RepairPdfViewTests(TestCase):
             quantity=2,
             purchase_price=Decimal("40.00"),
             sale_price=Decimal("99.50"),
-            repair_code=repair.tracking_code,
+            repair_code=repair.visit.tracking_code,
         )
         Service.objects.create(name="Full Service", price=Decimal("150.00"))
 
-        self.assertEqual(RepairDocument.objects.filter(repair=repair).count(), 0)
+        self.assertEqual(RepairDocument.objects.filter(visit=repair.visit).count(), 0)
         self.client.force_authenticate(self.staff_user)
         response = self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
         self.assertEqual(response.status_code, 200)
 
-        doc = RepairDocument.objects.get(repair=repair)
+        doc = RepairDocument.objects.get(visit=repair.visit)
         self.assertEqual(doc.version, 1)
         self.assertEqual(doc.exported_by_id, self.staff_user.id)
         self.assertTrue(doc.file.name)
@@ -683,10 +690,10 @@ class RepairPdfViewTests(TestCase):
         self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
         self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
         versions = list(
-            RepairDocument.objects.filter(repair=repair).order_by("version").values_list("version", flat=True)
+            RepairDocument.objects.filter(visit=repair.visit).order_by("version").values_list("version", flat=True)
         )
         self.assertEqual(versions, [1, 2])
-        self.assertEqual(RepairFinancialSnapshot.objects.filter(repair=repair).count(), 2)
+        self.assertEqual(RepairFinancialSnapshot.objects.filter(visit=repair.visit).count(), 2)
 
     def test_repairs_list_includes_has_pdf_flag(self):
         without_pdf = self._create_completed_repair()

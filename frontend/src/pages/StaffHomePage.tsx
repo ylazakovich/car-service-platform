@@ -1179,6 +1179,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     resetRepairForm,
     closeRepairModal,
     openRepairCreateModal,
+    openRepairCreateModalForVisit,
     closeRepairCreateModal,
     openRepairModal,
     handleRepairSubmit,
@@ -1358,6 +1359,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairPdfBlob(null);
     setRepairPdfLoading(false);
     closeRepairModal();
+  }
+
+  function handleAddAnotherTaskToVisit() {
+    const repair = repairs.find((r) => r.id === selectedRepairId);
+    if (!repair) {
+      return;
+    }
+    handleCloseRepairModal();
+    openRepairCreateModalForVisit(repair.visit_id, repair.vehicle_id);
+    if (!isAdmin && user?.id) {
+      setRepairForm((current) => ({ ...current, master_id: String(user.id) }));
+    }
   }
 
   useEffect(() => {
@@ -2000,6 +2013,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   const selectedRepairVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id) ?? null;
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
+  const selectedVisitTaskCount = selectedRepair
+    ? repairs.filter((r) => r.visit_id === selectedRepair.visit_id).length
+    : 0;
+  const repairCreateVisitTracking =
+    repairForm.visit_id.trim() === ""
+      ? ""
+      : repairs.find((r) => String(r.visit_id) === repairForm.visit_id)?.tracking_code ?? repairForm.visit_id;
 
   const customerVehicleCounts = useMemo(() => {
     return vehicles.reduce<Record<number, number>>((accumulator, vehicle) => {
@@ -4016,6 +4036,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onCardDrop={handleCardDrop}
             onOpenRepair={openRepairModal}
             onCopyTrackingCode={handleCopyTrackingCode}
+            onCopyPortalLink={handleCopyPortalLink}
+            onAddTaskToVisit={(visitId, vehicleId) => {
+              openRepairCreateModalForVisit(visitId, vehicleId);
+              if (!isAdmin && user?.id) {
+                setRepairForm((current) => ({ ...current, master_id: String(user.id) }));
+              }
+            }}
             repairPartSummaries={repairPartSummaries}
           />
         </div>
@@ -4031,7 +4058,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               <div className="panel-header">
                 <div>
                   <p className="eyebrow">Repair Intake</p>
-                  <h3>Create Repair</h3>
+                  <h3>{repairForm.visit_id ? `Add task · #${repairCreateVisitTracking}` : "Create Repair"}</h3>
+                  {repairForm.visit_id ? (
+                    <p className="workspace-note repair-form-visit-hint">
+                      Same visit as #{repairCreateVisitTracking}: shared client link and completion act when every task is
+                      completed.
+                    </p>
+                  ) : null}
                 </div>
                 <button type="button" className="button button-secondary" onClick={closeRepairCreateModal}>
                   Close
@@ -4045,6 +4078,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     value={repairForm.vehicle_id}
                     onChange={(event) => setRepairForm((current) => ({ ...current, vehicle_id: event.target.value }))}
                     required
+                    disabled={Boolean(repairForm.visit_id)}
                   >
                     <option value="">Select vehicle</option>
                     {vehicles.map((vehicle) => (
@@ -4315,6 +4349,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <div className="repair-info-row">
                       <span className="repair-info-label">Service</span>
                       <p>{selectedRepair.service_name}</p>
+                    </div>
+                    <div className="repair-info-row repair-info-row-block">
+                      <span className="repair-info-label">Visit</span>
+                      <div className="repair-visit-actions">
+                        <p className="workspace-note">
+                          {selectedVisitTaskCount} task{selectedVisitTaskCount === 1 ? "" : "s"} on this visit · one client
+                          link · act when all are completed.
+                        </p>
+                        <button type="button" className="button button-secondary button-sm" onClick={handleAddAnotherTaskToVisit}>
+                          + Add task to this visit
+                        </button>
+                      </div>
                     </div>
                     <div className="repair-info-row">
                       <span className="repair-info-label">Client Link</span>
