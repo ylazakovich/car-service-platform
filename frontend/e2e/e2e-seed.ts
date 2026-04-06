@@ -6,3 +6,6 @@
 export const E2E_DEMO_REPAIR_TRACKING_CODE = "TOR-1001";
 
 export const E2E_DEMO_REPAIR_SERVICE_NAME = "Oil change + filter replacement";
+
+/** Kanban / list summary when demo repair has multiple `repair_service_lines` (first line + count). */
+export const E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY = "Oil change + filter replacement +1";

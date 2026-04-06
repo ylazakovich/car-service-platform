@@ -1151,7 +1151,8 @@ describe("bootstrap application", () => {
     await user.click((await screen.findAllByText("WB 1234K"))[0]);
     expect(await screen.findByRole("button", { name: "Edit Vehicle" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
-    expect(screen.getByText("Date Added: 04-11-2024")).toBeInTheDocument();
+    // Desktop + mobile vehicle panels both render the same meta (two matching nodes).
+    expect(screen.getAllByText("Date Added: 04-11-2024").length).toBeGreaterThanOrEqual(1);
     // Vehicle modal: repair title may appear once (e.g. mobile list) or again on History tab (table); not duplicated as former desktop cards + list.
     expect(screen.getAllByText("Brake Inspection").length).toBeGreaterThanOrEqual(1);
   });

@@ -677,6 +677,13 @@ FROM repairs r
 LEFT JOIN services s ON s.name = r.service_name
 WHERE r.tracking_code LIKE 'TOR-%';
 
+-- E2E / UX demo: TOR-1001 has two service lines (Kanban "+1" and multi-line modal editor for admin).
+INSERT INTO repair_service_lines (repair_id, name, catalog_service_id, sort_order)
+SELECT r.id, 'Tire service', s.id, 1
+FROM repairs r
+LEFT JOIN services s ON s.name = 'Tire service'
+WHERE r.tracking_code = 'TOR-1001';
+
 -- Suppliers
 INSERT INTO suppliers (name, nip, phone, email, notes, created_at, updated_at)
 VALUES

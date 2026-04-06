@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
+import { E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY, E2E_DEMO_REPAIR_TRACKING_CODE } from "./e2e-seed";
 import { openStaffApp } from "./fixtures/auth";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
@@ -20,6 +21,12 @@ test.describe("Staff repairs mobile @mobile-only", () => {
 
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();
+
+    const demoCard = page
+      .getByLabel("Repairs kanban board")
+      .locator(".kanban-card")
+      .filter({ hasText: `#${E2E_DEMO_REPAIR_TRACKING_CODE}` });
+    await expect(demoCard).toContainText(E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY);
 
     await repairs.openSeededRepairCard();
     await repairs.expectRepairDetailDialogVisible();
