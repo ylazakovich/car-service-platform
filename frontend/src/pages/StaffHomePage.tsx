@@ -449,8 +449,32 @@ function buildCalendarDays(visibleMonth: Date) {
       iso,
       label: String(date.getDate()),
       isCurrentMonth: date.getMonth() === visibleMonth.getMonth(),
+      ariaLabel: `Choose ${iso}`,
     };
   });
+}
+
+function normalizeDashboardDateRange(range: DashboardDateRange): DashboardDateRange {
+  if (range.start_date && range.end_date && range.end_date < range.start_date) {
+    return {
+      start_date: range.end_date,
+      end_date: range.start_date,
+    };
+  }
+  return range;
+}
+
+function formatDateRangeInputValue(startValue: string, endValue: string): string {
+  if (startValue && endValue) {
+    return `${formatDateInputValue(startValue)} - ${formatDateInputValue(endValue)}`;
+  }
+  if (startValue) {
+    return `${formatDateInputValue(startValue)} - ...`;
+  }
+  if (endValue) {
+    return `... - ${formatDateInputValue(endValue)}`;
+  }
+  return "";
 }
 
 type FriendlyDateInputProps = {
@@ -615,6 +639,221 @@ function FriendlyDateInput({
                     setIsOpen(false);
                   }}
                   disabled={isDisabled}
+                  aria-label={day.ariaLabel}
+                >
+                  {day.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type FriendlyDateRangeInputProps = {
+  startValue: string;
+  endValue: string;
+  onChange: (range: DashboardDateRange) => void;
+  min?: string;
+  max?: string;
+  disabled?: boolean;
+  placeholder?: string;
+};
+
+function FriendlyDateRangeInput({
+  startValue,
+  endValue,
+  onChange,
+  min,
+  max,
+  disabled = false,
+  placeholder = "dd-mm-yyyy - dd-mm-yyyy",
+}: FriendlyDateRangeInputProps) {
+  const inputId = useId();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const normalizedRange = normalizeDashboardDateRange({ start_date: startValue, end_date: endValue });
+  const [isOpen, setIsOpen] = useState(false);
+  const [draftRange, setDraftRange] = useState<DashboardDateRange>(normalizedRange);
+  const [selectionStep, setSelectionStep] = useState<"start" | "end">("start");
+  const [visibleMonth, setVisibleMonth] = useState(() =>
+    getInitialCalendarMonth(normalizedRange.start_date || normalizedRange.end_date, min, max)
+  );
+
+  useEffect(() => {
+    setDraftRange(normalizedRange);
+  }, [normalizedRange.end_date, normalizedRange.start_date]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraftRange(normalizedRange);
+      setSelectionStep(normalizedRange.start_date && !normalizedRange.end_date ? "end" : "start");
+      setVisibleMonth(getInitialCalendarMonth(normalizedRange.start_date || normalizedRange.end_date, min, max));
+    }
+  }, [isOpen, max, min, normalizedRange.end_date, normalizedRange.start_date]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setDraftRange(normalizedRange);
+        setSelectionStep("start");
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        setDraftRange(normalizedRange);
+        setSelectionStep("start");
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [normalizedRange.end_date, normalizedRange.start_date]);
+
+  const minMonth = min ? getMonthStart(parseIsoDate(min) ?? getInitialCalendarMonth(startValue || endValue, min, max)) : null;
+  const maxMonth = max ? getMonthStart(parseIsoDate(max) ?? getInitialCalendarMonth(startValue || endValue, min, max)) : null;
+  const canGoPrevMonth = !minMonth || getMonthIndex(visibleMonth) > getMonthIndex(minMonth);
+  const canGoNextMonth = !maxMonth || getMonthIndex(visibleMonth) < getMonthIndex(maxMonth);
+  const calendarDays = buildCalendarDays(visibleMonth);
+  const hasCompleteRange = Boolean(draftRange.start_date && draftRange.end_date);
+
+  const helperText =
+    selectionStep === "end" && draftRange.start_date
+      ? "Choose the end date to finish the range."
+      : hasCompleteRange
+        ? "Click any day to start a new range."
+        : "Choose the start date to begin the range.";
+
+  function handleDaySelect(iso: string) {
+    if (selectionStep === "start" || !draftRange.start_date || (draftRange.start_date && draftRange.end_date)) {
+      setDraftRange({ start_date: iso, end_date: "" });
+      setSelectionStep("end");
+      return;
+    }
+
+    const nextRange =
+      iso < draftRange.start_date
+        ? { start_date: iso, end_date: draftRange.start_date }
+        : { start_date: draftRange.start_date, end_date: iso };
+
+    const normalizedNextRange = normalizeDashboardDateRange(nextRange);
+    setDraftRange(normalizedNextRange);
+    onChange(normalizedNextRange);
+    setSelectionStep("start");
+    setIsOpen(false);
+  }
+
+  return (
+    <div className={`friendly-date friendly-date-range ${isOpen ? "friendly-date-open" : ""}`} ref={rootRef}>
+      <div className="friendly-date-input-wrap">
+        <input
+          id={inputId}
+          className="friendly-date-input friendly-date-range-input"
+          value={formatDateRangeInputValue(normalizedRange.start_date, normalizedRange.end_date)}
+          onFocus={() => setIsOpen(true)}
+          onClick={() => setIsOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setIsOpen(true);
+            }
+          }}
+          placeholder={placeholder}
+          autoComplete="off"
+          disabled={disabled}
+          readOnly
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          aria-controls={`${inputId}-calendar`}
+        />
+      </div>
+
+      {isOpen ? (
+        <div
+          id={`${inputId}-calendar`}
+          className="friendly-date-popover friendly-date-range-popover"
+          role="dialog"
+          aria-modal="false"
+          aria-label="Date range calendar"
+        >
+          <div className="friendly-date-range-summary">
+            <div className={`friendly-date-range-chip ${selectionStep === "start" ? "friendly-date-range-chip-active" : ""}`}>
+              <span>Start</span>
+              <strong>{draftRange.start_date ? formatDateInputValue(draftRange.start_date) : "Pick date"}</strong>
+            </div>
+            <div className={`friendly-date-range-chip ${selectionStep === "end" ? "friendly-date-range-chip-active" : ""}`}>
+              <span>End</span>
+              <strong>{draftRange.end_date ? formatDateInputValue(draftRange.end_date) : "Pick date"}</strong>
+            </div>
+          </div>
+          <p className="friendly-date-range-copy">{helperText}</p>
+
+          <div className="friendly-date-header">
+            <button
+              type="button"
+              className="friendly-date-nav"
+              onClick={() => setVisibleMonth((current) => addMonths(current, -1))}
+              disabled={!canGoPrevMonth}
+              aria-label="Previous month"
+            >
+              Prev
+            </button>
+            <strong>{calendarMonthFormatter.format(visibleMonth)}</strong>
+            <button
+              type="button"
+              className="friendly-date-nav"
+              onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
+              disabled={!canGoNextMonth}
+              aria-label="Next month"
+            >
+              Next
+            </button>
+          </div>
+
+          <div className="friendly-date-weekdays" aria-hidden="true">
+            {calendarWeekdayLabels.map((label) => (
+              <span key={label}>{label}</span>
+            ))}
+          </div>
+
+          <div className="friendly-date-grid">
+            {calendarDays.map((day) => {
+              const isDisabled = !isIsoDateWithinBounds(day.iso, min, max);
+              const isStart = day.iso === draftRange.start_date;
+              const isEnd = day.iso === draftRange.end_date;
+              const isInRange =
+                Boolean(draftRange.start_date && draftRange.end_date) &&
+                day.iso > draftRange.start_date &&
+                day.iso < draftRange.end_date;
+
+              return (
+                <button
+                  key={day.iso}
+                  type="button"
+                  className={[
+                    "friendly-date-day",
+                    day.isCurrentMonth ? "" : "friendly-date-day-muted",
+                    isInRange ? "friendly-date-day-in-range" : "",
+                    isStart || isEnd ? "friendly-date-day-selected friendly-date-day-range-boundary" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => {
+                    if (isDisabled) {
+                      return;
+                    }
+                    handleDaySelect(day.iso);
+                  }}
+                  disabled={isDisabled}
+                  aria-label={day.ariaLabel}
                 >
                   {day.label}
                 </button>
@@ -2410,36 +2649,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           : "All completed repairs in this range already have an act.";
     const activeDateRange =
       activeDashboardTab === "service_board" ? serviceBoardDateRange : moneyflowDateRange;
-    const updateActiveDateRange = (field: keyof DashboardDateRange, value: string) => {
+    const setActiveDateRange = (updater: (current: DashboardDateRange) => DashboardDateRange) => {
       if (activeDashboardTab === "service_board") {
-        setServiceBoardDateRange((current) => {
-          if (field === "start_date") {
-            return {
-              start_date: value,
-              end_date: current.end_date && value && current.end_date < value ? value : current.end_date,
-            };
-          }
-
-          return {
-            start_date: current.start_date && value && current.start_date > value ? value : current.start_date,
-            end_date: value,
-          };
-        });
+        setServiceBoardDateRange((current) => normalizeDashboardDateRange(updater(current)));
         return;
       }
-      setMoneyflowDateRange((current) => {
-        if (field === "start_date") {
-          return {
-            start_date: value,
-            end_date: current.end_date && value && current.end_date < value ? value : current.end_date,
-          };
-        }
-
-        return {
-          start_date: current.start_date && value && current.start_date > value ? value : current.start_date,
-          end_date: value,
-        };
-      });
+      setMoneyflowDateRange((current) => normalizeDashboardDateRange(updater(current)));
+    };
+    const replaceActiveDateRange = (range: DashboardDateRange) => {
+      setActiveDateRange(() => range);
     };
     const renderMetricComparison = (label: string, comparisonValue: number | null, deltaValue: number | null) => {
       if (comparisonValue == null || deltaValue == null) {
@@ -2501,18 +2719,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
           <div className="dashboard-folder-panel">
             <div className="dashboard-date-bar">
-              <label className="dashboard-date-field">
-                <span>Start date</span>
-                <FriendlyDateInput
-                  value={activeDateRange.start_date}
-                  onChange={(nextValue) => updateActiveDateRange("start_date", nextValue)}
-                />
-              </label>
-              <label className="dashboard-date-field">
-                <span>End date</span>
-                <FriendlyDateInput
-                  value={activeDateRange.end_date}
-                  onChange={(nextValue) => updateActiveDateRange("end_date", nextValue)}
+              <label className="dashboard-date-field dashboard-date-range-field">
+                <span>Date range</span>
+                <FriendlyDateRangeInput
+                  startValue={activeDateRange.start_date}
+                  endValue={activeDateRange.end_date}
+                  onChange={replaceActiveDateRange}
                 />
               </label>
             </div>
@@ -2528,13 +2740,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             ) : null}
             {activeDashboardTab === "moneyflow" ? (
               <div className="workspace-stack">
-                <section className="dashboard-report-section dashboard-report-section-plan">
-                  <div className="dashboard-report-head">
-                    <div>
-                      <p className="eyebrow">Planned movement</p>
-                      <h3>Sales Plan</h3>
-                    </div>
-                  </div>
+                <section
+                  className="dashboard-report-section dashboard-report-section-plan"
+                  aria-label="Sales Plan"
+                >
+                  <p className="eyebrow">Planned movement</p>
                   <p className="workspace-copy">
                     Live estimate from the current service catalog and current purchase lines for repairs completed in
                     the selected period.
@@ -2562,13 +2772,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </div>
                 </section>
 
-                <section className="dashboard-report-section dashboard-report-section-fact">
-                  <div className="dashboard-report-head">
-                    <div>
-                      <p className="eyebrow">Act coverage</p>
-                      <h3>Acts Coverage</h3>
-                    </div>
-                  </div>
+                <section
+                  className="dashboard-report-section dashboard-report-section-fact"
+                  aria-label="Acts Coverage"
+                >
+                  <p className="eyebrow">Act coverage</p>
                   <p className="workspace-copy">
                     Track how many completed repairs already have an exported act in the selected period.
                   </p>
@@ -2607,10 +2815,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           <strong>{pdfAnalytics.completed_repairs_with_multiple_exports}</strong>
                           <p>Completed repairs with more than one stored act version.</p>
                         </article>
+                        <article className="metric-card metric-card-fact">
+                          <span className="metric-label">Act exports in period</span>
+                          <strong>{pdfAnalytics.exports_in_period}</strong>
+                          <p>Stored act exports created inside the selected period.</p>
+                        </article>
                       </div>
-                      <p className="dashboard-fact-meta">
-                        Act exports in period: <strong>{pdfAnalytics.exports_in_period}</strong>
-                      </p>
                     </div>
                   ) : (
                     <p className="workspace-note">Billing analytics unavailable (check connection or sign-in).</p>
