@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App";
+import type { DashboardAnalyticsResponse } from "./api/analytics";
 import { AuthProvider } from "./context/AuthContext";
 
 const localStorageStore = new Map<string, string>();
@@ -96,7 +97,7 @@ async function pickDashboardDateRange(user: ReturnType<typeof userEvent.setup>, 
 }
 
 /** Minimal valid `/api/analytics/dashboard/` payload for tests that override `mockApi.get`. */
-function createStubDashboardAnalyticsResponse() {
+function createStubDashboardAnalyticsResponse(): DashboardAnalyticsResponse {
   return {
     moneyflow_range: { start_date: "2025-01-01", end_date: "2025-12-31" },
     operational_range: { start_date: "2025-01-01", end_date: "2025-12-31" },
