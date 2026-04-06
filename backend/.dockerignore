@@ -12,3 +12,5 @@ htmlcov/
 .coverage
 .coverage.*
 coverage/
+# Local uploads & exports (volume at /app/media in prod; dev bind-mount — keep out of build context)
+media/
