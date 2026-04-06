@@ -16,7 +16,7 @@ export class AdminDashboardPage {
     });
   }
 
-  async openTab(name: "ServiceBoard" | "Procurement" | "MoneyFlow"): Promise<void> {
+  async openTab(name: "ServiceBoard" | "Warehouse" | "MoneyFlow"): Promise<void> {
     await this.page.getByRole("tab", { name }).click();
   }
 
@@ -24,7 +24,7 @@ export class AdminDashboardPage {
     await expect(this.page.getByRole("heading", { name: "Operations Dashboard" })).toBeVisible();
   }
 
-  async expectProcurementSummary(): Promise<void> {
+  async expectWarehouseSuppliersSummary(): Promise<void> {
     await expect(this.page.getByRole("heading", { name: "Top suppliers by spend" })).toBeVisible();
   }
 

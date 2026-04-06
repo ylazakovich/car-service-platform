@@ -26,7 +26,6 @@ type StaffVehicleMobileDetailProps = {
   getRepairStatusClass: (status: RepairEntry["status"]) => string;
   repairStatusLabels: Record<RepairEntry["status"], string>;
   onOpenRepairs: () => void;
-  onClose: () => void;
 };
 
 export function StaffVehicleMobileDetail({
@@ -39,7 +38,6 @@ export function StaffVehicleMobileDetail({
   getRepairStatusClass,
   repairStatusLabels,
   onOpenRepairs,
-  onClose,
 }: StaffVehicleMobileDetailProps) {
   return (
     <div className="vehicle-mobile-detail-surface" aria-label="Mobile vehicle details">
@@ -61,9 +59,6 @@ export function StaffVehicleMobileDetail({
         <div className="vehicle-mobile-actions">
           <button type="button" className="button" onClick={onOpenRepairs}>
             Open Repairs
-          </button>
-          <button type="button" className="button button-ghost" onClick={onClose}>
-            Close
           </button>
         </div>
       </div>

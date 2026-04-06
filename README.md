@@ -48,6 +48,11 @@ Default dev admin:
 - Email: `admin@autoservice.local`
 - Password: `admin12345`
 
+Default dev staff (when seeded via `seed_staff` / `.env.example`):
+
+- Email: `staff@autoservice.local`
+- Password: `staff12345`
+
 ## Stop
 
 Production stack (static frontend):

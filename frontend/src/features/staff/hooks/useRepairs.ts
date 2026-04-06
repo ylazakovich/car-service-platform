@@ -66,6 +66,7 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
     status: item.status,
     tracking_code: item.tracking_code,
     portal_token: item.portal_token,
+    has_pdf: item.has_pdf ?? false,
     estimated_date: item.estimated_date ?? "",
     before_photos: item.before_photos,
     during_photos: item.during_photos,
@@ -501,6 +502,12 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     }, 2400);
   }
 
+  function markRepairPdfAvailable(repairId: number) {
+    setRepairs((current) =>
+      current.map((repair) => (repair.id === repairId ? { ...repair, has_pdf: true } : repair))
+    );
+  }
+
   return {
     repairs,
     repairSearch,
@@ -555,5 +562,6 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     handleCopyTrackingCode,
     handleCopyPortalLink,
     handleRegeneratePortalLink,
+    markRepairPdfAvailable,
   };
 }

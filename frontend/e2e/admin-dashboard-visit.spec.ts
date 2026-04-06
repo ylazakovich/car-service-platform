@@ -17,8 +17,8 @@ test.describe("admin dashboard (Docker stack) @desktop", () => {
     await dashboard.openTab("ServiceBoard");
     await dashboard.expectServiceBoardTab();
 
-    await dashboard.openTab("Procurement");
-    await dashboard.expectProcurementSummary();
+    await dashboard.openTab("Warehouse");
+    await dashboard.expectWarehouseSuppliersSummary();
 
     await dashboard.openTab("MoneyFlow");
     await dashboard.expectMoneyFlowTab();

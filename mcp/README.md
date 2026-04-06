@@ -8,7 +8,7 @@ It is **not** tied to a single vendor UI: you can copy the JSON manually, or run
 
 If you use the **everything-claude-code** plugin, Built-in MCPs already cover context7, playwright, github, memory, sequential-thinking, exa, etc. Adding the **same** servers again via project merge or **project-local** `~/.claude.json` creates duplicate processes (two Playwright MCPs, etc.).
 
-**Default in this repo:** `car-service-platform.default.json` has an **empty** `mcpServers`. Running `install-user.mjs` then only merges **what you already have** plus `local.overrides.json` (e.g. GitHub token for a stdio server named `github`) — it does **not** inject a second copy of Playwright.
+**Default in this repo:** `car-service-platform.default.json` has an **empty** `mcpServers`. Running `install-user.mjs` then only merges **what you already have** plus optional `local.overrides.json` — it does **not** inject a second copy of Playwright.
 
 **Full stdio stack without the plugin:** use `--profile standalone` (reads `car-service-platform.standalone.json`).
 
@@ -68,20 +68,9 @@ node scripts/mcp/install-user.mjs --force-profile
 
 If you use **only** the plugin’s GitHub MCP, configure its token per plugin docs; the `github` key in overrides applies to the **stdio** server with that name.
 
-## Session token via GitHub CLI (required for agents in this repo)
+## Bootstrap from this repo
 
-For **each working session**, prefer the token issued to [GitHub CLI](https://cli.github.com/) instead of a long-lived PAT in git:
-
-```bash
-node scripts/mcp/sync-github-token-from-gh.mjs
-node scripts/mcp/install-user.mjs          # or --target claude
-```
-
-- Writes **`mcp/local.overrides.json`** (gitignored) with `GITHUB_PERSONAL_ACCESS_TOKEN` from `gh auth token`.
-- The script does **not** print the token.
-- Requires `gh auth login` beforehand.
-
-Default bootstrap (MCP + gh, **no** host npm/pip — Docker is the norm): `bash scripts/agents/bootstrap-agent-session.sh`. Optional: `--mcp-profile standalone` if you have no ECC. See **`docs/dev/agent-session-bootstrap.md`**.
+Agent / local setup (**no** host npm/pip by default — Docker is the norm): `bash scripts/agents/bootstrap-agent-session.sh`. Optional: `--mcp-profile standalone` if you have no ECC. See **`docs/dev/agent-session-bootstrap.md`**.
 
 ## Other tools (Codex, etc.)
 

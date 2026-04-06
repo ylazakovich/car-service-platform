@@ -9,6 +9,7 @@ const localStorageStore = new Map<string, string>();
 const mockOpen = vi.fn();
 const mockConfirm = vi.fn();
 const mockCreateObjectURL = vi.fn();
+const mockRevokeObjectURL = vi.fn();
 
 const mockApi = vi.hoisted(() => ({
   get: vi.fn(),
@@ -113,9 +114,14 @@ describe("bootstrap application", () => {
       configurable: true,
       value: mockCreateObjectURL,
     });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: mockRevokeObjectURL,
+    });
     mockOpen.mockReset();
     mockConfirm.mockReset();
     mockCreateObjectURL.mockReset();
+    mockRevokeObjectURL.mockReset();
     mockConfirm.mockReturnValue(true);
     mockCreateObjectURL.mockReturnValue("blob:test-invoice");
     mockApi.get.mockImplementation((url: string) => {
@@ -165,6 +171,7 @@ describe("bootstrap application", () => {
               status: "in_progress",
               tracking_code: "TOR-1011",
               portal_token: "test-portal-token-1011",
+              has_pdf: false,
               estimated_date: null,
               completed_at: null,
               repair_notes: [],
@@ -354,20 +361,20 @@ describe("bootstrap application", () => {
             operational_range: { start_date: "2025-03-01", end_date: "2025-03-31" },
             pdf: {
               latest_act_totals: {
-                labor_total: 610,
-                parts_client_total: 230,
+                labor_total: 640,
+                parts_client_total: 210,
                 parts_purchase_total: 150,
                 other_expenses_total: 0,
-                document_total: 840,
+                document_total: 850,
                 repairs_with_latest_act: 2,
               },
               coverage: { completed_in_range: 2, completed_without_pdf: 0 },
               exports_in_period: 0,
               completed_repairs_with_multiple_exports: 0,
               completed_to_first_export_lag_days: {
-                average: 0,
-                median: 0,
-                p90: 0,
+                average: 2,
+                median: 2,
+                p90: 2,
                 sample_size: 2,
               },
               series_by_export_day: [],
@@ -380,9 +387,26 @@ describe("bootstrap application", () => {
               recently_created_preview: [],
             },
             moneyflow: {
-              supplier_spend_top: [],
-              purchases_unlinked: { count: 0, total_spend: 0 },
-              exports_by_exporter: [],
+              supplier_spend_top: [
+                {
+                  supplier_id: 1,
+                  supplier_name: "AutoParts Pro",
+                  total_spend: 120,
+                  line_count: 2,
+                },
+              ],
+              purchases_unlinked: {
+                count: 1,
+                total_spend: 70,
+              },
+              exports_by_exporter: [
+                {
+                  user_id: 7,
+                  email: "manager@test.local",
+                  display_name: "Test Manager",
+                  export_count: 2,
+                },
+              ],
             },
           },
         });
@@ -402,6 +426,7 @@ describe("bootstrap application", () => {
               status: "completed",
               tracking_code: "TOR-1011",
               portal_token: "test-portal-token-1011",
+              has_pdf: false,
               estimated_date: null,
               completed_at: "2025-02-05",
               repair_notes: [],
@@ -423,6 +448,7 @@ describe("bootstrap application", () => {
               status: "completed",
               tracking_code: "TOR-1012",
               portal_token: "test-portal-token-1012",
+              has_pdf: true,
               estimated_date: null,
               completed_at: "2025-03-05",
               repair_notes: [],
@@ -444,6 +470,7 @@ describe("bootstrap application", () => {
               status: "completed",
               tracking_code: "TOR-1013",
               portal_token: "test-portal-token-1013",
+              has_pdf: true,
               estimated_date: null,
               completed_at: "2025-03-20",
               repair_notes: [],
@@ -465,6 +492,7 @@ describe("bootstrap application", () => {
               status: "in_progress",
               tracking_code: "TOR-1014",
               portal_token: "test-portal-token-1014",
+              has_pdf: false,
               estimated_date: null,
               completed_at: null,
               repair_notes: [],
@@ -473,6 +501,28 @@ describe("bootstrap application", () => {
               after_photos: [],
               created_at: "2025-04-08T10:00:00Z",
               updated_at: "2025-04-08T10:00:00Z",
+            },
+            {
+              id: 15,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: 7,
+              master_name: "Chris Mason",
+              service_name: "Brake Diagnostics",
+              issue_notes: "March waiting for parts.",
+              status: "waiting_parts",
+              tracking_code: "TOR-1015",
+              portal_token: "test-portal-token-1015",
+              has_pdf: false,
+              estimated_date: "2025-03-29",
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-03-18T10:00:00Z",
+              updated_at: "2025-03-22T10:00:00Z",
             },
           ],
         });
@@ -593,17 +643,58 @@ describe("bootstrap application", () => {
     await user.type(endInput, "31-03-2025");
     await user.tab();
 
-    const serviceResults = screen.getByRole("heading", { name: "Service Results", level: 3 }).closest("section");
-    const partsResults = screen.getByRole("heading", { name: "Parts Results", level: 3 }).closest("section");
+    const salesPlan = screen.getByRole("heading", { name: "Sales Plan", level: 3 }).closest("section");
+    const actsFact = screen.getByRole("heading", { name: "Acts Coverage", level: 3 }).closest("section");
+    const repairCalendar = screen.getByRole("heading", { name: "Repair Calendar", level: 3 }).closest("section");
 
-    expect(serviceResults).not.toBeNull();
-    expect(partsResults).not.toBeNull();
+    expect(salesPlan).not.toBeNull();
+    expect(actsFact).not.toBeNull();
+    expect(repairCalendar).not.toBeNull();
+    expect(screen.queryByRole("heading", { name: "Parts Results", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Live estimate vs latest act", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Exports by staff", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Flow Timeline", level: 3 })).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(within(serviceResults as HTMLElement).getByText(/610,00\s*zł/)).toBeInTheDocument();
-      expect(within(partsResults as HTMLElement).getByText(/120,00\s*zł/)).toBeInTheDocument();
-      expect(within(partsResults as HTMLElement).getByText(/230,00\s*zł/)).toBeInTheDocument();
-      expect(within(partsResults as HTMLElement).getByText(/110,00\s*zł/)).toBeInTheDocument();
+      expect(within(salesPlan as HTMLElement).getAllByText(/610,00\s*zł/).length).toBeGreaterThan(0);
+      expect(within(salesPlan as HTMLElement).getAllByText(/230,00\s*zł/).length).toBeGreaterThan(0);
+      expect(within(salesPlan as HTMLElement).getAllByText(/840,00\s*zł/).length).toBeGreaterThan(0);
+      expect(within(salesPlan as HTMLElement).getByText("Δ +30,00 zł")).toBeInTheDocument();
+      expect(within(salesPlan as HTMLElement).getByText("Δ -20,00 zł")).toBeInTheDocument();
+      expect(within(salesPlan as HTMLElement).getByText("Δ +10,00 zł")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Coverage status")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Fully covered")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("100%")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("2 of 2 completed repairs have an act.")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("2 d")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).queryByText("Labor (acts)")).not.toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).queryByText("Parts to client (acts)")).not.toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).queryByText("Document total (acts)")).not.toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Missing acts")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Median time to first act")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Re-exported repairs")).toBeInTheDocument();
+      expect(within(actsFact as HTMLElement).getByText("Act exports in period:")).toBeInTheDocument();
+      const calEl = repairCalendar as HTMLElement;
+      expect(within(calEl).getAllByText("TOR-1015").length).toBeGreaterThan(0);
+      expect(calEl.textContent).toContain("Chris Mason");
+      expect(calEl.textContent).toContain("Waiting for Parts");
+      expect(calEl.textContent).toContain("March waiting for parts.");
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Warehouse" }));
+
+    const warehouseParts = await screen.findByRole("heading", { name: "Parts Results", level: 3 });
+    const warehouseSection = warehouseParts.closest("section");
+
+    expect(warehouseSection).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Top suppliers by spend", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Unlinked purchases", level: 3 })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Exports by staff", level: 3 })).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(within(warehouseSection as HTMLElement).getByText(/120,00\s*zł/)).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText(/230,00\s*zł/)).toBeInTheDocument();
+      expect(within(warehouseSection as HTMLElement).getByText(/110,00\s*zł/)).toBeInTheDocument();
     });
   });
 
@@ -644,29 +735,154 @@ describe("bootstrap application", () => {
     });
   });
 
-  it("shows a moneyflow chart with toggleable series", async () => {
+  it("shows a partial act coverage state when completed repairs still miss acts", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        const analytics = createStubDashboardAnalyticsResponse();
+        analytics.pdf.latest_act_totals.repairs_with_latest_act = 1;
+        analytics.pdf.coverage.completed_in_range = 4;
+        analytics.pdf.coverage.completed_without_pdf = 3;
+        analytics.pdf.exports_in_period = 5;
+        analytics.pdf.completed_repairs_with_multiple_exports = 1;
+        return Promise.resolve({ data: analytics });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/vehicles/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/customers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/suppliers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/users/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderApp("/app");
+
+    const actsFact = await screen.findByRole("heading", { name: "Acts Coverage", level: 3 });
+    const section = actsFact.closest("section");
+
+    expect(section).not.toBeNull();
+
+    await waitFor(() => {
+      expect(within(section as HTMLElement).getByText("Partial coverage")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("25%")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("1 of 4 completed repairs have an act.")).toBeInTheDocument();
+      expect(
+        within(section as HTMLElement).getByText("3 completed repairs are still waiting for their first act.")
+      ).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("Missing acts")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("3")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("Median time to first act")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("—")).toBeInTheDocument();
+      expect(
+        within(section as HTMLElement).getByText("No completed repairs with an exported act yet.")
+      ).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("Re-exported repairs")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("1")).toBeInTheDocument();
+    });
+  });
+
+  it("shows a neutral empty state when the selected period has no completed repairs", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/vehicles/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/customers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/suppliers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/users/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderApp("/app");
+
+    const actsFact = await screen.findByRole("heading", { name: "Acts Coverage", level: 3 });
+    const section = actsFact.closest("section");
+
+    expect(section).not.toBeNull();
+
+    await waitFor(() => {
+      expect(within(section as HTMLElement).getByText("No completed repairs")).toBeInTheDocument();
+      expect(within(section as HTMLElement).getByText("No completed repairs in this period.")).toBeInTheDocument();
+      expect(
+        within(section as HTMLElement).getByText("Pick a date range with completed work to review act coverage.")
+      ).toBeInTheDocument();
+      expect(within(section as HTMLElement).queryByText("0 / 0")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows a clickable repair calendar strip on moneyflow", async () => {
     const user = userEvent.setup();
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
-    expect(screen.getByRole("heading", { name: "Flow Timeline", level: 3 })).toBeInTheDocument();
+    const [startInput, endInput] = await screen.findAllByPlaceholderText("dd-mm-yyyy");
+    await user.clear(startInput);
+    await user.type(startInput, "01-04-2025");
+    await user.tab();
+    await user.clear(endInput);
+    await user.type(endInput, "30-04-2025");
+    await user.tab();
 
-    const purchaseToggle = screen.getByRole("button", { name: "Purchase Spend trend" });
-    const serviceToggle = screen.getByRole("button", { name: "Service Sales (live) trend" });
-    const partsToggle = screen.getByRole("button", { name: "Parts Sales (live) trend" });
+    const calendarSection = await screen.findByRole("heading", { name: "Repair Calendar", level: 3 });
 
-    expect(purchaseToggle).toHaveAttribute("aria-pressed", "true");
-    expect(serviceToggle).toHaveAttribute("aria-pressed", "true");
-    expect(partsToggle).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("heading", { name: "Flow Timeline", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "MoneyFlow trend chart" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Turn on at least one line to display the chart.")).not.toBeInTheDocument();
 
-    await user.click(purchaseToggle);
-    await user.click(serviceToggle);
-    await user.click(partsToggle);
+    const openButtons = within(calendarSection.closest("section") as HTMLElement).getAllByRole("button", {
+      name: "Open repair TOR-1011",
+    });
+    await user.click(openButtons[0]);
 
-    expect(purchaseToggle).toHaveAttribute("aria-pressed", "false");
-    expect(serviceToggle).toHaveAttribute("aria-pressed", "false");
-    expect(partsToggle).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText("Turn on at least one line to display the chart.")).toBeInTheDocument();
+    expect(await screen.findByText("Customer reported vibration while braking.")).toBeInTheDocument();
   });
 
   it("opens detail dialogs for customer and vehicle cards", async () => {
@@ -938,6 +1154,130 @@ describe("bootstrap application", () => {
     });
   });
 
+  it("lets staff explicitly unlink a purchase from repair before saving", async () => {
+    const user = userEvent.setup();
+    mockApi.post.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/purchases/") {
+        return Promise.resolve({
+          data: {
+            id: 100,
+            order_date: data?.order_date,
+            approximate_delivery_date: null,
+            supplier: { id: 1, name: data?.supplier_name, nip: "", phone: "", email: "", notes: "" },
+            part_name: data?.part_name,
+            quantity: data?.quantity,
+            purchase_price: String(data?.purchase_price),
+            sale_price: String(data?.sale_price ?? 0),
+            repair_code: typeof data?.repair_code === "string" ? data.repair_code : "",
+            vehicle: typeof data?.vehicle_id === "number" ? data.vehicle_id : null,
+            vehicle_license_plate: typeof data?.vehicle_id === "number" ? "WB 1234K" : "",
+            invoice_name: "",
+            invoice_url: "",
+            delivered: false,
+            created_at: "2025-04-05T10:00:00Z",
+            updated_at: "2025-04-05T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({
+        data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+      });
+    });
+
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    await user.click(await screen.findByRole("button", { name: "+ Add Purchase" }));
+
+    expect(screen.getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Leave this empty for stock or reserve parts that are not tied to a repair.")
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
+    await user.tab();
+    await user.type(screen.getByLabelText("Supplier"), "AutoParts Pro");
+    await user.type(screen.getByLabelText("Part"), "Brake Sensor");
+    await user.type(screen.getByLabelText("Purchase Price"), "85");
+    await user.selectOptions(screen.getByLabelText("Linked Repair"), "TOR-1011");
+
+    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+    expect(screen.getByRole("button", { name: "Unlink repair" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Unlink repair" }));
+    expect(screen.getByLabelText("Linked Repair")).toHaveValue("");
+    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+
+    await user.click(screen.getByRole("button", { name: "Add Purchase" }));
+
+    await waitFor(() => {
+      const purchaseCall = mockApi.post.mock.calls.find(([url]) => url === "/purchases/");
+      expect(purchaseCall).toBeTruthy();
+      const payload = purchaseCall?.[1] as Record<string, unknown>;
+      expect(payload).toMatchObject({
+        order_date: "2025-04-05",
+        supplier_name: "AutoParts Pro",
+        part_name: "Brake Sensor",
+        vehicle_id: 1,
+      });
+      expect(payload).not.toHaveProperty("repair_code");
+    });
+  });
+
+  it("removes repair linkage when editing an existing purchase", async () => {
+    const user = userEvent.setup();
+    mockApi.patch.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/purchases/2") {
+        return Promise.resolve({
+          data: {
+            id: 2,
+            order_date: data?.order_date,
+            approximate_delivery_date: null,
+            supplier: { id: 1, name: data?.supplier_name, nip: "", phone: "", email: "", notes: "" },
+            part_name: data?.part_name,
+            quantity: data?.quantity,
+            purchase_price: String(data?.purchase_price),
+            sale_price: String(data?.sale_price ?? 0),
+            repair_code: typeof data?.repair_code === "string" ? data.repair_code : "TOR-1011",
+            vehicle: typeof data?.vehicle_id === "number" ? data.vehicle_id : null,
+            vehicle_license_plate: typeof data?.vehicle_id === "number" ? "WB 1234K" : "",
+            invoice_name: "",
+            invoice_url: "",
+            delivered: Boolean(data?.delivered),
+            created_at: "2025-04-05T10:00:00Z",
+            updated_at: "2025-04-05T10:05:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    await user.click(await screen.findByText("Brake Pad Set"));
+
+    const purchaseDialog = await screen.findByRole("dialog");
+    expect(within(purchaseDialog).getByLabelText("Linked Repair")).toHaveValue("TOR-1011");
+
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Unlink repair" }));
+    expect(within(purchaseDialog).getByLabelText("Linked Repair")).toHaveValue("");
+
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Save Purchase" }));
+
+    await waitFor(() => {
+      expect(mockApi.patch).toHaveBeenCalledWith(
+        "/purchases/2",
+        expect.objectContaining({
+          repair_code: "",
+          vehicle_id: null,
+        })
+      );
+    });
+  });
+
   it("renders a public client portal route", async () => {
     mockApi.get.mockImplementation((url: string) => {
       if (url === "/portal/ABC-123/") {
@@ -1163,7 +1503,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
 
-    const kanban = await screen.findByLabelText("Desktop repairs board");
+    const kanban = await screen.findByLabelText("Repairs kanban board");
 
     expect(await screen.findByRole("button", { name: "Show 5 more" })).toBeInTheDocument();
     expect(within(kanban).getAllByText("Job 1").length).toBeGreaterThan(0);
@@ -1272,7 +1612,7 @@ describe("bootstrap application", () => {
     expect(screen.queryByText("Order TOR-0001")).not.toBeInTheDocument();
   });
 
-  it("kanban cards do not show tracking code chip", async () => {
+  it("kanban cards show tracking code chip", async () => {
     const user = userEvent.setup();
     renderApp("/app");
 
@@ -1280,7 +1620,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findAllByText("Brake Inspection");
 
-    expect(screen.queryByText("#TOR-1011")).not.toBeInTheDocument();
+    expect(screen.getByText("#TOR-1011")).toBeInTheDocument();
   });
 
   it("shows regenerate portal link button to admin", async () => {
@@ -1389,5 +1729,143 @@ describe("bootstrap application", () => {
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith("/repairs/11/regenerate-portal-token/");
     });
+  });
+
+  it("shows Make Act before first export and View PDF after an act already exists", async () => {
+    const pdfBlob = new Blob(["pdf"], { type: "application/pdf" });
+
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/customers/")) {
+        return Promise.resolve({
+          data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
+        });
+      }
+      if (url.startsWith("/vehicles/")) {
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              customer: { id: 1, full_name: "Alex Johnson" },
+              license_plate: "WB 1234K",
+              make: "Toyota",
+              model: "Corolla",
+              year: 2018,
+              vin: "",
+              color: "White",
+              notes: "",
+              added_date: "2024-11-04",
+            },
+          ],
+        });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 11,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "First Act Repair",
+              issue_notes: "First completed repair without act.",
+              status: "completed",
+              tracking_code: "TOR-1011",
+              portal_token: "test-portal-token-1011",
+              has_pdf: false,
+              estimated_date: null,
+              completed_at: "2025-03-05",
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-03-05T10:00:00Z",
+              updated_at: "2025-03-05T10:00:00Z",
+            },
+            {
+              id: 12,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K • Toyota Corolla",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Existing Act Repair",
+              issue_notes: "Completed repair with stored act.",
+              status: "completed",
+              tracking_code: "TOR-1012",
+              portal_token: "test-portal-token-1012",
+              has_pdf: true,
+              estimated_date: null,
+              completed_at: "2025-03-06",
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2025-03-06T10:00:00Z",
+              updated_at: "2025-03-06T10:00:00Z",
+            },
+          ],
+        });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({
+          data: [{ id: 1, name: "Brake Inspection", description: "", price: "299.00", is_active: true }],
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      if (url === "/repairs/11/pdf/") {
+        return Promise.resolve({ status: 404, data: null });
+      }
+      if (url === "/repairs/12/pdf/") {
+        return Promise.resolve({ status: 200, data: pdfBlob });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    mockApi.post.mockImplementation((url: string) => {
+      if (url === "/repairs/11/pdf/export/") {
+        return Promise.resolve({ data: pdfBlob });
+      }
+      return Promise.resolve({
+        data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+      });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+
+    await user.click(screen.getAllByText("First Act Repair")[1]);
+    let dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("button", { name: "Make Act" })).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Make Act" }));
+    await waitFor(() => {
+      expect(mockApi.post).toHaveBeenCalledWith("/repairs/11/pdf/export/", null, { responseType: "blob" });
+      expect(within(dialog).getByRole("button", { name: "View PDF" })).toBeInTheDocument();
+    });
+
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    await user.click(screen.getAllByText("Existing Act Repair")[1]);
+    dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("button", { name: "View PDF" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Make Act" })).not.toBeInTheDocument();
   });
 });

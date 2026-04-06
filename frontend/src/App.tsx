@@ -1,6 +1,15 @@
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactElement,
+} from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ScrollToWorkspaceHeaderFab } from "./components/ScrollToWorkspaceHeaderFab";
 import { BrandMark } from "./components/BrandMark";
 import { useAuth } from "./context/AuthContext";
 import { updateUserName } from "./api/users";
@@ -148,17 +157,43 @@ function getInitialStaffSection(): StaffSection {
 
 const STAFF_ALLOWED_SECTIONS: StaffSection[] = ["vehicles", "repairs"];
 
+const shellMobileMq = "(max-width: 820px)";
+
+function shellMobileNarrowSnapshot() {
+  if (typeof window === "undefined") return false;
+  if (typeof window.matchMedia !== "function") return false;
+  return window.matchMedia(shellMobileMq).matches;
+}
+
+function subscribeShellMobileNarrow(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  if (typeof window.matchMedia !== "function") return () => {};
+  const mq = window.matchMedia(shellMobileMq);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+/** Viewport ≤820px: mobile shell (sticky header + picker), desktop sidebar hidden. */
+function useShellMobileNarrow() {
+  return useSyncExternalStore(subscribeShellMobileNarrow, shellMobileNarrowSnapshot, () => false);
+}
+
 /* ── Staff Shell ────────────────────────────────────────── */
 
 function StaffShell() {
+  const shellMobileNarrow = useShellMobileNarrow();
   const { user, logout, isStaff, setUser } = useAuth();
   const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobilePickerOpen, setIsMobilePickerOpen] = useState(false);
   const [openRepairComposerRequest, setOpenRepairComposerRequest] = useState(0);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileFirstName, setProfileFirstName] = useState("");
   const [profileLastName, setProfileLastName] = useState("");
   const profileFirstRef = useRef<HTMLInputElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const mobileStickyStackRef = useRef<HTMLDivElement>(null);
+  const mobilePickerReturnFocusRef = useRef<HTMLElement | null>(null);
+  const pickerFirstFocusRef = useRef<HTMLButtonElement>(null);
 
   function startEditProfile() {
     setProfileFirstName(user?.first_name ?? "");
@@ -183,7 +218,11 @@ function StaffShell() {
         { label: "Operations", items: ["repairs"]  as StaffSection[] },
       ]
     : navGroups;
-  const mobileSections = visibleNavGroups.flatMap((group) => group.items);
+  const pickerSections = useMemo(() => visibleNavGroups.flatMap((g) => g.items), [visibleNavGroups]);
+
+  useEffect(() => {
+    if (!shellMobileNarrow) setIsMobilePickerOpen(false);
+  }, [shellMobileNarrow]);
 
   useEffect(() => {
     writeStoredStaffSection(activeSection);
@@ -196,147 +235,283 @@ function StaffShell() {
   }, [isStaff, activeSection]);
 
   useEffect(() => {
-    setIsMobileNavOpen(false);
+    setIsMobilePickerOpen(false);
   }, [activeSection]);
 
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
-    document.body.classList.toggle("mobile-nav-open", isMobileNavOpen);
+    document.body.classList.toggle("mobile-shell-picker-open", isMobilePickerOpen);
     return () => {
-      document.body.classList.remove("mobile-nav-open");
+      document.body.classList.remove("mobile-shell-picker-open");
     };
-  }, [isMobileNavOpen]);
+  }, [isMobilePickerOpen]);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    const stack = mobileStickyStackRef.current;
+    if (!shell || !stack) return undefined;
+    const apply = () => {
+      const cs = getComputedStyle(stack);
+      const marginY =
+        (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+      shell.style.setProperty(
+        "--shell-mobile-sticky-top",
+        `${stack.offsetHeight + marginY}px`,
+      );
+    };
+    apply();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(apply);
+    ro.observe(stack);
+    return () => ro.disconnect();
+  }, [activeSection, isMobilePickerOpen, shellMobileNarrow]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isMobilePickerOpen) return;
+    window.requestAnimationFrame(() => pickerFirstFocusRef.current?.focus());
+  }, [isMobilePickerOpen]);
+
+  const openMobilePicker = useCallback((source: HTMLElement) => {
+    mobilePickerReturnFocusRef.current = source;
+    setIsMobilePickerOpen(true);
+  }, []);
+
+  const closeMobilePicker = useCallback((focusAfter?: HTMLElement | null) => {
+    setIsMobilePickerOpen(false);
+    const back = focusAfter ?? mobilePickerReturnFocusRef.current;
+    mobilePickerReturnFocusRef.current = null;
+    if (typeof window !== "undefined" && back) {
+      window.requestAnimationFrame(() => back.focus());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isMobilePickerOpen) return undefined;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMobilePicker();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isMobilePickerOpen, closeMobilePicker]);
 
   function handleSectionChange(section: StaffSection) {
     setActiveSection(section);
-    setIsMobileNavOpen(false);
+    setIsMobilePickerOpen(false);
   }
 
   function handleOpenRepairComposer() {
     setActiveSection("repairs");
     setOpenRepairComposerRequest((current) => current + 1);
-    setIsMobileNavOpen(false);
+    setIsMobilePickerOpen(false);
   }
 
   return (
-    <div className="shell">
-      <header className="shell-mobile-bar">
-        <button
-          type="button"
-          className="mobile-menu-button"
-          aria-label={isMobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={isMobileNavOpen}
-          onClick={() => setIsMobileNavOpen((current) => !current)}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
-        <div className="shell-mobile-context">
-          <span className="mobile-section-pill">{isStaff ? "Staff Flow" : "Workspace"}</span>
-          <strong>{sectionLabels[activeSection]}</strong>
-        </div>
-        <button type="button" className="button button-secondary mobile-signout-button" onClick={logout}>
-          Sign Out
-        </button>
-      </header>
+    <div className="shell" ref={shellRef}>
+      <div
+        className={`shell-mobile-sticky-stack${isMobilePickerOpen ? " shell-mobile-sticky-stack--menu-open" : ""}`}
+        ref={mobileStickyStackRef}
+      >
+        <header className="shell-mobile-bar">
+          <button
+            type="button"
+            className="shell-mobile-header-toggle"
+            aria-expanded={isMobilePickerOpen}
+            aria-controls={isMobilePickerOpen ? "mobile-section-picker" : undefined}
+            aria-label={isMobilePickerOpen ? "Close workspace menu" : "Open workspace menu"}
+            title="Tap to choose a section, account, or sign out"
+            onClick={(e) =>
+              isMobilePickerOpen ? closeMobilePicker(e.currentTarget) : openMobilePicker(e.currentTarget)
+            }
+          >
+            <span className="shell-mobile-header-toggle-text">
+              <span className="shell-mobile-context shell-mobile-context--title-only">
+                <strong className="shell-mobile-section-title">{sectionLabels[activeSection]}</strong>
+                <span className="shell-mobile-header-hint">Sections · account · sign out</span>
+              </span>
+              <span className="shell-mobile-header-chevron-wrap" aria-hidden>
+                <span className="shell-mobile-header-chevron">{isMobilePickerOpen ? "▴" : "▾"}</span>
+              </span>
+            </span>
+          </button>
+        </header>
 
-      {isMobileNavOpen ? <button type="button" className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setIsMobileNavOpen(false)} /> : null}
+        {isMobilePickerOpen ? (
+          <nav
+            id="mobile-section-picker"
+            className="shell-mobile-quick-nav shell-mobile-quick-nav--expanded"
+            aria-label="Sections and account"
+          >
+            <div className="shell-mobile-quick-sections">
+              {pickerSections.map((section, idx) => (
+                <button
+                  key={section}
+                  ref={idx === 0 ? pickerFirstFocusRef : undefined}
+                  type="button"
+                  className={`shell-mobile-quick-section ${activeSection === section ? "shell-mobile-quick-section-active" : ""}`}
+                  onClick={() => handleSectionChange(section)}
+                >
+                  <span className="nav-link-icon shell-mobile-quick-section-icon">{sectionIcons[section]}</span>
+                  <span className="shell-mobile-quick-section-label">{sectionLabels[section]}</span>
+                </button>
+              ))}
+            </div>
 
-      <aside className={`shell-sidebar ${isMobileNavOpen ? "shell-sidebar-mobile-open" : ""}`}>
-        <div className="shell-sidebar-top">
-          <div className="shell-sidebar-header">
-            <span className="mobile-section-pill">{isStaff ? "Staff Menu" : "Workspace Menu"}</span>
-            <button type="button" className="shell-sidebar-close" onClick={() => setIsMobileNavOpen(false)}>
-              Close
-            </button>
-          </div>
-
-          {/* Brand */}
-          <div className="brand-block">
-            <BrandMark variant="compact" />
-            <h1>Car Service</h1>
-            <p className="shell-copy">Run the entire workshop from one board.</p>
-          </div>
-
-          {/* Navigation */}
-          <nav className="shell-nav" aria-label="Staff sections">
-            {visibleNavGroups.map((group) => (
-              <div key={group.label} className="nav-group">
-                <span className="nav-group-label">{group.label}</span>
-                {group.items.map((section) => (
-                  <button
-                    key={section}
-                    type="button"
-                    className={`nav-link ${activeSection === section ? "nav-link-active" : ""}`}
-                    onClick={() => handleSectionChange(section)}
-                  >
-                    <span className="nav-link-icon">{sectionIcons[section]}</span>
-                    <span>{sectionLabels[section]}</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </nav>
-
-          {/* Quick focus */}
-          <section className="sidebar-panel">
-            <p className="eyebrow">Quick Focus</p>
-            <h2>Start with records.</h2>
-            <p>
-              Create repair jobs, assign masters, and keep every vehicle moving through the workshop.
-            </p>
-            <div className="sidebar-actions">
-              <button type="button" className="button" onClick={handleOpenRepairComposer}>
+            {isStaff ? (
+              <button type="button" className="button shell-mobile-picker-cta" onClick={handleOpenRepairComposer}>
                 Add New Repair
               </button>
-            </div>
-          </section>
-        </div>
+            ) : null}
 
-        {/* User */}
-        <div className="shell-user">
-          <div className="shell-user-info">
-            <div className="user-avatar">
-              {user?.email?.charAt(0).toUpperCase() ?? "?"}
-            </div>
-            <div className="shell-user-details">
-              <span className="user-label">Signed in as</span>
-              <strong>{user?.email}</strong>
-              {editingProfile ? (
-                <div className="profile-edit-row">
-                  <input
-                    ref={profileFirstRef}
-                    className="user-edit-input"
-                    value={profileFirstName}
-                    onChange={(e) => setProfileFirstName(e.target.value)}
-                    placeholder="First name"
-                  />
-                  <input
-                    className="user-edit-input"
-                    value={profileLastName}
-                    onChange={(e) => setProfileLastName(e.target.value)}
-                    placeholder="Last name"
-                  />
-                  <div className="profile-edit-actions">
-                    <button type="button" className="button" style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }} onClick={saveProfile}>Save</button>
-                    <button type="button" className="button button-secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }} onClick={() => setEditingProfile(false)}>Cancel</button>
-                  </div>
+            <div className="shell-mobile-account">
+              <div className="shell-mobile-account-row">
+                <div className="user-avatar">{user?.email?.charAt(0).toUpperCase() ?? "?"}</div>
+                <div className="shell-mobile-account-details">
+                  <span className="user-label">Signed in as</span>
+                  <strong className="shell-mobile-account-email">{user?.email}</strong>
+                  {editingProfile ? (
+                    <div className="profile-edit-row">
+                      <input
+                        ref={profileFirstRef}
+                        className="user-edit-input"
+                        value={profileFirstName}
+                        onChange={(e) => setProfileFirstName(e.target.value)}
+                        placeholder="First name"
+                      />
+                      <input
+                        className="user-edit-input"
+                        value={profileLastName}
+                        onChange={(e) => setProfileLastName(e.target.value)}
+                        placeholder="Last name"
+                      />
+                      <div className="profile-edit-actions">
+                        <button type="button" className="button" style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }} onClick={saveProfile}>
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }}
+                          onClick={() => setEditingProfile(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button type="button" className="profile-edit-trigger" onClick={startEditProfile}>
+                      {user?.first_name || user?.last_name
+                        ? `${user.first_name} ${user.last_name}`.trim()
+                        : "Set your name"}
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <button type="button" className="profile-edit-trigger" onClick={startEditProfile}>
-                  {user?.first_name || user?.last_name
-                    ? `${user.first_name} ${user.last_name}`.trim()
-                    : "Set your name"}
-                </button>
-              )}
+              </div>
+              <button type="button" className="button button-secondary shell-mobile-sign-out" onClick={logout}>
+                Sign out
+              </button>
             </div>
+          </nav>
+        ) : null}
+      </div>
+
+      {!shellMobileNarrow ? (
+        <aside id="staff-shell-sidebar" className="shell-sidebar" aria-label="Workspace navigation">
+          <div className="shell-sidebar-top">
+            <div className="shell-sidebar-header">
+              <span className="mobile-section-pill">Menu</span>
+            </div>
+
+            <div className="brand-block">
+              <BrandMark variant="compact" />
+              <h1>Car Service</h1>
+              <p className="shell-copy">Run the entire workshop from one board.</p>
+            </div>
+
+            <nav className="shell-nav" aria-label="Staff sections">
+              {visibleNavGroups.map((group) => (
+                <div key={group.label} className="nav-group">
+                  <span className="nav-group-label">{group.label}</span>
+                  {group.items.map((section) => (
+                    <button
+                      key={section}
+                      type="button"
+                      className={`nav-link ${activeSection === section ? "nav-link-active" : ""}`}
+                      onClick={() => handleSectionChange(section)}
+                    >
+                      <span className="nav-link-icon">{sectionIcons[section]}</span>
+                      <span>{sectionLabels[section]}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </nav>
+
+            <section className="sidebar-panel">
+              <p className="eyebrow">Quick Focus</p>
+              <h2>Start with records.</h2>
+              <p>
+                Create repair jobs, assign masters, and keep every vehicle moving through the workshop.
+              </p>
+              <div className="sidebar-actions">
+                <button type="button" className="button" onClick={handleOpenRepairComposer}>
+                  Add New Repair
+                </button>
+              </div>
+            </section>
           </div>
-          <button type="button" className="button button-secondary" onClick={logout}>
-            Sign Out
-          </button>
-        </div>
-      </aside>
+
+          <div className="shell-user">
+            <div className="shell-user-info">
+              <div className="user-avatar">
+                {user?.email?.charAt(0).toUpperCase() ?? "?"}
+              </div>
+              <div className="shell-user-details">
+                <span className="user-label">Signed in as</span>
+                <strong>{user?.email}</strong>
+                {editingProfile ? (
+                  <div className="profile-edit-row">
+                    <input
+                      ref={profileFirstRef}
+                      className="user-edit-input"
+                      value={profileFirstName}
+                      onChange={(e) => setProfileFirstName(e.target.value)}
+                      placeholder="First name"
+                    />
+                    <input
+                      className="user-edit-input"
+                      value={profileLastName}
+                      onChange={(e) => setProfileLastName(e.target.value)}
+                      placeholder="Last name"
+                    />
+                    <div className="profile-edit-actions">
+                      <button type="button" className="button" style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }} onClick={saveProfile}>
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }}
+                        onClick={() => setEditingProfile(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" className="profile-edit-trigger" onClick={startEditProfile}>
+                    {user?.first_name || user?.last_name
+                      ? `${user.first_name} ${user.last_name}`.trim()
+                      : "Set your name"}
+                  </button>
+                )}
+              </div>
+            </div>
+            <button type="button" className="button button-secondary" onClick={logout}>
+              Sign Out
+            </button>
+          </div>
+        </aside>
+      ) : null}
 
       <main className="shell-main">
         <StaffHomePage
@@ -346,21 +521,21 @@ function StaffShell() {
         />
       </main>
 
-      {isStaff ? (
-        <nav className="mobile-tabbar" aria-label="Staff quick navigation">
-          {mobileSections.map((section) => (
-            <button
-              key={section}
-              type="button"
-              className={`mobile-tabbar-link ${activeSection === section ? "mobile-tabbar-link-active" : ""}`}
-              onClick={() => handleSectionChange(section)}
-            >
-              <span className="nav-link-icon">{sectionIcons[section]}</span>
-              <span>{sectionLabels[section]}</span>
-            </button>
-          ))}
-        </nav>
+      {isMobilePickerOpen ? (
+        <button
+          type="button"
+          className="shell-mobile-picker-backdrop"
+          aria-label="Close sections and account"
+          onClick={() => closeMobilePicker()}
+        />
       ) : null}
+
+      <ScrollToWorkspaceHeaderFab
+        active={shellMobileNarrow}
+        pickerOpen={isMobilePickerOpen}
+        headerRef={mobileStickyStackRef}
+        layoutRootRef={shellRef}
+      />
     </div>
   );
 }

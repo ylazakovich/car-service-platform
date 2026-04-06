@@ -12,17 +12,17 @@ test.describe("Staff repairs mobile @mobile-only", () => {
     await openStaffApp(page);
   });
 
-  test("mobile list, tabbar, and seeded completed repair modal", async ({ page }) => {
+  test("mobile list, quick nav, and seeded completed repair modal", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · mobile list · open seeded job");
     const repairs = new StaffRepairsPage(page);
 
-    await expect(repairs.staffQuickNav()).toBeVisible({ timeout: 15_000 });
+    await expect(repairs.staffMobileWorkspaceMenuToggle()).toBeVisible({ timeout: 15_000 });
 
     await repairs.gotoRepairsSection();
-    await repairs.expectMobileRepairsListVisible();
+    await repairs.expectRepairsKanbanVisible();
 
     await repairs.openSeededRepairCard();
     await repairs.expectRepairDetailDialogVisible();
-    await expect(repairs.viewPdfButton()).toBeVisible();
+    await expect(repairs.repairPdfPrimaryButton()).toBeVisible();
   });
 });

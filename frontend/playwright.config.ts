@@ -1,6 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 import { AUTH_STATE_STAFF } from "./e2e/fixtures/auth";
+import { applyRepoRootDotEnv } from "./e2e/load-repo-env";
+
+applyRepoRootDotEnv();
 
 const isCi = !!process.env.CI;
 

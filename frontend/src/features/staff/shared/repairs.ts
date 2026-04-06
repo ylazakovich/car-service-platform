@@ -26,6 +26,7 @@ export type RepairEntry = {
   status: RepairStatus;
   tracking_code: string;
   portal_token: string;
+  has_pdf: boolean;
   estimated_date: string;
   before_photos: string[];
   during_photos: string[];
