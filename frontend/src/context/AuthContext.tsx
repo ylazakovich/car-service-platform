@@ -31,6 +31,15 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const authUserStorageKey = "auth-user";
 
+/** Session cookie auth + optional dev-only silent login (Docker / Vite dev server only). */
+function shouldAttemptDevAutoLogin(): boolean {
+  return (
+    import.meta.env.DEV &&
+    import.meta.env.MODE !== "test" &&
+    import.meta.env.VITE_DEV_AUTO_LOGIN === "true"
+  );
+}
+
 function readStoredUser(): User | null {
   if (typeof window === "undefined") {
     return null;
@@ -86,12 +95,30 @@ export function AuthProvider({ children }: PropsWithChildren) {
           setUser(response.data);
         }
       } catch (error) {
-        if (active) {
-          if (axios.isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0)) {
-            clearUser();
-          } else if (!cachedUser) {
+        if (!active) {
+          return;
+        }
+        const unauthorized =
+          axios.isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0);
+
+        if (unauthorized && shouldAttemptDevAutoLogin()) {
+          const email =
+            import.meta.env.VITE_DEV_LOGIN_EMAIL?.trim() || "admin@autoservice.local";
+          const password =
+            import.meta.env.VITE_DEV_LOGIN_PASSWORD?.trim() || "admin12345";
+          try {
+            await api.get("/auth/csrf");
+            const loginRes = await api.post("/auth/login", { email, password });
+            if (active) {
+              setUser(loginRes.data);
+            }
+          } catch {
             clearUser();
           }
+        } else if (unauthorized) {
+          clearUser();
+        } else if (!cachedUser) {
+          clearUser();
         }
       } finally {
         if (active) {

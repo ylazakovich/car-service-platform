@@ -4,7 +4,7 @@ import { openStaffApp } from "./fixtures/auth";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
- * Expects Docker Compose with seeded staff user (see backend seed_staff) and at least one completed repair on the board.
+ * Expects Docker Compose with seed_staff and demo repairs (`demo/demo_data.sql` in CI; locally load-demo).
  */
 /** @desktop — счётчики POST /pdf/export и модалка превью стабильны на широком layout; mobile-chrome см. staff-repairs-mobile. */
 test.describe("Repair PDF: view without new export @desktop", () => {
