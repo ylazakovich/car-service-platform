@@ -4279,6 +4279,68 @@ button.moneyflow-series-toggle {
   border-top: 1px solid var(--border);
 }
 
+.repair-update-modal .repair-modal-mileage-at-service {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-top: var(--s4);
+}
+
+.repair-update-modal .repair-modal-mileage-input {
+  width: 100%;
+  border-radius: 10px;
+  padding: 0.72rem var(--s4);
+  border: 1px solid var(--border);
+  background: var(--surface-mid);
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.repair-update-modal .repair-modal-mileage-input:hover {
+  border-color: var(--border-strong);
+}
+
+.repair-update-modal .repair-modal-mileage-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.repair-update-modal .repair-modal-mileage-readonly {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.repair-update-modal .repair-mileage-reminder {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: color-mix(in srgb, var(--warning, #c27803) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning, #c27803) 35%, var(--border));
+}
+
+.repair-mileage-reminder__context {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.kanban-card-mileage-reminder {
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--text-soft);
+  background: color-mix(in srgb, var(--warning, #c27803) 10%, var(--surface-mid));
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--warning, #c27803) 28%, var(--border));
+}
+
 .repair-update-modal .repair-modal-assignment-card select {
   width: 100%;
   border-radius: 10px;
@@ -4544,7 +4606,6 @@ button.moneyflow-series-toggle {
   gap: var(--s3);
 }
 
-.vehicle-detail-modal .vehicle-modal-actions.staff-modal-footer-bar--center,
 .vehicle-form-modal .vehicle-modal-actions.staff-modal-footer-bar--center {
   justify-content: center;
 }
@@ -4688,9 +4749,8 @@ button.moneyflow-series-toggle {
     padding: 0 var(--s6) var(--s4);
   }
 
-  .repair-modal-footer-bar .repair-modal-actions,
-  .repair-modal-footer-bar.vehicle-modal-actions,
-  .repair-modal-footer-bar.purchase-modal-actions {
+  /* Only strip top padding when actions are nested inside the footer bar — not when the bar itself uses these classes */
+  .repair-modal-footer-bar .repair-modal-actions {
     padding-top: 0;
   }
 }
@@ -4989,10 +5049,180 @@ button.moneyflow-series-toggle {
   line-height: 1.5;
 }
 
-.vehicle-info-col p:first-of-type {
-  color: var(--text);
-  font-weight: 600;
+.vehicle-detail-hero-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
   font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.vehicle-detail-hero-title-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  margin-top: 2px;
+  color: rgba(205, 216, 58, 0.82);
+}
+
+.vehicle-detail-hero-title-text {
+  min-width: 0;
+}
+
+.vehicle-detail-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.vehicle-vin-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.55rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.vehicle-detail-meta-row--vin .vehicle-detail-meta-text--vin-wrap {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vehicle-detail-meta-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: rgba(205, 216, 58, 0.78);
+}
+
+.vehicle-detail-meta-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--text-mid);
+  line-height: 1.45;
+}
+
+.vehicle-detail-meta-text--mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.vehicle-detail-meta-text--vin-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  font-family: ui-monospace, monospace;
+}
+
+.vehicle-vin-label {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(205, 216, 58, 0.88);
+  text-transform: uppercase;
+}
+
+.vehicle-vin-digits {
+  min-width: 0;
+  flex: 0 1 auto;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+  color: var(--text-mid);
+}
+
+.vin-copy-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  flex-shrink: 0;
+  padding: 0.32rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(205, 216, 58, 0.4);
+  background: rgba(205, 216, 58, 0.12);
+  color: #e8ee9a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.vin-copy-button:hover {
+  background: rgba(205, 216, 58, 0.22);
+  border-color: rgba(205, 216, 58, 0.65);
+}
+
+.vin-copy-button__text {
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 420px) {
+  .vin-copy-button__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .vin-copy-button {
+    padding: 0.32rem;
+    min-width: 2.25rem;
+  }
+}
+
+.copy-chip--compact {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  font-size: 0.7rem;
+}
+
+.vehicle-mobile-plate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 var(--s2);
+}
+
+.vehicle-mobile-plate-row .vehicle-mobile-license {
+  margin: 0;
+}
+
+.vehicle-mobile-detail-surface .vehicle-detail-meta-row {
+  margin-top: 6px;
+}
+
+.vehicle-mobile-detail-surface .vehicle-mobile-plate-row + .vehicle-detail-hero-title {
+  margin-top: 0;
+}
+
+.detail-card .vehicle-detail-meta-row {
+  margin-top: 6px;
+}
+
+.detail-card .vehicle-detail-meta-row:first-of-type {
+  margin-top: 0;
+}
+
+.detail-item .vehicle-detail-meta-row {
+  margin-top: var(--s2);
 }
 
 .vehicle-info-divider {
@@ -7221,36 +7451,6 @@ button.moneyflow-series-toggle {
   flex-shrink: 0;
 }
 
-.vehicle-detail-tabs {
-  display: flex;
-  gap: var(--s2, 8px);
-  margin-bottom: var(--s4, 16px);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  padding-bottom: var(--s2, 8px);
-}
-
-.vehicle-detail-tab {
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.5);
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: var(--s1, 4px) var(--s3, 12px);
-  border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
-}
-
-.vehicle-detail-tab:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.07);
-}
-
-.vehicle-detail-tab.active {
-  color: #cdd83a;
-  background: rgba(205,216,58,0.1);
-}
-
 .vehicle-history-section {
   display: flex;
   flex-direction: column;
@@ -7318,3 +7518,367 @@ button.moneyflow-series-toggle {
   color: rgba(255,255,255,0.3);
   font-family: monospace;
 }
+
+.vehicle-history-section-title {
+  margin: 0 0 var(--s3, 12px);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Vehicle repairs: one table — issue, dates, km, act total (PDF), status */
+.vehicle-history-table-wrap--repairs-merged .vehicle-history-table-head,
+.vehicle-history-table-wrap--repairs-merged .vehicle-history-table-row {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(6.25rem, 7.5rem)
+    minmax(6.25rem, 7.5rem)
+    minmax(3.25rem, 4rem)
+    minmax(4.5rem, 5.75rem)
+    minmax(5.25rem, 6.5rem);
+}
+
+.vehicle-history-td--code {
+  font-size: 0.72rem;
+  font-family: ui-monospace, monospace;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.vehicle-history-td--money {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #cdd83a;
+}
+
+.vehicle-history-td--money-na {
+  color: rgba(255, 255, 255, 0.28);
+  font-weight: 500;
+}
+
+.vehicle-history-compact-card__code {
+  margin: 0 0 2px;
+  font-size: 0.72rem;
+  font-family: ui-monospace, monospace;
+  color: rgba(255, 255, 255, 0.42);
+  letter-spacing: 0.02em;
+}
+
+.vehicle-history-compact-card__meta--wrap {
+  flex-wrap: wrap;
+  row-gap: var(--s2, 8px);
+}
+
+.vehicle-history-compact-card__act {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: #cdd83a;
+}
+
+.vehicle-history-compact-card__act--na {
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 500;
+}
+
+/* Vehicle history: full-width table, single-line rows */
+.vehicle-history-table-wrap {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.vehicle-history-table-head,
+.vehicle-history-table-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(7.75rem, 9.25rem)
+    minmax(7.75rem, 9.25rem)
+    minmax(4rem, 4.75rem)
+    minmax(5.5rem, 6.75rem);
+  gap: 0 14px;
+  align-items: center;
+  padding: 10px 16px;
+  line-height: 1.25;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.vehicle-history-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.45);
+  background: rgba(20, 20, 22, 0.97);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.vehicle-history-th,
+.vehicle-history-td {
+  min-width: 0;
+}
+
+.vehicle-history-th--km,
+.vehicle-history-th--status,
+.vehicle-history-th--numeric {
+  text-align: right;
+}
+
+.vehicle-history-td--issue {
+  min-width: 0;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.8125rem;
+}
+
+/* Ellipsis inside the Issue grid cell; full text in title on hover */
+.vehicle-history-issue-clip {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicle-history-td--created,
+.vehicle-history-td--completed {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.vehicle-history-td--km {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #cdd83a;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.vehicle-history-td--km-na {
+  color: rgba(255, 255, 255, 0.28);
+  font-weight: 500;
+}
+
+.vehicle-history-td--status {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.vehicle-history-td--status .repair-status-chip {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.48rem;
+  letter-spacing: 0.02em;
+}
+
+.vehicle-history-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.vehicle-history-table-row {
+  margin: 0;
+  width: 100%;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+  border-left: 3px solid transparent;
+  min-height: 44px;
+}
+
+.vehicle-history-table-row:first-child {
+  border-top: none;
+}
+
+.vehicle-history-table-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vehicle-history-table-row:focus-visible {
+  outline: 2px solid #cdd83a;
+  outline-offset: -2px;
+  z-index: 0;
+}
+
+.vehicle-history-table-row--new {
+  border-left-color: rgba(91, 156, 246, 0.75);
+}
+
+.vehicle-history-table-row--in_progress {
+  border-left-color: rgba(240, 168, 74, 0.8);
+}
+
+.vehicle-history-table-row--waiting_parts {
+  border-left-color: rgba(224, 82, 82, 0.7);
+}
+
+.vehicle-history-table-row--completed {
+  border-left-color: rgba(78, 201, 148, 0.65);
+}
+
+/* Linked purchases tab — same table shell as History, 5 columns */
+.vehicle-linked-purchases-table .vehicle-history-table-head,
+.vehicle-linked-purchases-table .vehicle-history-table-row.vehicle-purchases-table-row {
+  grid-template-columns:
+    minmax(0, 1.25fr)
+    minmax(6.5rem, 1fr)
+    minmax(2.5rem, 3.5rem)
+    minmax(5.25rem, 6.75rem)
+    minmax(5.25rem, 6.75rem);
+}
+
+.vehicle-history-td--numeric {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.vehicle-history-td--sell {
+  font-weight: 600;
+  color: #cdd83a;
+}
+
+.vehicle-purchases-table-row {
+  cursor: default;
+  border-left-color: rgba(205, 216, 58, 0.35);
+}
+
+.vehicle-purchases-table-row:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.vehicle-history-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2, 8px);
+}
+
+.vehicle-history-compact-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s1, 4px);
+  width: 100%;
+  margin: 0;
+  padding: var(--s2, 8px) var(--s3, 12px);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font: inherit;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.vehicle-history-compact-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vehicle-history-compact-card:focus-visible {
+  outline: 2px solid #cdd83a;
+  outline-offset: 2px;
+}
+
+.vehicle-history-compact-card--new {
+  border-color: rgba(91, 156, 246, 0.45);
+  box-shadow: 0 0 0 1px rgba(91, 156, 246, 0.12);
+  background: rgba(91, 156, 246, 0.06);
+}
+
+.vehicle-history-compact-card--in_progress {
+  border-color: rgba(240, 168, 74, 0.45);
+  box-shadow: 0 0 0 1px rgba(240, 168, 74, 0.1);
+  background: rgba(240, 168, 74, 0.06);
+}
+
+.vehicle-history-compact-card--waiting_parts {
+  border-color: rgba(224, 82, 82, 0.4);
+  box-shadow: 0 0 0 1px rgba(224, 82, 82, 0.1);
+  background: rgba(224, 82, 82, 0.06);
+}
+
+.vehicle-history-compact-card--completed {
+  border-color: rgba(78, 201, 148, 0.35);
+  box-shadow: 0 0 0 1px rgba(78, 201, 148, 0.08);
+  background: rgba(78, 201, 148, 0.05);
+}
+
+.vehicle-history-compact-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s2, 8px);
+}
+
+.vehicle-history-compact-card__title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #fff;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+}
+
+.vehicle-history-compact-card .repair-status-chip {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  padding: 0.22rem 0.5rem;
+}
+
+.vehicle-history-compact-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1, 4px) var(--s3, 12px);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.35;
+}
+
+.vehicle-history-compact-card__km {
+  color: #cdd83a;
+  font-weight: 500;
+}
+
+.vehicle-history-compact-card__km--na {
+  color: rgba(255, 255, 255, 0.38);
+  font-weight: 400;
+}
+
+.vehicle-history-compact-card__date {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+}
+
+.vehicle-history-compact-card__hint {
+  font-size: 0.68rem;
+  color: rgba(205, 216, 58, 0.75);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+

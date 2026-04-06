@@ -24,8 +24,8 @@ function getRepairPhotoCount(repair: RepairEntry) {
   return repair.before_photos.length + repair.during_photos.length + repair.after_photos.length;
 }
 
-function getRepairNextAction(status: RepairStatus) {
-  switch (status) {
+function getRepairNextAction(repair: RepairEntry) {
+  switch (repair.status) {
     case "new":
       return "Open intake and set the first working step";
     case "in_progress":
@@ -33,7 +33,9 @@ function getRepairNextAction(status: RepairStatus) {
     case "waiting_parts":
       return "Check notes, parts status, and next update";
     case "completed":
-      return "Review the summary and share tracking when needed";
+      return repair.mileage_at_service == null
+        ? "Add odometer (km) when the vehicle was returned"
+        : "Review the summary and share tracking when needed";
     default:
       return "Open the repair card";
   }
@@ -131,7 +133,7 @@ export function StaffRepairsMobileList({
 
                   <div className="repair-mobile-card-footer">
                     <div className="repair-mobile-next-copy">
-                      <span className="repair-mobile-next-action">{getRepairNextAction(repair.status)}</span>
+                      <span className="repair-mobile-next-action">{getRepairNextAction(repair)}</span>
                       <span className="tracking-chip">{repair.tracking_code}</span>
                     </div>
                     <div className="repair-mobile-card-actions">

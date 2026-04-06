@@ -149,6 +149,12 @@ export function StaffRepairsKanban({
                       </button>
                     </div>
 
+                    {repair.status === "completed" && repair.mileage_at_service == null ? (
+                      <p className="kanban-card-mileage-reminder" role="status">
+                        Odometer (km) not set — open the card to add it.
+                      </p>
+                    ) : null}
+
                     <div className="kanban-card-meta">
                       <span>
                         <span className="kanban-card-label">Master:</span>{" "}

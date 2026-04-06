@@ -6,6 +6,7 @@ import {
   createRepair,
   deleteRepair as deleteRepairApi,
   deleteRepairNote,
+  fetchRepair,
   fetchRepairs,
   regeneratePortalToken,
   reorderRepairs,
@@ -58,8 +59,8 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
 
   return {
     id: item.id,
-    created_at: item.created_at.slice(0, 10),
-    updated_at: item.updated_at.slice(0, 10),
+    created_at: item.created_at,
+    updated_at: item.updated_at,
     completed_at: item.completed_at ?? "",
     vehicle_id: item.vehicle_id,
     vehicle_label: item.vehicle_label,
@@ -77,9 +78,14 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
       text: n.text,
     })),
     status: item.status,
+    mileage_at_service: item.mileage_at_service ?? null,
     tracking_code: item.tracking_code,
     portal_token: item.portal_token,
     has_pdf: item.has_pdf ?? false,
+    latest_act_document_total:
+      item.latest_act_document_total != null && Number.isFinite(item.latest_act_document_total)
+        ? item.latest_act_document_total
+        : null,
     estimated_date: item.estimated_date ?? "",
     before_photos: item.before_photos,
     during_photos: item.during_photos,
@@ -94,6 +100,23 @@ function getStaffUserLabel(staff: StaffUser): string {
 
 function getLocalTodayDate() {
   return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+function parseMileageAtServiceInput(
+  raw: string
+): { ok: true; value: number | null } | { ok: false; message: string } {
+  const t = raw.trim().replace(/,/g, "").replace(/\s/g, "");
+  if (!t) {
+    return { ok: true, value: null };
+  }
+  if (!/^\d+$/.test(t)) {
+    return { ok: false, message: "Odometer must be a whole number (km), or leave empty." };
+  }
+  const n = Number(t);
+  if (n > 2_147_483_647) {
+    return { ok: false, message: "Odometer value is too large." };
+  }
+  return { ok: true, value: n };
 }
 
 function createPreviewUrls(files: File[]) {
@@ -148,6 +171,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [repairModalStatus, setRepairModalStatus] = useState<RepairStatus>("new");
   const [repairModalMasterId, setRepairModalMasterId] = useState("");
   const [repairModalCompletedAt, setRepairModalCompletedAt] = useState("");
+  const [repairModalMileageAtService, setRepairModalMileageAtService] = useState("");
   const [repairModalEstimatedDate, setRepairModalEstimatedDate] = useState("");
   const [repairModalNewNote, setRepairModalNewNote] = useState("");
   const [repairModalServiceLines, setRepairModalServiceLines] = useState<RepairServiceLineDraft[]>([
@@ -188,6 +212,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalStatus("new");
     setRepairModalMasterId("");
     setRepairModalCompletedAt("");
+    setRepairModalMileageAtService("");
     setRepairModalEstimatedDate("");
     setRepairModalNewNote("");
     setRepairModalServiceLines([newRepairServiceLineDraft()]);
@@ -212,6 +237,9 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalStatus(repair.status);
     setRepairModalMasterId(repair.master_id);
     setRepairModalCompletedAt(repair.completed_at);
+    setRepairModalMileageAtService(
+      repair.mileage_at_service != null ? String(repair.mileage_at_service) : ""
+    );
     setRepairModalEstimatedDate(repair.estimated_date);
     setRepairModalNewNote("");
     setRepairModalServiceLines(repairDraftsFromEntryLines(repair.service_lines));
@@ -364,11 +392,22 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       user?.role === "admin" ||
       (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id));
 
+    let mileageForPayload: number | null = null;
+    if (repairModalStatus === "completed") {
+      const parsed = parseMileageAtServiceInput(repairModalMileageAtService);
+      if (!parsed.ok) {
+        window.alert(parsed.message);
+        return;
+      }
+      mileageForPayload = parsed.value;
+    }
+
     const payload: Partial<RepairWritePayload> = {
       status: repairModalStatus,
       master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
       completed_at: repairModalStatus === "completed" ? repairModalCompletedAt || null : null,
       estimated_date: repairModalEstimatedDate || null,
+      mileage_at_service: repairModalStatus === "completed" ? mileageForPayload : null,
     };
 
     if (canEditServicesAndNotes) {
@@ -577,9 +616,27 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   }
 
   function markRepairPdfAvailable(repairId: number) {
-    setRepairs((current) =>
-      current.map((repair) => (repair.id === repairId ? { ...repair, has_pdf: true } : repair))
-    );
+    void (async () => {
+      try {
+        const item = await fetchRepair(repairId);
+        setRepairs((current) =>
+          current.map((repair) =>
+            repair.id === repairId
+              ? {
+                  ...mapApiRepairToEntry(item),
+                  before_photos: repair.before_photos,
+                  during_photos: repair.during_photos,
+                  after_photos: repair.after_photos,
+                }
+              : repair
+          )
+        );
+      } catch {
+        setRepairs((current) =>
+          current.map((repair) => (repair.id === repairId ? { ...repair, has_pdf: true } : repair))
+        );
+      }
+    })();
   }
 
   return {
@@ -601,6 +658,8 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalMasterId,
     repairModalCompletedAt,
     setRepairModalCompletedAt,
+    repairModalMileageAtService,
+    setRepairModalMileageAtService,
     repairModalEstimatedDate,
     setRepairModalEstimatedDate,
     repairModalNewNote,

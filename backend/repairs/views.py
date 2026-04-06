@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef, Prefetch, Q
+from django.db.models import Exists, OuterRef, Prefetch, Q, Subquery
 import secrets
 
 from django.http import HttpResponse
@@ -9,17 +9,25 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from .models import Repair, RepairDocument, RepairNote, RepairServiceLine
+from .models import Repair, RepairDocument, RepairFinancialSnapshot, RepairNote, RepairServiceLine
 from .serializers import PortalRepairSerializer, RepairNoteSerializer, RepairSerializer
 
 
 def build_repair_queryset():
     has_pdf_subquery = RepairDocument.objects.filter(repair_id=OuterRef("pk"))
+    latest_act_total_sq = (
+        RepairFinancialSnapshot.objects.filter(repair_id=OuterRef("pk"))
+        .order_by("-document__version")
+        .values("document_total")[:1]
+    )
     line_qs = RepairServiceLine.objects.select_related("catalog_service").order_by("sort_order", "id")
     return (
         Repair.objects.select_related("vehicle", "vehicle__customer", "master")
         .prefetch_related("notes", Prefetch("service_lines", queryset=line_qs))
-        .annotate(has_pdf=Exists(has_pdf_subquery))
+        .annotate(
+            has_pdf=Exists(has_pdf_subquery),
+            latest_act_document_total=Subquery(latest_act_total_sq),
+        )
     )
 
 

@@ -700,3 +700,27 @@ class RepairPdfViewTests(TestCase):
         by_id = {row["id"]: row for row in response.json()}
         self.assertIs(by_id[without_pdf.id]["has_pdf"], False)
         self.assertIs(by_id[with_pdf.id]["has_pdf"], True)
+
+    def test_repairs_list_includes_latest_act_document_total(self):
+        without_pdf = self._create_completed_repair()
+        with_pdf = self._create_completed_repair()
+        supplier = Supplier.objects.create(name="Parts Co")
+        Purchase.objects.create(
+            order_date="2026-01-10",
+            supplier=supplier,
+            vehicle=self.vehicle,
+            part_name="Brake pad",
+            quantity=2,
+            purchase_price=Decimal("40.00"),
+            sale_price=Decimal("99.50"),
+            repair_code=with_pdf.tracking_code,
+        )
+        Service.objects.create(name="Full Service", price=Decimal("150.00"))
+        self.client.force_authenticate(self.staff_user)
+        self.client.post(f"/api/repairs/{with_pdf.id}/pdf/export/")
+
+        response = self.client.get("/api/repairs/")
+        self.assertEqual(response.status_code, 200)
+        by_id = {row["id"]: row for row in response.json()}
+        self.assertIsNone(by_id[without_pdf.id]["latest_act_document_total"])
+        self.assertEqual(by_id[with_pdf.id]["latest_act_document_total"], 349.0)
