@@ -8,12 +8,15 @@ class Command(BaseCommand):
     help = "Create or update the initial admin user from environment or debug defaults."
 
     def handle(self, *args, **options):
-        email = settings.ADMIN_EMAIL or None
-        password = settings.ADMIN_PASSWORD or None
+        email = (settings.ADMIN_EMAIL or "").strip() or None
+        password = (settings.ADMIN_PASSWORD or "").strip() or None
 
         if not email and settings.DEBUG:
             email = "admin@autoservice.local"
-            password = "demo-admin-change-me"
+            password = "admin12345"
+
+        if email and not password and settings.DEBUG:
+            password = "admin12345"
 
         if not email or not password:
             self.stdout.write("No admin credentials configured; skipping seed_admin.")

@@ -34,33 +34,35 @@ export function StaffVehiclesMobileList({
           <div className="vehicles-mobile-group" key={group.key}>
             {group.label ? <h3 className="purchases-group-heading">{group.label}</h3> : null}
             {layout === "compact" ? (
-              <div className="purchases-compact-list">
+              <div className="purchases-compact-list vehicles-mobile-compact-list">
                 {group.vehicles.map((vehicle) => {
                   const details = getVehicleDetails(vehicle);
+                  const serviceLabel = details.last_service_date
+                    ? formatVehicleDisplayDate(details.last_service_date)
+                    : "—";
+                  const mileageLabel = details.mileage ? `${details.mileage} km` : "—";
+                  const openLabel = `${vehicle.license_plate}, ${formatVehicleTitle(vehicle)}, ${vehicle.customer.full_name}`;
                   return (
                     <button
                       type="button"
-                      className="purchases-compact-row vehicles-compact-row"
+                      className="purchases-compact-row vehicles-compact-row vehicles-mobile-list-row"
                       key={vehicle.id}
                       onClick={() => onOpenVehicle(vehicle)}
+                      aria-label={`Open vehicle ${openLabel}`}
                     >
-                      <div className="vehicles-compact-row-main">
-                        <span className="purchases-compact-cell purchases-compact-part">
+                      <div className="vehicles-compact-row-main vehicles-mobile-list-main">
+                        <span className="purchases-compact-cell purchases-compact-part vehicles-mobile-list-plate">
                           <span className="purchases-compact-part-text">{vehicle.license_plate}</span>
                         </span>
-                        <span className="purchases-compact-cell purchases-compact-part">
+                        <div className="vehicles-mobile-list-meta" aria-hidden="true">
+                          <span>{serviceLabel}</span>
+                          <span>{mileageLabel}</span>
+                        </div>
+                        <span className="purchases-compact-cell purchases-compact-part vehicles-mobile-list-title">
                           <span className="purchases-compact-part-text">{formatVehicleTitle(vehicle)}</span>
                         </span>
-                        <span className="purchases-compact-cell purchases-compact-supplier">
+                        <span className="purchases-compact-cell purchases-compact-supplier vehicles-mobile-list-owner">
                           {vehicle.customer.full_name}
-                        </span>
-                        <span className="purchases-compact-cell purchases-compact-narrow">
-                          {details.last_service_date
-                            ? formatVehicleDisplayDate(details.last_service_date)
-                            : "—"}
-                        </span>
-                        <span className="purchases-compact-cell purchases-compact-narrow">
-                          {details.mileage ? `${details.mileage} km` : "—"}
                         </span>
                       </div>
                     </button>

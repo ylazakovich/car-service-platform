@@ -15,6 +15,7 @@ type StaffRepairsMobileListProps = {
   activeFilter: RepairStatusFilter;
   onFilterChange: (filter: RepairStatusFilter) => void;
   onOpenRepair: (repair: RepairEntry) => void;
+  onCopyTrackingCode: (trackingCode: string, event?: { stopPropagation?: () => void }) => void;
   repairPartSummaries: Record<string, RepairPartsSummary>;
 };
 
@@ -42,6 +43,7 @@ export function StaffRepairsMobileList({
   activeFilter,
   onFilterChange,
   onOpenRepair,
+  onCopyTrackingCode,
   repairPartSummaries,
 }: StaffRepairsMobileListProps) {
   const filteredRepairs =
@@ -49,7 +51,12 @@ export function StaffRepairsMobileList({
 
   return (
     <div className="repairs-mobile-surface" aria-label="Mobile repairs list">
-      <div className="repair-mobile-filter-strip" role="tablist" aria-label="Repair status filters">
+      <div
+        className="repair-mobile-filter-strip"
+        role="tablist"
+        aria-label="Repair status filters"
+        data-no-swipe-nav
+      >
         <button
           type="button"
           className={`repair-mobile-filter ${activeFilter === "all" ? "repair-mobile-filter-active" : ""}`}
@@ -122,8 +129,21 @@ export function StaffRepairsMobileList({
                   </button>
 
                   <div className="repair-mobile-card-footer">
-                    <span className="repair-mobile-next-action">{getRepairNextAction(repair.status)}</span>
-                    <span className="repair-mobile-open-hint">Continue</span>
+                    <div className="repair-mobile-next-copy">
+                      <span className="repair-mobile-next-action">{getRepairNextAction(repair.status)}</span>
+                      <span className="tracking-chip">{repair.tracking_code}</span>
+                    </div>
+                    <div className="repair-mobile-card-actions">
+                      <span className="repair-mobile-open-hint">Continue</span>
+                      <button
+                        type="button"
+                        className="copy-chip"
+                        aria-label={`Copy tracking code ${repair.tracking_code}`}
+                        onClick={(event) => void onCopyTrackingCode(repair.tracking_code, event)}
+                      >
+                        ⧉
+                      </button>
+                    </div>
                   </div>
                 </article>
               );

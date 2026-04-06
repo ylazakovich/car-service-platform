@@ -1,8 +1,9 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { SEEDED_REPAIR_CARD_HEADING } from "../e2e-seed";
+import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
 
 /**
- * Staff repairs board (desktop kanban + mobile list) and seeded E2E card.
+ * Staff repairs board (kanban; mobile list скрыт CSS — на узкой ширине тот же канбан, колонки столбцом).
  */
 export class StaffRepairsPage {
   readonly page: Page;
@@ -11,16 +12,23 @@ export class StaffRepairsPage {
     this.page = page;
   }
 
+  /** Раскрытый блок секций/аккаунта (до открытия шапки `hidden` — не полагаемся на a11y tree). */
   staffQuickNav(): Locator {
-    return this.page.getByRole("navigation", { name: "Staff quick navigation" });
+    return this.page.locator("#mobile-section-picker");
+  }
+
+  /** Кнопка в шапке мобильного staff-shell: открыть/закрыть меню секций и аккаунта. */
+  staffMobileWorkspaceMenuToggle(): Locator {
+    return this.page.getByRole("button", { name: /Open workspace menu|Close workspace menu/ });
   }
 
   certificateDialog(): Locator {
     return this.page.getByRole("dialog", { name: "Certificate of Completion" });
   }
 
-  viewPdfButton(): Locator {
-    return this.page.getByRole("button", { name: "View PDF" });
+  /** Completed repair without an export yet shows **Make Act**; after first open — **View PDF**. */
+  repairPdfPrimaryButton(): Locator {
+    return this.page.getByRole("button", { name: /^(View PDF|Make Act)$/ });
   }
 
   exportNewVersionButton(): Locator {
@@ -33,52 +41,20 @@ export class StaffRepairsPage {
    * Сначала poll до появления любой навигации (гидрация), затем клик по приоритету как раньше в helpers/repair-board.
    */
   async gotoRepairsSection(): Promise<void> {
-    const quickNav = this.page.getByLabel("Staff quick navigation");
-    const taskSwitcher = this.page.getByLabel("Staff task switcher");
-    const staffSections = this.page.getByLabel("Staff sections");
-
-    await expect
-      .poll(
-        async () =>
-          (await quickNav.isVisible()) || (await taskSwitcher.isVisible()) || (await staffSections.isVisible()),
-        { timeout: 20_000 },
-      )
-      .toBe(true);
-
-    if (await quickNav.isVisible()) {
-      await quickNav.getByRole("button", { name: "Repairs" }).click();
-      return;
-    }
-    if (await taskSwitcher.isVisible()) {
-      await taskSwitcher.getByRole("button", { name: "Repairs" }).click();
-      return;
-    }
-    await staffSections.getByRole("button", { name: "Repairs" }).click();
+    await new StaffMobileNavigationPage(this.page).gotoStaffSection("Repairs");
   }
 
   /**
-   * Ждёт видимый kanban или мобильный список, затем открывает CI-seeded completed repair.
+   * Ждёт канбан, затем открывает CI-seeded completed repair (карточка в колонке Completed).
    */
   async openSeededRepairCard(): Promise<void> {
-    const mobileList = this.page.getByLabel("Mobile repairs list");
-    const desktopBoard = this.page.getByLabel("Desktop repairs board");
-    await expect
-      .poll(
-        async () => (await mobileList.isVisible()) || (await desktopBoard.isVisible()),
-        { timeout: 25_000 },
-      )
-      .toBe(true);
-
-    if (await mobileList.isVisible()) {
-      await this.page.locator(".repair-mobile-open").filter({ hasText: /E2E-CI-001/ }).first().click();
-      return;
-    }
-
+    const board = this.page.getByLabel("Repairs kanban board");
+    await expect(board).toBeVisible({ timeout: 25_000 });
     await this.page.getByRole("heading", { name: SEEDED_REPAIR_CARD_HEADING }).first().click();
   }
 
-  async expectMobileRepairsListVisible(timeoutMs = 25_000): Promise<void> {
-    await expect(this.page.getByLabel("Mobile repairs list")).toBeVisible({ timeout: timeoutMs });
+  async expectRepairsKanbanVisible(timeoutMs = 25_000): Promise<void> {
+    await expect(this.page.getByLabel("Repairs kanban board")).toBeVisible({ timeout: timeoutMs });
   }
 
   async expectRepairDetailDialogVisible(): Promise<void> {
@@ -88,7 +64,7 @@ export class StaffRepairsPage {
   }
 
   async openCertificateFromViewPdf(): Promise<void> {
-    await this.viewPdfButton().click();
+    await this.repairPdfPrimaryButton().click();
     await expect(this.certificateDialog()).toBeVisible({ timeout: 30_000 });
   }
 

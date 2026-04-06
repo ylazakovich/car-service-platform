@@ -407,6 +407,15 @@ input, select, textarea {
   width: 100%;
 }
 
+/* Compact vs global input min-height (48px); keeps picker trigger aligned with repair info rows */
+input.friendly-date-input {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  border-radius: 8px;
+}
+
 .friendly-date-popover {
   position: absolute;
   top: calc(100% + 0.5rem);
@@ -714,8 +723,7 @@ textarea { resize: vertical; }
 }
 
 .shell-mobile-bar,
-.sidebar-backdrop,
-.mobile-tabbar,
+.shell-mobile-sticky-stack,
 .shell-sidebar-header {
   display: none;
 }
@@ -738,46 +746,23 @@ textarea { resize: vertical; }
 .shell-mobile-context {
   display: grid;
   gap: var(--s1);
+  min-width: 0;
 }
 
 .shell-mobile-context strong {
   color: var(--text);
   font-size: 0.96rem;
   line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.mobile-menu-button,
-.shell-sidebar-close,
-.mobile-tabbar-link {
+.shell-sidebar-close {
   border: 0;
   background: transparent;
   cursor: pointer;
-}
-
-.mobile-menu-button {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface-mid);
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.mobile-menu-button span {
-  width: 16px;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--text);
-}
-
-.mobile-signout-button {
-  flex-shrink: 0;
 }
 
 .shell-sidebar-close {
@@ -1152,6 +1137,10 @@ textarea { resize: vertical; }
   line-height: 1.1;
 }
 
+.dashboard-folder-label-short {
+  display: none;
+}
+
 .dashboard-folder-tab-active {
   margin-bottom: -1px;
   border-color: rgba(205, 216, 58, 0.24);
@@ -1199,6 +1188,47 @@ textarea { resize: vertical; }
   gap: var(--s3);
 }
 
+.dashboard-report-stack {
+  display: grid;
+  gap: var(--s3);
+}
+
+.dashboard-report-section-plan,
+.dashboard-report-section-fact,
+.dashboard-report-section-warehouse {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: var(--s4);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    rgba(255, 255, 255, 0.01);
+  overflow: hidden;
+}
+
+.dashboard-report-section-plan::before,
+.dashboard-report-section-fact::before,
+.dashboard-report-section-warehouse::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 2px;
+  opacity: 0.7;
+}
+
+.dashboard-report-section-plan::before {
+  background: linear-gradient(90deg, rgba(205, 216, 58, 0.55), rgba(205, 216, 58, 0.08));
+}
+
+.dashboard-report-section-fact::before {
+  background: linear-gradient(90deg, rgba(91, 156, 246, 0.55), rgba(91, 156, 246, 0.08));
+}
+
+.dashboard-report-section-warehouse::before {
+  background: linear-gradient(90deg, rgba(255, 155, 92, 0.5), rgba(255, 155, 92, 0.08));
+}
+
 .dashboard-report-head {
   display: flex;
   align-items: end;
@@ -1221,13 +1251,444 @@ textarea { resize: vertical; }
   display: grid;
   gap: var(--s4);
   background:
-    radial-gradient(circle at top right, rgba(91, 156, 246, 0.08), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    var(--surface-mid);
+    radial-gradient(circle at top right, rgba(91, 156, 246, 0.1), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    rgba(14, 17, 26, 0.78);
+}
+
+.dashboard-calendar-panel {
+  display: grid;
+  gap: var(--s4);
+  background:
+    radial-gradient(circle at top right, rgba(91, 156, 246, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    rgba(10, 13, 20, 0.82);
 }
 
 .dashboard-chart-copy {
   margin: calc(var(--s2) * -1) 0 0;
+}
+
+.dashboard-metric-comparison {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-metric-comparison-label {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-metric-comparison-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-mid);
+  font-size: 0.83rem;
+}
+
+.dashboard-fact-summary {
+  display: grid;
+  gap: var(--s3);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-fact-hero {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(91, 156, 246, 0.16);
+  border-radius: 18px;
+  padding: 1.15rem 1.2rem;
+  background:
+    radial-gradient(circle at top right, rgba(91, 156, 246, 0.16), transparent 42%),
+    linear-gradient(180deg, rgba(91, 156, 246, 0.1), rgba(255, 255, 255, 0)),
+    rgba(11, 15, 24, 0.76);
+}
+
+.dashboard-fact-hero-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-fact-hero strong {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.dashboard-fact-hero-copy,
+.dashboard-fact-hero-note,
+.dashboard-fact-meta {
+  margin: 0;
+}
+
+.dashboard-fact-hero-copy {
+  color: var(--text-high);
+  font-size: 0.98rem;
+}
+
+.dashboard-fact-hero-note {
+  color: var(--text-mid);
+  font-size: 0.85rem;
+}
+
+.dashboard-fact-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.22rem 0.62rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-fact-status-healthy {
+  background: rgba(133, 235, 187, 0.15);
+  color: #91e7be;
+}
+
+.dashboard-fact-status-partial {
+  background: rgba(255, 205, 110, 0.16);
+  color: #ffcf77;
+}
+
+.dashboard-fact-status-missing {
+  background: rgba(255, 128, 128, 0.16);
+  color: #ff9b9b;
+}
+
+.dashboard-fact-status-empty {
+  background: rgba(190, 202, 224, 0.12);
+  color: #c8d2e9;
+}
+
+.dashboard-fact-hero-healthy {
+  border-color: rgba(133, 235, 187, 0.2);
+  background:
+    radial-gradient(circle at top right, rgba(133, 235, 187, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(133, 235, 187, 0.08), rgba(255, 255, 255, 0)),
+    rgba(11, 15, 24, 0.76);
+}
+
+.dashboard-fact-hero-partial {
+  border-color: rgba(255, 205, 110, 0.2);
+  background:
+    radial-gradient(circle at top right, rgba(255, 205, 110, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(255, 205, 110, 0.08), rgba(255, 255, 255, 0)),
+    rgba(11, 15, 24, 0.76);
+}
+
+.dashboard-fact-hero-missing {
+  border-color: rgba(255, 128, 128, 0.22);
+  background:
+    radial-gradient(circle at top right, rgba(255, 128, 128, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(255, 128, 128, 0.08), rgba(255, 255, 255, 0)),
+    rgba(11, 15, 24, 0.76);
+}
+
+.dashboard-fact-hero-empty {
+  border-color: rgba(190, 202, 224, 0.14);
+  background:
+    radial-gradient(circle at top right, rgba(190, 202, 224, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(190, 202, 224, 0.05), rgba(255, 255, 255, 0)),
+    rgba(11, 15, 24, 0.72);
+}
+
+.dashboard-fact-metric-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-fact-pill {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid rgba(91, 156, 246, 0.12);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(91, 156, 246, 0.08), rgba(255, 255, 255, 0)),
+    rgba(11, 15, 24, 0.62);
+  padding: 0.95rem 1rem;
+}
+
+.dashboard-fact-pill strong {
+  font-size: 1.05rem;
+}
+
+.dashboard-fact-pill p {
+  margin: 0;
+  color: var(--text-mid);
+  font-size: 0.82rem;
+}
+
+.dashboard-fact-pill-label {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dashboard-fact-meta {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.dashboard-fact-meta strong {
+  color: var(--text-mid);
+  font-weight: 700;
+}
+
+.dashboard-metric-delta {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.73rem;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-metric-delta-positive {
+  background: rgba(91, 156, 246, 0.12);
+  color: #a9c4ff;
+}
+
+.dashboard-metric-delta-negative {
+  background: rgba(255, 155, 92, 0.14);
+  color: #ffc6a6;
+}
+
+.dashboard-metric-delta-neutral {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-soft);
+}
+
+.dashboard-calendar-shell {
+  display: grid;
+  gap: var(--s3);
+  border: 1px solid rgba(91, 156, 246, 0.1);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(91, 156, 246, 0.06), rgba(255, 255, 255, 0)),
+    rgba(7, 10, 17, 0.58);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.dashboard-calendar-header,
+.dashboard-calendar-row {
+  display: grid;
+  grid-template-columns: minmax(210px, 240px) minmax(720px, 1fr);
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.dashboard-calendar-label-spacer,
+.dashboard-calendar-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.dashboard-calendar-label-spacer {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(9, 11, 17, 0.92);
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dashboard-calendar-day-grid,
+.dashboard-calendar-lane-grid {
+  display: grid;
+  min-width: max-content;
+}
+
+.dashboard-calendar-day-cell {
+  display: grid;
+  gap: 0.2rem;
+  align-content: center;
+  justify-items: center;
+  min-height: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+}
+
+.dashboard-calendar-day-cell strong {
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.dashboard-calendar-day-cell-weekend,
+.dashboard-calendar-lane-cell-weekend {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-calendar-day-cell-today,
+.dashboard-calendar-lane-cell-today {
+  box-shadow: inset 0 0 0 1px rgba(205, 216, 58, 0.45);
+}
+
+.dashboard-calendar-rows {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.dashboard-calendar-row-label {
+  display: grid;
+  gap: 0.28rem;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(9, 11, 17, 0.94);
+  color: var(--text);
+  padding: 0.85rem 0.95rem;
+  text-align: left;
+}
+
+.dashboard-calendar-row-label:hover {
+  border-color: rgba(91, 156, 246, 0.24);
+}
+
+.dashboard-calendar-row-label-active {
+  border-color: rgba(91, 156, 246, 0.34);
+  box-shadow: 0 0 0 1px rgba(91, 156, 246, 0.18);
+}
+
+.dashboard-calendar-row-label strong {
+  font-size: 0.88rem;
+}
+
+.dashboard-calendar-row-label span {
+  color: var(--text-mid);
+  font-size: 0.81rem;
+}
+
+.dashboard-calendar-row-meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-calendar-lane-grid {
+  position: relative;
+  align-items: center;
+}
+
+.dashboard-calendar-lane-cell {
+  min-height: 3.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.dashboard-calendar-bar {
+  z-index: 1;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 0.7rem;
+  color: #091017;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dashboard-calendar-bar-in_progress {
+  background: linear-gradient(90deg, #78b2ff, #9bc4ff);
+}
+
+.dashboard-calendar-bar-waiting_parts {
+  background: linear-gradient(90deg, #ffb071, #ffd0ae);
+}
+
+.dashboard-calendar-bar-active {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.dashboard-calendar-bar-overdue {
+  border-color: rgba(123, 26, 26, 0.44);
+}
+
+.dashboard-calendar-detail {
+  display: grid;
+  gap: var(--s3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    rgba(7, 10, 17, 0.62);
+  padding: 1rem 1.05rem;
+}
+
+.dashboard-calendar-detail h4 {
+  margin: 0.2rem 0 0;
+  font-size: 1rem;
+}
+
+.dashboard-calendar-detail-copy p {
+  margin: 0.28rem 0 0;
+}
+
+.dashboard-calendar-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.dashboard-calendar-swatch-in-progress {
+  background: #9bc4ff;
+}
+
+.dashboard-calendar-swatch-waiting {
+  background: #ffba84;
+}
+
+.metric-card-plan {
+  background:
+    linear-gradient(180deg, rgba(205, 216, 58, 0.05), rgba(255, 255, 255, 0)),
+    var(--surface);
+}
+
+.metric-card-fact {
+  background:
+    linear-gradient(180deg, rgba(91, 156, 246, 0.07), rgba(255, 255, 255, 0)),
+    var(--surface);
+}
+
+.metric-card-warehouse {
+  background:
+    linear-gradient(180deg, rgba(255, 155, 92, 0.06), rgba(255, 255, 255, 0)),
+    var(--surface);
 }
 
 .dashboard-table {
@@ -1246,6 +1707,26 @@ textarea { resize: vertical; }
 .dashboard-table th {
   color: var(--text-mid);
   font-weight: 600;
+}
+
+.moneyflow-series-groups {
+  display: grid;
+  gap: var(--s3);
+}
+
+.moneyflow-series-group {
+  display: grid;
+  gap: var(--s2);
+}
+
+.moneyflow-series-group-label {
+  margin: 0;
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .moneyflow-series-toggle-row {
@@ -1298,33 +1779,34 @@ textarea { resize: vertical; }
 
 .moneyflow-chart-shell {
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
+  border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    rgba(9, 10, 16, 0.42);
-  padding: 0.9rem;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    rgba(8, 10, 15, 0.55);
+  padding: 1rem 1rem 0.85rem;
   overflow-x: auto;
 }
 
 .moneyflow-chart-svg {
   display: block;
   width: 100%;
-  min-width: 620px;
+  min-width: 680px;
   height: auto;
 }
 
 .moneyflow-chart-gridline {
-  stroke: rgba(255, 255, 255, 0.08);
+  stroke: rgba(255, 255, 255, 0.1);
   stroke-width: 1;
 }
 
 .moneyflow-chart-gridline-vertical {
-  stroke-dasharray: 4 8;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-dasharray: 3 10;
 }
 
 .moneyflow-chart-axis-label {
   fill: var(--text-soft);
-  font-size: 12px;
+  font-size: 11px;
   font-family: "IBM Plex Mono", monospace;
 }
 
@@ -2125,6 +2607,11 @@ textarea { resize: vertical; }
     border-left: 1px solid var(--border);
     overflow-y: auto;
   }
+
+  /* Боковая панель без скругления — шапка без radius */
+  .purchase-detail-modal .panel-header {
+    border-radius: 0;
+  }
 }
 
 @media (max-width: 899px) {
@@ -2823,6 +3310,48 @@ textarea { resize: vertical; }
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+/* Calendar glyph: native picker icon is often invisible on dark UI */
+.repair-info-date-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 160px;
+}
+
+.repair-info-date-wrap .repair-info-date-input {
+  position: relative;
+  padding-right: 2.65rem;
+}
+
+.repair-info-date-wrap::after {
+  content: "";
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.15rem;
+  height: 1.15rem;
+  pointer-events: none;
+  opacity: 0.72;
+  background-color: var(--text-soft);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.repair-info-date-wrap .repair-info-date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2.75rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
 /* ═══════════════════════════════════════════════
    MODAL
    ═══════════════════════════════════════════════ */
@@ -2858,10 +3387,302 @@ textarea { resize: vertical; }
   scroll-padding-bottom: calc(var(--s8) + env(safe-area-inset-bottom, 0px));
 }
 
+/* Repair Update + Vehicles + Purchases: призрачная шапка вплотную к краю карточки (компенсация padding модалки) */
+.repair-update-modal .panel-header,
+.vehicle-detail-modal .panel-header,
+.vehicle-form-modal .panel-header,
+.purchase-detail-modal .panel-header,
+.purchase-form-modal .panel-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: calc(var(--s6) * -1) calc(var(--s6) * -1) 0;
+  /* Симметрия по вертикали — текст по центру полосы, не «прилипший» к низу */
+  padding: var(--s5) var(--s6);
+  border-radius: 17px 17px 0 0;
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    rgba(21, 21, 28, 0.96) 0%,
+    rgba(21, 21, 28, 0.96) calc(100% - 28%),
+    rgba(21, 21, 28, 0) 100%
+  );
+}
+
+/* Заголовок по центру модалки, если нет боковых действий в шапке */
+.repair-update-modal .panel-header:not(:has(.inline-actions)),
+.vehicle-detail-modal .panel-header:not(:has(.inline-actions)),
+.vehicle-form-modal .panel-header,
+.purchase-detail-modal .panel-header,
+.purchase-form-modal .panel-header {
+  justify-content: center;
+  text-align: center;
+}
+
+/* PDF / Delete / Edit в шапке — строка с разносом, текст слева */
+.repair-update-modal .panel-header:has(.inline-actions),
+.vehicle-detail-modal .panel-header:has(.inline-actions) {
+  justify-content: space-between;
+  text-align: start;
+}
+
+/* UA / типографика: лишний зазор под заголовком в призрачной шапке */
+.repair-update-modal .panel-header h3,
+.vehicle-detail-modal .panel-header h3,
+.vehicle-form-modal .panel-header h3,
+.purchase-detail-modal .panel-header h3,
+.purchase-form-modal .panel-header h3 {
+  margin: 0;
+}
+
 .repair-form-stack,
 .repair-modal-sections {
   display: grid;
   gap: var(--s4);
+}
+
+/* Master + completed date (when status completed) — one card at top of modal sections */
+.repair-update-modal .repair-modal-assignment-card.repair-status-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s4);
+  margin-top: 0;
+}
+
+.repair-update-modal .repair-modal-assignment-master,
+.repair-update-modal .repair-modal-assignment-card .repair-modal-completed-date {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.repair-update-modal .repair-modal-assignment-completed {
+  padding-top: var(--s5);
+  margin-top: var(--s1);
+  border-top: 1px solid var(--border);
+}
+
+.repair-update-modal .repair-modal-assignment-card select {
+  width: 100%;
+  border-radius: 10px;
+  padding: 0.72rem var(--s4);
+  border: 1px solid var(--border);
+  background: var(--surface-mid);
+  color: var(--text);
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.repair-update-modal .repair-modal-assignment-card select:hover {
+  border-color: var(--border-strong);
+}
+
+.repair-update-modal .repair-modal-assignment-card select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.repair-update-modal .repair-modal-assignment-card .repair-modal-field-label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.repair-update-modal .repair-modal-master-readonly {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* Full width like Master select; same chrome as stack-form inputs */
+.repair-update-modal .repair-modal-assignment-card .friendly-date {
+  width: 100%;
+  max-width: none;
+}
+
+.repair-update-modal .repair-modal-assignment-card input.friendly-date-input {
+  width: 100%;
+  max-width: none;
+  min-height: 48px;
+  padding: 0.72rem var(--s4);
+  font-size: 0.95rem;
+  line-height: 1.2;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  box-sizing: border-box;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.repair-update-modal .repair-modal-assignment-card input.friendly-date-input:hover {
+  border-color: var(--border-strong);
+}
+
+.repair-update-modal .repair-modal-assignment-card input.friendly-date-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Repair Update modal — остальные карточки в том же ритме, что assignment-card */
+.repair-update-modal .repair-modal-sections > .detail-card {
+  padding: var(--s4);
+}
+
+.repair-update-modal .repair-modal-sections > .detail-card > strong:first-child {
+  margin: 0 0 var(--s3);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.repair-update-modal .repair-info-card {
+  padding: var(--s4);
+}
+
+.repair-update-modal .repair-info-stack {
+  margin-top: 0;
+  gap: var(--s3);
+}
+
+.repair-update-modal .repair-info-row {
+  gap: var(--s3);
+  padding-bottom: var(--s3);
+}
+
+.repair-update-modal .repair-info-row:last-child {
+  padding-bottom: 0;
+}
+
+.repair-update-modal .repair-info-date-input {
+  width: 100%;
+  max-width: none;
+  min-height: 48px;
+  padding: 0.72rem var(--s4);
+  font-size: 0.95rem;
+  line-height: 1.2;
+  border-radius: 10px;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.repair-update-modal .repair-info-date-input:hover {
+  border-color: var(--border-strong);
+}
+
+.repair-update-modal .repair-info-date-wrap {
+  max-width: none;
+}
+
+.repair-update-modal .repair-info-date-wrap .repair-info-date-input {
+  padding-right: 2.75rem;
+}
+
+.repair-update-modal .repair-info-date-wrap::after {
+  right: 1rem;
+}
+
+/* Та же иконка у FriendlyDateInput в панели назначения (текстовое поле без нативного индикатора) */
+.repair-update-modal .repair-modal-assignment-card .friendly-date-input-wrap {
+  position: relative;
+}
+
+.repair-update-modal .repair-modal-assignment-card .friendly-date-input-wrap::after {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.15rem;
+  height: 1.15rem;
+  pointer-events: none;
+  opacity: 0.72;
+  background-color: var(--text-soft);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.repair-update-modal .repair-modal-assignment-card .friendly-date-input-wrap .friendly-date-input {
+  padding-right: 2.75rem;
+}
+
+.repair-update-modal .repair-modal-sections .repair-status-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  align-items: stretch;
+}
+
+.repair-update-modal .repair-modal-sections .repair-status-field > span:first-child {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.repair-update-modal .repair-modal-sections .repair-status-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 7rem;
+  padding: 0.72rem var(--s4);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-mid);
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  resize: vertical;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.repair-update-modal .repair-modal-sections .repair-status-field textarea:hover {
+  border-color: var(--border-strong);
+}
+
+.repair-update-modal .repair-modal-sections .repair-status-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.repair-update-modal .repair-modal-sections .repair-status-field input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem var(--s3);
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: var(--surface-high);
+  color: var(--text-mid);
+  font-size: 0.85rem;
+  min-height: 48px;
+  cursor: pointer;
+}
+
+.repair-update-modal .repair-modal-sections .repair-status-field input[type="file"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.88;
+}
+
+.repair-update-modal .repair-modal-sections .detail-list {
+  gap: var(--s3);
+  margin-top: var(--s1);
+}
+
+.repair-update-modal .repair-modal-sections .detail-item {
+  border-radius: 10px;
+  padding: var(--s4);
 }
 
 .repair-modal-panel {
@@ -2878,15 +3699,33 @@ textarea { resize: vertical; }
 
 .repair-modal-actions {
   padding-top: var(--s2);
+  align-items: center;
+}
+
+.repair-update-modal .repair-modal-actions {
+  justify-content: flex-end;
+  gap: var(--s3);
 }
 
 .vehicle-form-modal,
-.vehicle-detail-modal {
+.vehicle-detail-modal,
+.purchase-detail-modal,
+.purchase-form-modal {
   scroll-padding-bottom: calc(var(--s8) + env(safe-area-inset-bottom, 0px));
 }
 
-.vehicle-modal-actions {
+.vehicle-modal-actions,
+.purchase-modal-actions {
   padding-top: var(--s2);
+  align-items: center;
+}
+
+.vehicle-detail-modal .vehicle-modal-actions,
+.vehicle-form-modal .vehicle-modal-actions,
+.purchase-detail-modal .purchase-modal-actions,
+.purchase-form-modal .purchase-modal-actions {
+  justify-content: flex-end;
+  gap: var(--s3);
 }
 
 /* ═══════════════════════════════════════════════
@@ -3524,6 +4363,8 @@ textarea { resize: vertical; }
   border-radius: 12px;
   border: 1px solid var(--border);
   margin-bottom: var(--s5);
+  overflow: visible;
+  min-height: 0;
 }
 
 .status-switcher-label {
@@ -3535,15 +4376,43 @@ textarea { resize: vertical; }
 }
 
 .status-switcher-options {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s2);
-  flex-wrap: wrap;
+  align-content: start;
+}
+
+.status-switcher-options-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.status-switcher-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+/* Waiting Parts — full width of the row */
+.status-switcher-row-waiting .status-btn {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+}
+
+.status-switcher-final {
+  margin-top: var(--s1);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
 }
 
 .status-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--s2);
+  width: 100%;
+  min-height: 2.5rem;
   padding: var(--s2) var(--s3);
   border-radius: 8px;
   border: 1px solid transparent;
@@ -3553,8 +4422,36 @@ textarea { resize: vertical; }
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: normal;
+  text-align: center;
+  box-sizing: border-box;
 }
 .status-btn:hover { background: var(--surface); color: var(--text); }
+
+/* Full-width final status — must follow .status-btn so padding/border win */
+.status-btn.status-btn-completed-final {
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--s3) var(--s4);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 10px;
+  border-width: 2px;
+  border-style: solid;
+}
+
+.status-btn.status-btn-completed-final:not(.status-btn-active) {
+  border-color: rgba(78, 201, 148, 0.35);
+  background: rgba(78, 201, 148, 0.06);
+  color: var(--text);
+}
+
+.status-btn.status-btn-completed-final:not(.status-btn-active):hover {
+  background: rgba(78, 201, 148, 0.12);
+  border-color: rgba(78, 201, 148, 0.45);
+  color: var(--text);
+}
 
 .status-btn-dot {
   width: 7px;
@@ -3640,22 +4537,359 @@ textarea { resize: vertical; }
     grid-template-columns: 1fr;
   }
 
-  body.mobile-nav-open {
+  /*
+   * Иначе при min-height: 100vh у .shell строки grid растягиваются (align-content: stretch по умолчанию),
+   * первая строка «съедает» высоту — между sticky-шапкой и main получается огромный пустой зазор
+   * на коротких страницах (Purchases, Users, Vehicles и т.д.).
+   */
+  .shell {
+    align-content: start;
+  }
+
+  /* Staff desktop sidebar must not appear in the mobile shell (defense in depth vs JS breakpoint). */
+  #staff-shell-sidebar {
+    display: none !important;
+  }
+
+  body.mobile-shell-picker-open {
     overflow: hidden;
   }
 
-  .shell-mobile-bar {
-    position: sticky;
-    top: 0;
-    z-index: 30;
+  /*
+   * Полоса «в шапку» на всю ширину между отступами — те же отступы/радиус/фон, что у .shell-mobile-sticky-stack.
+   */
+  .shell-scroll-to-header-fab {
+    position: fixed;
+    z-index: 28;
+    left: max(var(--s4), env(safe-area-inset-left, 0px));
+    right: max(var(--s4), env(safe-area-inset-right, 0px));
+    bottom: max(var(--s3), env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: 10px var(--s4);
+    margin: 0;
+    width: auto;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(
+        0deg,
+        rgba(205, 216, 58, 0.075) 0%,
+        rgba(205, 216, 58, 0.045) 42%,
+        rgba(205, 216, 58, 0.018) 100%
+      ),
+      var(--surface);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.22);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease,
+      box-shadow 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .shell-scroll-to-header-fab:hover {
+    border-color: var(--border-accent);
+    color: var(--accent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      0 10px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  .shell-scroll-to-header-fab:focus-visible {
+    outline: 2px solid rgba(205, 216, 58, 0.55);
+    outline-offset: 2px;
+  }
+
+  .shell-scroll-to-header-fab-label {
+    display: block;
+    margin: 0;
+    max-width: 100%;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .shell-mobile-picker-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(5, 5, 8, 0.55);
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Sticky «шапка»: подсветка на всю высоту блока (без узкой полосы только у верхнего края). */
+  .shell-mobile-sticky-stack {
+    display: block;
+    position: sticky;
+    /* Воздух от верха + на iPhone не под вырез: один раз через max, не дублируем с padding. */
+    --shell-mobile-stack-inset-top: max(var(--s3), env(safe-area-inset-top, 0px));
+    top: var(--shell-mobile-stack-inset-top);
+    z-index: 32;
+    margin: var(--shell-mobile-stack-inset-top) var(--s4) var(--s3);
+    padding-top: 0;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(205, 216, 58, 0.075) 0%,
+        rgba(205, 216, 58, 0.045) 42%,
+        rgba(205, 216, 58, 0.018) 100%
+      ),
+      var(--surface);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+  }
+
+  .shell-mobile-sticky-stack.shell-mobile-sticky-stack--menu-open {
+    border-radius: 22px 22px 18px 18px;
+  }
+
+  /* Закрытое меню: высота = только шапка, без «пустой половины карточки». */
+  .shell-mobile-sticky-stack:not(.shell-mobile-sticky-stack--menu-open) {
+    height: fit-content;
+    padding-bottom: 0;
+  }
+
+  .shell-mobile-bar {
+    position: static;
+    top: auto;
+    z-index: auto;
+    display: block;
+    border-bottom: none;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    box-shadow: none;
+    min-height: 0;
+  }
+
+  .shell-mobile-header-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0;
+    padding: 10px var(--s4) 10px;
+    border: 0;
+    border-bottom: none;
+    border-radius: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+  }
+
+  .shell-mobile-header-toggle:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .shell-mobile-header-toggle:focus-visible {
+    outline: 2px solid rgba(205, 216, 58, 0.5);
+    outline-offset: -2px;
+  }
+
+  .shell-mobile-header-toggle-text {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding-right: 1.35rem;
+    box-sizing: border-box;
+  }
+
+  .shell-mobile-header-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text-soft);
+    line-height: 1.2;
+  }
+
+  .shell-mobile-header-chevron-wrap {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+  }
+
+  .shell-mobile-header-chevron {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: var(--text-soft);
+    line-height: 1;
+  }
+
+  .shell-mobile-context {
+    justify-self: stretch;
+    text-align: center;
+    min-width: 0;
+    display: block;
+  }
+
+  .shell-mobile-context--title-only {
+    padding: 0 0.25rem;
+  }
+
+  .shell-mobile-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .shell-mobile-bar .shell-mobile-context strong.shell-mobile-section-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    -webkit-box-orient: unset;
+    max-width: 100%;
+  }
+
+  .shell-mobile-quick-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 10px 10px;
+    border-top: 1px solid var(--border);
+    background: transparent;
+    position: relative;
+    z-index: 31;
+  }
+
+  .shell-mobile-quick-nav--expanded {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .shell-mobile-quick-sections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Компактные «вкладки» секций (Users / Vehicles / …) — ~44px по высоте, без лишнего min-height. */
+  .shell-mobile-quick-section {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 5.6rem;
+    min-height: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.3rem 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-mid);
+    color: var(--text-mid);
+    font: inherit;
+    font-size: 0.63rem;
+    font-weight: 700;
+    line-height: 1.12;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.14s, background 0.14s, color 0.14s;
+  }
+
+  .shell-mobile-quick-section:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
+
+  .shell-mobile-quick-section-active {
+    border-color: var(--border-accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .shell-mobile-quick-section-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .shell-mobile-quick-section-label {
+    text-align: center;
+    word-break: break-word;
+    max-width: 100%;
+  }
+
+  .shell-mobile-picker-cta {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .shell-mobile-account {
+    display: grid;
     gap: var(--s3);
-    border-bottom: 1px solid var(--border);
-    background: rgba(13, 13, 17, 0.92);
-    backdrop-filter: blur(16px);
-    padding: calc(var(--s3) + env(safe-area-inset-top, 0px)) var(--s4) var(--s3);
+    padding: var(--s3);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-mid);
+  }
+
+  .shell-mobile-account-row {
+    display: flex;
+    gap: var(--s3);
+    align-items: flex-start;
+  }
+
+  .shell-mobile-account .user-avatar {
+    flex-shrink: 0;
+  }
+
+  .shell-mobile-account-details {
+    display: grid;
+    gap: var(--s2);
+    min-width: 0;
+    flex: 1;
+  }
+
+  .shell-mobile-account-email {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .shell-mobile-sign-out {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
 
   .shell-sidebar {
@@ -3681,54 +4915,11 @@ textarea { resize: vertical; }
     gap: var(--s3);
   }
 
-  .sidebar-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    border: 0;
-    background: rgba(5, 5, 8, 0.62);
-    padding: 0;
-  }
-
   .shell-main {
     padding:
       var(--s4)
       var(--s4)
-      calc(var(--s8) + 68px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .mobile-tabbar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--s2);
-    position: fixed;
-    left: var(--s3);
-    right: var(--s3);
-    bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px));
-    z-index: 35;
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    background: rgba(21, 21, 28, 0.94);
-    backdrop-filter: blur(14px);
-    padding: var(--s2);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-  }
-
-  .mobile-tabbar-link {
-    display: grid;
-    justify-items: center;
-    gap: 6px;
-    border-radius: 12px;
-    color: var(--text-mid);
-    font-size: 0.74rem;
-    font-weight: 700;
-    padding: 0.72rem 0.5rem;
-  }
-
-  .mobile-tabbar-link-active {
-    background: var(--accent-dim);
-    color: var(--accent);
+      calc(var(--s6) + env(safe-area-inset-bottom, 0px));
   }
 
   .workspace-topbar,
@@ -3745,12 +4936,36 @@ textarea { resize: vertical; }
 
   .form-grid          { grid-template-columns: 1fr; }
   .photo-preview-grid { grid-template-columns: repeat(2, 1fr); }
+  /* Sit below the sticky shell stack; --shell-mobile-sticky-top is set in App.tsx (includes safe-area via header padding). */
   .staff-mobile-taskbar {
     display: grid;
     gap: var(--s3);
     position: sticky;
-    top: calc(var(--s4) - var(--s2));
+    top: var(--shell-mobile-sticky-top, 3.05rem);
     z-index: 12;
+  }
+
+  /* Один источник заголовка секции — shell picker; убираем второй «плашечный» блок (Staff Task + summary). */
+  .staff-mobile-taskbar .staff-mobile-taskcopy {
+    display: none;
+  }
+
+  .staff-mobile-taskbar .staff-mobile-taskcard {
+    padding: var(--s3);
+    gap: var(--s3);
+  }
+
+  /* Единая мобильная шапка / drawer: дублирующий switcher не нужен (раньше завязка на :has(.shell-mobile-quick-nav)). */
+  .staff-mobile-switcher {
+    display: none;
+  }
+
+  @media (min-width: 380px) {
+    .staff-mobile-taskactions {
+      grid-template-columns: 1fr minmax(7.5rem, auto);
+      align-items: end;
+      gap: var(--s2);
+    }
   }
 
   .section-desktop-header,
@@ -3779,13 +4994,15 @@ textarea { resize: vertical; }
     flex: initial;
   }
 
+  /* Список фильтров/карточек скрыт: на мобилке только вертикальный канбан (колонки сверху вниз). */
   .repairs-mobile-surface {
-    display: grid;
-    gap: var(--s4);
+    display: none !important;
   }
 
-  .repairs-web-surface {
-    display: none;
+  /* Мобильная доска ремонтов: одна колонка сетки = весь статусный столбец, интуитивно тянуть к низу. */
+  .repairs-workspace .kanban-board {
+    grid-template-columns: 1fr;
+    gap: var(--s4);
   }
 
   .vehicles-mobile-surface {
@@ -3816,8 +5033,493 @@ textarea { resize: vertical; }
     -webkit-line-clamp: 2;
   }
 
+  /* Dashboard tabs: equal-width segments — no horizontal drag/scrolling */
+  .dashboard-folder-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    align-items: stretch;
+  }
+
   .dashboard-folder-tab {
-    min-width: min(100%, 220px);
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    padding: 0.55rem 0.3rem 0.48rem;
+    border-radius: 12px;
+    text-align: center;
+    justify-items: center;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  .dashboard-folder-tab-active {
+    margin-bottom: 0;
+  }
+
+  .dashboard-folder-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: normal;
+    display: block;
+    text-align: center;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  .dashboard-folder-label-long {
+    display: none;
+  }
+
+  .dashboard-folder-label-short {
+    display: inline;
+  }
+
+  .dashboard-folder-panel {
+    border-radius: 14px;
+    padding: var(--s4);
+    margin-top: var(--s2);
+    border-top-left-radius: 14px;
+  }
+
+  .vehicles-workspace .vehicles-section-topbar {
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+  }
+
+  /* Staff: дублирует shell + mobile rail (поиск уже в rail). */
+  .vehicles-workspace .vehicles-section-topbar--staff-mobile-skip {
+    display: none !important;
+  }
+
+  .vehicles-workspace .vehicles-section-topbar h2 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+  }
+
+  /* Eyebrow repeats the title sense (Registry + Vehicle Registry) — keep title only */
+  .vehicles-workspace .vehicles-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .vehicles-workspace .vehicles-top-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+  }
+
+  .vehicles-workspace .vehicles-top-actions .kanban-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .vehicles-workspace .vehicles-top-actions .kanban-search input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehicles-workspace .vehicles-top-actions .button {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
+  }
+
+  .vehicles-workspace .purchases-controls-bar.kanban-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+    padding: var(--s3);
+  }
+
+  .vehicles-workspace .purchases-controls-cluster {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .vehicles-workspace .purchases-seg {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    padding: 0.45rem 0.4rem;
+  }
+
+  /* Sort / group selects are awkward on small screens — hidden until a better mobile UX exists */
+  .vehicles-workspace .purchases-controls-selects {
+    display: none;
+  }
+
+  .vehicles-workspace .purchases-controls-footnote {
+    display: none;
+  }
+
+  /* Mobile vehicle compact = dense list rows (not cards, not wide horizontal table) */
+  .vehicles-mobile-surface .vehicles-mobile-compact-list {
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface-mid);
+  }
+
+  .vehicles-mobile-surface .vehicles-mobile-list-row {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+    padding: 0.55rem var(--s3);
+    background: transparent;
+    overflow: visible;
+    text-align: left;
+  }
+
+  .vehicles-mobile-surface .vehicles-mobile-list-row:last-child {
+    border-bottom: none;
+  }
+
+  .vehicles-mobile-surface .vehicles-mobile-list-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+  }
+
+  .vehicles-mobile-list-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    gap: 2px 10px;
+    min-width: 0 !important;
+    align-items: start;
+  }
+
+  .vehicles-mobile-list-plate {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vehicles-mobile-list-plate .purchases-compact-part-text {
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+
+  .vehicles-mobile-list-meta {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    font-size: 0.68rem;
+    color: var(--text-soft);
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vehicles-mobile-list-title {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .vehicles-mobile-list-title .purchases-compact-part-text {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .vehicles-mobile-list-owner {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    white-space: normal;
+    font-size: 0.78rem;
+    color: var(--text-mid);
+    line-height: 1.35;
+  }
+
+  /* Purchases workspace — mirror vehicles controls; keep search (no duplicate rail) */
+  .purchases-workspace .purchases-section-topbar {
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+  }
+
+  .purchases-workspace .purchases-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .purchases-workspace .purchases-section-topbar h2 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+  }
+
+  .purchases-workspace .purchases-top-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+  }
+
+  .purchases-workspace .purchases-top-actions .kanban-search input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .purchases-workspace .purchases-top-actions .button {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
+  }
+
+  .purchases-workspace .purchases-controls-bar.kanban-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+    padding: var(--s3);
+  }
+
+  .purchases-workspace .purchases-controls-cluster {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .purchases-workspace .purchases-seg {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    padding: 0.45rem 0.4rem;
+  }
+
+  .purchases-workspace .purchases-controls-selects {
+    display: none;
+  }
+
+  .purchases-workspace .purchases-controls-footnote {
+    display: none;
+  }
+
+  .purchases-workspace .purchases-compact-list {
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface-mid);
+  }
+
+  .purchases-workspace .purchases-compact-row {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+    padding: 0.55rem var(--s3);
+    background: transparent;
+    overflow: visible;
+  }
+
+  .purchases-workspace .purchases-compact-row:last-child {
+    border-bottom: none;
+  }
+
+  .purchases-workspace .purchases-compact-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+  }
+
+  .purchases-workspace .purchases-compact-row-main {
+    min-width: 0 !important;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+    align-items: start;
+  }
+
+  /* part | qty — supplier full width — dates row — money row */
+  .purchases-workspace .purchases-compact-row-main > :nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(5) {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    white-space: normal;
+    font-size: 0.78rem;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(3) {
+    grid-column: 1;
+    grid-row: 3;
+    font-size: 0.7rem;
+    color: var(--text-soft);
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(4) {
+    grid-column: 2;
+    grid-row: 3;
+    font-size: 0.7rem;
+    color: var(--text-soft);
+    text-align: right;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(6) {
+    grid-column: 1;
+    grid-row: 4;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(7) {
+    grid-column: 2;
+    grid-row: 4;
+    text-align: right;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .purchases-workspace .purchases-compact-row-main .purchases-compact-part-text {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .users-workspace .users-section-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+  }
+
+  .users-workspace .users-section-head h2 {
+    font-size: 1.08rem;
+  }
+
+  .users-workspace .users-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .users-workspace .users-section-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: var(--s2);
+  }
+
+  .users-workspace .users-section-actions .button {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
+  }
+
+  .users-workspace .invite-panel {
+    margin-bottom: var(--s4);
+    border-radius: 14px;
+  }
+
+  .users-workspace .invite-panel-body,
+  .users-workspace form.invite-panel-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+  }
+
+  .users-workspace .invite-name-row {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--s2);
+  }
+
+  .users-workspace .invite-email-input {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .users-workspace .invite-role-toggle {
+    width: 100%;
+  }
+
+  .users-workspace .invite-role-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .users-workspace .user-card {
+    flex-direction: column;
+    padding: var(--s3) var(--s4);
+    gap: var(--s3);
+  }
+
+  .users-workspace .user-card:has(.user-badge[data-role="admin"]) {
+    padding-left: var(--s4);
+  }
+
+  .users-workspace .user-card-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .users-workspace .user-card-actions .button-secondary {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .users-workspace .user-edit-row {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .users-workspace .user-edit-input {
+    width: 100%;
+    max-width: none;
+  }
+
+  .users-workspace .user-edit-btn {
+    opacity: 0.55;
+  }
+
+  .dashboard-shell {
+    padding: var(--s4);
+    border-radius: 18px;
+  }
+
+  .dashboard-shell-head h2 {
+    font-size: 1.28rem;
+  }
+
+  .dashboard-date-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-date-field {
+    min-width: 0;
+    width: 100%;
+    max-width: none;
   }
 
   .dashboard-inline-meta {
@@ -3825,9 +5527,10 @@ textarea { resize: vertical; }
     text-align: left;
   }
 
+  /* Шит вплотную к краю вьюпорта: safe-area переносим в padding карточки + компенсируем margin шапки/футера. */
   .modal-overlay {
     align-items: end;
-    padding: var(--s2);
+    padding: 0;
   }
 
   .modal-card,
@@ -3835,25 +5538,131 @@ textarea { resize: vertical; }
     width: 100%;
     max-height: min(94vh, 960px);
     border-radius: 20px 20px 0 0;
-    padding: var(--s4);
+    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
+    padding-right: calc(var(--s4) + env(safe-area-inset-right, 0px));
+    padding-bottom: var(--s4);
+    padding-left: calc(var(--s4) + env(safe-area-inset-left, 0px));
+  }
+
+  /*
+   * Нижний «призрак» вплотную к низу карточки — без двойного padding.
+   * Верхний padding карточки = 0: иначе отрицательный margin-top у шапки поднимал блок визуально,
+   * а поток формы оставался выше — при открытии первая строка (Order Date) оказывалась под sticky-шапкой.
+   */
+  .modal-card.repair-update-modal,
+  .modal-card.repair-form-modal,
+  .modal-card.vehicle-detail-modal,
+  .modal-card.vehicle-form-modal,
+  .modal-card.purchase-detail-modal,
+  .modal-card.purchase-form-modal {
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .repair-update-modal .panel-header,
-  .repair-form-modal .panel-header,
   .vehicle-detail-modal .panel-header,
-  .vehicle-form-modal .panel-header {
-    position: sticky;
-    top: calc(var(--s2) * -1);
-    z-index: 2;
-    background: linear-gradient(180deg, rgba(21, 21, 28, 1) 72%, rgba(21, 21, 28, 0.88) 100%);
+  .vehicle-form-modal .panel-header,
+  .purchase-detail-modal .panel-header,
+  .purchase-form-modal .panel-header {
+    margin-top: 0;
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    margin-bottom: var(--s3);
+    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
     padding-bottom: var(--s3);
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    border-radius: 20px 20px 0 0;
+    top: 0;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 0;
+    box-sizing: border-box;
+    /* Сплошная шапка без прозрачного «хвоста» — форма не просвечивает и не перекрывается при scrollTop=0 */
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .repair-modal-actions {
+  /*
+   * Repairs / Vehicles: в глобальном @media .panel-header = column — заголовок и кнопки штабелируются
+   * и шапка модалки выглядит «жирной». Как у Purchases: ряд title | actions, плотнее padding.
+   */
+  .repair-update-modal .panel-header:has(.inline-actions),
+  .vehicle-detail-modal .panel-header:has(.inline-actions) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s3);
+    text-align: start;
+    padding-top: calc(var(--s3) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s2);
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) > div:first-child,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) > div:first-child {
+    text-align: start;
+    flex: 1 1 auto;
+    min-width: min(100%, 11rem);
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) .inline-actions,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) .inline-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .repair-form-modal .panel-header {
     position: sticky;
-    bottom: calc(var(--s2) * -1);
-    background: linear-gradient(180deg, rgba(21, 21, 28, 0) 0%, rgba(21, 21, 28, 0.96) 28%);
-    padding: var(--s4) 0 calc(var(--s2) + env(safe-area-inset-bottom, 0px));
+    top: 0;
+    z-index: 2;
+    margin-top: 0;
+    margin-bottom: var(--s3);
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s3);
+    text-align: start;
+    padding-top: calc(var(--s3) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s2);
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .repair-form-modal .panel-header > div:first-child {
+    text-align: start;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .repair-modal-actions,
+  .vehicle-modal-actions,
+  .purchase-modal-actions {
+    position: sticky;
+    bottom: 0;
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    margin-top: var(--s3);
+    margin-bottom: 0;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    /* Как шапка: сплошная плашка + тонкая линия к контенту (сверху у футера) */
+    background: var(--surface);
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.04);
+    min-height: 0;
+    padding-top: var(--s3);
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    padding-bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px));
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
   }
 
   .vehicle-info-split {
@@ -3870,21 +5679,24 @@ textarea { resize: vertical; }
     padding: var(--s4);
   }
 
+  /* Селект и кнопка в одном ряду + width:100% у кнопки давали наложение на узкой ширине. */
   .inline-owner-header {
+    flex-direction: column;
     align-items: stretch;
+    gap: var(--s3);
+  }
+
+  .inline-owner-select {
+    width: 100%;
+    flex: none;
   }
 
   .inline-owner-toggle {
     justify-content: center;
     width: 100%;
+    align-self: stretch;
   }
 
-  .vehicle-modal-actions {
-    position: sticky;
-    bottom: calc(var(--s2) * -1);
-    background: linear-gradient(180deg, rgba(21, 21, 28, 0) 0%, rgba(21, 21, 28, 0.96) 28%);
-    padding: var(--s4) 0 calc(var(--s2) + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -3994,6 +5806,57 @@ textarea { resize: vertical; }
 
 .users-list {
   grid-template-columns: 1fr;
+  gap: var(--s3);
+}
+
+/* ── Users workspace (admin user management) ─────────────────── */
+
+.users-section-topbar {
+  align-items: flex-end;
+}
+
+.users-section-head {
+  min-width: 0;
+}
+
+.users-section-head h2 {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
+
+.users-section-head .eyebrow {
+  margin-bottom: 4px;
+}
+
+.users-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s3);
+}
+
+.users-workspace .user-card {
+  align-items: flex-start;
+  border-radius: 14px;
+  padding: var(--s4) var(--s5);
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.03) 0%, transparent 42%),
+    var(--surface-mid);
+}
+
+.users-workspace .user-card:has(.user-badge[data-role="admin"]) {
+  border-left: 3px solid rgba(205, 216, 58, 0.55);
+  padding-left: calc(var(--s5) - 3px);
+}
+
+.users-workspace .user-card-actions .invite-link-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  max-width: 100%;
 }
 
 .user-card {

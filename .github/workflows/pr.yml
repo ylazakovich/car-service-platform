@@ -133,9 +133,9 @@ jobs:
     env:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       E2E_ADMIN_EMAIL: admin@autoservice.local
-      E2E_ADMIN_PASSWORD: change-me-in-production
+      E2E_ADMIN_PASSWORD: admin12345
       E2E_STAFF_EMAIL: staff@autoservice.local
-      E2E_STAFF_PASSWORD: change-me-in-production
+      E2E_STAFF_PASSWORD: staff12345
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 

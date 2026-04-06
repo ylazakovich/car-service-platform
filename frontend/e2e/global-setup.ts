@@ -1,5 +1,9 @@
 import type { FullConfig } from "@playwright/test";
 
+import { applyRepoRootDotEnv } from "./load-repo-env";
+
+applyRepoRootDotEnv();
+
 function apiHealthUrl(baseURL: string): string {
   return new URL("/api/health", baseURL).href;
 }

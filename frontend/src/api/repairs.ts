@@ -21,6 +21,7 @@ export interface RepairItem {
   status: RepairStatus;
   tracking_code: string;
   portal_token: string;
+  has_pdf: boolean;
   completed_at: string | null;
   estimated_date: string | null;
   repair_notes: RepairNoteItem[];
