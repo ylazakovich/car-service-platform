@@ -1,8 +1,8 @@
 # Playwright E2E — целевой framework (car-service-platform)
 
-- Last updated: 2026-04-05
+- Last updated: 2026-04-06
 - Статус: **целевой дизайн** (реализация поэтапно через `NEXT_STEPS.md`)
-- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `backend/repairs/management/commands/seed_e2e_data.py`, `.github/workflows/pr.yml`, `DOMAIN_RULES.md`
+- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `DOMAIN_RULES.md`
 
 ## 1) Принцип: проход с первого раза, без ретраев
 
@@ -11,7 +11,7 @@
 Как достигается детерминизм:
 
 1. **Явная готовность стека** до первого теста: не только HTTP 200 от статики фронта, но и успешный ответ **backend** (например `GET /api/health` через тот же origin, что и Playwright `baseURL`), плюс при необходимости проверка, что миграции и сиды отработали (см. §4).
-2. **Фиксированные данные**: сиды с предсказуемыми ключами (`E2E-CI-001`, роли admin/staff) и **явное состояние** для сценариев PDF (наличие или отсутствие уже выгруженного PDF — отдельные фикстуры или отдельные команды сида, а не «как повезёт»).
+2. **Фиксированные данные**: в CI после `compose-up` в БД грузится `demo/demo_data.sql`; стабильная опора для staff-сценариев — ремонт **TOR-1001** (константы в `e2e/e2e-seed.ts`). Роли admin/staff — `seed_admin` / `seed_staff`. Для PDF по-прежнему нужно **явное состояние** (наличие/отсутствие уже выгруженного PDF) — см. §4.
 3. **Ожидания через состояние UI/API**, а не фиксированные `sleep` (кроме редких исключений с комментарием и тикетом).
 4. **Изоляция тестов**: тесты, которые мутируют данные (второй POST export), либо идут в хвосте сьюта, либо используют выделенного пользователя/ремонт/БД-слой (см. roadmap).
 
@@ -23,7 +23,7 @@
 | **Глобальная подготовка** | poll `GET /api/health` (тот же origin, что `baseURL`); пропуск: `E2E_SKIP_GLOBAL_SETUP=1` | `e2e/global-setup.ts` (+ `globalSetup` в `playwright.config.ts`) |
 | **Фикстуры** | авторизация по роли, сохранение storageState | `e2e/fixtures/auth.ts` |
 | **Page objects / экраны** | стабильные селекторы, переиспользование | `e2e/pages/*.ts` (эволюция из `helpers/`) |
-| **Данные** | константы, синхрон с Python-сидом | `e2e/e2e-seed.ts` + `seed_e2e_data.py` |
+| **Данные** | константы, синхрон с `demo/demo_data.sql` | `e2e/e2e-seed.ts` (TOR-1001 + имя услуги) |
 | **Allure** | epic/feature/story | `e2e/allure-helpers.ts` |
 
 ## 3) Сценарная матрица (покрытие vs сейчас)
@@ -40,19 +40,19 @@
 
 ## 4) Сиды и состояние PDF
 
-Проблема: `seed_e2e_data` идемпотентен по факту «есть любой completed repair», но **не гарантирует** наличие `RepairDocument` / версии PDF. Тесты «два View PDF без лишнего POST» зависят от начального состояния БД.
+Проблема: демо-SQL задаёт ремонты и закупки, но **не гарантирует** наличие `RepairDocument` / версии PDF для конкретного TOR. Тесты «два View PDF без лишнего POST» зависят от начального состояния БД после загрузки демо.
 
 **Целевое решение (выбрать одно и зафиксировать в коде):**
 
-- **Вариант A:** расширить `seed_e2e_data` (или добавить `seed_e2e_pdf_state`) — создавать ремонт с уже существующим документом для сценария «повторное открытие».
-- **Вариант B:** два независимых сида / два license_plate: `E2E-CI-PDF-NEW` и `E2E-CI-PDF-EXISTING`.
+- **Вариант A:** расширить `demo/demo_data.sql` (или отдельный SQL-фрагмент для E2E) — вставить `repair_documents` для сценария «повторное открытие».
+- **Вариант B:** два явных ремонта в демо: один без PDF, второй с уже выгруженным PDF.
 
 ## 5) CI: жёсткие ворота
 
 **Сделано:**
 
 1. Composite action `.github/actions/compose-up`: inputs `wait-for-api-health`, `api-health-url` (по умолчанию `http://127.0.0.1:4173/api/health`). После шага «Wait for frontend» идёт poll до JSON с `"status"` и успешного `curl`.
-2. Job E2E в `.github/workflows/pr.yml`: `wait-for-api-health: true`.
+2. Job E2E в `.github/workflows/pr.yml`: `wait-for-api-health: true`, затем шаг **Load demo data for E2E** (`psql` + `demo/demo_data.sql`).
 
 **Дальше (по необходимости):** smoke с авторизацией, если появятся частые 502 от API после старта nginx.
 
@@ -60,7 +60,7 @@
 
 ## 6) Версионирование и документация
 
-Любое изменение сида Python → обновить комментарий/константы в `e2e-seed.ts`.
+Любое изменение фикстурного ремонта в `demo/demo_data.sql` (TOR-1001 / услуга) → обновить `e2e-seed.ts` и при необходимости POM.
 
 Новые экраны в M3 → добавить story в Allure и строку в этой таблице или в `NEXT_STEPS.md`.
 

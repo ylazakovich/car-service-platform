@@ -5,7 +5,7 @@ import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
  * @mobile-only — только проект mobile-chrome (см. playwright.config.ts grepInvert).
- * Проверяет мобильный список ремонтов и открытие сидированной карточки.
+ * Проверяет мобильный список ремонтов и открытие демо-карточки (TOR-1001 из demo_data.sql).
  */
 test.describe("Staff repairs mobile @mobile-only", () => {
   test.beforeEach(async ({ page }) => {
@@ -13,7 +13,7 @@ test.describe("Staff repairs mobile @mobile-only", () => {
   });
 
   test("mobile list, quick nav, and seeded completed repair modal", async ({ page }) => {
-    await e2eBehaviors("staff", "repairs · mobile list · open seeded job");
+    await e2eBehaviors("staff", "repairs · mobile list · open demo TOR-1001");
     const repairs = new StaffRepairsPage(page);
 
     await expect(repairs.staffMobileWorkspaceMenuToggle()).toBeVisible({ timeout: 15_000 });

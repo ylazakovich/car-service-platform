@@ -1,5 +1,8 @@
 /**
- * Must stay aligned with `backend/repairs/management/commands/seed_e2e_data.py`:
- * license_plate E2E-CI-001 → API `vehicle_label` "E2E-CI-001 • Demo Sedan" shown as kanban card <h4>.
+ * Stable E2E fixture from `demo/demo_data.sql`:
+ * completed repair TOR-1001 — AA 1234 BB • Toyota Camry, service below (unique among that plate’s completed jobs in demo).
+ * CI loads this file after compose-up (`.github/workflows/pr.yml`). Locally: `bash scripts/load-demo.sh`.
  */
-export const SEEDED_REPAIR_CARD_HEADING = /E2E-CI-001/;
+export const E2E_DEMO_REPAIR_TRACKING_CODE = "TOR-1001";
+
+export const E2E_DEMO_REPAIR_SERVICE_NAME = "Oil change + filter replacement";
