@@ -126,6 +126,44 @@ export type DashboardAnalyticsResponse = {
       created_at: string;
     }>;
   };
+  service_board: {
+    range_summary: {
+      open_repairs_end_of_range: number;
+      vehicles_in_range: number;
+      customers_in_range: number;
+      returning_customers_in_range: number;
+      non_returning_customers_in_range: number;
+      returning_ratio: number | null;
+      median_cycle_time_days: number | null;
+      completed_repairs_in_range: number;
+    };
+    current_snapshot: {
+      waiting_parts_current: number;
+      open_repairs_current: number;
+    };
+    all_time_totals: {
+      repairs_total: number;
+      vehicles_total: number;
+      customers_total: number;
+      returning_customers_total: number;
+      non_returning_customers_total: number;
+      masters_total: number;
+    };
+    masters_current: Array<{
+      master_id: number;
+      display_name: string;
+      assigned_open_current: number;
+      waiting_parts_current: number;
+      estimated_assigned_value_current: number;
+    }>;
+    masters_range: Array<{
+      master_id: number;
+      display_name: string;
+      completed_in_range: number;
+      median_cycle_time_days: number | null;
+      actual_service_value_completed: number;
+    }>;
+  };
   moneyflow: DashboardMoneyflowPayload;
   warehouse: DashboardWarehousePayload;
 };
@@ -152,10 +190,13 @@ export async function fetchDashboardAnalytics(params: {
     typeof data !== "object" ||
     !("pdf" in data) ||
     !("operational" in data) ||
+    !("service_board" in data) ||
     !("moneyflow" in data) ||
     !("warehouse" in data) ||
     data.pdf == null ||
     typeof data.pdf !== "object" ||
+    data.service_board == null ||
+    typeof data.service_board !== "object" ||
     data.moneyflow == null ||
     typeof data.moneyflow !== "object" ||
     data.warehouse == null ||
