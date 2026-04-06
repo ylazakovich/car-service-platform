@@ -3256,7 +3256,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
         {isCustomerFormOpen ? (
           <div className="modal-overlay" role="presentation" onClick={closeCustomerFormModal}>
-            <section className="modal-card modal-card-large" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <section className="modal-card modal-card-large customer-form-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
               <div className="panel-header">
                 <div>
                   <p className="eyebrow">Customer Intake</p>
@@ -3267,7 +3267,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </button>
               </div>
 
-              <form className="stack-form" onSubmit={handleCustomerSubmit}>
+              <form className="stack-form customer-form-stack" onSubmit={handleCustomerSubmit}>
+                <div className="customer-form-modal-scroll">
                 <label>
                   <span>Full Name</span>
                   <input
@@ -3330,7 +3331,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {customerError ? <p className="form-error">{customerError}</p> : null}
 
-                <div className="form-actions">
+                </div>
+
+                <div className="form-actions repair-modal-footer-bar">
                   <button type="submit" className="button" disabled={isSavingCustomer}>
                     {isSavingCustomer ? "Saving..." : editingCustomerId ? "Update Customer" : "Create Customer"}
                   </button>
@@ -3346,7 +3349,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         {selectedCustomer ? (
           <div className="modal-overlay" role="presentation" onClick={closeCustomerDetailModal}>
             <section
-              className="modal-card modal-card-large"
+              className="modal-card modal-card-large customer-detail-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="customer-modal-title"
@@ -3381,6 +3384,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
               </div>
 
+              <div className="modal-body-scroll">
               <div className="customer-detail-stack">
                 <div className="detail-card">
                   <strong>Contact</strong>
@@ -3427,6 +3431,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                   )}
                 </div>
+              </div>
               </div>
             </section>
           </div>
@@ -3628,6 +3633,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 )}
               </div>
 
+              <div className="modal-body-scroll">
               <div className="customer-detail-stack vehicle-detail-stack">
                 <StaffVehicleMobileDetail
                   vehicle={selectedVehicle}
@@ -3656,8 +3662,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   repairStatusLabels={REPAIR_STATUS_LABELS}
                 />
               </div>
+              </div>
 
-              <div className="form-actions vehicle-modal-actions">
+              <div className="form-actions vehicle-modal-actions repair-modal-footer-bar staff-modal-footer-bar--center">
                 <button type="button" className="button button-secondary" onClick={closeVehicleDetailModal}>
                   Cancel
                 </button>
@@ -3682,6 +3689,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
 
               <form className="stack-form vehicle-form-stack" onSubmit={handleVehicleSubmit}>
+                <div className="vehicle-form-modal-scroll">
 
                 {/* Owner field + inline customer creation */}
                 <div className="inline-owner-block vehicle-form-section">
@@ -3917,7 +3925,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 ) : null}
                 {vehicleError ? <p className="form-error">{vehicleError}</p> : null}
 
-                <div className="form-actions vehicle-modal-actions">
+                </div>
+
+                <div className="form-actions vehicle-modal-actions repair-modal-footer-bar staff-modal-footer-bar--center">
                   <button type="submit" className="button" disabled={isSavingVehicle || customers.length === 0}>
                     {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
                   </button>
@@ -4029,6 +4039,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
 
               <form className="stack-form repair-form-stack" onSubmit={handleRepairSubmit}>
+                <div className="repair-form-modal-scroll">
                 <label>
                   <span>Vehicle</span>
                   <select
@@ -4097,7 +4108,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </label>
 
                 <div className="repair-form-services-block">
-                  <span className="repair-form-services-label">Services</span>
+                  <span className="repair-form-services-label repair-info-label--pill">Services</span>
                   <RepairServiceLinesEditor
                     idPrefix="repair-create"
                     lines={repairForm.service_lines}
@@ -4152,7 +4163,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {repairError ? <p className="form-error">{repairError}</p> : null}
 
-                <div className="form-actions repair-modal-actions">
+                </div>
+
+                <div className="form-actions repair-modal-actions repair-modal-footer-bar">
                   <button type="submit" className="button" disabled={isSavingRepair}>
                     {isSavingRepair ? "Saving..." : "Create Repair"}
                   </button>
@@ -4168,7 +4181,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         {selectedRepair ? (
           <div className="modal-overlay" role="presentation" onClick={handleCloseRepairModal}>
             <section
-              className="modal-card repair-update-modal"
+              className="modal-card modal-card-large repair-update-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="repair-modal-title"
@@ -4212,8 +4225,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
 
               {/* ── Status Switcher ────────────────────────────── */}
-              <div className="status-switcher">
-                <span className="status-switcher-label">Status</span>
+              <div className="status-switcher status-switcher--repair-modal" role="group" aria-label="Repair status">
                 <div className="status-switcher-options status-switcher-options-stacked">
                   <div className="status-switcher-row">
                     {REPAIR_KANBAN_COLUMNS.filter((col) => col.status === "new" || col.status === "in_progress").map(({ status, label }) => (
@@ -4261,7 +4273,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
               </div>
 
-              <div className="customer-detail-stack repair-modal-sections">
+              <div className="repair-update-modal-scroll">
+                <div className="customer-detail-stack repair-modal-sections">
                 <div className="detail-card repair-status-field repair-modal-panel repair-modal-assignment-card">
                   <div className="repair-modal-assignment-master">
                     <span className="repair-modal-field-label">Master</span>
@@ -4310,8 +4323,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <span className="repair-info-label">Owner</span>
                       <p>{selectedRepair.owner_name}</p>
                     </div>
-                    <div className="repair-info-row repair-info-row-block">
-                      <span className="repair-info-label">Services</span>
+                    <div className="repair-info-row repair-info-row-block repair-info-row-services">
+                      <span className="repair-info-label repair-info-label--pill">Services</span>
                       {isAdmin || (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id)) ? (
                         <RepairServiceLinesEditor
                           idPrefix="repair-modal"
@@ -4481,7 +4494,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </div>
                 ) : null}
 
-                <div className="form-actions repair-modal-actions">
+                </div>
+              </div>
+
+                <div className="form-actions repair-modal-actions repair-modal-footer-bar">
                   <button type="button" className="button" onClick={() => void handleRepairModalSave()}>
                     Save Repair Update
                   </button>
@@ -4489,7 +4505,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     Cancel
                   </button>
                 </div>
-              </div>
             </section>
           </div>
         ) : null}
@@ -4810,6 +4825,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </button>
               </div>
 
+              <div className="purchase-detail-modal-scroll">
               <div className="customer-detail-stack purchase-modal-stack">
                 {purchaseDetailModalTab === "order" ? (
                 <div className="detail-card">
@@ -5065,7 +5081,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {purchaseModalError ? <p className="form-error">{purchaseModalError}</p> : null}
 
-                <div className="form-actions purchase-modal-actions">
+              </div>
+              </div>
+
+                <div className="form-actions purchase-modal-actions repair-modal-footer-bar">
                   <button type="button" className="button" onClick={handlePurchaseModalSave}>
                     Save Purchase
                   </button>
@@ -5073,7 +5092,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     Cancel
                   </button>
                 </div>
-              </div>
             </section>
           </div>
         ) : null}
@@ -5093,7 +5111,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
               </div>
 
-              <form className="stack-form" onSubmit={handlePurchaseSubmit}>
+              <form className="stack-form purchase-form-stack" onSubmit={handlePurchaseSubmit}>
+                <div className="purchase-form-modal-scroll">
                 <div className="form-grid">
                   <label>
                     <span>Order Date</span>
@@ -5287,7 +5306,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
 
-                <div className="form-actions purchase-modal-actions">
+                </div>
+
+                <div className="form-actions purchase-modal-actions repair-modal-footer-bar">
                   <button type="submit" className="button" disabled={isSavingPurchase}>
                     {isSavingPurchase ? "Saving..." : "Add Purchase"}
                   </button>
