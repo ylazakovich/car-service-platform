@@ -1,0 +1,1 @@
+{"id":"755e16d82d404875e3cf16ecee3bce32","fullName":"src/swipeNavNeighbors.test.ts#getSwipeNavNeighborLabels returns nulls when active is not in list","name":"returns nulls when active is not in list","status":"passed","testResultsByEnv":{"frontend":"9963c3c3fbba5b2de98f6f52eee3d43e"}}
