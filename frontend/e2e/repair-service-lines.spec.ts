@@ -5,6 +5,7 @@ import {
   E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY,
   E2E_DEMO_REPAIR_SERVICE_NAME,
   E2E_DEMO_REPAIR_TRACKING_CODE,
+  E2E_DEMO_REPAIR_VEHICLE_PLATE,
 } from "./e2e-seed";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
@@ -46,7 +47,7 @@ test.describe("Repair service lines — modal editor @desktop", () => {
     await repairs.gotoRepairsSection();
     await repairs.openSeededRepairCard();
 
-    const dialog = page.getByRole("dialog").filter({ hasText: E2E_DEMO_REPAIR_SERVICE_NAME });
+    const dialog = page.getByRole("dialog").filter({ hasText: E2E_DEMO_REPAIR_VEHICLE_PLATE });
     await expect(dialog).toBeVisible({ timeout: 15_000 });
 
     await expect(dialog.locator(".repair-service-lines-editor")).toBeVisible();
