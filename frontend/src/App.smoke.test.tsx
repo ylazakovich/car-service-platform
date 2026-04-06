@@ -128,6 +128,32 @@ function createStubDashboardAnalyticsResponse(): DashboardAnalyticsResponse {
       active_workload_preview: [],
       recently_created_preview: [],
     },
+    service_board: {
+      range_summary: {
+        open_repairs_end_of_range: 0,
+        vehicles_in_range: 0,
+        customers_in_range: 0,
+        returning_customers_in_range: 0,
+        non_returning_customers_in_range: 0,
+        returning_ratio: null,
+        median_cycle_time_days: null,
+        completed_repairs_in_range: 0,
+      },
+      current_snapshot: {
+        waiting_parts_current: 0,
+        open_repairs_current: 0,
+      },
+      all_time_totals: {
+        repairs_total: 0,
+        vehicles_total: 0,
+        customers_total: 0,
+        returning_customers_total: 0,
+        non_returning_customers_total: 0,
+        masters_total: 0,
+      },
+      masters_current: [],
+      masters_range: [],
+    },
     moneyflow: {
       supplier_spend_top: [],
       purchases_unlinked: { count: 0, total_spend: 0 },
@@ -292,10 +318,55 @@ describe("bootstrap application", () => {
               active_workload_preview: [],
               recently_created_preview: [],
             },
+            service_board: {
+              range_summary: {
+                open_repairs_end_of_range: 1,
+                vehicles_in_range: 1,
+                customers_in_range: 1,
+                returning_customers_in_range: 0,
+                non_returning_customers_in_range: 1,
+                returning_ratio: 0,
+                median_cycle_time_days: null,
+                completed_repairs_in_range: 0,
+              },
+              current_snapshot: {
+                waiting_parts_current: 0,
+                open_repairs_current: 1,
+              },
+              all_time_totals: {
+                repairs_total: 1,
+                vehicles_total: 1,
+                customers_total: 1,
+                returning_customers_total: 0,
+                non_returning_customers_total: 1,
+                masters_total: 0,
+              },
+              masters_current: [],
+              masters_range: [],
+            },
             moneyflow: {
               supplier_spend_top: [],
               purchases_unlinked: { count: 0, total_spend: 0 },
               exports_by_exporter: [],
+            },
+            warehouse: {
+              snapshot_as_of: "2025-04-30T12:00:00Z",
+              stock_totals: {
+                delivered_quantity_total: 0,
+                assigned_quantity_total: 0,
+                free_quantity_total: 0,
+                in_transit_quantity_total: 0,
+              },
+              valuations: {
+                in_stock: { buy_total: 0, sale_total: 0, margin_total: 0 },
+                in_transit: { buy_total: 0, sale_total: 0, margin_total: 0 },
+                cumulative: { buy_total: 0, sale_total: 0, margin_total: 0 },
+              },
+              invoice_split: {
+                with_invoice: { line_count: 0, quantity_total: 0, buy_total: 0 },
+                without_invoice: { line_count: 0, quantity_total: 0, buy_total: 0 },
+              },
+              suppliers_top_current: [],
             },
           },
         });
@@ -818,6 +889,127 @@ describe("bootstrap application", () => {
       expect(screen.getByLabelText("Date range")).toHaveValue(
         `${formatExpectedDateInput(startDate)} - ${formatExpectedDateInput(endDate)}`
       );
+    });
+  });
+
+  it("renders the redesigned service board with range, live, master, and all-time sections", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        const analytics = createStubDashboardAnalyticsResponse();
+        analytics.service_board = {
+          range_summary: {
+            open_repairs_end_of_range: 5,
+            vehicles_in_range: 4,
+            customers_in_range: 3,
+            returning_customers_in_range: 2,
+            non_returning_customers_in_range: 1,
+            returning_ratio: 2 / 3,
+            median_cycle_time_days: 6,
+            completed_repairs_in_range: 7,
+          },
+          current_snapshot: {
+            waiting_parts_current: 2,
+            open_repairs_current: 4,
+          },
+          all_time_totals: {
+            repairs_total: 18,
+            vehicles_total: 11,
+            customers_total: 9,
+            returning_customers_total: 4,
+            non_returning_customers_total: 5,
+            masters_total: 3,
+          },
+          masters_current: [
+            {
+              master_id: 10,
+              display_name: "Chris North",
+              assigned_open_current: 3,
+              waiting_parts_current: 1,
+              estimated_assigned_value_current: 950,
+            },
+          ],
+          masters_range: [
+            {
+              master_id: 10,
+              display_name: "Chris North",
+              completed_in_range: 4,
+              median_cycle_time_days: 5,
+              actual_service_value_completed: 1800,
+            },
+          ],
+        };
+        return Promise.resolve({ data: analytics });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/vehicles/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/customers/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/services/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/auth/users/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url === "/purchases/") {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "ServiceBoard" }));
+
+    const selectedRange = await screen.findByRole("region", { name: "Selected range" });
+    const mastersSection = screen.getByRole("region", { name: "Masters" });
+    const allTimeSection = screen.getByRole("region", { name: "All-time totals" });
+
+    expect(screen.getByRole("heading", { name: "Service Board KPIs", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Current load and performance", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Registry baseline", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Repair flow", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Vehicles and clients", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Workshop objects", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Loyalty split", level: 3 })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Live operations", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Active workload", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Recently created", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Master Workload", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByText("Cycle p90")).not.toBeInTheDocument();
+    expect(screen.queryByText("Created in range")).not.toBeInTheDocument();
+    expect(screen.queryByText("Returning / non-returning")).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(within(selectedRange).getByText("5")).toBeInTheDocument();
+      expect(within(selectedRange).getByText("2")).toBeInTheDocument();
+      expect(within(selectedRange).getByText("4")).toBeInTheDocument();
+      expect(within(selectedRange).getByText("3")).toBeInTheDocument();
+      expect(within(selectedRange).getAllByText("6 d").length).toBeGreaterThan(0);
+      expect(within(selectedRange).getByText("7")).toBeInTheDocument();
+      expect(within(mastersSection).getByText("3 masters in the workshop roster.")).toBeInTheDocument();
+      expect(within(mastersSection).getByText(/950,00\s*zł/)).toBeInTheDocument();
+      expect(within(mastersSection).getByText(/1800,00\s*zł/)).toBeInTheDocument();
+      expect(within(mastersSection).getAllByText("Chris North")).toHaveLength(2);
+      expect(within(allTimeSection).getByText("18")).toBeInTheDocument();
+      expect(within(allTimeSection).getByText("11")).toBeInTheDocument();
+      expect(within(allTimeSection).getByText("9")).toBeInTheDocument();
+      expect(within(allTimeSection).getByText("4")).toBeInTheDocument();
+      expect(within(allTimeSection).getByText("5")).toBeInTheDocument();
     });
   });
 

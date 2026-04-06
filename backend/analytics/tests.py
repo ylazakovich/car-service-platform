@@ -11,6 +11,7 @@ from rest_framework.test import APIClient
 from customers.models import Customer
 from purchases.models import Purchase, Supplier
 from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot
+from services.models import Service
 from vehicles.models import Vehicle
 
 
@@ -65,6 +66,28 @@ class StaffDashboardAnalyticsTests(TestCase):
             document_total=doc_total,
         )
         return doc
+
+    def _create_repair(
+        self,
+        *,
+        vehicle: Vehicle | None = None,
+        service_name: str = "Oil Change",
+        status: str = Repair.Status.NEW,
+        created_at: datetime | None = None,
+        completed_at: date | None = None,
+        master=None,
+    ) -> Repair:
+        repair = Repair.objects.create(
+            vehicle=vehicle or self.vehicle,
+            service_name=service_name,
+            status=status,
+            master=master,
+            created_at=created_at or timezone.make_aware(datetime(2026, 1, 1, 10, 0, 0)),
+        )
+        if status == Repair.Status.COMPLETED:
+            repair.completed_at = completed_at
+            repair.save()
+        return repair
 
     def test_requires_auth(self):
         response = self.client.get("/api/analytics/dashboard/?start_date=2026-01-01&end_date=2026-01-31")
@@ -287,3 +310,133 @@ class StaffDashboardAnalyticsTests(TestCase):
         self.assertEqual(suppliers[1]["in_stock_buy_total"], 35.0)
         self.assertEqual(suppliers[1]["in_transit_buy_total"], 0.0)
         self.assertEqual(suppliers[1]["quantity_total"], 5)
+
+    def test_service_board_payload_includes_range_current_all_time_and_master_metrics(self):
+        staff_user_model = get_user_model()
+        master_a = staff_user_model.objects.create_user(
+            email="master-a@test.local",
+            password="master12345",
+            role="staff",
+            first_name="Chris",
+            last_name="North",
+        )
+        master_b = staff_user_model.objects.create_user(
+            email="master-b@test.local",
+            password="master12345",
+            role="staff",
+            first_name="Daria",
+            last_name="West",
+        )
+        second_customer = Customer.objects.create(
+            full_name="Piotr Kowalski",
+            phone="+48 600 300 400",
+            assigned_to=self.user,
+        )
+        second_vehicle = Vehicle.objects.create(
+            customer=second_customer,
+            license_plate="KR 12345",
+            make="Ford",
+            model="Focus",
+        )
+        Service.objects.create(name="Oil Change", price=Decimal("150.00"))
+        Service.objects.create(name="Brake Service", price=Decimal("400.00"))
+
+        open_repair = self._create_repair(
+            service_name="Brake Service",
+            status=Repair.Status.IN_PROGRESS,
+            created_at=timezone.make_aware(datetime(2026, 1, 10, 10, 0, 0)),
+            master=master_a,
+        )
+        waiting_repair = self._create_repair(
+            service_name="Oil Change",
+            status=Repair.Status.WAITING_PARTS,
+            created_at=timezone.make_aware(datetime(2026, 1, 11, 10, 0, 0)),
+            master=master_b,
+        )
+        completed_a = self._create_repair(
+            service_name="Oil Change",
+            status=Repair.Status.COMPLETED,
+            created_at=timezone.make_aware(datetime(2026, 1, 5, 10, 0, 0)),
+            completed_at=date(2026, 1, 15),
+            master=master_a,
+        )
+        completed_b = self._create_repair(
+            vehicle=second_vehicle,
+            service_name="Brake Service",
+            status=Repair.Status.COMPLETED,
+            created_at=timezone.make_aware(datetime(2026, 1, 6, 10, 0, 0)),
+            completed_at=date(2026, 1, 20),
+            master=master_b,
+        )
+        historical_completed = self._create_repair(
+            service_name="Oil Change",
+            status=Repair.Status.COMPLETED,
+            created_at=timezone.make_aware(datetime(2025, 12, 25, 10, 0, 0)),
+            completed_at=date(2025, 12, 31),
+        )
+
+        self._attach_snapshot(
+            completed_a,
+            1,
+            (Decimal("150"), Decimal("50"), Decimal("30"), Decimal("0"), Decimal("200")),
+        )
+        self._attach_snapshot(
+            completed_b,
+            1,
+            (Decimal("400"), Decimal("70"), Decimal("40"), Decimal("0"), Decimal("470")),
+        )
+        self._attach_snapshot(
+            historical_completed,
+            1,
+            (Decimal("150"), Decimal("0"), Decimal("0"), Decimal("0"), Decimal("150")),
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.get(
+            "/api/analytics/dashboard/?start_date=2026-01-01&end_date=2026-01-31"
+            "&operational_start_date=2026-01-01&operational_end_date=2026-01-31"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        service_board = response.json()["service_board"]
+        range_summary = service_board["range_summary"]
+        self.assertEqual(range_summary["open_repairs_end_of_range"], 2)
+        self.assertEqual(range_summary["vehicles_in_range"], 2)
+        self.assertEqual(range_summary["customers_in_range"], 2)
+        self.assertEqual(range_summary["returning_customers_in_range"], 1)
+        self.assertEqual(range_summary["non_returning_customers_in_range"], 1)
+        self.assertEqual(range_summary["returning_ratio"], 0.5)
+        self.assertEqual(range_summary["median_cycle_time_days"], 12.0)
+        self.assertEqual(range_summary["completed_repairs_in_range"], 2)
+
+        current_snapshot = service_board["current_snapshot"]
+        self.assertEqual(current_snapshot["waiting_parts_current"], 1)
+        self.assertEqual(current_snapshot["open_repairs_current"], 2)
+
+        all_time = service_board["all_time_totals"]
+        self.assertEqual(all_time["repairs_total"], 5)
+        self.assertEqual(all_time["vehicles_total"], 2)
+        self.assertEqual(all_time["customers_total"], 2)
+        self.assertEqual(all_time["returning_customers_total"], 1)
+        self.assertEqual(all_time["non_returning_customers_total"], 1)
+        self.assertEqual(all_time["masters_total"], 3)
+
+        masters_current = {row["master_id"]: row for row in service_board["masters_current"]}
+        self.assertEqual(masters_current[master_a.id]["assigned_open_current"], 1)
+        self.assertEqual(masters_current[master_a.id]["waiting_parts_current"], 0)
+        self.assertEqual(masters_current[master_a.id]["estimated_assigned_value_current"], 400.0)
+        self.assertEqual(masters_current[master_b.id]["assigned_open_current"], 1)
+        self.assertEqual(masters_current[master_b.id]["waiting_parts_current"], 1)
+        self.assertEqual(masters_current[master_b.id]["estimated_assigned_value_current"], 150.0)
+
+        masters_range = {row["master_id"]: row for row in service_board["masters_range"]}
+        self.assertEqual(masters_range[master_a.id]["completed_in_range"], 1)
+        self.assertEqual(masters_range[master_a.id]["median_cycle_time_days"], 10.0)
+        self.assertEqual(masters_range[master_a.id]["actual_service_value_completed"], 200.0)
+        self.assertEqual(masters_range[master_b.id]["completed_in_range"], 1)
+        self.assertEqual(masters_range[master_b.id]["median_cycle_time_days"], 14.0)
+        self.assertEqual(masters_range[master_b.id]["actual_service_value_completed"], 470.0)
+
+        # Existing current repairs stay untouched to ensure the payload is purely read-only.
+        self.assertEqual(Repair.objects.get(pk=open_repair.pk).status, Repair.Status.IN_PROGRESS)
+        self.assertEqual(Repair.objects.get(pk=waiting_repair.pk).status, Repair.Status.WAITING_PARTS)
