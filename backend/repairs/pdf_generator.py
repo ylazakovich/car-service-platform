@@ -164,8 +164,7 @@ def _info_block(repair: Any, font: str, width: float) -> Table:
 
 
 def _items_table(
-    service_name: str,
-    service_price: Decimal | None,
+    labor_rows: Sequence[tuple[str, Decimal | None]],
     purchases: Sequence[Any],
     font: str,
     width: float,
@@ -185,16 +184,18 @@ def _items_table(
     data = [headers]
 
     purchase_list = list(purchases)
-    totals = compute_completion_financial_totals(service_price, purchase_list)
+    labor_prices = [p for _name, p in labor_rows]
+    totals = compute_completion_financial_totals(labor_prices, purchase_list)
     grand_total = totals.document_total
 
-    if service_price is not None:
-        svc_price_str = _fmt(service_price)
-        svc_total_str = _fmt(service_price)
-    else:
-        svc_price_str = "—"
-        svc_total_str = "—"
-    data.append([td(service_name or "—"), td_r("1"), td_r(svc_price_str), td_r(svc_total_str)])
+    for service_name, service_price in labor_rows:
+        if service_price is not None:
+            svc_price_str = _fmt(service_price)
+            svc_total_str = _fmt(service_price)
+        else:
+            svc_price_str = "—"
+            svc_total_str = "—"
+        data.append([td(service_name or "—"), td_r("1"), td_r(svc_price_str), td_r(svc_total_str)])
     for p in purchase_list:
         line_total = p.quantity * p.sale_price
         data.append([
@@ -238,7 +239,11 @@ def _total_block(total: Decimal, font: str, width: float) -> Table:
     return t
 
 
-def generate_completion_act_pdf(repair: Any, purchases: Sequence[Any], service_price: Decimal | None = None) -> bytes:
+def generate_completion_act_pdf(
+    repair: Any,
+    purchases: Sequence[Any],
+    labor_rows: Sequence[tuple[str, Decimal | None]],
+) -> bytes:
     buffer = BytesIO()
     font = _register_font()
 
@@ -267,8 +272,7 @@ def generate_completion_act_pdf(repair: Any, purchases: Sequence[Any], service_p
     ]
 
     items_tbl, grand_total = _items_table(
-        repair.service_name,
-        service_price,
+        list(labor_rows),
         list(purchases),
         font,
         width,

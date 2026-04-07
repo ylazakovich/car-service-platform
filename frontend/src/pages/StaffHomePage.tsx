@@ -9,12 +9,23 @@ import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from "../api
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
-import { useRepairs, customRepairServiceOption, sanitizeImageUrl } from "../features/staff/hooks/useRepairs";
+import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
+import {
+  IconEmail,
+  IconNote,
+  IconPhone,
+  VehicleMetaRow,
+  VehicleVinRow,
+} from "../features/staff/components/VehicleDetailMeta";
+import { useRepairs, sanitizeImageUrl } from "../features/staff/hooks/useRepairs";
 import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMobileList";
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
 import { StaffVehiclesMobileList } from "../features/staff/mobile/StaffVehiclesMobileList";
 import {
+  formatRepairServicesSummary,
+  getLastRecordedOdometerFromRepairs,
   getRepairStatusClass,
+  parseVehicleProfileMileageKm,
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
   type RepairEntry,
@@ -298,11 +309,12 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
   return true;
 }
 
-function getRepairServiceSaleValue(serviceName: string, priceByName: Map<string, number>) {
-  if (serviceName === customRepairServiceOption) {
-    return 0;
+function getRepairLaborSaleTotal(repair: RepairEntry, priceByName: Map<string, number>): number {
+  const lines = repair.service_lines.filter((l) => l.name.trim());
+  if (lines.length === 0) {
+    return priceByName.get(repair.service_name.trim()) ?? 0;
   }
-  return priceByName.get(serviceName) ?? 0;
+  return lines.reduce((sum, l) => sum + (priceByName.get(l.name.trim()) ?? 0), 0);
 }
 
 const calendarWeekdayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -1168,8 +1180,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairModalMasterId,
     repairModalCompletedAt,
     setRepairModalCompletedAt,
+    repairModalMileageAtService,
+    setRepairModalMileageAtService,
     repairModalNewNote,
     setRepairModalNewNote,
+    repairModalServiceLines,
+    setRepairModalServiceLines,
+    repairModalIssueNotes,
+    setRepairModalIssueNotes,
+    prefillHandoffRepairCreate,
     repairBeforePhotos,
     repairDuringPhotos,
     repairAfterPhotos,
@@ -1206,10 +1225,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairModalEstimatedDate,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
-  const repairServiceOptions = useMemo(
-    () => [...apiServices.map((s) => s.name), customRepairServiceOption],
-    [apiServices]
-  );
   const servicePriceByName = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of apiServices) {
@@ -2000,6 +2015,30 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   const selectedRepairVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id) ?? null;
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
+  const canEditRepairWorkDetails =
+    isAdmin ||
+    (Boolean(selectedRepair?.master_id) && String(selectedRepair?.master_id) === String(user?.id));
+
+  const repairOdometerReminderLead = useMemo(() => {
+    if (!selectedRepair || repairModalStatus !== "completed" || repairModalMileageAtService.trim()) {
+      return null;
+    }
+    const fromHistory = getLastRecordedOdometerFromRepairs(repairs, selectedRepair.vehicle_id);
+    if (fromHistory) {
+      return `The last recorded odometer for this vehicle was ${fromHistory.km.toLocaleString("en-US")} km (${fromHistory.tracking_code}).`;
+    }
+    const profileKm = parseVehicleProfileMileageKm(vehicleUiDetails[selectedRepair.vehicle_id]?.mileage);
+    if (profileKm != null) {
+      return `The vehicle profile still lists ${profileKm.toLocaleString("en-US")} km — enter the reading when the car was returned if it has changed.`;
+    }
+    return null;
+  }, [
+    repairModalMileageAtService,
+    repairModalStatus,
+    repairs,
+    selectedRepair,
+    vehicleUiDetails,
+  ]);
 
   const customerVehicleCounts = useMemo(() => {
     return vehicles.reduce<Record<number, number>>((accumulator, vehicle) => {
@@ -2245,7 +2284,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const totalServiceSales = useMemo(
     () =>
       completedRepairsForServiceSales.reduce(
-        (sum, repair) => sum + getRepairServiceSaleValue(repair.service_name, servicePriceByName),
+        (sum, repair) => sum + getRepairLaborSaleTotal(repair, servicePriceByName),
         0
       ),
     [completedRepairsForServiceSales, servicePriceByName]
@@ -3252,7 +3291,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
         {isCustomerFormOpen ? (
           <div className="modal-overlay" role="presentation" onClick={closeCustomerFormModal}>
-            <section className="modal-card modal-card-large" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <section className="modal-card modal-card-large customer-form-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
               <div className="panel-header">
                 <div>
                   <p className="eyebrow">Customer Intake</p>
@@ -3263,7 +3302,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </button>
               </div>
 
-              <form className="stack-form" onSubmit={handleCustomerSubmit}>
+              <form className="stack-form customer-form-stack" onSubmit={handleCustomerSubmit}>
+                <div className="customer-form-modal-scroll">
                 <label>
                   <span>Full Name</span>
                   <input
@@ -3326,7 +3366,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {customerError ? <p className="form-error">{customerError}</p> : null}
 
-                <div className="form-actions">
+                </div>
+
+                <div className="form-actions repair-modal-footer-bar">
                   <button type="submit" className="button" disabled={isSavingCustomer}>
                     {isSavingCustomer ? "Saving..." : editingCustomerId ? "Update Customer" : "Create Customer"}
                   </button>
@@ -3342,7 +3384,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         {selectedCustomer ? (
           <div className="modal-overlay" role="presentation" onClick={closeCustomerDetailModal}>
             <section
-              className="modal-card modal-card-large"
+              className="modal-card modal-card-large customer-detail-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="customer-modal-title"
@@ -3377,12 +3419,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
               </div>
 
+              <div className="modal-body-scroll">
               <div className="customer-detail-stack">
                 <div className="detail-card">
                   <strong>Contact</strong>
-                  <p>{selectedCustomer.phone}</p>
-                  <p>{selectedCustomer.email || "No email provided"}</p>
-                  <p className="meta-line">{selectedCustomer.notes || "No notes yet"}</p>
+                  <VehicleMetaRow icon={<IconPhone />} text={selectedCustomer.phone} title="Phone" />
+                  <VehicleMetaRow
+                    icon={<IconEmail />}
+                    text={selectedCustomer.email || "No email provided"}
+                    title="Email"
+                  />
+                  <VehicleMetaRow icon={<IconNote />} text={selectedCustomer.notes || "No notes yet"} title="Notes" />
                 </div>
 
                 <div className="detail-card">
@@ -3398,7 +3445,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             {vehicle.make} {vehicle.model}
                             {vehicle.year ? `, ${vehicle.year}` : ""}
                           </p>
-                          {vehicle.vin ? <p className="meta-line">VIN: {vehicle.vin}</p> : null}
+                          {vehicle.vin ? <VehicleVinRow vin={vehicle.vin} /> : null}
                         </article>
                       ))}
                     </div>
@@ -3423,6 +3470,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                   )}
                 </div>
+              </div>
               </div>
             </section>
           </div>
@@ -3624,6 +3672,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 )}
               </div>
 
+              <div className="modal-body-scroll">
               <div className="customer-detail-stack vehicle-detail-stack">
                 <StaffVehicleMobileDetail
                   vehicle={selectedVehicle}
@@ -3638,10 +3687,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     closeVehicleDetailModal();
                     onSelectSection("repairs");
                   }}
+                  onOpenRepair={(repair) => {
+                    closeVehicleDetailModal();
+                    openRepairModal(repair);
+                  }}
                 />
 
                 <StaffVehicleDetailPanel
-                  vehicleId={selectedVehicle.id}
                   vehicle={selectedVehicle}
                   vehicleDetails={getVehicleDetails(selectedVehicle)}
                   owner={selectedVehicleOwner}
@@ -3650,10 +3702,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   formatCurrency={formatCurrency}
                   getRepairStatusClass={getRepairStatusClass}
                   repairStatusLabels={REPAIR_STATUS_LABELS}
+                  onOpenRepair={(repair) => {
+                    closeVehicleDetailModal();
+                    openRepairModal(repair);
+                  }}
                 />
               </div>
+              </div>
 
-              <div className="form-actions vehicle-modal-actions">
+              <div className="form-actions vehicle-modal-actions repair-modal-footer-bar">
                 <button type="button" className="button button-secondary" onClick={closeVehicleDetailModal}>
                   Cancel
                 </button>
@@ -3678,6 +3735,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
 
               <form className="stack-form vehicle-form-stack" onSubmit={handleVehicleSubmit}>
+                <div className="vehicle-form-modal-scroll">
 
                 {/* Owner field + inline customer creation */}
                 <div className="inline-owner-block vehicle-form-section">
@@ -3913,7 +3971,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 ) : null}
                 {vehicleError ? <p className="form-error">{vehicleError}</p> : null}
 
-                <div className="form-actions vehicle-modal-actions">
+                </div>
+
+                <div className="form-actions vehicle-modal-actions repair-modal-footer-bar staff-modal-footer-bar--center">
                   <button type="submit" className="button" disabled={isSavingVehicle || customers.length === 0}>
                     {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
                   </button>
@@ -4005,477 +4065,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             repairPartSummaries={repairPartSummaries}
           />
         </div>
-
-        {isRepairFormOpen ? (
-          <div className="modal-overlay" role="presentation" onClick={closeRepairCreateModal}>
-            <section
-              className="modal-card modal-card-large repair-form-modal"
-              role="dialog"
-              aria-modal="true"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="panel-header">
-                <div>
-                  <p className="eyebrow">Repair Intake</p>
-                  <h3>Create Repair</h3>
-                </div>
-                <button type="button" className="button button-secondary" onClick={closeRepairCreateModal}>
-                  Close
-                </button>
-              </div>
-
-              <form className="stack-form repair-form-stack" onSubmit={handleRepairSubmit}>
-                <label>
-                  <span>Vehicle</span>
-                  <select
-                    value={repairForm.vehicle_id}
-                    onChange={(event) => setRepairForm((current) => ({ ...current, vehicle_id: event.target.value }))}
-                    required
-                  >
-                    <option value="">Select vehicle</option>
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.license_plate} • {vehicle.make} {vehicle.model}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  <span>Owner</span>
-                  <input value={selectedRepairVehicle?.customer.full_name ?? ""} type="text" readOnly />
-                </label>
-
-                <label>
-                  <span>Master</span>
-                  {isAdmin ? (
-                    <select
-                      value={repairForm.master_id}
-                      onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
-                      required
-                    >
-                      <option value="">Select master</option>
-                      {staffUsers.map((master) => (
-                        <option key={master.id} value={master.id}>
-                          {getStaffUserLabel(master)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={getStaffUserLabel(staffUsers.find((m) => m.id === user?.id) ?? { id: 0, email: user?.email ?? "", first_name: user?.first_name ?? "", last_name: user?.last_name ?? "", role: "staff" })}
-                      readOnly
-                    />
-                  )}
-                </label>
-
-                <label>
-                  <span>Service</span>
-                  <select
-                    value={repairForm.service_key}
-                    onChange={(event) => setRepairForm((current) => ({ ...current, service_key: event.target.value }))}
-                    required
-                  >
-                    <option value="">Select service</option>
-                    {repairServiceOptions.map((service) => (
-                      <option key={service} value={service}>
-                        {service}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                {repairForm.service_key === customRepairServiceOption ? (
-                  <label>
-                    <span>Custom Service</span>
-                    <input
-                      value={repairForm.custom_service}
-                      onChange={(event) =>
-                        setRepairForm((current) => ({ ...current, custom_service: event.target.value }))
-                      }
-                      type="text"
-                      placeholder="Write your own service"
-                      required
-                    />
-                  </label>
-                ) : null}
-
-                <div className="form-grid">
-                  <label>
-                    <span>Status</span>
-                    <select
-                      value={repairForm.status}
-                      onChange={(event) =>
-                        setRepairForm((current) => ({
-                          ...current,
-                          status: event.target.value as RepairStatus,
-                        }))
-                      }
-                    >
-                      {Object.entries(REPAIR_STATUS_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label>
-                    <span>Before Repair Photos</span>
-                    <input accept="image/*" capture="environment" multiple onChange={handleRepairPhotosChange} type="file" disabled title="Photo upload coming soon" />
-                  </label>
-                </div>
-
-                {repairPhotoPreviews.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairPhotoPreviews.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); blob: URLs are browser-generated via URL.createObjectURL
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
-                    ))}
-                  </div>
-                ) : null}
-
-                <label>
-                  <span>Issue Notes</span>
-                  <textarea
-                    value={repairForm.issue_notes}
-                    onChange={(event) => setRepairForm((current) => ({ ...current, issue_notes: event.target.value }))}
-                    rows={4}
-                  />
-                </label>
-
-                {repairError ? <p className="form-error">{repairError}</p> : null}
-
-                <div className="form-actions repair-modal-actions">
-                  <button type="submit" className="button" disabled={isSavingRepair}>
-                    {isSavingRepair ? "Saving..." : "Create Repair"}
-                  </button>
-                  <button type="button" className="button button-secondary" onClick={closeRepairCreateModal}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </section>
-          </div>
-        ) : null}
-
-        {selectedRepair ? (
-          <div className="modal-overlay" role="presentation" onClick={handleCloseRepairModal}>
-            <section
-              className="modal-card repair-update-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="repair-modal-title"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="panel-header">
-                <div>
-                  <p className="eyebrow">Repair Update</p>
-                  <h3 id="repair-modal-title">{selectedRepair.vehicle_label}</h3>
-                </div>
-                {(selectedRepair.status === "completed" || !isStaff) && (
-                  <div className="inline-actions">
-                    {selectedRepair.status === "completed" && (
-                      <button
-                        type="button"
-                        className="button button-primary"
-                        disabled={repairPdfLoading}
-                        onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
-                      >
-                        {repairPdfLoading ? "Loading…" : selectedRepair.has_pdf ? "View PDF" : "Make Act"}
-                      </button>
-                    )}
-                    {!isStaff && (
-                      <button
-                        type="button"
-                        className="button button-danger"
-                        onClick={() => void handleRepairDelete(selectedRepair)}
-                      >
-                        Delete Repair
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* ── Status Switcher ────────────────────────────── */}
-              <div className="status-switcher">
-                <span className="status-switcher-label">Status</span>
-                <div className="status-switcher-options status-switcher-options-stacked">
-                  <div className="status-switcher-row">
-                    {REPAIR_KANBAN_COLUMNS.filter((col) => col.status === "new" || col.status === "in_progress").map(({ status, label }) => (
-                      <button
-                        key={status}
-                        type="button"
-                        className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
-                        onClick={() => {
-                          setRepairModalStatus(status);
-                        }}
-                      >
-                        <span className="status-btn-dot" />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="status-switcher-row status-switcher-row-waiting">
-                    {REPAIR_KANBAN_COLUMNS.filter((col) => col.status === "waiting_parts").map(({ status, label }) => (
-                      <button
-                        key={status}
-                        type="button"
-                        className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
-                        onClick={() => {
-                          setRepairModalStatus(status);
-                        }}
-                      >
-                        <span className="status-btn-dot" />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="status-switcher-final">
-                    <button
-                      type="button"
-                      className={`status-btn status-btn-completed-final ${getRepairStatusClass("completed")} ${repairModalStatus === "completed" ? "status-btn-active" : ""}`}
-                      onClick={() => {
-                        setRepairModalStatus("completed");
-                        setRepairModalCompletedAt((current) => current || selectedRepair.completed_at || getLocalTodayDate());
-                      }}
-                    >
-                      <span className="status-btn-dot" />
-                      {REPAIR_KANBAN_COLUMNS.find((col) => col.status === "completed")?.label ?? "Completed"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="customer-detail-stack repair-modal-sections">
-                <div className="detail-card repair-status-field repair-modal-panel repair-modal-assignment-card">
-                  <div className="repair-modal-assignment-master">
-                    <span className="repair-modal-field-label">Master</span>
-                    {isStaff ? (
-                      <p className="repair-modal-master-readonly">{selectedRepair.master_name || "Unassigned"}</p>
-                    ) : (
-                      <select
-                        value={repairModalMasterId}
-                        onChange={(event) => setRepairModalMasterId(event.target.value)}
-                        aria-label="Assign master"
-                      >
-                        {staffUsers.map((master) => (
-                          <option key={master.id} value={master.id}>
-                            {getStaffUserLabel(master)}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  {repairModalStatus === "completed" ? (
-                    <div className="repair-modal-completed-date repair-modal-assignment-completed">
-                      <span className="repair-modal-field-label">Completed Date</span>
-                      <FriendlyDateInput
-                        value={repairModalCompletedAt}
-                        onChange={setRepairModalCompletedAt}
-                        required
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="detail-card repair-info-card">
-                  <strong>Repair Info</strong>
-                  <div className="repair-info-stack">
-                    <div className="repair-info-row">
-                      <span className="repair-info-label">Created</span>
-                      <p>{formatDisplayDate(selectedRepair.created_at)}</p>
-                    </div>
-                    {selectedRepair.status === "completed" && selectedRepair.completed_at ? (
-                      <div className="repair-info-row">
-                        <span className="repair-info-label">Completed</span>
-                        <p>{formatDisplayDate(selectedRepair.completed_at)}</p>
-                      </div>
-                    ) : null}
-                    <div className="repair-info-row">
-                      <span className="repair-info-label">Owner</span>
-                      <p>{selectedRepair.owner_name}</p>
-                    </div>
-                    <div className="repair-info-row">
-                      <span className="repair-info-label">Service</span>
-                      <p>{selectedRepair.service_name}</p>
-                    </div>
-                    <div className="repair-info-row">
-                      <span className="repair-info-label">Client Link</span>
-                      <div className="tracking-chip-row">
-                        <button
-                          type="button"
-                          className="copy-chip portal-link-chip"
-                          aria-label="Copy client portal link"
-                          onClick={() => void handleCopyPortalLink(selectedRepair.portal_token)}
-                        >
-                          Copy ⧉
-                        </button>
-                        {isAdmin && (
-                          <button
-                            type="button"
-                            className="copy-chip portal-link-chip portal-link-regenerate"
-                            aria-label="Regenerate client portal link"
-                            onClick={() => {
-                              if (window.confirm("Regenerate portal link? The current link will stop working immediately.")) {
-                                void handleRegeneratePortalLink(selectedRepair.id);
-                              }
-                            }}
-                          >
-                            Regenerate ↺
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="repair-info-row">
-                      <span className="repair-info-label">Est. Completion</span>
-                      <div className="repair-info-date-wrap">
-                        <input
-                          type="date"
-                          className="repair-info-date-input"
-                          value={repairModalEstimatedDate}
-                          onChange={(e) => setRepairModalEstimatedDate(e.target.value)}
-                          aria-label="Estimated completion date"
-                        />
-                      </div>
-                    </div>
-                    <div className="repair-info-row repair-info-row-block">
-                      <span className="repair-info-label">Issue</span>
-                      <p className="repair-info-issue">{selectedRepair.issue_notes}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="detail-card repair-modal-panel">
-                  <strong>Linked Parts</strong>
-                  {selectedRepairPurchases.length === 0 ? (
-                    <p className="workspace-note">No ordered parts linked to this repair yet.</p>
-                  ) : (
-                    <div className="detail-list">
-                      {selectedRepairPurchases.map((entry) => (
-                        <article className="detail-item" key={entry.id}>
-                          <h4>{entry.part_name}</h4>
-                          <p>{entry.supplier_name}</p>
-                          <p className="meta-line">
-                            Qty {entry.quantity} • Buy {formatCurrency(entry.purchase_price)} • Sell {formatCurrency(entry.sale_price)}
-                          </p>
-                          <p className="meta-line">Ordered {formatDisplayDate(entry.order_date)}</p>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Add Repair Note</span>
-                  <textarea
-                    value={repairModalNewNote}
-                    onChange={(event) => setRepairModalNewNote(event.target.value)}
-                    rows={4}
-                  />
-                </label>
-                <div className="form-actions repair-note-actions">
-                  <button type="button" className="button button-secondary" onClick={() => void handleRepairNoteAdd()}>
-                    Add Note
-                  </button>
-                </div>
-
-                <div className="detail-card repair-modal-panel">
-                  <strong>Repair Notes History</strong>
-                  {selectedRepair.repair_notes.length === 0 ? (
-                    <p className="workspace-note">No repair notes yet.</p>
-                  ) : (
-                    <div className="detail-list">
-                      {selectedRepair.repair_notes.map((note) => (
-                        <article className="detail-item" key={note.id}>
-                          <div className="note-header">
-                            <strong>{note.author_name}</strong>
-                            <span className="meta-line">{formatDisplayDate(note.created_at)}</span>
-                          </div>
-                          <p className="meta-line">{note.author_email}</p>
-                          <p>{note.text}</p>
-                          {note.author_email === user?.email ? (
-                            <button
-                              type="button"
-                              className="text-action"
-                              onClick={() => void handleRepairNoteDelete(note.id)}
-                            >
-                              Delete note
-                            </button>
-                          ) : null}
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Photos Before Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairBeforePhotosChange} type="file" disabled title="Photo upload coming soon" />
-                </label>
-                {repairBeforePhotos.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairBeforePhotos.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
-                    ))}
-                  </div>
-                ) : null}
-
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Photos During Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairDuringPhotosChange} type="file" disabled title="Photo upload coming soon" />
-                </label>
-                {repairDuringPhotos.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairDuringPhotos.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="During repair preview" />
-                    ))}
-                  </div>
-                ) : null}
-
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Photos After Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairAfterPhotosChange} type="file" disabled title="Photo upload coming soon" />
-                </label>
-                {repairAfterPhotos.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairAfterPhotos.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="After repair preview" />
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className="form-actions repair-modal-actions">
-                  <button type="button" className="button" onClick={() => void handleRepairModalSave()}>
-                    Save Repair Update
-                  </button>
-                  <button type="button" className="button button-secondary" onClick={handleCloseRepairModal}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </section>
-          </div>
-        ) : null}
-
-        {repairPdfBlob ? (
-          <PdfPreviewModal
-            blob={repairPdfBlob}
-            filename={`act_${selectedRepair?.tracking_code ?? "repair"}.pdf`}
-            onClose={() => setRepairPdfBlob(null)}
-            onExportNewVersion={
-              selectedRepair
-                ? () => void handleExportNewRepairPdfVersion(selectedRepair.id)
-                : undefined
-            }
-            exportNewVersionBusy={repairPdfExportBusy}
-          />
-        ) : null}
       </div>
     );
   }
@@ -4779,6 +4368,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </button>
               </div>
 
+              <div className="purchase-detail-modal-scroll">
               <div className="customer-detail-stack purchase-modal-stack">
                 {purchaseDetailModalTab === "order" ? (
                 <div className="detail-card">
@@ -5034,7 +4624,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {purchaseModalError ? <p className="form-error">{purchaseModalError}</p> : null}
 
-                <div className="form-actions purchase-modal-actions">
+              </div>
+              </div>
+
+                <div className="form-actions purchase-modal-actions repair-modal-footer-bar">
                   <button type="button" className="button" onClick={handlePurchaseModalSave}>
                     Save Purchase
                   </button>
@@ -5042,7 +4635,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     Cancel
                   </button>
                 </div>
-              </div>
             </section>
           </div>
         ) : null}
@@ -5062,7 +4654,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
               </div>
 
-              <form className="stack-form" onSubmit={handlePurchaseSubmit}>
+              <form className="stack-form purchase-form-stack" onSubmit={handlePurchaseSubmit}>
+                <div className="purchase-form-modal-scroll">
                 <div className="form-grid">
                   <label>
                     <span>Order Date</span>
@@ -5256,7 +4849,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                 {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
 
-                <div className="form-actions purchase-modal-actions">
+                </div>
+
+                <div className="form-actions purchase-modal-actions repair-modal-footer-bar">
                   <button type="submit" className="button" disabled={isSavingPurchase}>
                     {isSavingPurchase ? "Saving..." : "Add Purchase"}
                   </button>
@@ -5564,6 +5159,543 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       {activeSection === "repairs" ? renderRepairsPreview() : null}
       {activeSection === "purchases" ? renderPurchasesSection() : null}
       {activeSection === "users" ? renderUsersSection() : null}
+
+        {isRepairFormOpen ? (
+          <div className="modal-overlay" role="presentation" onClick={closeRepairCreateModal}>
+            <section
+              className="modal-card modal-card-large repair-form-modal"
+              role="dialog"
+              aria-modal="true"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Repair Intake</p>
+                  <h3>Create Repair</h3>
+                </div>
+                <button type="button" className="button button-secondary" onClick={closeRepairCreateModal}>
+                  Close
+                </button>
+              </div>
+
+              <form className="stack-form repair-form-stack" onSubmit={handleRepairSubmit}>
+                <div className="repair-form-modal-scroll">
+                <label>
+                  <span>Vehicle</span>
+                  <select
+                    value={repairForm.vehicle_id}
+                    onChange={(event) => setRepairForm((current) => ({ ...current, vehicle_id: event.target.value }))}
+                    required
+                  >
+                    <option value="">Select vehicle</option>
+                    {vehicles.map((vehicle) => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.license_plate} • {vehicle.make} {vehicle.model}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span>Owner</span>
+                  <input value={selectedRepairVehicle?.customer.full_name ?? ""} type="text" readOnly />
+                </label>
+
+                <label>
+                  <span>Master</span>
+                  {isAdmin ? (
+                    <select
+                      value={repairForm.master_id}
+                      onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
+                      required
+                    >
+                      <option value="">Select master</option>
+                      {staffUsers.map((master) => (
+                        <option key={master.id} value={master.id}>
+                          {getStaffUserLabel(master)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : repairForm.master_id ? (
+                    <input
+                      type="text"
+                      value={getStaffUserLabel(
+                        staffUsers.find((m) => String(m.id) === repairForm.master_id) ?? {
+                          id: 0,
+                          email: user?.email ?? "",
+                          first_name: user?.first_name ?? "",
+                          last_name: user?.last_name ?? "",
+                          role: "staff",
+                        }
+                      )}
+                      readOnly
+                    />
+                  ) : (
+                    <select
+                      value={repairForm.master_id}
+                      onChange={(event) => setRepairForm((current) => ({ ...current, master_id: event.target.value }))}
+                      required
+                      aria-label="Assign master for this repair"
+                    >
+                      <option value="">Select master (e.g. handoff)</option>
+                      {staffUsers.map((master) => (
+                        <option key={master.id} value={master.id}>
+                          {getStaffUserLabel(master)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </label>
+
+                <div className="repair-form-services-block">
+                  <span className="repair-form-services-label repair-info-label--pill">Services</span>
+                  <RepairServiceLinesEditor
+                    idPrefix="repair-create"
+                    lines={repairForm.service_lines}
+                    onChange={(next) => setRepairForm((current) => ({ ...current, service_lines: next }))}
+                    catalog={apiServices}
+                  />
+                </div>
+
+                <div className="form-grid">
+                  <label>
+                    <span>Status</span>
+                    <select
+                      value={repairForm.status}
+                      onChange={(event) =>
+                        setRepairForm((current) => ({
+                          ...current,
+                          status: event.target.value as RepairStatus,
+                        }))
+                      }
+                    >
+                      {Object.entries(REPAIR_STATUS_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Before Repair Photos</span>
+                    <input accept="image/*" capture="environment" multiple onChange={handleRepairPhotosChange} type="file" disabled title="Photo upload coming soon" />
+                  </label>
+                </div>
+
+                {repairPhotoPreviews.length > 0 ? (
+                  <div className="photo-preview-grid">
+                    {repairPhotoPreviews.map((preview) => (
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); blob: URLs are browser-generated via URL.createObjectURL
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
+                    ))}
+                  </div>
+                ) : null}
+
+                <label>
+                  <span>Issue Notes</span>
+                  <textarea
+                    value={repairForm.issue_notes}
+                    onChange={(event) => setRepairForm((current) => ({ ...current, issue_notes: event.target.value }))}
+                    rows={4}
+                  />
+                </label>
+
+                {repairError ? <p className="form-error">{repairError}</p> : null}
+
+                </div>
+
+                <div className="form-actions repair-modal-actions repair-modal-footer-bar">
+                  <button type="submit" className="button" disabled={isSavingRepair}>
+                    {isSavingRepair ? "Saving..." : "Create Repair"}
+                  </button>
+                  <button type="button" className="button button-secondary" onClick={closeRepairCreateModal}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        ) : null}
+
+        {selectedRepair ? (
+          <div className="modal-overlay" role="presentation" onClick={handleCloseRepairModal}>
+            <section
+              className="modal-card modal-card-large repair-update-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="repair-modal-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Repair Update</p>
+                  <h3 id="repair-modal-title">{selectedRepair.vehicle_label}</h3>
+                </div>
+                <div className="inline-actions">
+                  {canEditRepairWorkDetails && (
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => prefillHandoffRepairCreate(selectedRepair)}
+                    >
+                      New card for another master
+                    </button>
+                  )}
+                  {selectedRepair.status === "completed" && (
+                    <button
+                      type="button"
+                      className="button button-primary"
+                      disabled={repairPdfLoading}
+                      onClick={() => void handleDownloadRepairPdf(selectedRepair.id)}
+                    >
+                      {repairPdfLoading ? "Loading…" : selectedRepair.has_pdf ? "View PDF" : "Make Act"}
+                    </button>
+                  )}
+                  {!isStaff && (
+                    <button
+                      type="button"
+                      className="button button-danger"
+                      onClick={() => void handleRepairDelete(selectedRepair)}
+                    >
+                      Delete Repair
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Status Switcher ────────────────────────────── */}
+              <div className="status-switcher status-switcher--repair-modal" role="group" aria-label="Repair status">
+                <div className="status-switcher-options status-switcher-options-stacked">
+                  <div className="status-switcher-row">
+                    {REPAIR_KANBAN_COLUMNS.filter((col) => col.status === "new" || col.status === "in_progress").map(({ status, label }) => (
+                      <button
+                        key={status}
+                        type="button"
+                        className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
+                        onClick={() => {
+                          setRepairModalStatus(status);
+                        }}
+                      >
+                        <span className="status-btn-dot" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="status-switcher-row status-switcher-row-waiting">
+                    {REPAIR_KANBAN_COLUMNS.filter((col) => col.status === "waiting_parts").map(({ status, label }) => (
+                      <button
+                        key={status}
+                        type="button"
+                        className={`status-btn ${getRepairStatusClass(status)} ${repairModalStatus === status ? "status-btn-active" : ""}`}
+                        onClick={() => {
+                          setRepairModalStatus(status);
+                        }}
+                      >
+                        <span className="status-btn-dot" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="status-switcher-final">
+                    <button
+                      type="button"
+                      className={`status-btn status-btn-completed-final ${getRepairStatusClass("completed")} ${repairModalStatus === "completed" ? "status-btn-active" : ""}`}
+                      onClick={() => {
+                        setRepairModalStatus("completed");
+                        setRepairModalCompletedAt((current) => current || selectedRepair.completed_at || getLocalTodayDate());
+                      }}
+                    >
+                      <span className="status-btn-dot" />
+                      {REPAIR_KANBAN_COLUMNS.find((col) => col.status === "completed")?.label ?? "Completed"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="repair-update-modal-scroll">
+                <div className="customer-detail-stack repair-modal-sections">
+                <div className="detail-card repair-status-field repair-modal-panel repair-modal-assignment-card">
+                  <div className="repair-modal-assignment-master">
+                    <span className="repair-modal-field-label">Master</span>
+                    {isStaff ? (
+                      <p className="repair-modal-master-readonly">{selectedRepair.master_name || "Unassigned"}</p>
+                    ) : (
+                      <select
+                        value={repairModalMasterId}
+                        onChange={(event) => setRepairModalMasterId(event.target.value)}
+                        aria-label="Assign master"
+                      >
+                        {staffUsers.map((master) => (
+                          <option key={master.id} value={master.id}>
+                            {getStaffUserLabel(master)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  {repairModalStatus === "completed" ? (
+                    <>
+                      <div className="repair-modal-completed-date repair-modal-assignment-completed">
+                        <span className="repair-modal-field-label">Completed Date</span>
+                        <FriendlyDateInput
+                          value={repairModalCompletedAt}
+                          onChange={setRepairModalCompletedAt}
+                          required
+                        />
+                      </div>
+                      <div className="repair-modal-mileage-at-service">
+                        <span className="repair-modal-field-label">Odometer when returned (km)</span>
+                        {canEditRepairWorkDetails ? (
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            className="repair-modal-mileage-input"
+                            autoComplete="off"
+                            placeholder="e.g. 87400"
+                            value={repairModalMileageAtService}
+                            onChange={(event) => setRepairModalMileageAtService(event.target.value)}
+                            aria-label="Odometer reading in kilometers when vehicle was returned"
+                          />
+                        ) : (
+                          <p className="repair-modal-mileage-readonly">
+                            {selectedRepair.mileage_at_service != null
+                              ? selectedRepair.mileage_at_service.toLocaleString()
+                              : "—"}
+                          </p>
+                        )}
+                      </div>
+                      {!repairModalMileageAtService.trim() ? (
+                        <p className="repair-mileage-reminder" role="status">
+                          {repairOdometerReminderLead ? (
+                            <>
+                              <span className="repair-mileage-reminder__context">{repairOdometerReminderLead}</span>{" "}
+                            </>
+                          ) : null}
+                          Add the odometer reading when the vehicle was returned so service history and vehicle mileage
+                          stay accurate.
+                        </p>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+
+                <div className="detail-card repair-info-card">
+                  <strong>Repair Info</strong>
+                  <div className="repair-info-stack">
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Created</span>
+                      <p>{formatDisplayDate(selectedRepair.created_at)}</p>
+                    </div>
+                    {selectedRepair.status === "completed" && selectedRepair.completed_at ? (
+                      <div className="repair-info-row">
+                        <span className="repair-info-label">Completed</span>
+                        <p>{formatDisplayDate(selectedRepair.completed_at)}</p>
+                      </div>
+                    ) : null}
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Owner</span>
+                      <p>{selectedRepair.owner_name}</p>
+                    </div>
+                    <div className="repair-info-row repair-info-row-block repair-info-row-services">
+                      <span className="repair-info-label repair-info-label--pill">Services</span>
+                      {canEditRepairWorkDetails ? (
+                        <RepairServiceLinesEditor
+                          idPrefix="repair-modal"
+                          lines={repairModalServiceLines}
+                          onChange={setRepairModalServiceLines}
+                          catalog={apiServices}
+                        />
+                      ) : (
+                        <p>{formatRepairServicesSummary(selectedRepair)}</p>
+                      )}
+                    </div>
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Client Link</span>
+                      <div className="tracking-chip-row">
+                        <button
+                          type="button"
+                          className="copy-chip portal-link-chip"
+                          aria-label="Copy client portal link"
+                          onClick={() => void handleCopyPortalLink(selectedRepair.portal_token)}
+                        >
+                          Copy ⧉
+                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            className="copy-chip portal-link-chip portal-link-regenerate"
+                            aria-label="Regenerate client portal link"
+                            onClick={() => {
+                              if (window.confirm("Regenerate portal link? The current link will stop working immediately.")) {
+                                void handleRegeneratePortalLink(selectedRepair.id);
+                              }
+                            }}
+                          >
+                            Regenerate ↺
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="repair-info-row">
+                      <span className="repair-info-label">Est. Completion</span>
+                      <div className="repair-info-date-wrap">
+                        <input
+                          type="date"
+                          className="repair-info-date-input"
+                          value={repairModalEstimatedDate}
+                          onChange={(e) => setRepairModalEstimatedDate(e.target.value)}
+                          aria-label="Estimated completion date"
+                        />
+                      </div>
+                    </div>
+                    <div className="repair-info-row repair-info-row-block">
+                      <span className="repair-info-label">Issue / details</span>
+                      {canEditRepairWorkDetails ? (
+                        <textarea
+                          className="repair-info-issue-input"
+                          value={repairModalIssueNotes}
+                          onChange={(e) => setRepairModalIssueNotes(e.target.value)}
+                          rows={4}
+                          aria-label="Issue and repair details"
+                        />
+                      ) : (
+                        <p className="repair-info-issue">{selectedRepair.issue_notes}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="detail-card repair-modal-panel">
+                  <strong>Linked Parts</strong>
+                  {selectedRepairPurchases.length === 0 ? (
+                    <p className="workspace-note">No ordered parts linked to this repair yet.</p>
+                  ) : (
+                    <div className="detail-list">
+                      {selectedRepairPurchases.map((entry) => (
+                        <article className="detail-item" key={entry.id}>
+                          <h4>{entry.part_name}</h4>
+                          <p>{entry.supplier_name}</p>
+                          <p className="meta-line">
+                            Qty {entry.quantity} • Buy {formatCurrency(entry.purchase_price)} • Sell {formatCurrency(entry.sale_price)}
+                          </p>
+                          <p className="meta-line">Ordered {formatDisplayDate(entry.order_date)}</p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <label className="detail-card repair-status-field repair-modal-panel">
+                  <span>Add Repair Note</span>
+                  <textarea
+                    value={repairModalNewNote}
+                    onChange={(event) => setRepairModalNewNote(event.target.value)}
+                    rows={4}
+                  />
+                </label>
+                <div className="form-actions repair-note-actions">
+                  <button type="button" className="button button-secondary" onClick={() => void handleRepairNoteAdd()}>
+                    Add Note
+                  </button>
+                </div>
+
+                <div className="detail-card repair-modal-panel">
+                  <strong>Repair Notes History</strong>
+                  {selectedRepair.repair_notes.length === 0 ? (
+                    <p className="workspace-note">No repair notes yet.</p>
+                  ) : (
+                    <div className="detail-list">
+                      {selectedRepair.repair_notes.map((note) => (
+                        <article className="detail-item" key={note.id}>
+                          <div className="note-header">
+                            <strong>{note.author_name}</strong>
+                            <span className="meta-line">{formatDisplayDate(note.created_at)}</span>
+                          </div>
+                          <p className="meta-line">{note.author_email}</p>
+                          <p>{note.text}</p>
+                          {note.author_email === user?.email ? (
+                            <button
+                              type="button"
+                              className="text-action"
+                              onClick={() => void handleRepairNoteDelete(note.id)}
+                            >
+                              Delete note
+                            </button>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <label className="detail-card repair-status-field repair-modal-panel">
+                  <span>Photos Before Repair</span>
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairBeforePhotosChange} type="file" disabled title="Photo upload coming soon" />
+                </label>
+                {repairBeforePhotos.length > 0 ? (
+                  <div className="photo-preview-grid">
+                    {repairBeforePhotos.map((preview) => (
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
+                    ))}
+                  </div>
+                ) : null}
+
+                <label className="detail-card repair-status-field repair-modal-panel">
+                  <span>Photos During Repair</span>
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairDuringPhotosChange} type="file" disabled title="Photo upload coming soon" />
+                </label>
+                {repairDuringPhotos.length > 0 ? (
+                  <div className="photo-preview-grid">
+                    {repairDuringPhotos.map((preview) => (
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="During repair preview" />
+                    ))}
+                  </div>
+                ) : null}
+
+                <label className="detail-card repair-status-field repair-modal-panel">
+                  <span>Photos After Repair</span>
+                  <input accept="image/*" capture="environment" multiple onChange={handleRepairAfterPhotosChange} type="file" disabled title="Photo upload coming soon" />
+                </label>
+                {repairAfterPhotos.length > 0 ? (
+                  <div className="photo-preview-grid">
+                    {repairAfterPhotos.map((preview) => (
+                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="After repair preview" />
+                    ))}
+                  </div>
+                ) : null}
+
+                </div>
+              </div>
+
+                <div className="form-actions repair-modal-actions repair-modal-footer-bar">
+                  <button type="button" className="button" onClick={() => void handleRepairModalSave()}>
+                    Save Repair Update
+                  </button>
+                  <button type="button" className="button button-secondary" onClick={handleCloseRepairModal}>
+                    Cancel
+                  </button>
+                </div>
+            </section>
+          </div>
+        ) : null}
+
+        {repairPdfBlob ? (
+          <PdfPreviewModal
+            blob={repairPdfBlob}
+            filename={`act_${selectedRepair?.tracking_code ?? "repair"}.pdf`}
+            onClose={() => setRepairPdfBlob(null)}
+            onExportNewVersion={
+              selectedRepair
+                ? () => void handleExportNewRepairPdfVersion(selectedRepair.id)
+                : undefined
+            }
+            exportNewVersionBusy={repairPdfExportBusy}
+          />
+        ) : null}
 
       {copyToast ? <div className="copy-toast">{copyToast}</div> : null}
     </div>

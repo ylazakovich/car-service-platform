@@ -72,6 +72,28 @@ class Repair(models.Model):
             Repair.objects.filter(pk=self.pk).update(**updates)
 
 
+class RepairServiceLine(models.Model):
+    """One or more named services per repair; optional link to catalog Service for pricing."""
+
+    repair = models.ForeignKey(Repair, on_delete=models.CASCADE, related_name="service_lines")
+    name = models.CharField(max_length=255)
+    catalog_service = models.ForeignKey(
+        "services.Service",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="repair_line_usages",
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = "repair_service_lines"
+        ordering = ("repair_id", "sort_order", "id")
+
+    def __str__(self):
+        return f"{self.repair_id}: {self.name}"
+
+
 class RepairNote(models.Model):
     repair = models.ForeignKey(Repair, on_delete=models.CASCADE, related_name="notes")
     author = models.ForeignKey(

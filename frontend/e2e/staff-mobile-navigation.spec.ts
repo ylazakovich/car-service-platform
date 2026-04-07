@@ -99,13 +99,31 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();
 
+    // FAB only mounts when scrollHeight > clientHeight + threshold and user is near the bottom.
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const root = document.scrollingElement ?? document.documentElement;
+            return root.scrollHeight - root.clientHeight;
+          }),
+        { timeout: 25_000 },
+      )
+      .toBeGreaterThan(72);
+
     await page.evaluate(() => {
       const root = document.scrollingElement ?? document.documentElement;
       root.scrollTop = root.scrollHeight;
+      window.dispatchEvent(new Event("scroll"));
+      document.dispatchEvent(new Event("scroll"));
     });
+    // Wheel nudges ensure scroll listeners run after layout (programmatic scrollTop alone can be flaky in CI).
+    for (let i = 0; i < 12; i += 1) {
+      await page.mouse.wheel(0, 600);
+    }
 
     const fab = page.getByRole("button", { name: "Jump to top of page and focus workspace menu" });
-    await expect(fab).toBeVisible({ timeout: 12_000 });
+    await expect(fab).toBeVisible({ timeout: 20_000 });
     await fab.click();
 
     await expect

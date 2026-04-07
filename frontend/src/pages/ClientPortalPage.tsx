@@ -117,8 +117,12 @@ export function ClientPortalPage() {
 
             <div className="portal-meta">
               <div className="portal-meta-row">
-                <span>Service</span>
-                <span>{repair.service_name}</span>
+                <span>Services</span>
+                <span>
+                  {repair.service_lines && repair.service_lines.length > 0
+                    ? repair.service_lines.map((l) => l.name).join("; ")
+                    : repair.service_name}
+                </span>
               </div>
               {repair.estimated_date && !repair.completed_at && (
                 <div className="portal-meta-row">

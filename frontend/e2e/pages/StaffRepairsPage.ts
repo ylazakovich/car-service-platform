@@ -1,6 +1,8 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { E2E_DEMO_REPAIR_SERVICE_NAME, E2E_DEMO_REPAIR_TRACKING_CODE } from "../e2e-seed";
+import { E2E_DEMO_REPAIR_DIALOG_NAME, E2E_DEMO_REPAIR_TRACKING_CODE } from "../e2e-seed";
 import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
+
+const SHOW_MORE_COMPLETED = /^Show \d+ more$/;
 
 /**
  * Staff repairs board (kanban; mobile list скрыт CSS — на узкой ширине тот же канбан, колонки столбцом).
@@ -45,13 +47,36 @@ export class StaffRepairsPage {
   }
 
   /**
+   * Карточка демо-ремонта TOR-1001 на канбане (колонка Completed может показывать только 15 карточек).
+   */
+  async seededRepairKanbanCard(): Promise<Locator> {
+    const board = this.page.getByLabel("Repairs kanban board");
+    await expect(board).toBeVisible({ timeout: 25_000 });
+    const tracking = `#${E2E_DEMO_REPAIR_TRACKING_CODE}`;
+
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      const card = board.locator(".kanban-card").filter({ hasText: tracking });
+      if ((await card.count()) > 0 && (await card.first().isVisible())) {
+        return card.first();
+      }
+      const showMore = this.page.getByRole("button", { name: SHOW_MORE_COMPLETED });
+      if (await showMore.isVisible()) {
+        await showMore.click();
+      } else {
+        break;
+      }
+    }
+
+    const card = board.locator(".kanban-card").filter({ hasText: tracking });
+    await expect(card.first()).toBeVisible({ timeout: 25_000 });
+    return card.first();
+  }
+
+  /**
    * Ждёт канбан, затем открывает демо-ремонт из `demo/demo_data.sql` (TOR-1001 в колонке Completed).
    */
   async openSeededRepairCard(): Promise<void> {
-    const board = this.page.getByLabel("Repairs kanban board");
-    await expect(board).toBeVisible({ timeout: 25_000 });
-    const card = board.locator(".kanban-card").filter({ hasText: `#${E2E_DEMO_REPAIR_TRACKING_CODE}` });
-    await expect(card).toBeVisible({ timeout: 25_000 });
+    const card = await this.seededRepairKanbanCard();
     await card.click();
   }
 
@@ -60,8 +85,8 @@ export class StaffRepairsPage {
   }
 
   async expectRepairDetailDialogVisible(): Promise<void> {
-    const dialog = this.page.getByRole("dialog").filter({ hasText: E2E_DEMO_REPAIR_SERVICE_NAME });
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    const dialog = this.page.getByRole("dialog", { name: E2E_DEMO_REPAIR_DIALOG_NAME });
+    await expect(dialog).toBeVisible({ timeout: 20_000 });
   }
 
   async openCertificateFromViewPdf(): Promise<void> {

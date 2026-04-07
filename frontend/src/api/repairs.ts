@@ -9,6 +9,13 @@ export interface RepairNoteItem {
   created_at: string;
 }
 
+export interface RepairServiceLineItem {
+  id: number | null;
+  name: string;
+  catalog_service_id: number | null;
+  sort_order: number;
+}
+
 export interface RepairItem {
   id: number;
   vehicle_id: number;
@@ -17,11 +24,16 @@ export interface RepairItem {
   master_id: number | null;
   master_name: string;
   service_name: string;
+  /** Present when API returns structured lines; omitted in older mocks. */
+  service_lines?: RepairServiceLineItem[];
   issue_notes: string;
   status: RepairStatus;
+  mileage_at_service?: number | null;
   tracking_code: string;
   portal_token: string;
   has_pdf: boolean;
+  /** Latest completion act total (PLN); null until a PDF act is exported. */
+  latest_act_document_total?: number | null;
   completed_at: string | null;
   estimated_date: string | null;
   repair_notes: RepairNoteItem[];
@@ -41,6 +53,12 @@ export interface StaffUser {
   role: string;
 }
 
+export interface RepairServiceLineWrite {
+  name: string;
+  catalog_service_id?: number | null;
+  sort_order?: number;
+}
+
 export interface RepairWritePayload {
   vehicle_id: number;
   master_id: number | null;
@@ -49,6 +67,9 @@ export interface RepairWritePayload {
   status: RepairStatus;
   completed_at?: string | null;
   estimated_date?: string | null;
+  /** Odometer (km) when the vehicle was returned; omit or null when not completed. */
+  mileage_at_service?: number | null;
+  service_lines?: RepairServiceLineWrite[];
 }
 
 export async function fetchRepairs(q?: string, masterId?: number): Promise<RepairItem[]> {
@@ -58,6 +79,11 @@ export async function fetchRepairs(q?: string, masterId?: number): Promise<Repai
   const response = await api.get<RepairItem[]>("/repairs/", {
     params: Object.keys(params).length ? params : undefined,
   });
+  return response.data;
+}
+
+export async function fetchRepair(id: number): Promise<RepairItem> {
+  const response = await api.get<RepairItem>(`/repairs/${id}/`);
   return response.data;
 }
 
