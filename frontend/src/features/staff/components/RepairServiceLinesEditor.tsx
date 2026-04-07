@@ -18,6 +18,12 @@ function matchCatalog(name: string, catalog: ServiceItem[]): ServiceItem | null 
   return catalog.find((s) => s.name.trim().toLowerCase() === t) ?? null;
 }
 
+/** Accessible name for each row: line index + current service text (matches screen-reader context). */
+function serviceLineInputAriaLabel(index: number, rawName: string): string {
+  const n = rawName.trim();
+  return n ? `Line ${index + 1}: ${n}` : `Line ${index + 1} — service name`;
+}
+
 export function repairDraftsFromEntryLines(
   lines: { id: string | null; name: string; catalog_service_id: number | null }[]
 ): RepairServiceLineDraft[] {
@@ -85,7 +91,7 @@ export function RepairServiceLinesEditor({
                 onChange={(e) => updateLine(index, { name: e.target.value, catalog_service_id: null })}
                 onBlur={() => onNameBlur(index)}
                 placeholder="Type or pick from catalog"
-                aria-label={`Service ${index + 1}`}
+                aria-label={serviceLineInputAriaLabel(index, line.name)}
                 title={
                   custom
                     ? "Not in catalog — will be saved as a custom service name"
@@ -103,7 +109,7 @@ export function RepairServiceLinesEditor({
                 type="button"
                 className="button button-secondary button-sm repair-service-line-remove"
                 onClick={() => removeLine(index)}
-                aria-label={`Remove service ${index + 1}`}
+                aria-label={`Remove line ${index + 1}`}
               >
                 Delete
               </button>

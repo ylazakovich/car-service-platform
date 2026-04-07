@@ -25,11 +25,7 @@ test.describe("Repair service lines — Kanban summary @desktop", () => {
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();
 
-    const card = page
-      .getByLabel("Repairs kanban board")
-      .locator(".kanban-card")
-      .filter({ hasText: `#${E2E_DEMO_REPAIR_TRACKING_CODE}` });
-    await expect(card).toBeVisible({ timeout: 25_000 });
+    const card = await repairs.seededRepairKanbanCard();
     await expect(card).toContainText(E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY);
   });
 });
@@ -53,10 +49,12 @@ test.describe("Repair service lines — modal editor @desktop", () => {
     await expect(dialog).toBeVisible({ timeout: 20_000 });
 
     await expect(dialog.locator(".repair-service-lines-editor")).toBeVisible({ timeout: 15_000 });
-    await expect(dialog.getByRole("textbox", { name: "Service 1" })).toHaveValue(E2E_DEMO_REPAIR_SERVICE_NAME, {
+    await expect(
+      dialog.getByRole("textbox", { name: `Line 1: ${E2E_DEMO_REPAIR_SERVICE_NAME}` }),
+    ).toHaveValue(E2E_DEMO_REPAIR_SERVICE_NAME, { timeout: 15_000 });
+    await expect(dialog.getByRole("textbox", { name: "Line 2: Tire service" })).toHaveValue("Tire service", {
       timeout: 15_000,
     });
-    await expect(dialog.getByRole("textbox", { name: "Service 2" })).toHaveValue("Tire service", { timeout: 15_000 });
     await expect(dialog.getByRole("button", { name: "+ Add service" })).toBeVisible({ timeout: 10_000 });
   });
 });
