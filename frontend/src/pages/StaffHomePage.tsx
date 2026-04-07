@@ -2665,79 +2665,79 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         </dl>
       </article>
     );
-    const renderWarehouseSupplierSummary = (quantity: number | null | undefined, amount: number) => (
-      <div className="dashboard-supplier-summary">
-        <span className="dashboard-supplier-summary-label">Supplier total</span>
+    const renderWarehouseSupplierPortfolioCell = (quantity: number | null | undefined, amount: number) => (
+      <div className="dashboard-table-metric-cell">
         <strong>{formatCount(typeof quantity === "number" && Number.isFinite(quantity) ? quantity : 0)} pcs</strong>
         <span>{formatCurrency(amount)}</span>
       </div>
     );
-    const renderWarehouseSupplierMetric = (label: string, quantity: number, amount: number) => {
-      const isEmpty = quantity === 0 && amount === 0;
-      return (
-        <div className={`dashboard-supplier-split ${isEmpty ? "dashboard-supplier-split-empty" : ""}`}>
-          <span className="dashboard-supplier-split-label">{label}</span>
-          <span className="dashboard-supplier-split-value">
-            {formatCount(quantity)} pcs · {formatCurrency(amount)}
-          </span>
-        </div>
-      );
-    };
-    const renderWarehousePartSummary = (quantity: number, amount: number) => (
-      <div className="dashboard-supplier-part-total">
-        <strong>{formatCount(quantity)} pcs</strong>
-        <span>{formatCurrency(amount)}</span>
-      </div>
-    );
-    const renderWarehouseSupplierCard = (row: {
-      supplier_id: number;
-      supplier_name: string;
-      current_buy_total: number;
-      current_quantity_total: number;
-      quantity_total?: number;
-      parts: Array<{
-        part_name: string;
-        current_quantity_total: number;
+    const renderWarehouseSupplierBreakdown = (
+      rows: Array<{
+        supplier_id: number;
+        supplier_name: string;
         current_buy_total: number;
-        in_stock_quantity_total: number;
-        in_stock_buy_total: number;
-        in_transit_quantity_total: number;
-        in_transit_buy_total: number;
-      }>;
-    }) => (
-      <article key={`${row.supplier_id}-${row.supplier_name}`} className="dashboard-supplier-card">
-        <div className="dashboard-supplier-card-head">
-          <div className="dashboard-supplier-head">
-            <strong className="dashboard-supplier-name">{row.supplier_name || `ID ${row.supplier_id}`}</strong>
-            <span className="dashboard-supplier-meta">
-              {formatCount(row.parts.length)} {row.parts.length === 1 ? "part" : "parts"}
-            </span>
-          </div>
-          {renderWarehouseSupplierSummary(row.current_quantity_total ?? row.quantity_total ?? 0, row.current_buy_total)}
-        </div>
-        {row.parts.length ? (
-          <div className="dashboard-supplier-card-body">
-            <ul className="dashboard-supplier-part-list" aria-label={`Parts from ${row.supplier_name || `supplier ${row.supplier_id}`}`}>
-              {row.parts.map((part) => (
-                <li key={`${row.supplier_id}-${part.part_name}`} className="dashboard-supplier-part-item">
-                  <div className="dashboard-supplier-part-head">
-                    <div className="dashboard-supplier-part-main">
-                      <span className="dashboard-supplier-part-name">{part.part_name}</span>
-                    </div>
-                    {renderWarehousePartSummary(part.current_quantity_total, part.current_buy_total)}
+        current_quantity_total: number;
+        quantity_total?: number;
+        parts: Array<{
+          part_name: string;
+          current_buy_total: number;
+          current_quantity_total: number;
+          in_stock_buy_total: number;
+          in_stock_quantity_total: number;
+          in_transit_buy_total: number;
+          in_transit_quantity_total: number;
+        }>;
+      }>
+    ) => (
+      <table className="dashboard-table dashboard-supplier-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>On stock</th>
+            <th>In transit</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.flatMap((row) => {
+            const supplierKey = `${row.supplier_id}-${row.supplier_name}`;
+            const supplierRow = (
+              <tr key={`supplier-${supplierKey}`} className="dashboard-supplier-table-row dashboard-supplier-table-row-supplier">
+                <td>
+                  <div className="dashboard-supplier-table-name">
+                    <strong>{row.supplier_name || `ID ${row.supplier_id}`}</strong>
+                    <span>{formatCount(row.parts.length)} {row.parts.length === 1 ? "part" : "parts"}</span>
                   </div>
-                  <div className="dashboard-supplier-part-splits">
-                    {renderWarehouseSupplierMetric("On stock", part.in_stock_quantity_total, part.in_stock_buy_total)}
-                    {renderWarehouseSupplierMetric("In transit", part.in_transit_quantity_total, part.in_transit_buy_total)}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <span className="dashboard-supplier-parts-empty">No part names</span>
-        )}
-      </article>
+                </td>
+                <td>
+                  {renderWarehouseSupplierPortfolioCell(
+                    row.in_stock_quantity_total ?? (row.in_stock_buy_total > 0 ? row.quantity_total : 0),
+                    row.in_stock_buy_total
+                  )}
+                </td>
+                <td>
+                  {renderWarehouseSupplierPortfolioCell(
+                    row.in_transit_quantity_total ?? (row.in_transit_buy_total > 0 ? row.quantity_total : 0),
+                    row.in_transit_buy_total
+                  )}
+                </td>
+                <td>{renderWarehouseSupplierPortfolioCell(row.current_quantity_total ?? row.quantity_total ?? 0, row.current_buy_total)}</td>
+              </tr>
+            );
+            const partRows = (row.parts ?? []).map((part) => (
+              <tr key={`part-${supplierKey}-${part.part_name}`} className="dashboard-supplier-table-row dashboard-supplier-table-row-part">
+                <td>
+                  <span className="dashboard-supplier-table-part-name">{part.part_name}</span>
+                </td>
+                <td>{renderWarehouseSupplierPortfolioCell(part.in_stock_quantity_total, part.in_stock_buy_total)}</td>
+                <td>{renderWarehouseSupplierPortfolioCell(part.in_transit_quantity_total, part.in_transit_buy_total)}</td>
+                <td>{renderWarehouseSupplierPortfolioCell(part.current_quantity_total, part.current_buy_total)}</td>
+              </tr>
+            ));
+            return [supplierRow, ...partRows];
+          })}
+        </tbody>
+      </table>
     );
     return (
       <div className="workspace-stack dashboard-workspace">
@@ -3104,17 +3104,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <div className="dashboard-report-head">
                     <div>
                       <p className="eyebrow">Current portfolio</p>
-                      <h3>Supplier breakdown</h3>
                     </div>
                   </div>
                   <p className="workspace-copy">
-                    Full current supplier portfolio with warehouse part names plus quantities and buy totals split between
-                    on-stock and in-transit parts.
+                    Full current supplier portfolio with supplier totals and part-level stock/transit breakdown.
                   </p>
                   {warehouseAnalytics?.suppliers_top_current?.length ? (
-                    <div className="dashboard-supplier-breakdown">
-                      {warehouseAnalytics.suppliers_top_current.map((row) => renderWarehouseSupplierCard(row))}
-                    </div>
+                    renderWarehouseSupplierBreakdown(warehouseAnalytics.suppliers_top_current)
                   ) : (
                     <p className="workspace-note">No suppliers in the current stock portfolio.</p>
                   )}
