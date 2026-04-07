@@ -49,12 +49,12 @@ test.describe("Repair service lines — modal editor @desktop", () => {
     await expect(dialog).toBeVisible({ timeout: 20_000 });
 
     await expect(dialog.locator(".repair-service-lines-editor")).toBeVisible({ timeout: 15_000 });
-    await expect(
-      dialog.getByRole("textbox", { name: `Line 1: ${E2E_DEMO_REPAIR_SERVICE_NAME}` }),
-    ).toHaveValue(E2E_DEMO_REPAIR_SERVICE_NAME, { timeout: 15_000 });
-    await expect(dialog.getByRole("textbox", { name: "Line 2: Tire service" })).toHaveValue("Tire service", {
-      timeout: 15_000,
-    });
+    // Inputs use `list=` (datalist); Chromium exposes them as role `combobox`, not `textbox` — use aria-label via getByLabel.
+    await expect(dialog.getByLabel(`Line 1: ${E2E_DEMO_REPAIR_SERVICE_NAME}`)).toHaveValue(
+      E2E_DEMO_REPAIR_SERVICE_NAME,
+      { timeout: 15_000 },
+    );
+    await expect(dialog.getByLabel("Line 2: Tire service")).toHaveValue("Tire service", { timeout: 15_000 });
     await expect(dialog.getByRole("button", { name: "+ Add service" })).toBeVisible({ timeout: 10_000 });
   });
 });
