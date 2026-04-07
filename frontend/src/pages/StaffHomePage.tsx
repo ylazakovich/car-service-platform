@@ -2665,8 +2665,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         </dl>
       </article>
     );
-    const renderWarehouseSupplierPortfolioCell = (quantity: number | null | undefined, amount: number) => (
+    const renderWarehouseSupplierPortfolioCell = (
+      quantity: number | null | undefined,
+      amount: number,
+      label?: string
+    ) => (
       <div className="dashboard-table-metric-cell">
+        {label ? <span className="dashboard-table-metric-label">{label}</span> : null}
         <strong>{formatCount(typeof quantity === "number" && Number.isFinite(quantity) ? quantity : 0)} pcs</strong>
         <span>{formatCurrency(amount)}</span>
       </div>
@@ -2674,7 +2679,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     const renderWarehouseSupplierCell = (
       supplierName: string,
       supplierId: number,
-      parts: Array<{ part_name: string; current_quantity_total: number }>
+      parts: Array<{ part_name: string }>
     ) => (
       <div className="dashboard-supplier-cell">
         <strong className="dashboard-supplier-name">{supplierName || `ID ${supplierId}`}</strong>
@@ -2683,7 +2688,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             {parts.map((part) => (
               <li key={`${supplierId}-${part.part_name}`} className="dashboard-supplier-part-row">
                 <span className="dashboard-supplier-part-name">{part.part_name}</span>
-                <span className="dashboard-supplier-part-qty">{formatCount(part.current_quantity_total)} pcs</span>
               </li>
             ))}
           </ul>
@@ -2691,6 +2695,29 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           <span className="dashboard-supplier-parts-empty">No part names</span>
         )}
       </div>
+    );
+    const renderWarehouseSupplierMetricList = (
+      parts: Array<{
+        part_name: string;
+        in_stock_quantity_total: number;
+        in_stock_buy_total: number;
+        in_transit_quantity_total: number;
+        in_transit_buy_total: number;
+      }>,
+      mode: "in_stock" | "in_transit"
+    ) => (
+      <ul className="dashboard-supplier-metric-list" aria-hidden="true">
+        {parts.map((part) => {
+          const quantity = mode === "in_stock" ? part.in_stock_quantity_total : part.in_transit_quantity_total;
+          const amount = mode === "in_stock" ? part.in_stock_buy_total : part.in_transit_buy_total;
+          return (
+            <li key={`${mode}-${part.part_name}`} className="dashboard-supplier-metric-row">
+              <strong>{formatCount(quantity)} pcs</strong>
+              <span>{formatCurrency(amount)}</span>
+            </li>
+          );
+        })}
+      </ul>
     );
     return (
       <div className="workspace-stack dashboard-workspace">
@@ -3079,21 +3106,20 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           <tr key={`${row.supplier_id}-${row.supplier_name}`}>
                             <td>{renderWarehouseSupplierCell(row.supplier_name, row.supplier_id, row.parts ?? [])}</td>
                             <td>
-                              {renderWarehouseSupplierPortfolioCell(
-                                row.in_stock_quantity_total ?? (row.in_stock_buy_total > 0 ? row.quantity_total : 0),
-                                row.in_stock_buy_total
-                              )}
+                              <div className="dashboard-supplier-metric-cell">
+                                {renderWarehouseSupplierMetricList(row.parts ?? [], "in_stock")}
+                              </div>
                             </td>
                             <td>
-                              {renderWarehouseSupplierPortfolioCell(
-                                row.in_transit_quantity_total ?? (row.in_transit_buy_total > 0 ? row.quantity_total : 0),
-                                row.in_transit_buy_total
-                              )}
+                              <div className="dashboard-supplier-metric-cell">
+                                {renderWarehouseSupplierMetricList(row.parts ?? [], "in_transit")}
+                              </div>
                             </td>
                             <td>
                               {renderWarehouseSupplierPortfolioCell(
                                 row.current_quantity_total ?? row.quantity_total ?? 0,
-                                row.current_buy_total
+                                row.current_buy_total,
+                                "Supplier total"
                               )}
                             </td>
                           </tr>
