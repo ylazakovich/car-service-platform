@@ -2665,13 +2665,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         </dl>
       </article>
     );
-    const renderWarehouseSupplierPortfolioCell = (
-      quantity: number | null | undefined,
-      amount: number,
-      label?: string
-    ) => (
-      <div className="dashboard-table-metric-cell">
-        {label ? <span className="dashboard-table-metric-label">{label}</span> : null}
+    const renderWarehouseSupplierPortfolioCell = (quantity: number | null | undefined, amount: number) => (
+      <div className="dashboard-table-metric-cell dashboard-table-metric-cell-total">
         <strong>{formatCount(typeof quantity === "number" && Number.isFinite(quantity) ? quantity : 0)} pcs</strong>
         <span>{formatCurrency(amount)}</span>
       </div>
@@ -2682,7 +2677,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       parts: Array<{ part_name: string }>
     ) => (
       <div className="dashboard-supplier-cell">
-        <strong className="dashboard-supplier-name">{supplierName || `ID ${supplierId}`}</strong>
+        <div className="dashboard-supplier-head">
+          <strong className="dashboard-supplier-name">{supplierName || `ID ${supplierId}`}</strong>
+          <span className="dashboard-supplier-meta">
+            {formatCount(parts.length)} {parts.length === 1 ? "part" : "parts"}
+          </span>
+        </div>
         {parts.length ? (
           <ul className="dashboard-supplier-parts" aria-label={`Parts from ${supplierName || `supplier ${supplierId}`}`}>
             {parts.map((part) => (
@@ -2710,8 +2710,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         {parts.map((part) => {
           const quantity = mode === "in_stock" ? part.in_stock_quantity_total : part.in_transit_quantity_total;
           const amount = mode === "in_stock" ? part.in_stock_buy_total : part.in_transit_buy_total;
+          const isEmpty = quantity === 0 && amount === 0;
           return (
-            <li key={`${mode}-${part.part_name}`} className="dashboard-supplier-metric-row">
+            <li
+              key={`${mode}-${part.part_name}`}
+              className={`dashboard-supplier-metric-row ${isEmpty ? "dashboard-supplier-metric-row-empty" : ""}`}
+            >
               <strong>{formatCount(quantity)} pcs</strong>
               <span>{formatCurrency(amount)}</span>
             </li>
@@ -3116,11 +3120,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               </div>
                             </td>
                             <td>
-                              {renderWarehouseSupplierPortfolioCell(
-                                row.current_quantity_total ?? row.quantity_total ?? 0,
-                                row.current_buy_total,
-                                "Supplier total"
-                              )}
+                              {renderWarehouseSupplierPortfolioCell(row.current_quantity_total ?? row.quantity_total ?? 0, row.current_buy_total)}
                             </td>
                           </tr>
                         ))}
