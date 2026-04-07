@@ -2672,15 +2672,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         <span>{formatCurrency(amount)}</span>
       </div>
     );
-    const renderWarehouseSupplierMetric = (quantity: number, amount: number) => {
+    const renderWarehouseSupplierMetric = (label: string, quantity: number, amount: number) => {
       const isEmpty = quantity === 0 && amount === 0;
       return (
-        <div className={`dashboard-supplier-inline-metric ${isEmpty ? "dashboard-supplier-inline-metric-empty" : ""}`}>
-          <strong>{formatCount(quantity)} pcs</strong>
-          <span>{formatCurrency(amount)}</span>
+        <div className={`dashboard-supplier-split ${isEmpty ? "dashboard-supplier-split-empty" : ""}`}>
+          <span className="dashboard-supplier-split-label">{label}</span>
+          <span className="dashboard-supplier-split-value">
+            {formatCount(quantity)} pcs · {formatCurrency(amount)}
+          </span>
         </div>
       );
     };
+    const renderWarehousePartSummary = (quantity: number, amount: number) => (
+      <div className="dashboard-supplier-part-total">
+        <strong>{formatCount(quantity)} pcs</strong>
+        <span>{formatCurrency(amount)}</span>
+      </div>
+    );
     const renderWarehouseSupplierCard = (row: {
       supplier_id: number;
       supplier_name: string;
@@ -2689,6 +2697,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       quantity_total?: number;
       parts: Array<{
         part_name: string;
+        current_quantity_total: number;
+        current_buy_total: number;
         in_stock_quantity_total: number;
         in_stock_buy_total: number;
         in_transit_quantity_total: number;
@@ -2707,20 +2717,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         </div>
         {row.parts.length ? (
           <div className="dashboard-supplier-card-body">
-            <div className="dashboard-supplier-card-columns" aria-hidden="true">
-              <span>Part</span>
-              <span>On stock</span>
-              <span>In transit</span>
-            </div>
             <ul className="dashboard-supplier-part-list" aria-label={`Parts from ${row.supplier_name || `supplier ${row.supplier_id}`}`}>
               {row.parts.map((part) => (
                 <li key={`${row.supplier_id}-${part.part_name}`} className="dashboard-supplier-part-item">
-                  <div className="dashboard-supplier-part-main">
-                    <span className="dashboard-supplier-part-name">{part.part_name}</span>
+                  <div className="dashboard-supplier-part-head">
+                    <div className="dashboard-supplier-part-main">
+                      <span className="dashboard-supplier-part-name">{part.part_name}</span>
+                    </div>
+                    {renderWarehousePartSummary(part.current_quantity_total, part.current_buy_total)}
                   </div>
-                  <div className="dashboard-supplier-part-metrics">
-                    {renderWarehouseSupplierMetric(part.in_stock_quantity_total, part.in_stock_buy_total)}
-                    {renderWarehouseSupplierMetric(part.in_transit_quantity_total, part.in_transit_buy_total)}
+                  <div className="dashboard-supplier-part-splits">
+                    {renderWarehouseSupplierMetric("On stock", part.in_stock_quantity_total, part.in_stock_buy_total)}
+                    {renderWarehouseSupplierMetric("In transit", part.in_transit_quantity_total, part.in_transit_buy_total)}
                   </div>
                 </li>
               ))}
