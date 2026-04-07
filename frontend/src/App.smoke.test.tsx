@@ -584,6 +584,26 @@ describe("bootstrap application", () => {
             {
               supplier_id: 1,
               supplier_name: "AutoParts Pro",
+              parts: [
+                {
+                  part_name: "Brake discs",
+                  current_buy_total: 120,
+                  in_stock_buy_total: 120,
+                  in_transit_buy_total: 0,
+                  current_quantity_total: 6,
+                  in_stock_quantity_total: 6,
+                  in_transit_quantity_total: 0,
+                },
+                {
+                  part_name: "Wheel bolts",
+                  current_buy_total: 80,
+                  in_stock_buy_total: 0,
+                  in_transit_buy_total: 80,
+                  current_quantity_total: 3,
+                  in_stock_quantity_total: 0,
+                  in_transit_quantity_total: 3,
+                },
+              ],
               current_buy_total: 200,
               in_stock_buy_total: 120,
               in_transit_buy_total: 80,
@@ -886,9 +906,11 @@ describe("bootstrap application", () => {
       expect(within(warehouseSection as HTMLElement).getByText(/200,00\s*zł/)).toBeInTheDocument();
       expect(within(warehouseSection as HTMLElement).getByText(/350,00\s*zł/)).toBeInTheDocument();
       expect(within(warehouseSection as HTMLElement).getByText(/150,00\s*zł/)).toBeInTheDocument();
-      expect(within(supplierBreakdownSection as HTMLElement).getByText("6 pcs")).toBeInTheDocument();
-      expect(within(supplierBreakdownSection as HTMLElement).getByText("3 pcs")).toBeInTheDocument();
-      expect(within(supplierBreakdownSection as HTMLElement).getByText("9 pcs")).toBeInTheDocument();
+      expect(within(supplierBreakdownSection as HTMLElement).getByText("Brake discs")).toBeInTheDocument();
+      expect(within(supplierBreakdownSection as HTMLElement).getByText("Wheel bolts")).toBeInTheDocument();
+      expect(within(supplierBreakdownSection as HTMLElement).getAllByText("6 pcs").length).toBeGreaterThan(0);
+      expect(within(supplierBreakdownSection as HTMLElement).getAllByText("3 pcs").length).toBeGreaterThan(0);
+      expect(within(supplierBreakdownSection as HTMLElement).getAllByText("9 pcs").length).toBeGreaterThan(0);
     });
 
     await user.click(within(warehouseSection as HTMLElement).getByRole("button", { name: "More info about In stock value" }));

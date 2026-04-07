@@ -217,6 +217,31 @@ class StaffDashboardAnalyticsView(APIView):
             )
             .order_by("-current_buy_total", "supplier__name")
         )
+        supplier_part_rows = (
+            all_purchases_qs.values("supplier_id", "part_name")
+            .annotate(
+                current_buy_total=Sum(line_buy_amount),
+                in_stock_buy_total=Sum(line_buy_amount, filter=Q(delivered=True)),
+                in_transit_buy_total=Sum(line_buy_amount, filter=Q(delivered=False)),
+                current_quantity_total=Sum("quantity"),
+                in_stock_quantity_total=Sum("quantity", filter=Q(delivered=True)),
+                in_transit_quantity_total=Sum("quantity", filter=Q(delivered=False)),
+            )
+            .order_by("supplier_id", "-current_buy_total", "part_name")
+        )
+        supplier_parts_by_supplier: dict[int | None, list[dict]] = {}
+        for row in supplier_part_rows:
+            supplier_parts_by_supplier.setdefault(row["supplier_id"], []).append(
+                {
+                    "part_name": (row["part_name"] or "").strip() or "Unnamed part",
+                    "current_buy_total": _decimal_to_float(row["current_buy_total"]),
+                    "in_stock_buy_total": _decimal_to_float(row["in_stock_buy_total"]),
+                    "in_transit_buy_total": _decimal_to_float(row["in_transit_buy_total"]),
+                    "current_quantity_total": row["current_quantity_total"] or 0,
+                    "in_stock_quantity_total": row["in_stock_quantity_total"] or 0,
+                    "in_transit_quantity_total": row["in_transit_quantity_total"] or 0,
+                }
+            )
         return {
             "snapshot_as_of": timezone.now().isoformat(),
             "stock_totals": stock_totals,
@@ -239,6 +264,7 @@ class StaffDashboardAnalyticsView(APIView):
                     "current_quantity_total": row["current_quantity_total"] or 0,
                     "in_stock_quantity_total": row["in_stock_quantity_total"] or 0,
                     "in_transit_quantity_total": row["in_transit_quantity_total"] or 0,
+                    "parts": supplier_parts_by_supplier.get(row["supplier_id"], []),
                 }
                 for row in supplier_rows
             ],
