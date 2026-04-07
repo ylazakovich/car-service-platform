@@ -862,6 +862,93 @@ function FriendlyDateRangeInput({
   );
 }
 
+type ServiceBoardInfoButtonProps = {
+  title: string;
+  summary: string;
+  formula?: string;
+  notes?: string[];
+};
+
+function ServiceBoardInfoButton({ title, summary, formula, notes = [] }: ServiceBoardInfoButtonProps) {
+  const popoverId = useId();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className={`service-board-info ${isOpen ? "service-board-info-open" : ""}`} ref={rootRef}>
+      <button
+        type="button"
+        className="service-board-info-trigger"
+        aria-label={`More info about ${title}`}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        aria-controls={popoverId}
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        i
+      </button>
+
+      {isOpen ? (
+        <div id={popoverId} className="service-board-info-popover" role="dialog" aria-modal="false" aria-label={`${title} details`}>
+          <div className="service-board-info-popover-head">
+            <strong>{title}</strong>
+            <button
+              type="button"
+              className="service-board-info-close"
+              aria-label={`Close info about ${title}`}
+              onClick={() => setIsOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+          <p>{summary}</p>
+          {formula ? (
+            <div className="service-board-info-block">
+              <span>Formula</span>
+              <p>{formula}</p>
+            </div>
+          ) : null}
+          {notes.length > 0 ? (
+            <div className="service-board-info-block">
+              <span>Notes</span>
+              <ul className="service-board-info-list">
+                {notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 
 function getDefaultVehicleForm(nextCustomerId = ""): VehicleFormState {
   return {
@@ -2553,9 +2640,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       title: string,
       description: string,
       values: { buy_total: number; sale_total: number; margin_total: number },
-      toneClassName: string
+      toneClassName: string,
+      info: ServiceBoardInfoButtonProps
     ) => (
-      <article className={`dashboard-warehouse-value-card ${toneClassName}`}>
+      <article className={`dashboard-warehouse-value-card service-board-card-with-info ${toneClassName}`}>
+        <ServiceBoardInfoButton {...info} />
         <div className="dashboard-warehouse-value-head">
           <span className="metric-label">{title}</span>
           <p>{description}</p>
@@ -2575,6 +2664,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           </div>
         </dl>
       </article>
+    );
+    const renderWarehouseSupplierPortfolioCell = (quantity: number | null | undefined, amount: number) => (
+      <div className="dashboard-table-metric-cell">
+        <strong>{formatCount(typeof quantity === "number" && Number.isFinite(quantity) ? quantity : 0)} pcs</strong>
+        <span>{formatCurrency(amount)}</span>
+      </div>
     );
     return (
       <div className="workspace-stack dashboard-workspace">
@@ -2644,19 +2739,35 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </p>
 
                   <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
-                    <article className="metric-card metric-card-plan">
+                    <article className="metric-card metric-card-plan service-board-card-with-info">
+                      <ServiceBoardInfoButton
+                        title="Service sales (live)"
+                        summary="This card estimates service revenue from the current service catalog for repairs completed in the selected period."
+                        formula="Sum current catalog prices for services attached to repairs completed inside the selected date range."
+                        notes={["The value is live and may differ from acts if service prices changed after repair completion."]}
+                      />
                       <span className="metric-label">Service sales (live)</span>
                       <strong>{formatCurrency(totalServiceSales)}</strong>
                       {renderMetricComparison("Acts", pdfTotals?.labor_total ?? null, serviceToActDelta)}
                       <p>From the service catalog API for the selected period.</p>
                     </article>
-                    <article className="metric-card metric-card-plan">
+                    <article className="metric-card metric-card-plan service-board-card-with-info">
+                      <ServiceBoardInfoButton
+                        title="Parts sales (live)"
+                        summary="This card estimates parts resale revenue from purchase lines linked to repairs completed in the selected range."
+                        formula="Sum purchase line sale prices for lines attached to repairs completed inside the selected date range."
+                      />
                       <span className="metric-label">Parts sales (live)</span>
                       <strong>{formatCurrency(totalPartsSales)}</strong>
                       {renderMetricComparison("Acts", pdfTotals?.parts_client_total ?? null, partsToActDelta)}
                       <p>Purchase lines tied to repairs completed in the selected range.</p>
                     </article>
-                    <article className="metric-card metric-card-accent">
+                    <article className="metric-card metric-card-accent service-board-card-with-info">
+                      <ServiceBoardInfoButton
+                        title="Combined live (services + parts)"
+                        summary="This card combines live service and live parts estimates for completed jobs in the selected period."
+                        formula="Combined live = Service sales (live) + Parts sales (live)."
+                      />
                       <span className="metric-label">Combined live (services + parts)</span>
                       <strong>{formatCurrency(combinedLiveTotal)}</strong>
                       {renderMetricComparison("Acts", pdfTotals?.document_total ?? null, combinedToActDelta)}
@@ -2676,7 +2787,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
                   {pdfAnalytics ? (
                     <div className="dashboard-report-stack">
-                      <article className={`dashboard-fact-hero dashboard-fact-hero-${coverageState}`}>
+                      <article className={`dashboard-fact-hero dashboard-fact-hero-${coverageState} service-board-card-with-info`}>
+                        <ServiceBoardInfoButton
+                          title="Coverage status"
+                          summary="This hero card shows how much of the completed work in the selected range already has at least one exported act."
+                          formula="Coverage % = repairs with latest act / completed repairs in range × 100."
+                          notes={["The status label is derived from whether coverage is empty, missing, partial, or complete."]}
+                        />
                         <div className="dashboard-fact-hero-head">
                           <span className="dashboard-fact-pill-label">Coverage status</span>
                           <span className={`dashboard-fact-status dashboard-fact-status-${coverageState}`}>
@@ -2689,12 +2806,22 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       </article>
 
                       <div className="metric-grid dashboard-metric-grid dashboard-fact-metric-grid">
-                        <article className="metric-card metric-card-fact">
+                        <article className="metric-card metric-card-fact service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="Missing acts"
+                            summary="This card counts completed repairs in the selected range that still do not have their first act export."
+                            formula="Completed repairs in range - repairs with latest act."
+                          />
                           <span className="metric-label">Missing acts</span>
                           <strong>{missingActs}</strong>
                           <p>Completed repairs still waiting for their first act.</p>
                         </article>
-                        <article className="metric-card metric-card-fact">
+                        <article className="metric-card metric-card-fact service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="Median time to first act"
+                            summary="This card shows the typical delay between repair completion and the first stored act export."
+                            formula="Median(first act export date - repair completion date) across covered completed repairs in range."
+                          />
                           <span className="metric-label">Median time to first act</span>
                           <strong>{pdfLag?.median != null ? `${pdfLag.median} d` : "—"}</strong>
                           <p>
@@ -2703,12 +2830,22 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               : "No completed repairs with an exported act yet."}
                           </p>
                         </article>
-                        <article className="metric-card metric-card-fact">
+                        <article className="metric-card metric-card-fact service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="Re-exported repairs"
+                            summary="This card counts completed repairs whose acts were exported more than once."
+                            formula="Count completed repairs in range with more than one stored act version."
+                          />
                           <span className="metric-label">Re-exported repairs</span>
                           <strong>{pdfAnalytics.completed_repairs_with_multiple_exports}</strong>
                           <p>Completed repairs with more than one stored act version.</p>
                         </article>
-                        <article className="metric-card metric-card-fact">
+                        <article className="metric-card metric-card-fact service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="Act exports in period"
+                            summary="This card counts every act export event created inside the selected period."
+                            formula="Count stored act export records with created date inside the selected range."
+                          />
                           <span className="metric-label">Act exports in period</span>
                           <strong>{pdfAnalytics.exports_in_period}</strong>
                           <p>Stored act exports created inside the selected period.</p>
@@ -2749,22 +2886,42 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   {warehouseAnalytics ? (
                     <div className="dashboard-report-stack">
                       <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-warehouse-hero">
-                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card">
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="On stock total"
+                            summary="This card shows every delivered unit currently present in the live stock snapshot."
+                            formula="Count all delivered quantities currently on stock."
+                          />
                           <span className="metric-label">On stock total</span>
                           <strong>{formatCount(warehouseAnalytics.stock_totals.delivered_quantity_total)}</strong>
                           <p>All delivered units currently in the live stock snapshot.</p>
                         </article>
-                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card">
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="Assigned"
+                            summary="This card shows delivered units already reserved against a repair through a repair code."
+                            formula="Count delivered quantities whose purchase lines are linked to a repair code."
+                          />
                           <span className="metric-label">Assigned</span>
                           <strong>{formatCount(warehouseAnalytics.stock_totals.assigned_quantity_total)}</strong>
                           <p>Delivered units already linked to a repair via repair code.</p>
                         </article>
-                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card">
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="Free / unassigned"
+                            summary="This card shows delivered units that are still not assigned to any repair."
+                            formula="Count delivered quantities without a linked repair code."
+                          />
                           <span className="metric-label">Free / unassigned</span>
                           <strong>{formatCount(warehouseAnalytics.stock_totals.free_quantity_total)}</strong>
                           <p>Delivered units still free from any repair assignment.</p>
                         </article>
-                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card dashboard-warehouse-hero-card-transit">
+                        <article className="metric-card metric-card-warehouse dashboard-warehouse-hero-card dashboard-warehouse-hero-card-transit service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="In transit"
+                            summary="This card shows ordered quantities that have not yet been marked as delivered."
+                            formula="Count ordered quantities on lines where delivered = false."
+                          />
                           <span className="metric-label">In transit</span>
                           <strong>{formatCount(warehouseAnalytics.stock_totals.in_transit_quantity_total)}</strong>
                           <p>Ordered units that have not been marked as delivered yet.</p>
@@ -2776,26 +2933,51 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           "In stock value",
                           "Delivered lines valued by purchase and resale totals.",
                           warehouseAnalytics.valuations.in_stock,
-                          "dashboard-warehouse-value-card-stock"
+                          "dashboard-warehouse-value-card-stock",
+                          {
+                            title: "In stock value",
+                            summary: "This card values the currently delivered portfolio using purchase cost, resale value, and implied margin.",
+                            formula: "Buy = sum purchase totals on delivered lines; Sale = sum resale totals on delivered lines; Margin = Sale - Buy.",
+                          }
                         )}
                         {renderWarehouseValuePanel(
                           "In transit value",
                           "Open incoming lines valued before they land on stock.",
                           warehouseAnalytics.valuations.in_transit,
-                          "dashboard-warehouse-value-card-transit"
+                          "dashboard-warehouse-value-card-transit",
+                          {
+                            title: "In transit value",
+                            summary: "This card values the open incoming portfolio before items are marked as delivered.",
+                            formula: "Buy = sum purchase totals on undelivered lines; Sale = sum resale totals on undelivered lines; Margin = Sale - Buy.",
+                          }
                         )}
                       </div>
 
                       <div className="dashboard-warehouse-cumulative-strip" aria-label="Cumulative totals">
-                        <div className="dashboard-warehouse-cumulative-cell">
+                        <div className="dashboard-warehouse-cumulative-cell service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="All-time buy"
+                            summary="This cell shows total purchase cost across the cumulative tracked warehouse portfolio."
+                            formula="Sum cumulative buy totals across in-stock and in-transit warehouse valuations."
+                          />
                           <span className="metric-label">All-time buy</span>
                           <strong>{formatCurrency(warehouseAnalytics.valuations.cumulative.buy_total)}</strong>
                         </div>
-                        <div className="dashboard-warehouse-cumulative-cell">
+                        <div className="dashboard-warehouse-cumulative-cell service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="All-time sale"
+                            summary="This cell shows total resale value across the cumulative tracked warehouse portfolio."
+                            formula="Sum cumulative sale totals across in-stock and in-transit warehouse valuations."
+                          />
                           <span className="metric-label">All-time sale</span>
                           <strong>{formatCurrency(warehouseAnalytics.valuations.cumulative.sale_total)}</strong>
                         </div>
-                        <div className="dashboard-warehouse-cumulative-cell">
+                        <div className="dashboard-warehouse-cumulative-cell service-board-card-with-info">
+                          <ServiceBoardInfoButton
+                            title="All-time margin"
+                            summary="This cell shows the cumulative gross margin implied by tracked purchase and resale values."
+                            formula="All-time margin = All-time sale - All-time buy."
+                          />
                           <span className="metric-label">All-time margin</span>
                           <strong>{formatCurrency(warehouseAnalytics.valuations.cumulative.margin_total)}</strong>
                         </div>
@@ -2818,7 +3000,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </p>
                   {warehouseAnalytics ? (
                     <div className="dashboard-warehouse-invoice-grid">
-                      <article className="metric-card dashboard-warehouse-invoice-card dashboard-warehouse-invoice-card-covered">
+                      <article className="metric-card dashboard-warehouse-invoice-card dashboard-warehouse-invoice-card-covered service-board-card-with-info">
+                        <ServiceBoardInfoButton
+                          title="With invoice"
+                          summary="This card counts purchase lines that already have invoice evidence attached."
+                          formula="Count lines where invoice name or invoice URL is present."
+                        />
                         <span className="metric-label">With invoice</span>
                         <strong>{formatCount(warehouseAnalytics.invoice_split.with_invoice.line_count)} lines</strong>
                         <p>
@@ -2826,7 +3013,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           {formatCurrency(warehouseAnalytics.invoice_split.with_invoice.buy_total)}
                         </p>
                       </article>
-                      <article className="metric-card dashboard-warehouse-invoice-card dashboard-warehouse-invoice-card-missing">
+                      <article className="metric-card dashboard-warehouse-invoice-card dashboard-warehouse-invoice-card-missing service-board-card-with-info">
+                        <ServiceBoardInfoButton
+                          title="Without invoice"
+                          summary="This card counts purchase lines that still have no uploaded invoice name and no invoice URL."
+                          formula="Count lines where both invoice name and invoice URL are missing."
+                        />
                         <span className="metric-label">Without invoice</span>
                         <strong>{formatCount(warehouseAnalytics.invoice_split.without_invoice.line_count)} lines</strong>
                         <p>
@@ -2844,18 +3036,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <div className="dashboard-report-head">
                     <div>
                       <p className="eyebrow">Current portfolio</p>
-                      <h3>Top suppliers</h3>
+                      <h3>Supplier breakdown</h3>
                     </div>
                   </div>
                   <p className="workspace-copy">
-                    Top 5 suppliers ranked by current stock portfolio value, split between on-stock and in-transit buy totals.
+                    Full current supplier portfolio with quantities and buy totals split between on-stock and in-transit parts.
                   </p>
                   {warehouseAnalytics?.suppliers_top_current?.length ? (
                     <table className="dashboard-table">
                       <thead>
                         <tr>
                           <th>Supplier</th>
-                          <th>Qty</th>
                           <th>On stock</th>
                           <th>In transit</th>
                           <th>Total</th>
@@ -2865,10 +3056,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         {warehouseAnalytics.suppliers_top_current.map((row) => (
                           <tr key={`${row.supplier_id}-${row.supplier_name}`}>
                             <td>{row.supplier_name || `ID ${row.supplier_id}`}</td>
-                            <td>{formatCount(row.quantity_total)}</td>
-                            <td>{formatCurrency(row.in_stock_buy_total)}</td>
-                            <td>{formatCurrency(row.in_transit_buy_total)}</td>
-                            <td>{formatCurrency(row.current_buy_total)}</td>
+                            <td>
+                              {renderWarehouseSupplierPortfolioCell(
+                                row.in_stock_quantity_total ?? (row.in_stock_buy_total > 0 ? row.quantity_total : 0),
+                                row.in_stock_buy_total
+                              )}
+                            </td>
+                            <td>
+                              {renderWarehouseSupplierPortfolioCell(
+                                row.in_transit_quantity_total ?? (row.in_transit_buy_total > 0 ? row.quantity_total : 0),
+                                row.in_transit_buy_total
+                              )}
+                            </td>
+                            <td>
+                              {renderWarehouseSupplierPortfolioCell(
+                                row.current_quantity_total ?? row.quantity_total ?? 0,
+                                row.current_buy_total
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2896,7 +3101,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         Range cards use the selected Service Board window. Open repairs are calculated as backlog at the
                         end of that range.
                       </p>
-                      <div className="dashboard-grid">
+                      <div className="dashboard-grid dashboard-grid-service-board-range">
                         <section className="panel dashboard-mini-panel">
                           <div className="panel-header">
                             <div>
@@ -2904,23 +3109,52 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <h3>Repair flow</h3>
                             </div>
                           </div>
-                          <div className="metric-grid metric-grid-three">
-                            <article className="metric-card metric-card-accent">
+                          <div className="metric-grid service-board-range-flow-grid">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Open repairs"
+                                summary="This card shows backlog at the end of the selected Service Board range."
+                                formula="Count repairs that were still not completed on the selected range end date."
+                                notes={[
+                                  "This is a historical end-of-range snapshot, not the live value right now.",
+                                  "Use it to compare backlog pressure between different date windows.",
+                                ]}
+                              />
                               <span className="metric-label">Open repairs</span>
                               <strong>{formatCount(serviceBoardAnalytics.range_summary.open_repairs_end_of_range)}</strong>
                               <p>Repairs still not completed by the range end date.</p>
                             </article>
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Waiting parts"
+                                summary="This card shows how many repairs are currently blocked by missing parts."
+                                formula="Count current open repairs where the latest status is Waiting parts."
+                                notes={[
+                                  "This is a live snapshot based on the current status.",
+                                  "It is not recalculated as a historical value for the selected range.",
+                                ]}
+                              />
                               <span className="metric-label">Waiting parts</span>
                               <strong>{formatCount(serviceBoardAnalytics.current_snapshot.waiting_parts_current)}</strong>
                               <p>Live-only metric based on the current status.</p>
                             </article>
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Completed in range"
+                                summary="This card counts repairs that were finished inside the selected Service Board window."
+                                formula="Count repairs whose completion date falls inside the selected range."
+                              />
                               <span className="metric-label">Completed in range</span>
                               <strong>{formatCount(serviceBoardAnalytics.range_summary.completed_repairs_in_range)}</strong>
                               <p>Closed jobs used for range performance.</p>
                             </article>
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Median cycle time"
+                                summary="This card shows the typical turnaround time for repairs completed in the selected range."
+                                formula="Median(completion date - repair created date) for repairs completed in the selected range."
+                                notes={["A median is used so one extreme repair does not skew the whole card."]}
+                              />
                               <span className="metric-label">Median cycle time</span>
                               <strong>
                                 {serviceBoardAnalytics.range_summary.median_cycle_time_days != null
@@ -2939,13 +3173,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <h3>Vehicles and clients</h3>
                             </div>
                           </div>
-                          <div className="metric-grid metric-grid-three">
-                            <article className="metric-card">
+                          <div className="metric-grid service-board-range-customer-grid">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Vehicles"
+                                summary="This card shows how many unique vehicles were represented by repairs intersecting the selected range."
+                                formula="Count distinct vehicles linked to repairs that overlap the selected range."
+                              />
                               <span className="metric-label">Vehicles</span>
                               <strong>{formatCount(serviceBoardAnalytics.range_summary.vehicles_in_range)}</strong>
                               <p>Unique vehicles with repairs intersecting the range.</p>
                             </article>
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Customers"
+                                summary="This card shows how many unique customers were represented by repairs intersecting the selected range."
+                                formula="Count distinct customers linked to repairs that overlap the selected range."
+                              />
                               <span className="metric-label">Customers</span>
                               <strong>{formatCount(serviceBoardAnalytics.range_summary.customers_in_range)}</strong>
                               <p>Unique customers represented by those repairs.</p>
@@ -2978,14 +3222,33 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <p className="workspace-note">No masters configured yet.</p>
                             ) : null}
                             {serviceBoardAnalytics.masters_current.map((master) => (
-                              <article className="dashboard-worker-card" key={`current-${master.master_id}`}>
+                              <article className="dashboard-worker-card service-board-card-with-info" key={`current-${master.master_id}`}>
+                                <ServiceBoardInfoButton
+                                  title={`${master.display_name} current load`}
+                                  summary="This card shows the current live workload for the selected master."
+                                  formula="Open now = New + In progress + Waiting parts for repairs currently assigned to this master and not yet completed."
+                                  notes={[
+                                    "These counts reflect the current board state, not a historical range snapshot.",
+                                    "Money is intentionally not shown here; financial value stays in Completed work.",
+                                  ]}
+                                />
                                 <div className="dashboard-worker-topline">
                                   <strong>{master.display_name}</strong>
                                   <span className="tag">{formatCount(master.assigned_open_current)} open</span>
                                 </div>
-                                <div className="dashboard-worker-stats">
-                                  <span>Waiting parts {formatCount(master.waiting_parts_current)}</span>
-                                  <span>Estimate {formatCurrency(master.estimated_assigned_value_current)}</span>
+                                <div className="dashboard-worker-status-grid" aria-label={`${master.display_name} current status breakdown`}>
+                                  <div className="dashboard-worker-status-cell">
+                                    <span>New</span>
+                                    <strong>{formatCount(master.current_status_counts.new)}</strong>
+                                  </div>
+                                  <div className="dashboard-worker-status-cell">
+                                    <span>In progress</span>
+                                    <strong>{formatCount(master.current_status_counts.in_progress)}</strong>
+                                  </div>
+                                  <div className="dashboard-worker-status-cell">
+                                    <span>Waiting parts</span>
+                                    <strong>{formatCount(master.current_status_counts.waiting_parts)}</strong>
+                                  </div>
                                 </div>
                               </article>
                             ))}
@@ -3004,7 +3267,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <p className="workspace-note">No range performance data available.</p>
                             ) : null}
                             {serviceBoardAnalytics.masters_range.map((master) => (
-                              <article className="dashboard-worker-card" key={`range-${master.master_id}`}>
+                              <article className="dashboard-worker-card service-board-card-with-info" key={`range-${master.master_id}`}>
+                                <ServiceBoardInfoButton
+                                  title={`${master.display_name} range performance`}
+                                  summary="This card shows how the selected master performed inside the active Service Board range."
+                                  formula="Done = completed repairs in range; Median = median cycle time for the master's completed repairs in range; Actual = sum of completed service value in range."
+                                />
                                 <div className="dashboard-worker-topline">
                                   <strong>{master.display_name}</strong>
                                   <span className="tag">{formatCount(master.completed_in_range)} done</span>
@@ -3039,17 +3307,32 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             </div>
                           </div>
                           <div className="metric-grid metric-grid-three">
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Repairs"
+                                summary="This card shows the total number of repair records stored in the system."
+                                formula="Count all repair records."
+                              />
                               <span className="metric-label">Repairs</span>
                               <strong>{formatCount(serviceBoardAnalytics.all_time_totals.repairs_total)}</strong>
                               <p>All repair records in the system.</p>
                             </article>
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Vehicles"
+                                summary="This card shows how many distinct vehicles have at least one repair in history."
+                                formula="Count distinct vehicles with at least one repair history entry."
+                              />
                               <span className="metric-label">Vehicles</span>
                               <strong>{formatCount(serviceBoardAnalytics.all_time_totals.vehicles_total)}</strong>
                               <p>Total vehicles with at least one repair history entry.</p>
                             </article>
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info">
+                              <ServiceBoardInfoButton
+                                title="Customers"
+                                summary="This card shows how many distinct customers appear in repair history."
+                                formula="Count distinct customers represented in repair history."
+                              />
                               <span className="metric-label">Customers</span>
                               <strong>{formatCount(serviceBoardAnalytics.all_time_totals.customers_total)}</strong>
                               <p>Total customers represented in repair history.</p>
@@ -3064,13 +3347,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <h3>Loyalty split</h3>
                             </div>
                           </div>
-                          <div className="metric-grid metric-grid-three">
-                            <article className="metric-card">
+                          <div className="metric-grid service-board-loyalty-grid">
+                            <article className="metric-card service-board-card-with-info service-board-loyalty-card">
+                              <ServiceBoardInfoButton
+                                title="Returning customers"
+                                summary="This card shows customers who came back for at least one additional repair."
+                                formula="Count customers with two or more repairs across the full history."
+                              />
                               <span className="metric-label">Returning customers</span>
                               <strong>{formatCount(serviceBoardAnalytics.all_time_totals.returning_customers_total)}</strong>
                               <p>Customers with two or more repairs across the full history.</p>
                             </article>
-                            <article className="metric-card">
+                            <article className="metric-card service-board-card-with-info service-board-loyalty-card">
+                              <ServiceBoardInfoButton
+                                title="Non-returning customers"
+                                summary="This card shows customers who have only one repair in the system so far."
+                                formula="Count customers with exactly one repair across the full history."
+                              />
                               <span className="metric-label">Non-returning customers</span>
                               <strong>{formatCount(serviceBoardAnalytics.all_time_totals.non_returning_customers_total)}</strong>
                               <p>Customers with only one repair in the full history.</p>
