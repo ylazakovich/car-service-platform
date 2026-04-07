@@ -36,7 +36,6 @@ import {
 import {
   formatVehicleTitle,
   type Vehicle,
-  type VehicleListGroup,
   type VehicleOwnerDetails,
   type VehicleUiDetails,
 } from "../features/staff/shared/vehicles";
@@ -353,21 +352,6 @@ function parsePurchaseDayStart(value: string): Date | null {
   return key ? parseIsoDate(key) : null;
 }
 
-function purchaseWeekMondayKey(orderDate: string): string {
-  const d = parsePurchaseDayStart(orderDate);
-  if (!d) {
-    return "unknown";
-  }
-  const day = d.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() + mondayOffset);
-  const y = monday.getFullYear();
-  const m = String(monday.getMonth() + 1).padStart(2, "0");
-  const dayNum = String(monday.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dayNum}`;
-}
-
 function isPurchaseDeliveryOverdue(approximateDeliveryDate: string): boolean {
   const d = parsePurchaseDayStart(approximateDeliveryDate);
   if (!d) {
@@ -383,8 +367,6 @@ function isPurchaseDeliveryOverdue(approximateDeliveryDate: string): boolean {
 function hasPurchaseInvoice(entry: Pick<PurchaseEntry, "invoice_name" | "invoice_url">): boolean {
   return Boolean(entry.invoice_name?.trim() || entry.invoice_url?.trim());
 }
-
-type PurchaseDisplayGroup = { key: string; label: string; entries: PurchaseEntry[] };
 
 function formatDateInputValue(value: string): string {
   const parsed = parseIsoDate(value);
@@ -1055,25 +1037,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleModalSupplierSelect,
   } = usePurchases(vehicles);
 
-  const [purchaseListView, setPurchaseListView] = useState<"cards" | "compact">("cards");
-  const [purchaseGroupBy, setPurchaseGroupBy] = useState<"none" | "week" | "supplier">("none");
-  const [purchaseSort, setPurchaseSort] = useState<
-    "order_date_desc" | "order_date_asc" | "delivery_asc" | "delivery_desc" | "margin_desc" | "margin_asc"
-  >("order_date_desc");
   const [purchaseDetailModalTab, setPurchaseDetailModalTab] = useState<"order" | "invoice">("order");
-
-  const [vehicleListView, setVehicleListView] = useState<"cards" | "compact">("cards");
-  const [vehicleGroupBy, setVehicleGroupBy] = useState<"none" | "owner">("none");
-  const [vehicleSort, setVehicleSort] = useState<
-    | "plate_asc"
-    | "plate_desc"
-    | "owner_asc"
-    | "make_asc"
-    | "added_desc"
-    | "added_asc"
-    | "service_desc"
-    | "service_asc"
-  >("plate_asc");
 
   function toggleMoneyflowCalendarLayer(layer: "repairs" | "parts") {
     if (layer === "repairs") {
@@ -1882,136 +1846,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     });
   }, [repairSearch, repairs, repairDateFilter]);
 
-  const purchaseDisplayGroups = useMemo(() => {
-    const rows = [...purchases];
-
-    const margin = (e: PurchaseEntry) => e.quantity * (e.sale_price - e.purchase_price);
-    const deliveryTs = (e: PurchaseEntry) => {
-      const d = e.approximate_delivery_date?.trim();
-      if (!d) {
-        return Number.POSITIVE_INFINITY;
+  const vehicleIdsNeedingActExport = useMemo(() => {
+    const ids = new Set<number>();
+    for (const repair of repairs) {
+      if (repair.status === "completed" && !repair.has_pdf) {
+        ids.add(repair.vehicle_id);
       }
-      const parsed = parsePurchaseDayStart(d);
-      if (!parsed) {
-        return Number.POSITIVE_INFINITY;
-      }
-      return parsed.getTime();
-    };
-    const orderTs = (e: PurchaseEntry) => {
-      const parsed = parsePurchaseDayStart(e.order_date);
-      return parsed ? parsed.getTime() : 0;
-    };
-
-    rows.sort((a, b) => {
-      switch (purchaseSort) {
-        case "order_date_asc":
-          return orderTs(a) - orderTs(b);
-        case "order_date_desc":
-          return orderTs(b) - orderTs(a);
-        case "delivery_asc":
-          return deliveryTs(a) - deliveryTs(b);
-        case "delivery_desc":
-          return deliveryTs(b) - deliveryTs(a);
-        case "margin_asc":
-          return margin(a) - margin(b);
-        case "margin_desc":
-          return margin(b) - margin(a);
-        default:
-          return 0;
-      }
-    });
-
-    let groups: PurchaseDisplayGroup[];
-    if (purchaseGroupBy === "none") {
-      groups = [{ key: "all", label: "", entries: rows }];
-    } else if (purchaseGroupBy === "supplier") {
-      const map = new Map<string, PurchaseEntry[]>();
-      for (const e of rows) {
-        const k = e.supplier_name.trim() || "—";
-        if (!map.has(k)) {
-          map.set(k, []);
-        }
-        map.get(k)!.push(e);
-      }
-      groups = [...map.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, entries]) => ({ key, label: key, entries }));
-    } else {
-      const map = new Map<string, PurchaseEntry[]>();
-      for (const e of rows) {
-        const k = purchaseWeekMondayKey(e.order_date);
-        if (!map.has(k)) {
-          map.set(k, []);
-        }
-        map.get(k)!.push(e);
-      }
-      const keys = [...map.keys()].filter((k) => k !== "unknown").sort().reverse();
-      if (map.has("unknown")) {
-        keys.push("unknown");
-      }
-      groups = keys.map((key) => ({
-        key,
-        label: key === "unknown" ? "Unknown date" : `Week of ${formatDisplayDate(key)}`,
-        entries: map.get(key)!,
-      }));
     }
-
-    return groups;
-  }, [purchases, purchaseSort, purchaseGroupBy]);
-
-  const vehicleDisplayGroups = useMemo((): VehicleListGroup[] => {
-    const rows = [...sectionVehicles];
-    const addedTs = (v: Vehicle) => {
-      const raw = (vehicleUiDetails[v.id]?.added_date ?? v.added_date ?? "").trim();
-      const parsed = parsePurchaseDayStart(raw);
-      return parsed ? parsed.getTime() : 0;
-    };
-    const serviceTs = (v: Vehicle) => {
-      const raw = (vehicleUiDetails[v.id]?.last_service_date ?? v.last_service_date ?? "").trim();
-      const parsed = parsePurchaseDayStart(raw);
-      return parsed ? parsed.getTime() : 0;
-    };
-
-    rows.sort((a, b) => {
-      switch (vehicleSort) {
-        case "plate_asc":
-          return a.license_plate.localeCompare(b.license_plate, undefined, { sensitivity: "base" });
-        case "plate_desc":
-          return b.license_plate.localeCompare(a.license_plate, undefined, { sensitivity: "base" });
-        case "owner_asc":
-          return a.customer.full_name.localeCompare(b.customer.full_name, undefined, { sensitivity: "base" });
-        case "make_asc":
-          return formatVehicleTitle(a).localeCompare(formatVehicleTitle(b), undefined, { sensitivity: "base" });
-        case "added_asc":
-          return addedTs(a) - addedTs(b);
-        case "added_desc":
-          return addedTs(b) - addedTs(a);
-        case "service_asc":
-          return serviceTs(a) - serviceTs(b);
-        case "service_desc":
-          return serviceTs(b) - serviceTs(a);
-        default:
-          return 0;
-      }
-    });
-
-    if (vehicleGroupBy === "none") {
-      return [{ key: "all", label: "", vehicles: rows }];
-    }
-
-    const map = new Map<string, Vehicle[]>();
-    for (const v of rows) {
-      const k = v.customer.full_name.trim() || "—";
-      if (!map.has(k)) {
-        map.set(k, []);
-      }
-      map.get(k)!.push(v);
-    }
-
-    return [...map.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, grouped]) => ({ key, label: key, vehicles: grouped }));
-  }, [sectionVehicles, vehicleSort, vehicleGroupBy, vehicleUiDetails]);
+    return ids;
+  }, [repairs]);
 
   const selectedRepairVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id) ?? null;
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
@@ -3529,66 +3372,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           </div>
         </div>
 
-        <div className="kanban-topbar purchases-controls-bar">
-          <div className="purchases-controls-cluster" role="group" aria-label="List layout">
-            <button
-              type="button"
-              className={vehicleListView === "cards" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
-              onClick={() => setVehicleListView("cards")}
-            >
-              Cards
-            </button>
-            <button
-              type="button"
-              className={vehicleListView === "compact" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
-              onClick={() => setVehicleListView("compact")}
-            >
-              Compact
-            </button>
-          </div>
-          <div className="purchases-controls-selects">
-            <select
-              className="purchases-inline-select"
-              value={vehicleSort}
-              aria-label="Sort list"
-              onChange={(event) =>
-                setVehicleSort(
-                  event.target.value as
-                    | "plate_asc"
-                    | "plate_desc"
-                    | "owner_asc"
-                    | "make_asc"
-                    | "added_desc"
-                    | "added_asc"
-                    | "service_desc"
-                    | "service_asc"
-                )
-              }
-            >
-              <option value="plate_asc">License plate A–Z</option>
-              <option value="plate_desc">License plate Z–A</option>
-              <option value="owner_asc">Owner name A–Z</option>
-              <option value="make_asc">Make and model A–Z</option>
-              <option value="added_desc">Newest added</option>
-              <option value="added_asc">Oldest added</option>
-              <option value="service_desc">Latest service</option>
-              <option value="service_asc">Earliest service</option>
-            </select>
-            <select
-              className="purchases-inline-select"
-              value={vehicleGroupBy}
-              aria-label="Group list"
-              onChange={(event) => setVehicleGroupBy(event.target.value as "none" | "owner")}
-            >
-              <option value="none">No grouping</option>
-              <option value="owner">By owner</option>
-            </select>
-          </div>
-        </div>
-        <p className="purchases-controls-footnote">
-          Sort and grouping apply to loaded rows only — use search to change what the server returns.
-        </p>
-
         <div className="purchases-list-outer">
           {emptyServerList ? (
             <div className="purchases-empty-panel">
@@ -3607,16 +3390,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           ) : (
             <>
               <StaffVehiclesMobileList
-                groups={vehicleDisplayGroups}
-                layout={vehicleListView}
+                vehicles={sectionVehicles}
                 getVehicleDetails={getVehicleDetails}
+                vehicleNeedsActExport={(vehicleId) => vehicleIdsNeedingActExport.has(vehicleId)}
                 onOpenVehicle={openVehicleDetailModal}
               />
 
               <StaffVehiclesRegistry
-                groups={vehicleDisplayGroups}
-                layout={vehicleListView}
+                vehicles={sectionVehicles}
                 getVehicleDetails={getVehicleDetails}
+                vehicleNeedsActExport={(vehicleId) => vehicleIdsNeedingActExport.has(vehicleId)}
                 onOpenVehicle={openVehicleDetailModal}
               />
             </>
@@ -4102,65 +3885,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           </div>
         </div>
 
-        <div className="kanban-topbar purchases-controls-bar">
-          <div className="purchases-controls-cluster" role="group" aria-label="List layout">
-            <button
-              type="button"
-              className={purchaseListView === "cards" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
-              onClick={() => setPurchaseListView("cards")}
-            >
-              Cards
-            </button>
-            <button
-              type="button"
-              className={purchaseListView === "compact" ? "purchases-seg purchases-seg-active" : "purchases-seg"}
-              onClick={() => setPurchaseListView("compact")}
-            >
-              Compact
-            </button>
-          </div>
-          <div className="purchases-controls-selects">
-            <select
-              className="purchases-inline-select"
-              value={purchaseSort}
-              aria-label="Sort list"
-              onChange={(event) =>
-                setPurchaseSort(
-                  event.target.value as
-                    | "order_date_desc"
-                    | "order_date_asc"
-                    | "delivery_asc"
-                    | "delivery_desc"
-                    | "margin_desc"
-                    | "margin_asc"
-                )
-              }
-            >
-              <option value="order_date_desc">Newest order date</option>
-              <option value="order_date_asc">Oldest order date</option>
-              <option value="delivery_asc">Soonest delivery</option>
-              <option value="delivery_desc">Latest delivery</option>
-              <option value="margin_desc">Highest margin</option>
-              <option value="margin_asc">Lowest margin</option>
-            </select>
-            <select
-              className="purchases-inline-select"
-              value={purchaseGroupBy}
-              aria-label="Group list"
-              onChange={(event) =>
-                setPurchaseGroupBy(event.target.value as "none" | "week" | "supplier")
-              }
-            >
-              <option value="none">No grouping</option>
-              <option value="week">By week</option>
-              <option value="supplier">By supplier</option>
-            </select>
-          </div>
-        </div>
-        <p className="purchases-controls-footnote">
-          Sort and grouping apply to loaded rows only — use search to change what the server returns.
-        </p>
-
         <div className="purchases-list-outer">
           {emptyServerList ? (
             <div className="purchases-empty-panel">
@@ -4177,141 +3901,64 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               ) : null}
             </div>
           ) : (
-            purchaseDisplayGroups.map((group) => (
-              <div className="purchases-group" key={group.key}>
-                {group.label ? <h3 className="purchases-group-heading">{group.label}</h3> : null}
-                <div className={purchaseListView === "compact" ? "purchases-compact-list" : "purchases-group-cards"}>
-                  {group.entries.map((entry) => {
-                    const saleTotal = entry.quantity * entry.sale_price;
-                    const purchaseTotal = entry.quantity * entry.purchase_price;
-                    const marginVal = saleTotal - purchaseTotal;
-                    if (purchaseListView === "compact") {
-                      return (
-                        <button
-                          type="button"
-                          className="purchases-compact-row"
-                          key={entry.id}
-                          onClick={() => openPurchaseDetailModal(entry)}
-                        >
-                          <div className="purchases-compact-row-main">
-                            <span className="purchases-compact-cell purchases-compact-part">
-                              <span className="purchases-compact-part-text">{entry.part_name}</span>
-                            </span>
-                            <span className="purchases-compact-cell purchases-compact-supplier">{entry.supplier_name}</span>
-                            <span className="purchases-compact-cell purchases-compact-narrow">
-                              {formatDisplayDate(entry.order_date)}
-                            </span>
-                            <span className="purchases-compact-cell purchases-compact-narrow">
-                              {entry.approximate_delivery_date ? formatDisplayDate(entry.approximate_delivery_date) : "—"}
-                            </span>
-                            <span
-                              className="purchases-compact-cell purchases-compact-qty-cell"
-                              title={`Quantity ${entry.quantity}`}
-                            >
-                              ×{entry.quantity}
-                            </span>
-                            <span className="purchases-compact-cell purchases-compact-money">{formatCurrency(saleTotal)}</span>
-                            <span
-                              className={`purchases-compact-cell purchases-compact-money${marginVal >= 0 ? " purchase-margin-pos" : " purchase-margin-neg"}`}
-                            >
-                              {marginVal >= 0 ? "+" : ""}
-                              {formatCurrency(marginVal)}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    }
-                    const overdue =
-                      !entry.delivered && isPurchaseDeliveryOverdue(entry.approximate_delivery_date);
-                    const missingInv = !hasPurchaseInvoice(entry);
-                    const missingVeh = !entry.vehicle_id && !entry.vehicle_label?.trim();
-                    return (
-                      <article
-                        className="registry-card purchase-card purchase-card-clickable"
-                        key={entry.id}
-                        onClick={() => openPurchaseDetailModal(entry)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            openPurchaseDetailModal(entry);
-                          }
-                        }}
-                        role="button"
-                        tabIndex={0}
+            <div className="purchases-compact-list">
+              {purchases.map((entry) => {
+                const saleTotal = entry.quantity * entry.sale_price;
+                const marginVal = saleTotal - entry.quantity * entry.purchase_price;
+                const overdue =
+                  !entry.delivered && isPurchaseDeliveryOverdue(entry.approximate_delivery_date);
+                const missingInv = !hasPurchaseInvoice(entry);
+                const attention = overdue || missingInv;
+                const hints: string[] = [];
+                if (overdue) {
+                  hints.push("Delivery overdue");
+                }
+                if (missingInv) {
+                  hints.push("No invoice");
+                }
+                if (!entry.vehicle_id && !entry.vehicle_label?.trim()) {
+                  hints.push("No vehicle");
+                }
+                if (!entry.repair_code.trim()) {
+                  hints.push("No repair");
+                }
+                return (
+                  <button
+                    type="button"
+                    className={`purchases-compact-row${attention ? " purchases-compact-row--attention" : ""}`}
+                    key={entry.id}
+                    onClick={() => openPurchaseDetailModal(entry)}
+                    title={hints.length ? hints.join(" · ") : undefined}
+                  >
+                    <div className="purchases-compact-row-main">
+                      <span className="purchases-compact-cell purchases-compact-part">
+                        <span className="purchases-compact-part-text">{entry.part_name}</span>
+                      </span>
+                      <span className="purchases-compact-cell purchases-compact-supplier">{entry.supplier_name}</span>
+                      <span className="purchases-compact-cell purchases-compact-narrow">
+                        {formatDisplayDate(entry.order_date)}
+                      </span>
+                      <span className="purchases-compact-cell purchases-compact-narrow">
+                        {entry.approximate_delivery_date ? formatDisplayDate(entry.approximate_delivery_date) : "—"}
+                      </span>
+                      <span
+                        className="purchases-compact-cell purchases-compact-qty-cell"
+                        title={`Quantity ${entry.quantity}`}
                       >
-                        <div className="purchase-card-body">
-                          <div className="purchase-card-info">
-                            <h4 className="purchase-card-name">{entry.part_name}</h4>
-                            <p className="purchase-card-supplier">{entry.supplier_name}</p>
-                            <div className="purchase-card-chips">
-                              {entry.delivered ? (
-                                <span className="purchase-chip-status purchase-chip-status-delivered">Delivered</span>
-                              ) : null}
-                              {missingInv ? (
-                                <span className="purchase-chip-status purchase-chip-status-warn">No invoice</span>
-                              ) : null}
-                              {missingVeh ? (
-                                <span className="purchase-chip-status purchase-chip-status-muted">No vehicle</span>
-                              ) : null}
-                              {!entry.repair_code.trim() ? (
-                                <span className="purchase-chip-status purchase-chip-status-muted">No repair</span>
-                              ) : null}
-                              {overdue ? (
-                                <span className="purchase-chip-status purchase-chip-status-danger">Delivery overdue</span>
-                              ) : null}
-                              {entry.vehicle_label ? (
-                                <span className="purchase-chip-muted">{entry.vehicle_label}</span>
-                              ) : null}
-                              {entry.invoice_url ? (
-                                <button
-                                  className="purchase-chip-muted purchase-chip-link"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenInvoice(entry.invoice_url);
-                                  }}
-                                  title="Open invoice"
-                                  type="button"
-                                >
-                                  {entry.invoice_name || "Invoice"}
-                                </button>
-                              ) : entry.invoice_name ? (
-                                <span className="purchase-chip-muted">{entry.invoice_name}</span>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="purchase-card-financials">
-                            <div className="purchase-financials-header">
-                              <span className="tag">{formatDisplayDate(entry.order_date)}</span>
-                              {entry.approximate_delivery_date ? (
-                                <span
-                                  className={
-                                    overdue ? "purchase-delivery-date purchase-delivery-overdue" : "purchase-delivery-date"
-                                  }
-                                >
-                                  → {formatDisplayDate(entry.approximate_delivery_date)}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="purchase-financials-total">{formatCurrency(saleTotal)}</div>
-                            <div className="purchase-financials-grid">
-                              <span className="purchase-financials-label">Buy</span>
-                              <span>{formatCurrency(purchaseTotal)}</span>
-                              <span className="purchase-financials-label">Qty</span>
-                              <span>×{entry.quantity}</span>
-                              <span className="purchase-financials-label">Margin</span>
-                              <span className={marginVal >= 0 ? "purchase-margin-pos" : "purchase-margin-neg"}>
-                                {marginVal >= 0 ? "+" : ""}
-                                {formatCurrency(marginVal)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
+                        ×{entry.quantity}
+                      </span>
+                      <span className="purchases-compact-cell purchases-compact-money">{formatCurrency(saleTotal)}</span>
+                      <span
+                        className={`purchases-compact-cell purchases-compact-money${marginVal >= 0 ? " purchase-margin-pos" : " purchase-margin-neg"}`}
+                      >
+                        {marginVal >= 0 ? "+" : ""}
+                        {formatCurrency(marginVal)}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
           {purchaseHasMore && !emptyServerList ? (
             <div className="load-more-bar">

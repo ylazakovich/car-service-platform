@@ -1330,7 +1330,7 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     expect(screen.queryByText("TOR-2040")).not.toBeInTheDocument();
-    await user.click(await screen.findByRole("heading", { name: "Brake Pad Set", level: 4 }));
+    await user.click(await screen.findByRole("button", { name: /Brake Pad Set/i }));
     const purchaseDialog = await screen.findByRole("dialog");
     expect(screen.queryByLabelText("Tracking")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Repair Code")).not.toBeInTheDocument();
