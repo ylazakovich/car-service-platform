@@ -2346,6 +2346,7 @@ textarea { resize: vertical; }
 .dashboard-table th,
 .dashboard-table td {
   text-align: left;
+  vertical-align: top;
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -2381,6 +2382,15 @@ textarea { resize: vertical; }
   line-height: 1.2;
 }
 
+.dashboard-table-metric-label {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .dashboard-table-metric-cell span {
   color: var(--text-soft);
   font-size: 0.8rem;
@@ -2406,10 +2416,7 @@ textarea { resize: vertical; }
 }
 
 .dashboard-supplier-part-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.75rem;
+  display: block;
   padding: 0.38rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-soft);
@@ -2426,11 +2433,39 @@ textarea { resize: vertical; }
   word-break: break-word;
 }
 
-.dashboard-supplier-part-qty {
+.dashboard-supplier-metric-cell {
+  min-width: 0;
+}
+
+.dashboard-supplier-metric-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-supplier-metric-row {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.38rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-supplier-metric-row:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-supplier-metric-row strong {
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.dashboard-supplier-metric-row span {
   color: var(--text-soft);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
-  white-space: nowrap;
+  font-size: 0.78rem;
+  line-height: 1.2;
 }
 
 .dashboard-supplier-parts-empty {
