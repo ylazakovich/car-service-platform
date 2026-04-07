@@ -21,10 +21,11 @@ Ensure the plan and final implementation preserve domain correctness, business i
   - which invariants are confirmed
   - which rules are violated or ambiguous
   - which scenarios need extra verification
-  - path to the result file
+  - path to the result file, or `inline in chat` if no `RUN_DIR` per `AGENTS.md`
 - Artifact files:
   - `<RUN_DIR>/domain-review-plan.md` for pre-implementation review
   - `<RUN_DIR>/domain-review-final.md` for post-implementation review
+- If no `RUN_DIR` was created per `AGENTS.md`, deliver the same sections in the chat response instead of writing files.
 
 ## Rules
 - Focus on business meaning, not implementation style.

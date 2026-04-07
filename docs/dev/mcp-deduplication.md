@@ -34,6 +34,10 @@
 | `mcp/car-service-platform.default.json` | **Пустой** `mcpServers` — по умолчанию. `install-user` только мержит **существующее** + опциональный `local.overrides.json`. **Не** плодит дубли к ECC. |
 | `mcp/car-service-platform.standalone.json` | Полный набор stdio-серверов — если **нет** ECC / плагина и нужно поднять context7, playwright, … одной командой: `--profile standalone`. |
 
+## Verify и пустой `mcpServers` (Cursor / Claude Code)
+
+После merge с **пустым** профилем в `~/.cursor/mcp.json` или `~/.claude/settings.json` объект `mcpServers` может быть `{}` — это **нормально**, если инструменты приходят только из плагина ECC / Built-in. Скрипт `scripts/agents/verify-agent-environment.mjs` при пустом списке пишет **предупреждение** (проверка всё равно проходит). Чтобы считать пустой список ошибкой, передайте **`--strict`**.
+
 ## GitHub и плагин
 
 Если нужен GitHub из **плагина** ECC (`plugin:...:github`), настройте токен по документации плагина (env / UI). Для **stdio**-сервера с именем `github` можно положить секреты в **`mcp/local.overrides.json`** (шаблон — `local.overrides.json.example`); в репозиторий не коммитить. **Не** добавляйте второй экземпляр `github` (plugin + stdio) без необходимости — см. правило приоритета выше.

@@ -13,6 +13,7 @@ Turn the incoming task into a short, executable, verifiable plan.
 - A plan with 3–7 steps.
 - For each step: expected outcome and definition of done.
 - Artifact file: `<RUN_DIR>/planner.md`.
+- If no `RUN_DIR` was created per `AGENTS.md`, deliver the same content in the chat response instead of writing files.
 
 ## Rules
 - Do not write implementation—plan only.

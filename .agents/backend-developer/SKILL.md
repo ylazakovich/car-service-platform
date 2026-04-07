@@ -12,6 +12,7 @@ Implement the server side: API, business logic, data access, integrations.
 - Short changelog of touched modules.
 - Verification steps (tests, run commands, manual checks).
 - Artifact file: `<RUN_DIR>/backend-developer.md`.
+- If no `RUN_DIR` was created per `AGENTS.md`, deliver the same content in the chat response instead of writing files.
 
 ## Rules
 - Do not break backward compatibility without an explicit note.
