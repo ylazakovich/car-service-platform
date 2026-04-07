@@ -9,9 +9,9 @@ from django.db import transaction
 from django.db.models import Max
 
 from purchases.models import Purchase
-from services.models import Service
 
 from .financial_totals import compute_completion_financial_totals
+from .labor_pricing import build_labor_rows_for_pdf
 from .models import Repair, RepairDocument, RepairFinancialSnapshot
 from .pdf_generator import generate_completion_act_pdf
 
@@ -35,11 +35,11 @@ def export_repair_pdf_and_snapshot(repair: Repair, user: AbstractBaseUser) -> tu
     purchases = list(
         Purchase.objects.filter(repair_code=repair_locked.tracking_code).select_related("supplier")
     )
-    service = Service.objects.filter(name=repair_locked.service_name).first()
-    service_price = service.price if service and service.price is not None else None
+    labor_rows = build_labor_rows_for_pdf(repair_locked)
+    labor_prices = [price for _name, price in labor_rows]
 
-    financials = compute_completion_financial_totals(service_price, purchases)
-    pdf_bytes = generate_completion_act_pdf(repair_locked, purchases, service_price)
+    financials = compute_completion_financial_totals(labor_prices, purchases)
+    pdf_bytes = generate_completion_act_pdf(repair_locked, purchases, labor_rows)
 
     filename = f"act_{repair_locked.tracking_code}.pdf"
     doc = RepairDocument(

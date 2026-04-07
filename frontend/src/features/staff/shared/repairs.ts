@@ -10,6 +10,24 @@ export type RepairNote = {
   text: string;
 };
 
+export type RepairServiceLineEntry = {
+  id: string | null;
+  name: string;
+  catalog_service_id: number | null;
+  sort_order: number;
+};
+
+/** Local row for forms (React key + draft fields). */
+export type RepairServiceLineDraft = {
+  key: string;
+  name: string;
+  catalog_service_id: number | null;
+};
+
+export function newRepairServiceLineDraft(): RepairServiceLineDraft {
+  return { key: crypto.randomUUID(), name: "", catalog_service_id: null };
+}
+
 export type RepairEntry = {
   id: number;
   created_at: string;
@@ -21,12 +39,16 @@ export type RepairEntry = {
   master_id: string;
   master_name: string;
   service_name: string;
+  service_lines: RepairServiceLineEntry[];
   issue_notes: string;
   repair_notes: RepairNote[];
   status: RepairStatus;
+  mileage_at_service: number | null;
   tracking_code: string;
   portal_token: string;
   has_pdf: boolean;
+  /** Total from latest exported completion act (PDF), when any. */
+  latest_act_document_total: number | null;
   estimated_date: string;
   before_photos: string[];
   during_photos: string[];
@@ -68,6 +90,18 @@ export function getRepairStatusClass(status: RepairStatus) {
   return `repair-status-chip repair-status-${status}`;
 }
 
+/** Short label for Kanban / list: first service, or "+N" when multiple. */
+export function formatRepairServicesSummary(repair: RepairEntry): string {
+  const lines = repair.service_lines.filter((l) => l.name.trim());
+  if (lines.length === 0) {
+    return repair.service_name.trim() || "—";
+  }
+  if (lines.length === 1) {
+    return lines[0].name;
+  }
+  return `${lines[0].name} +${lines.length - 1}`;
+}
+
 export function formatRepairCardDateRow(repair: RepairEntry) {
   const createdLabel = `Created ${formatRepairDisplayDate(repair.created_at)}`;
   if (repair.status !== "completed" || !repair.completed_at) {
@@ -75,4 +109,37 @@ export function formatRepairCardDateRow(repair: RepairEntry) {
   }
 
   return [createdLabel, `Completed ${formatRepairDisplayDate(repair.completed_at)}`];
+}
+
+/** Parse digits from vehicle profile mileage field (string from API / form). */
+export function parseVehicleProfileMileageKm(raw: string | undefined): number | null {
+  const t = (raw ?? "").trim().replace(/\s/g, "").replace(/,/g, "");
+  if (!t || !/^\d+$/.test(t)) {
+    return null;
+  }
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Most recent repair on this vehicle that has mileage_at_service (by completed date, else created).
+ */
+export function getLastRecordedOdometerFromRepairs(
+  repairs: RepairEntry[],
+  vehicleId: number
+): { km: number; tracking_code: string } | null {
+  const withKm = repairs.filter((r) => r.vehicle_id === vehicleId && r.mileage_at_service != null);
+  if (withKm.length === 0) {
+    return null;
+  }
+  const sorted = [...withKm].sort((a, b) => {
+    const da = (a.completed_at || a.created_at || "").trim();
+    const db = (b.completed_at || b.created_at || "").trim();
+    if (db !== da) {
+      return db.localeCompare(da);
+    }
+    return b.id - a.id;
+  });
+  const r = sorted[0];
+  return { km: r.mileage_at_service as number, tracking_code: r.tracking_code };
 }

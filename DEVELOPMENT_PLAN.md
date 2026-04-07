@@ -4,7 +4,7 @@
 История и завершенные крупные блоки выносятся в `docs/planning/archive/`.
 
 - Active plan owner: `planner` + `architect`
-- Last updated: `2026-04-05`
+- Last updated: `2026-04-06`
 - Archive: `docs/planning/archive/`
 - Status: `m2 completed | m3 in progress — PDF persist + versioned snapshot + client portal + staff dashboard analytics (MoneyFlow / Procurement / ServiceBoard) в продуктовом контуре; дальше: MoneyFlow сводка закупок + Dashboard No invoice/No vehicles; исторический UX / monthly / supplier; параллельно — усиление E2E+CI (без ретраев, готовность API, явные PDF-фикстуры) по docs/testing/playwright-e2e-framework.md`
 
@@ -134,6 +134,7 @@ Milestone включает:
 
 ### M4: Deferred Media And Extended Reporting
 - постоянное хранилище фото ремонта (MinIO / S3-compatible)
+- **PDF акты завершения:** перенос бинарников `RepairDocument` в объектное хранилище (S3-compatible) вместо привязки к локальному `MEDIA_ROOT`/Docker volume — единая модель с фото, устойчивые URL/выдача для `GET …/pdf/` и export, миграция и бэкап на уровне бакета (см. `NEXT_STEPS` → PDF)
 - расширенные финансовые сценарии: оплаты, скидки, налоги, inventory
 - current status: `later`
 

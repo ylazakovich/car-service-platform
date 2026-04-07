@@ -17,13 +17,16 @@ class CompletionFinancialTotals:
 
 
 def compute_completion_financial_totals(
-    service_price: Decimal | None,
+    labor_prices: Sequence[Decimal | None],
     purchases: Sequence[Any],
 ) -> CompletionFinancialTotals:
     """
-    Mirrors logic in pdf_generator line items: one labor line + parts at client sale prices.
+    Sum labor lines (optional price per line) + parts at client sale prices.
     """
-    labor = service_price if service_price is not None else Decimal("0")
+    labor = Decimal("0")
+    for p in labor_prices:
+        if p is not None:
+            labor += p
     parts_client = Decimal("0")
     parts_purchase = Decimal("0")
     for p in purchases:

@@ -6,6 +6,7 @@ import {
   createRepair,
   deleteRepair as deleteRepairApi,
   deleteRepairNote,
+  fetchRepair,
   fetchRepairs,
   regeneratePortalToken,
   reorderRepairs,
@@ -14,10 +15,13 @@ import {
   type RepairWritePayload,
   type StaffUser,
 } from "../../../api/repairs";
+import { repairDraftsFromEntryLines } from "../components/RepairServiceLinesEditor";
 import {
   REPAIR_STATUS_LABELS,
+  newRepairServiceLineDraft,
   type RepairEntry,
   type RepairNote,
+  type RepairServiceLineDraft,
   type RepairStatus,
   type RepairStatusFilter,
 } from "../shared/repairs";
@@ -26,8 +30,7 @@ import type { Vehicle } from "../shared/vehicles";
 export type RepairFormState = {
   vehicle_id: string;
   master_id: string;
-  service_key: string;
-  custom_service: string;
+  service_lines: RepairServiceLineDraft[];
   issue_notes: string;
   status: RepairStatus;
 };
@@ -35,19 +38,29 @@ export type RepairFormState = {
 export const emptyRepairForm: RepairFormState = {
   vehicle_id: "",
   master_id: "",
-  service_key: "",
-  custom_service: "",
+  service_lines: [newRepairServiceLineDraft()],
   issue_notes: "",
   status: "new",
 };
 
+/** @deprecated Intake form uses multi-line services; kept for any legacy imports. */
 export const customRepairServiceOption = "Custom Service";
 
 function mapApiRepairToEntry(item: RepairItem): RepairEntry {
+  const sl =
+    item.service_lines && item.service_lines.length > 0
+      ? item.service_lines.map((l) => ({
+          id: l.id != null ? String(l.id) : null,
+          name: l.name,
+          catalog_service_id: l.catalog_service_id,
+          sort_order: l.sort_order ?? 0,
+        }))
+      : [{ id: null, name: item.service_name, catalog_service_id: null, sort_order: 0 }];
+
   return {
     id: item.id,
-    created_at: item.created_at.slice(0, 10),
-    updated_at: item.updated_at.slice(0, 10),
+    created_at: item.created_at,
+    updated_at: item.updated_at,
     completed_at: item.completed_at ?? "",
     vehicle_id: item.vehicle_id,
     vehicle_label: item.vehicle_label,
@@ -55,6 +68,7 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
     master_id: item.master_id != null ? String(item.master_id) : "",
     master_name: item.master_name,
     service_name: item.service_name,
+    service_lines: sl,
     issue_notes: item.issue_notes,
     repair_notes: item.repair_notes.map((n) => ({
       id: String(n.id),
@@ -64,9 +78,14 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
       text: n.text,
     })),
     status: item.status,
+    mileage_at_service: item.mileage_at_service ?? null,
     tracking_code: item.tracking_code,
     portal_token: item.portal_token,
     has_pdf: item.has_pdf ?? false,
+    latest_act_document_total:
+      item.latest_act_document_total != null && Number.isFinite(item.latest_act_document_total)
+        ? item.latest_act_document_total
+        : null,
     estimated_date: item.estimated_date ?? "",
     before_photos: item.before_photos,
     during_photos: item.during_photos,
@@ -81,6 +100,23 @@ function getStaffUserLabel(staff: StaffUser): string {
 
 function getLocalTodayDate() {
   return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+function parseMileageAtServiceInput(
+  raw: string
+): { ok: true; value: number | null } | { ok: false; message: string } {
+  const t = raw.trim().replace(/,/g, "").replace(/\s/g, "");
+  if (!t) {
+    return { ok: true, value: null };
+  }
+  if (!/^\d+$/.test(t)) {
+    return { ok: false, message: "Odometer must be a whole number (km), or leave empty." };
+  }
+  const n = Number(t);
+  if (n > 2_147_483_647) {
+    return { ok: false, message: "Odometer value is too large." };
+  }
+  return { ok: true, value: n };
 }
 
 function createPreviewUrls(files: File[]) {
@@ -135,8 +171,13 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [repairModalStatus, setRepairModalStatus] = useState<RepairStatus>("new");
   const [repairModalMasterId, setRepairModalMasterId] = useState("");
   const [repairModalCompletedAt, setRepairModalCompletedAt] = useState("");
+  const [repairModalMileageAtService, setRepairModalMileageAtService] = useState("");
   const [repairModalEstimatedDate, setRepairModalEstimatedDate] = useState("");
   const [repairModalNewNote, setRepairModalNewNote] = useState("");
+  const [repairModalServiceLines, setRepairModalServiceLines] = useState<RepairServiceLineDraft[]>([
+    newRepairServiceLineDraft(),
+  ]);
+  const [repairModalIssueNotes, setRepairModalIssueNotes] = useState("");
   const [repairBeforePhotos, setRepairBeforePhotos] = useState<string[]>([]);
   const [repairDuringPhotos, setRepairDuringPhotos] = useState<string[]>([]);
   const [repairAfterPhotos, setRepairAfterPhotos] = useState<string[]>([]);
@@ -171,8 +212,11 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalStatus("new");
     setRepairModalMasterId("");
     setRepairModalCompletedAt("");
+    setRepairModalMileageAtService("");
     setRepairModalEstimatedDate("");
     setRepairModalNewNote("");
+    setRepairModalServiceLines([newRepairServiceLineDraft()]);
+    setRepairModalIssueNotes("");
     setRepairBeforePhotos([]);
     setRepairDuringPhotos([]);
     setRepairAfterPhotos([]);
@@ -193,11 +237,36 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalStatus(repair.status);
     setRepairModalMasterId(repair.master_id);
     setRepairModalCompletedAt(repair.completed_at);
+    setRepairModalMileageAtService(
+      repair.mileage_at_service != null ? String(repair.mileage_at_service) : ""
+    );
     setRepairModalEstimatedDate(repair.estimated_date);
     setRepairModalNewNote("");
+    setRepairModalServiceLines(repairDraftsFromEntryLines(repair.service_lines));
+    setRepairModalIssueNotes(repair.issue_notes);
     setRepairBeforePhotos(repair.before_photos);
     setRepairDuringPhotos(repair.during_photos);
     setRepairAfterPhotos(repair.after_photos);
+  }
+
+  function prefillHandoffRepairCreate(source: RepairEntry) {
+    const copied = source.service_lines
+      .filter((l) => l.name.trim())
+      .map((l) => ({
+        key: crypto.randomUUID(),
+        name: l.name,
+        catalog_service_id: l.catalog_service_id,
+      }));
+    setRepairForm({
+      vehicle_id: String(source.vehicle_id),
+      master_id: "",
+      service_lines: copied.length > 0 ? copied : [newRepairServiceLineDraft()],
+      issue_notes: source.issue_notes,
+      status: "new",
+    });
+    setRepairError("");
+    closeRepairModal();
+    setIsRepairFormOpen(true);
   }
 
   async function handleRepairSubmit(event: FormEvent<HTMLFormElement>) {
@@ -206,9 +275,11 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setIsSavingRepair(true);
 
     const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id);
-    const serviceName =
-      repairForm.service_key === customRepairServiceOption ? repairForm.custom_service.trim() : repairForm.service_key;
     const selectedMaster = staffUsers.find((master) => String(master.id) === repairForm.master_id);
+
+    const trimmedLines = repairForm.service_lines
+      .map((l) => ({ ...l, name: l.name.trim() }))
+      .filter((l) => l.name.length > 0);
 
     if (!selectedVehicle) {
       setRepairError("Select a vehicle for this repair.");
@@ -222,16 +293,23 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       return;
     }
 
-    if (!serviceName) {
-      setRepairError("Choose a service or write your own.");
+    if (trimmedLines.length === 0) {
+      setRepairError("Add at least one service.");
       setIsSavingRepair(false);
       return;
     }
 
+    const service_lines = trimmedLines.map((l, i) => ({
+      name: l.name,
+      catalog_service_id: l.catalog_service_id,
+      sort_order: i,
+    }));
+
     const payload: RepairWritePayload = {
       vehicle_id: Number(repairForm.vehicle_id),
       master_id: repairForm.master_id ? Number(repairForm.master_id) : null,
-      service_name: serviceName,
+      service_name: trimmedLines[0].name,
+      service_lines,
       issue_notes: repairForm.issue_notes.trim() || "No issue notes provided yet.",
       status: repairForm.status,
     };
@@ -310,12 +388,46 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       }
     }
 
-    const updated = await updateRepair(selectedRepairId, {
+    const canEditServicesAndNotes =
+      user?.role === "admin" ||
+      (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id));
+
+    let mileageForPayload: number | null = null;
+    if (repairModalStatus === "completed") {
+      const parsed = parseMileageAtServiceInput(repairModalMileageAtService);
+      if (!parsed.ok) {
+        window.alert(parsed.message);
+        return;
+      }
+      mileageForPayload = parsed.value;
+    }
+
+    const payload: Partial<RepairWritePayload> = {
       status: repairModalStatus,
       master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
       completed_at: repairModalStatus === "completed" ? repairModalCompletedAt || null : null,
       estimated_date: repairModalEstimatedDate || null,
-    });
+      mileage_at_service: repairModalStatus === "completed" ? mileageForPayload : null,
+    };
+
+    if (canEditServicesAndNotes) {
+      const trimmedLines = repairModalServiceLines
+        .map((l) => ({ ...l, name: l.name.trim() }))
+        .filter((l) => l.name.length > 0);
+      if (trimmedLines.length === 0) {
+        window.alert("Add at least one service.");
+        return;
+      }
+      payload.service_lines = trimmedLines.map((l, i) => ({
+        name: l.name,
+        catalog_service_id: l.catalog_service_id,
+        sort_order: i,
+      }));
+      payload.service_name = trimmedLines[0].name;
+      payload.issue_notes = repairModalIssueNotes.trim() || selectedRepair.issue_notes;
+    }
+
+    const updated = await updateRepair(selectedRepairId, payload);
 
     setRepairs((current) =>
       current.map((repair) =>
@@ -384,6 +496,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     setDragOverColumn(status);
+    setDragOverCardId(null);
   }
 
   function handleColumnDragLeave(event: React.DragEvent<HTMLDivElement>) {
@@ -503,9 +616,27 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   }
 
   function markRepairPdfAvailable(repairId: number) {
-    setRepairs((current) =>
-      current.map((repair) => (repair.id === repairId ? { ...repair, has_pdf: true } : repair))
-    );
+    void (async () => {
+      try {
+        const item = await fetchRepair(repairId);
+        setRepairs((current) =>
+          current.map((repair) =>
+            repair.id === repairId
+              ? {
+                  ...mapApiRepairToEntry(item),
+                  before_photos: repair.before_photos,
+                  during_photos: repair.during_photos,
+                  after_photos: repair.after_photos,
+                }
+              : repair
+          )
+        );
+      } catch {
+        setRepairs((current) =>
+          current.map((repair) => (repair.id === repairId ? { ...repair, has_pdf: true } : repair))
+        );
+      }
+    })();
   }
 
   return {
@@ -527,10 +658,17 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalMasterId,
     repairModalCompletedAt,
     setRepairModalCompletedAt,
+    repairModalMileageAtService,
+    setRepairModalMileageAtService,
     repairModalEstimatedDate,
     setRepairModalEstimatedDate,
     repairModalNewNote,
     setRepairModalNewNote,
+    repairModalServiceLines,
+    setRepairModalServiceLines,
+    repairModalIssueNotes,
+    setRepairModalIssueNotes,
+    prefillHandoffRepairCreate,
     repairBeforePhotos,
     repairDuringPhotos,
     repairAfterPhotos,

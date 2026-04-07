@@ -96,6 +96,22 @@ async function pickDashboardDateRange(user: ReturnType<typeof userEvent.setup>, 
   });
 }
 
+/** Default `/repairs/` mock uses this plate + model in `vehicle_label` (modal `aria-labelledby`). */
+const SMOKE_DEFAULT_REPAIR_DIALOG_NAME = /WB 1234K\s*•\s*Toyota Corolla/;
+
+async function openRepairKanbanCardByTrackingCode(
+  user: ReturnType<typeof userEvent.setup>,
+  trackingCode: string
+): Promise<void> {
+  const board = await screen.findByLabelText("Repairs kanban board");
+  const chip = within(board).getByText(`#${trackingCode}`);
+  const card = chip.closest("article");
+  if (!card || !(card instanceof HTMLElement)) {
+    throw new Error(`Kanban card for ${trackingCode} not found`);
+  }
+  await user.click(card);
+}
+
 /** Minimal valid `/api/analytics/dashboard/` payload for tests that override `mockApi.get`. */
 function createStubDashboardAnalyticsResponse(): DashboardAnalyticsResponse {
   return {
@@ -1151,8 +1167,10 @@ describe("bootstrap application", () => {
     await user.click((await screen.findAllByText("WB 1234K"))[0]);
     expect(await screen.findByRole("button", { name: "Edit Vehicle" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete Vehicle" })).toBeInTheDocument();
-    expect(screen.getByText("Date Added: 04-11-2024")).toBeInTheDocument();
-    expect(screen.getAllByText("Brake Inspection")).toHaveLength(2);
+    // Desktop + mobile vehicle panels both render the same meta (two matching nodes).
+    expect(screen.getAllByText("Date Added: 04-11-2024").length).toBeGreaterThanOrEqual(1);
+    // Vehicle modal: repair title may appear once (e.g. mobile list) or again on History tab (table); not duplicated as former desktop cards + list.
+    expect(screen.getAllByText("Brake Inspection").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows the ordered parts linked to the selected repair", async () => {
@@ -1163,9 +1181,9 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     expect((await screen.findAllByText("1 linked part")).length).toBeGreaterThan(0);
 
-    await user.click(screen.getAllByText("Brake Inspection")[1]);
+    await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
 
-    const repairDialog = await screen.findByRole("dialog");
+    const repairDialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     expect(within(repairDialog).getByText("Linked Parts")).toBeInTheDocument();
     expect(within(repairDialog).getByText("Brake Pad Set")).toBeInTheDocument();
     expect(within(repairDialog).getByText("AutoParts Pro")).toBeInTheDocument();
@@ -1270,9 +1288,9 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
-    await user.click(screen.getAllByText("Wheel Alignment")[1]);
+    await openRepairKanbanCardByTrackingCode(user, "TOR-1015");
 
-    const repairDialog = await screen.findByRole("dialog");
+    const repairDialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     const completedDateInput = within(repairDialog).getByDisplayValue("08-03-2025");
 
     await user.clear(completedDateInput);
@@ -1874,7 +1892,7 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
-    await screen.findAllByText("Brake Inspection");
+    await screen.findByLabelText("Repairs kanban board");
 
     expect(screen.getByText("#TOR-1011")).toBeInTheDocument();
   });
@@ -1885,9 +1903,9 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
-    await user.click(screen.getAllByText("Brake Inspection")[1]);
+    await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     expect(within(dialog).getByRole("button", { name: "Regenerate client portal link" })).toBeInTheDocument();
   });
 
@@ -1945,9 +1963,9 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getAllByRole("button", { name: "Repairs" })[0]);
-    await user.click(screen.getAllByText("Brake Inspection")[1]);
+    await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     expect(within(dialog).queryByRole("button", { name: "Regenerate client portal link" })).not.toBeInTheDocument();
   });
 
@@ -1958,9 +1976,9 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
-    await user.click(screen.getAllByText("Brake Inspection")[1]);
+    await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     await user.click(within(dialog).getByRole("button", { name: "Regenerate client portal link" }));
 
     expect(mockApi.post).not.toHaveBeenCalledWith(
@@ -1977,9 +1995,9 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
-    await user.click(screen.getAllByText("Brake Inspection")[1]);
+    await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     await user.click(within(dialog).getByRole("button", { name: "Regenerate client portal link" }));
 
     await waitFor(() => {
@@ -2070,6 +2088,33 @@ describe("bootstrap application", () => {
               updated_at: "2025-03-06T10:00:00Z",
             },
           ],
+        });
+      }
+      if (url === "/repairs/11/") {
+        return Promise.resolve({
+          data: {
+            id: 11,
+            vehicle_id: 1,
+            vehicle_label: "WB 1234K • Toyota Corolla",
+            owner_name: "Alex Johnson",
+            master_id: null,
+            master_name: "",
+            service_name: "First Act Repair",
+            issue_notes: "First completed repair without act.",
+            status: "completed",
+            tracking_code: "TOR-1011",
+            portal_token: "test-portal-token-1011",
+            has_pdf: true,
+            latest_act_document_total: 299,
+            estimated_date: null,
+            completed_at: "2025-03-05",
+            repair_notes: [],
+            before_photos: [],
+            during_photos: [],
+            after_photos: [],
+            created_at: "2025-03-05T10:00:00Z",
+            updated_at: "2025-03-05T10:00:00Z",
+          },
         });
       }
       if (url === "/services/") {
