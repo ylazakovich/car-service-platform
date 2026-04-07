@@ -2671,6 +2671,27 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         <span>{formatCurrency(amount)}</span>
       </div>
     );
+    const renderWarehouseSupplierCell = (
+      supplierName: string,
+      supplierId: number,
+      parts: Array<{ part_name: string; current_quantity_total: number }>
+    ) => (
+      <div className="dashboard-supplier-cell">
+        <strong className="dashboard-supplier-name">{supplierName || `ID ${supplierId}`}</strong>
+        {parts.length ? (
+          <ul className="dashboard-supplier-parts" aria-label={`Parts from ${supplierName || `supplier ${supplierId}`}`}>
+            {parts.map((part) => (
+              <li key={`${supplierId}-${part.part_name}`} className="dashboard-supplier-part-row">
+                <span className="dashboard-supplier-part-name">{part.part_name}</span>
+                <span className="dashboard-supplier-part-qty">{formatCount(part.current_quantity_total)} pcs</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="dashboard-supplier-parts-empty">No part names</span>
+        )}
+      </div>
+    );
     return (
       <div className="workspace-stack dashboard-workspace">
         <section className="dashboard-shell">
@@ -3040,7 +3061,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                   </div>
                   <p className="workspace-copy">
-                    Full current supplier portfolio with quantities and buy totals split between on-stock and in-transit parts.
+                    Full current supplier portfolio with warehouse part names plus quantities and buy totals split between
+                    on-stock and in-transit parts.
                   </p>
                   {warehouseAnalytics?.suppliers_top_current?.length ? (
                     <table className="dashboard-table">
@@ -3055,7 +3077,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <tbody>
                         {warehouseAnalytics.suppliers_top_current.map((row) => (
                           <tr key={`${row.supplier_id}-${row.supplier_name}`}>
-                            <td>{row.supplier_name || `ID ${row.supplier_id}`}</td>
+                            <td>{renderWarehouseSupplierCell(row.supplier_name, row.supplier_id, row.parts ?? [])}</td>
                             <td>
                               {renderWarehouseSupplierPortfolioCell(
                                 row.in_stock_quantity_total ?? (row.in_stock_buy_total > 0 ? row.quantity_total : 0),
@@ -3217,12 +3239,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <h3>Assigned now</h3>
                             </div>
                           </div>
-                          <div className="dashboard-worker-grid">
+                          <div className="dashboard-worker-grid dashboard-worker-grid-masters">
                             {serviceBoardAnalytics.masters_current.length === 0 ? (
                               <p className="workspace-note">No masters configured yet.</p>
                             ) : null}
                             {serviceBoardAnalytics.masters_current.map((master) => (
-                              <article className="dashboard-worker-card service-board-card-with-info" key={`current-${master.master_id}`}>
+                              <article
+                                className="dashboard-worker-card dashboard-worker-card-master dashboard-worker-card-master-current service-board-card-with-info"
+                                key={`current-${master.master_id}`}
+                              >
                                 <ServiceBoardInfoButton
                                   title={`${master.display_name} current load`}
                                   summary="This card shows the current live workload for the selected master."
@@ -3236,7 +3261,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                   <strong>{master.display_name}</strong>
                                   <span className="tag">{formatCount(master.assigned_open_current)} open</span>
                                 </div>
-                                <div className="dashboard-worker-status-grid" aria-label={`${master.display_name} current status breakdown`}>
+                                <div
+                                  className="dashboard-worker-status-grid dashboard-worker-status-grid-master"
+                                  aria-label={`${master.display_name} current status breakdown`}
+                                >
                                   <div className="dashboard-worker-status-cell">
                                     <span>New</span>
                                     <strong>{formatCount(master.current_status_counts.new)}</strong>
@@ -3262,12 +3290,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <h3>Completed work</h3>
                             </div>
                           </div>
-                          <div className="dashboard-worker-grid">
+                          <div className="dashboard-worker-grid dashboard-worker-grid-masters">
                             {serviceBoardAnalytics.masters_range.length === 0 ? (
                               <p className="workspace-note">No range performance data available.</p>
                             ) : null}
                             {serviceBoardAnalytics.masters_range.map((master) => (
-                              <article className="dashboard-worker-card service-board-card-with-info" key={`range-${master.master_id}`}>
+                              <article
+                                className="dashboard-worker-card dashboard-worker-card-master dashboard-worker-card-master-range service-board-card-with-info"
+                                key={`range-${master.master_id}`}
+                              >
                                 <ServiceBoardInfoButton
                                   title={`${master.display_name} range performance`}
                                   summary="This card shows how the selected master performed inside the active Service Board range."
