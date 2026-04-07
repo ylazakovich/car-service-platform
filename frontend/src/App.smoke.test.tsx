@@ -886,13 +886,14 @@ describe("bootstrap application", () => {
 
     const warehouseParts = await screen.findByRole("heading", { name: "Current Stock Position", level: 3 });
     const warehouseSection = warehouseParts.closest("section");
-    const supplierBreakdownHeading = screen.getByRole("heading", { name: "Supplier breakdown", level: 3 });
-    const supplierBreakdownSection = supplierBreakdownHeading.closest("section");
+    const supplierBreakdownCopy = screen.getByText(
+      "Full current supplier portfolio with supplier totals and part-level stock/transit breakdown."
+    );
+    const supplierBreakdownSection = supplierBreakdownCopy.closest("section");
 
     expect(warehouseSection).not.toBeNull();
     expect(supplierBreakdownSection).not.toBeNull();
     expect(screen.getByRole("heading", { name: "Invoice Coverage", level: 3 })).toBeInTheDocument();
-    expect(supplierBreakdownHeading).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Exports by staff", level: 3 })).not.toBeInTheDocument();
 
     await waitFor(() => {
