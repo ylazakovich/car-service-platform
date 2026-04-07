@@ -587,7 +587,9 @@ describe("bootstrap application", () => {
               current_buy_total: 200,
               in_stock_buy_total: 120,
               in_transit_buy_total: 80,
-              quantity_total: 9,
+              current_quantity_total: 9,
+              in_stock_quantity_total: 6,
+              in_transit_quantity_total: 3,
             },
           ],
         };
@@ -854,14 +856,23 @@ describe("bootstrap application", () => {
       expect(within(actsFact).queryByText("Act exports in period:")).not.toBeInTheDocument();
     });
 
+    await user.click(within(salesPlan).getByRole("button", { name: "More info about Service sales (live)" }));
+    expect(await screen.findByRole("dialog", { name: "Service sales (live) details" })).toBeInTheDocument();
+    expect(screen.getByText("This card estimates service revenue from the current service catalog for repairs completed in the selected period.")).toBeInTheDocument();
+    expect(screen.getByText("Sum current catalog prices for services attached to repairs completed inside the selected date range.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close info about Service sales (live)" }));
+
     await user.click(screen.getByRole("tab", { name: "Warehouse" }));
 
     const warehouseParts = await screen.findByRole("heading", { name: "Current Stock Position", level: 3 });
     const warehouseSection = warehouseParts.closest("section");
+    const supplierBreakdownHeading = screen.getByRole("heading", { name: "Supplier breakdown", level: 3 });
+    const supplierBreakdownSection = supplierBreakdownHeading.closest("section");
 
     expect(warehouseSection).not.toBeNull();
+    expect(supplierBreakdownSection).not.toBeNull();
     expect(screen.getByRole("heading", { name: "Invoice Coverage", level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Top suppliers", level: 3 })).toBeInTheDocument();
+    expect(supplierBreakdownHeading).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Exports by staff", level: 3 })).not.toBeInTheDocument();
 
     await waitFor(() => {
@@ -875,7 +886,15 @@ describe("bootstrap application", () => {
       expect(within(warehouseSection as HTMLElement).getByText(/200,00\s*zł/)).toBeInTheDocument();
       expect(within(warehouseSection as HTMLElement).getByText(/350,00\s*zł/)).toBeInTheDocument();
       expect(within(warehouseSection as HTMLElement).getByText(/150,00\s*zł/)).toBeInTheDocument();
+      expect(within(supplierBreakdownSection as HTMLElement).getByText("6 pcs")).toBeInTheDocument();
+      expect(within(supplierBreakdownSection as HTMLElement).getByText("3 pcs")).toBeInTheDocument();
+      expect(within(supplierBreakdownSection as HTMLElement).getByText("9 pcs")).toBeInTheDocument();
     });
+
+    await user.click(within(warehouseSection as HTMLElement).getByRole("button", { name: "More info about In stock value" }));
+    expect(await screen.findByRole("dialog", { name: "In stock value details" })).toBeInTheDocument();
+    expect(screen.getByText("This card values the currently delivered portfolio using purchase cost, resale value, and implied margin.")).toBeInTheDocument();
+    expect(screen.getByText("Buy = sum purchase totals on delivered lines; Sale = sum resale totals on delivered lines; Margin = Sale - Buy.")).toBeInTheDocument();
   });
 
   it("resets moneyflow to the last 30 days on every dashboard visit", async () => {
@@ -948,6 +967,11 @@ describe("bootstrap application", () => {
               master_id: 10,
               display_name: "Chris North",
               assigned_open_current: 3,
+              current_status_counts: {
+                new: 1,
+                in_progress: 1,
+                waiting_parts: 1,
+              },
               waiting_parts_current: 1,
               estimated_assigned_value_current: 950,
             },
@@ -1018,7 +1042,9 @@ describe("bootstrap application", () => {
       expect(within(selectedRange).getAllByText("6 d").length).toBeGreaterThan(0);
       expect(within(selectedRange).getByText("7")).toBeInTheDocument();
       expect(within(mastersSection).getByText("3 masters in the workshop roster.")).toBeInTheDocument();
-      expect(within(mastersSection).getByText(/950,00\s*zł/)).toBeInTheDocument();
+      expect(within(mastersSection).getByText("New")).toBeInTheDocument();
+      expect(within(mastersSection).getByText("In progress")).toBeInTheDocument();
+      expect(within(mastersSection).getAllByText("Waiting parts").length).toBeGreaterThan(0);
       expect(within(mastersSection).getByText(/1800,00\s*zł/)).toBeInTheDocument();
       expect(within(mastersSection).getAllByText("Chris North")).toHaveLength(2);
       expect(within(allTimeSection).getByText("18")).toBeInTheDocument();
@@ -1026,7 +1052,13 @@ describe("bootstrap application", () => {
       expect(within(allTimeSection).getByText("9")).toBeInTheDocument();
       expect(within(allTimeSection).getByText("4")).toBeInTheDocument();
       expect(within(allTimeSection).getByText("5")).toBeInTheDocument();
+      expect(within(mastersSection).queryByText(/950,00\s*zł/)).not.toBeInTheDocument();
     });
+
+    await user.click(within(selectedRange).getByRole("button", { name: "More info about Open repairs" }));
+    expect(await screen.findByRole("dialog", { name: "Open repairs details" })).toBeInTheDocument();
+    expect(screen.getByText("This card shows backlog at the end of the selected Service Board range.")).toBeInTheDocument();
+    expect(screen.getByText("Count repairs that were still not completed on the selected range end date.")).toBeInTheDocument();
   });
 
   it("shows a partial act coverage state when completed repairs still miss acts", async () => {
