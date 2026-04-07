@@ -1,1 +1,1 @@
-{"id":"55e30e6be4876575b93d590d46151897","fullName":"users.tests.UserUpdateViewTests#test_user_can_update_own_name","name":"test_user_can_update_own_name","status":"passed","testResultsByEnv":{"backend":"49f232a3f36e125870ccd86b728bc674"}}
+{"id":"55e30e6be4876575b93d590d46151897","fullName":"users.tests.UserUpdateViewTests#test_user_can_update_own_name","name":"test_user_can_update_own_name","status":"passed","testResultsByEnv":{"backend":"239ff8a51438b992b490891c7217f2dc"}}
