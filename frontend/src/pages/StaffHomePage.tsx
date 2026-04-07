@@ -2672,11 +2672,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         <span>{formatCurrency(amount)}</span>
       </div>
     );
-    const renderWarehouseSupplierMetric = (label: string, quantity: number, amount: number) => {
+    const renderWarehouseSupplierMetric = (quantity: number, amount: number) => {
       const isEmpty = quantity === 0 && amount === 0;
       return (
         <div className={`dashboard-supplier-inline-metric ${isEmpty ? "dashboard-supplier-inline-metric-empty" : ""}`}>
-          <span className="dashboard-supplier-inline-metric-label">{label}</span>
           <strong>{formatCount(quantity)} pcs</strong>
           <span>{formatCurrency(amount)}</span>
         </div>
@@ -2720,8 +2719,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <span className="dashboard-supplier-part-name">{part.part_name}</span>
                   </div>
                   <div className="dashboard-supplier-part-metrics">
-                    {renderWarehouseSupplierMetric("On stock", part.in_stock_quantity_total, part.in_stock_buy_total)}
-                    {renderWarehouseSupplierMetric("In transit", part.in_transit_quantity_total, part.in_transit_buy_total)}
+                    {renderWarehouseSupplierMetric(part.in_stock_quantity_total, part.in_stock_buy_total)}
+                    {renderWarehouseSupplierMetric(part.in_transit_quantity_total, part.in_transit_buy_total)}
                   </div>
                 </li>
               ))}

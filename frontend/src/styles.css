@@ -2374,26 +2374,26 @@ textarea { resize: vertical; }
 
 .dashboard-supplier-breakdown {
   display: grid;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 .dashboard-supplier-card {
   display: grid;
-  gap: 0.9rem;
-  padding: 1rem 1.1rem;
+  gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.012)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01)),
     rgba(255, 255, 255, 0.01);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .dashboard-supplier-card-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
-  gap: 1rem;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
 }
 
 .dashboard-supplier-head {
@@ -2403,7 +2403,7 @@ textarea { resize: vertical; }
 
 .dashboard-supplier-name {
   display: block;
-  font-size: 1.02rem;
+  font-size: 0.98rem;
   line-height: 1.25;
 }
 
@@ -2416,14 +2416,14 @@ textarea { resize: vertical; }
 }
 
 .dashboard-supplier-summary {
-  display: grid;
-  gap: 0.18rem;
-  padding: 0.75rem 0.85rem;
-  border: 1px solid rgba(205, 216, 58, 0.16);
-  border-radius: 16px;
-  background:
-    linear-gradient(180deg, rgba(205, 216, 58, 0.08), rgba(255, 255, 255, 0)),
-    rgba(255, 255, 255, 0.02);
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid rgba(205, 216, 58, 0.12);
+  border-radius: 999px;
+  background: rgba(205, 216, 58, 0.05);
 }
 
 .dashboard-supplier-summary-label {
@@ -2435,36 +2435,37 @@ textarea { resize: vertical; }
 }
 
 .dashboard-supplier-summary strong {
-  font-size: 1rem;
+  font-size: 0.86rem;
   line-height: 1.2;
 }
 
 .dashboard-supplier-summary span:last-child {
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .dashboard-supplier-card-body {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.35rem;
 }
 
 .dashboard-supplier-card-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(180px, 220px) minmax(180px, 220px);
-  gap: 0.75rem;
-  padding: 0 0.15rem;
+  grid-template-columns: minmax(0, 1.6fr) minmax(120px, 140px) minmax(120px, 140px);
+  gap: 0.55rem;
+  padding: 0 0.1rem;
   color: var(--text-soft);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .dashboard-supplier-part-list {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.32rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -2472,26 +2473,26 @@ textarea { resize: vertical; }
 
 .dashboard-supplier-part-item {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(180px, 220px) minmax(180px, 220px);
-  gap: 0.75rem;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.6fr) minmax(120px, 140px) minmax(120px, 140px);
+  gap: 0.55rem;
+  align-items: center;
 }
 
 .dashboard-supplier-part-main {
   display: flex;
   align-items: center;
-  min-height: 3rem;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.022);
+  min-height: 2.15rem;
+  padding: 0.35rem 0.1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .dashboard-supplier-part-name {
   color: var(--text);
   word-break: break-word;
-  font-size: 0.86rem;
-  line-height: 1.3;
+  font-size: 0.83rem;
+  line-height: 1.2;
 }
 
 .dashboard-supplier-part-metrics {
@@ -2500,34 +2501,25 @@ textarea { resize: vertical; }
 
 .dashboard-supplier-inline-metric {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.08rem;
   align-content: center;
-  min-height: 3rem;
-  padding: 0.65rem 0.8rem;
+  min-height: 2.15rem;
+  padding: 0.35rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.022);
-}
-
-.dashboard-supplier-inline-metric-label {
-  color: var(--text-soft);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .dashboard-supplier-inline-metric strong {
   color: var(--text);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   line-height: 1.2;
 }
 
 .dashboard-supplier-inline-metric span:last-child {
   color: var(--text-soft);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   line-height: 1.2;
 }
 
@@ -2549,6 +2541,7 @@ textarea { resize: vertical; }
 @media (max-width: 980px) {
   .dashboard-supplier-card-head {
     grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .dashboard-supplier-card-columns {
@@ -2562,13 +2555,17 @@ textarea { resize: vertical; }
   .dashboard-supplier-part-metrics {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
+    gap: 0.45rem;
   }
 }
 
 @media (max-width: 640px) {
   .dashboard-supplier-card {
-    padding: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  .dashboard-supplier-summary {
+    justify-self: start;
   }
 
   .dashboard-supplier-part-metrics {
