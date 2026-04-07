@@ -18,7 +18,7 @@
 
 Перед задачей (или сразу после bootstrap) агент **должен** убедиться, что среда соответствует ожиданиям репозитория:
 
-1. Запустить **`node scripts/agents/verify-agent-environment.mjs`**: по умолчанию проверяется **Codex** (`~/.codex/config.toml` и секция `[mcp_servers]`). Для Cursor / Claude Code указать **`--mcp-target cursor`** или **`--mcp-target claude`**.
+1. Запустить **`node scripts/agents/verify-agent-environment.mjs`**: по умолчанию **`--mcp-target auto`** — выбирается первый существующий конфиг в порядке **Cursor** (`~/.cursor/mcp.json`) → **Claude Code** (`~/.claude/settings.json`) → **Codex** (`~/.codex/config.toml`). Явно: **`--mcp-target cursor`**, **`claude`** или **`codex`**, если авто-выбор не подходит (например на машине есть несколько клиентов). Для Cursor/Claude пустой `mcpServers: {}` допустим (типично с ECC); скрипт выдаёт предупреждение, **`--strict`** — завершить с ошибкой при пустом списке.
 2. Если проверка **не прошла**: для **Cursor / Claude Code** — `bash scripts/agents/bootstrap-agent-session.sh` с тем же `--mcp-target` (и профилем MCP при необходимости), затем verify снова; для **Codex** — настроить `~/.codex/config.toml` (`[mcp_servers.*]`, см. `mcp/README.md` и [документацию Codex MCP](https://developers.openai.com/codex/mcp)), затем verify снова.
 3. Для **CI / только репозиторий** (без домашнего MCP-файла): **`--skip-user-mcp-file`**.
 

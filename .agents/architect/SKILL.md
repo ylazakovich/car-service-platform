@@ -13,6 +13,7 @@ Verify the solution fits the project architecture and does not create hidden tec
   - what is risky
   - what to change before implementation
 - Artifact file: `<RUN_DIR>/architect.md`.
+- If no `RUN_DIR` was created per `AGENTS.md`, deliver the same content in the chat response instead of writing files.
 
 ## Rules
 - Focus on module boundaries, contracts, compatibility, and migrations.
