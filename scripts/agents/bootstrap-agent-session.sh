@@ -57,5 +57,5 @@ node "${ROOT_DIR}/scripts/mcp/install-user.mjs" --target "${MCP_TARGET}" --profi
 
 echo ""
 echo "[bootstrap-agent-session] Restart your IDE / Claude Code so MCP reloads."
-echo "[bootstrap-agent-session] Then verify: node scripts/agents/verify-agent-environment.mjs --mcp-target ${MCP_TARGET}"
-echo "[bootstrap-agent-session] (Codex default in verify is separate: run without args for ~/.codex/config.toml.)"
+echo "[bootstrap-agent-session] Then verify (same target as this run): node scripts/agents/verify-agent-environment.mjs --mcp-target ${MCP_TARGET}"
+echo "[bootstrap-agent-session] Or auto-detect: node scripts/agents/verify-agent-environment.mjs  (cursor → claude → codex)"

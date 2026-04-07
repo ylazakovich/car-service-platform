@@ -12,6 +12,7 @@ Implement UI/UX changes, API integration, and client-side validation without bre
 - Short changelog by screen and component.
 - Verification steps (build, tests, manual scenario).
 - Artifact file: `<RUN_DIR>/frontend-developer.md`.
+- If no `RUN_DIR` was created per `AGENTS.md`, deliver the same content in the chat response instead of writing files.
 
 ## Rules
 - Stay consistent with project style and patterns.
