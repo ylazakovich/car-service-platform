@@ -53,9 +53,10 @@ export class StaffMobileNavigationPage {
   }
 
   /**
-   * Перейти в секцию Vehicles или Repairs (меню шапки, иначе task switcher, иначе sidebar).
+   * Перейти в секцию (меню шапки, иначе task switcher, иначе sidebar).
+   * Staff видит только Vehicles / Repairs; admin — также Dashboard, Purchases, Users.
    */
-  async gotoStaffSection(section: "Vehicles" | "Repairs"): Promise<void> {
+  async gotoStaffSection(section: "Dashboard" | "Vehicles" | "Repairs" | "Purchases" | "Users"): Promise<void> {
     await this.waitForStaffNavigationChrome();
 
     const mobileToggle = this.workspaceMenuToggle();
