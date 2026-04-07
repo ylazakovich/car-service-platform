@@ -2,7 +2,7 @@
 
 - Last updated: 2026-04-06
 - Bootstrap сессии (обязательно для агентов): `docs/dev/agent-session-bootstrap.md`, `bash scripts/agents/bootstrap-agent-session.sh` (по умолчанию без установки пакетов на хост — Docker + hot reload)
-- Проверка готовности окружения: `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **Codex**; `--mcp-target cursor|claude` для других клиентов; политика в `AGENTS.md`)
+- Проверка готовности окружения: `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **auto**: cursor → claude → codex; `--mcp-target` для явного выбора; `--strict` — ошибка при пустом `mcpServers` в Cursor/Claude; политика в `AGENTS.md`)
 - Цель: единая «базовая точка» для Codex / Claude / Cursor без угадывания ролей; согласование с [Everything Claude Code (ECC)](https://github.com/affaan-m/everything-claude-code).
 
 ## 1) Локальные роли проекта (source of truth)

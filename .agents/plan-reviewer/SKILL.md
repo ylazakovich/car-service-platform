@@ -13,6 +13,7 @@ Review plan quality and whether the final implementation matches the plan and ar
 - Explicit verdict: `approved` or `changes_required`.
 - Report format: `.agents/templates/plan-review-report.md`.
 - Artifact file: `<RUN_DIR>/plan-review-report.md`.
+- If no `RUN_DIR` was created per `AGENTS.md`, deliver the same content in the chat response instead of writing files (still follow `.agents/templates/plan-review-report.md` structure).
 
 ## Rules
 - Check risks and potential regressions first, style second.

@@ -39,12 +39,16 @@ bash scripts/agents/bootstrap-agent-session.sh --deps-only
 Из **корня репозитория** (после bootstrap или перед задачей):
 
 ```bash
-# по умолчанию — Codex (~/.codex/config.toml, секция mcp_servers)
+# по умолчанию — auto: ~/.cursor/mcp.json → cursor, иначе ~/.claude/settings.json → claude, иначе ~/.codex/config.toml → codex
 node scripts/agents/verify-agent-environment.mjs
 
-# Cursor / Claude Code (после install-user / bootstrap)
+# явный клиент (если на машине несколько конфигов и авто не то)
 node scripts/agents/verify-agent-environment.mjs --mcp-target cursor
 node scripts/agents/verify-agent-environment.mjs --mcp-target claude
+node scripts/agents/verify-agent-environment.mjs --mcp-target codex
+
+# строго: для Cursor/Claude ошибка, если mcpServers пустой
+node scripts/agents/verify-agent-environment.mjs --strict
 ```
 
 Только файлы репозитория (без `~/.cursor/mcp.json` / `~/.claude/settings.json`), например в CI:
@@ -84,7 +88,7 @@ bash scripts/agents/bootstrap-environment.sh
 ## Чеклист для агента (копируемый)
 
 1. Прочитан `AGENTS.md`.
-2. Выполнен `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **Codex**; для Cursor/Claude — `--mcp-target cursor|claude`). При ошибке для Cursor/Claude — `bootstrap-agent-session.sh`, затем verify снова; для Codex — правка `~/.codex/config.toml` по `mcp/README.md`.
+2. Выполнен `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **auto**: cursor → claude → codex; явный `--mcp-target` при необходимости; `--strict` — не допускать пустой `mcpServers` в JSON). При ошибке для Cursor/Claude — `bootstrap-agent-session.sh`, затем verify снова; для Codex — правка `~/.codex/config.toml` по `mcp/README.md`.
 3. **Не** требовать `npm ci` / `pip install` на хосте, если задача выполняется в Docker; при сомнении — подтвердить у пользователя или использовать `--with-host-deps` только при явной необходимости запуска тулов на хосте.
 4. Пользователь уведомлён о **перезапуске** клиента для подхвата MCP.
 5. **MCP hygiene:** напоминание отключить нерелевантные глобальные MCP (см. `docs/dev/mcp-deduplication.md`); в ответе — поле **`MCP hygiene`** по шаблону `AGENTS.md`.
