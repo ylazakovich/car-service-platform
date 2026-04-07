@@ -2665,63 +2665,72 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         </dl>
       </article>
     );
-    const renderWarehouseSupplierPortfolioCell = (quantity: number | null | undefined, amount: number) => (
-      <div className="dashboard-table-metric-cell dashboard-table-metric-cell-total">
+    const renderWarehouseSupplierSummary = (quantity: number | null | undefined, amount: number) => (
+      <div className="dashboard-supplier-summary">
+        <span className="dashboard-supplier-summary-label">Supplier total</span>
         <strong>{formatCount(typeof quantity === "number" && Number.isFinite(quantity) ? quantity : 0)} pcs</strong>
         <span>{formatCurrency(amount)}</span>
       </div>
     );
-    const renderWarehouseSupplierCell = (
-      supplierName: string,
-      supplierId: number,
-      parts: Array<{ part_name: string }>
-    ) => (
-      <div className="dashboard-supplier-cell">
-        <div className="dashboard-supplier-head">
-          <strong className="dashboard-supplier-name">{supplierName || `ID ${supplierId}`}</strong>
-          <span className="dashboard-supplier-meta">
-            {formatCount(parts.length)} {parts.length === 1 ? "part" : "parts"}
-          </span>
+    const renderWarehouseSupplierMetric = (label: string, quantity: number, amount: number) => {
+      const isEmpty = quantity === 0 && amount === 0;
+      return (
+        <div className={`dashboard-supplier-inline-metric ${isEmpty ? "dashboard-supplier-inline-metric-empty" : ""}`}>
+          <span className="dashboard-supplier-inline-metric-label">{label}</span>
+          <strong>{formatCount(quantity)} pcs</strong>
+          <span>{formatCurrency(amount)}</span>
         </div>
-        {parts.length ? (
-          <ul className="dashboard-supplier-parts" aria-label={`Parts from ${supplierName || `supplier ${supplierId}`}`}>
-            {parts.map((part) => (
-              <li key={`${supplierId}-${part.part_name}`} className="dashboard-supplier-part-row">
-                <span className="dashboard-supplier-part-name">{part.part_name}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <span className="dashboard-supplier-parts-empty">No part names</span>
-        )}
-      </div>
-    );
-    const renderWarehouseSupplierMetricList = (
+      );
+    };
+    const renderWarehouseSupplierCard = (row: {
+      supplier_id: number;
+      supplier_name: string;
+      current_buy_total: number;
+      current_quantity_total: number;
+      quantity_total?: number;
       parts: Array<{
         part_name: string;
         in_stock_quantity_total: number;
         in_stock_buy_total: number;
         in_transit_quantity_total: number;
         in_transit_buy_total: number;
-      }>,
-      mode: "in_stock" | "in_transit"
-    ) => (
-      <ul className="dashboard-supplier-metric-list" aria-hidden="true">
-        {parts.map((part) => {
-          const quantity = mode === "in_stock" ? part.in_stock_quantity_total : part.in_transit_quantity_total;
-          const amount = mode === "in_stock" ? part.in_stock_buy_total : part.in_transit_buy_total;
-          const isEmpty = quantity === 0 && amount === 0;
-          return (
-            <li
-              key={`${mode}-${part.part_name}`}
-              className={`dashboard-supplier-metric-row ${isEmpty ? "dashboard-supplier-metric-row-empty" : ""}`}
-            >
-              <strong>{formatCount(quantity)} pcs</strong>
-              <span>{formatCurrency(amount)}</span>
-            </li>
-          );
-        })}
-      </ul>
+      }>;
+    }) => (
+      <article key={`${row.supplier_id}-${row.supplier_name}`} className="dashboard-supplier-card">
+        <div className="dashboard-supplier-card-head">
+          <div className="dashboard-supplier-head">
+            <strong className="dashboard-supplier-name">{row.supplier_name || `ID ${row.supplier_id}`}</strong>
+            <span className="dashboard-supplier-meta">
+              {formatCount(row.parts.length)} {row.parts.length === 1 ? "part" : "parts"}
+            </span>
+          </div>
+          {renderWarehouseSupplierSummary(row.current_quantity_total ?? row.quantity_total ?? 0, row.current_buy_total)}
+        </div>
+        {row.parts.length ? (
+          <div className="dashboard-supplier-card-body">
+            <div className="dashboard-supplier-card-columns" aria-hidden="true">
+              <span>Part</span>
+              <span>On stock</span>
+              <span>In transit</span>
+            </div>
+            <ul className="dashboard-supplier-part-list" aria-label={`Parts from ${row.supplier_name || `supplier ${row.supplier_id}`}`}>
+              {row.parts.map((part) => (
+                <li key={`${row.supplier_id}-${part.part_name}`} className="dashboard-supplier-part-item">
+                  <div className="dashboard-supplier-part-main">
+                    <span className="dashboard-supplier-part-name">{part.part_name}</span>
+                  </div>
+                  <div className="dashboard-supplier-part-metrics">
+                    {renderWarehouseSupplierMetric("On stock", part.in_stock_quantity_total, part.in_stock_buy_total)}
+                    {renderWarehouseSupplierMetric("In transit", part.in_transit_quantity_total, part.in_transit_buy_total)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <span className="dashboard-supplier-parts-empty">No part names</span>
+        )}
+      </article>
     );
     return (
       <div className="workspace-stack dashboard-workspace">
@@ -3096,36 +3105,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     on-stock and in-transit parts.
                   </p>
                   {warehouseAnalytics?.suppliers_top_current?.length ? (
-                    <table className="dashboard-table">
-                      <thead>
-                        <tr>
-                          <th>Supplier</th>
-                          <th>On stock</th>
-                          <th>In transit</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {warehouseAnalytics.suppliers_top_current.map((row) => (
-                          <tr key={`${row.supplier_id}-${row.supplier_name}`}>
-                            <td>{renderWarehouseSupplierCell(row.supplier_name, row.supplier_id, row.parts ?? [])}</td>
-                            <td>
-                              <div className="dashboard-supplier-metric-cell">
-                                {renderWarehouseSupplierMetricList(row.parts ?? [], "in_stock")}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="dashboard-supplier-metric-cell">
-                                {renderWarehouseSupplierMetricList(row.parts ?? [], "in_transit")}
-                              </div>
-                            </td>
-                            <td>
-                              {renderWarehouseSupplierPortfolioCell(row.current_quantity_total ?? row.quantity_total ?? 0, row.current_buy_total)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="dashboard-supplier-breakdown">
+                      {warehouseAnalytics.suppliers_top_current.map((row) => renderWarehouseSupplierCard(row))}
+                    </div>
                   ) : (
                     <p className="workspace-note">No suppliers in the current stock portfolio.</p>
                   )}
@@ -3188,11 +3170,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             </article>
                             <article className="metric-card service-board-card-with-info">
                               <ServiceBoardInfoButton
-                                title="Completed in range"
+                                title="Completed"
                                 summary="This card counts repairs that were finished inside the selected Service Board window."
                                 formula="Count repairs whose completion date falls inside the selected range."
                               />
-                              <span className="metric-label">Completed in range</span>
+                              <span className="metric-label">Completed</span>
                               <strong>{formatCount(serviceBoardAnalytics.range_summary.completed_repairs_in_range)}</strong>
                               <p>Closed jobs used for range performance.</p>
                             </article>
