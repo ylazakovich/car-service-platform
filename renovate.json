@@ -3,7 +3,7 @@
   "extends": ["config:best-practices", "mergeConfidence:all-badges"],
   "commitMessageTopic": "{{depName}}",
   "dependencyDashboardApproval": true,
-  "aliases": {
+  "registryAliases": {
     "allure-cli": "npm:allure"
   },
   "customManagers": [
@@ -83,8 +83,10 @@
     },
     {
       "description": "Group Allure Report 3: CLI (report.yml, depName allure-cli) + npm packages allure-*",
-      "matchPackagePatterns": ["/^allure/"],
-      "groupName": "allure report"
+      "groupName": "allure report",
+      "matchPackageNames": [
+        "//^allure//"
+      ]
     }
   ]
 }
