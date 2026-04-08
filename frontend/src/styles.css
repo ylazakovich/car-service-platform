@@ -3172,9 +3172,36 @@ button.moneyflow-series-toggle {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
+.purchases-compact-row--attention {
+  border-left: 3px solid rgba(224, 120, 80, 0.9);
+}
+
+.vehicle-row-act-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  min-width: 1.1rem;
+  flex-shrink: 0;
+}
+
+.vehicle-row-act-dot {
+  display: block;
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 50%;
+  background: #d4a012;
+  box-shadow: 0 0 0 2px rgba(212, 160, 18, 0.28);
+}
+
+.vehicles-compact-row--needs-act {
+  border-left: 3px solid rgba(212, 160, 18, 0.75);
+}
+
 .vehicles-compact-row-main {
   display: grid;
   grid-template-columns:
+    1.1rem
     minmax(4.5rem, 0.55fr)
     minmax(0, 1.25fr)
     minmax(0, 1fr)
@@ -3182,7 +3209,7 @@ button.moneyflow-series-toggle {
     minmax(4.25rem, max-content);
   gap: var(--s2) var(--s3);
   align-items: center;
-  min-width: 32rem;
+  min-width: 33rem;
 }
 
 .purchases-compact-cell {
@@ -3336,7 +3363,7 @@ button.moneyflow-series-toggle {
   }
 
   .vehicles-compact-row-main {
-    min-width: 28rem;
+    min-width: 29rem;
   }
 }
 
@@ -6495,61 +6522,24 @@ button.moneyflow-series-toggle {
 
   .vehicles-mobile-list-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto auto;
-    gap: 2px 10px;
-    min-width: 0 !important;
-    align-items: start;
+    grid-template-columns:
+      1.1rem
+      minmax(3.5rem, 0.5fr)
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(4.5rem, max-content)
+      minmax(3.75rem, max-content);
+    grid-template-rows: auto;
+    gap: var(--s2) var(--s3);
+    min-width: 26rem !important;
+    align-items: center;
   }
 
-  .vehicles-mobile-list-plate {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .vehicles-mobile-list-plate .purchases-compact-part-text {
+  .vehicles-mobile-list-main .vehicle-registry-plate-cell .purchases-compact-part-text {
     font-weight: 700;
-    font-size: 0.88rem;
-    letter-spacing: 0.04em;
+    font-size: 0.84rem;
+    letter-spacing: 0.03em;
     color: var(--accent);
-  }
-
-  .vehicles-mobile-list-meta {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0;
-    font-size: 0.68rem;
-    color: var(--text-soft);
-    line-height: 1.2;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .vehicles-mobile-list-title {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .vehicles-mobile-list-title .purchases-compact-part-text {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    font-size: 0.82rem;
-    font-weight: 600;
-    line-height: 1.35;
-  }
-
-  .vehicles-mobile-list-owner {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    white-space: normal;
-    font-size: 0.78rem;
-    color: var(--text-mid);
-    line-height: 1.35;
   }
 
   /* Purchases workspace — mirror vehicles controls; keep search (no duplicate rail) */

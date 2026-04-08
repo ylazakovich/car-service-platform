@@ -18,3 +18,14 @@ export const E2E_DEMO_REPAIR_SERVICE_NAME = "Oil change + filter replacement";
 
 /** Kanban / list summary when demo repair has multiple `repair_service_lines` (first line + count). */
 export const E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY = "Oil change + filter replacement +1";
+
+/**
+ * `purchases.part_name` fragment from `demo/demo_data.sql` (vehicle `E2E_DEMO_REPAIR_VEHICLE_PLATE`, repair TOR-1001).
+ */
+export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Castrol EDGE";
+
+/**
+ * Fresh demo DB has no `repair_documents` rows → completed repairs have `has_pdf: false`.
+ * Vehicles registry shows `.vehicles-compact-row--needs-act` for any vehicle with such a repair.
+ */
+export const E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE = E2E_DEMO_REPAIR_VEHICLE_PLATE;
