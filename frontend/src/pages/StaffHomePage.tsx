@@ -3091,6 +3091,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <div className="dashboard-report-head">
                     <div>
                       <p className="eyebrow">Current portfolio</p>
+                      <h3>Supplier portfolio</h3>
                     </div>
                   </div>
                   <p className="workspace-copy">

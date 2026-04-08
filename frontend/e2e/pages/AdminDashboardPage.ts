@@ -26,7 +26,7 @@ export class AdminDashboardPage {
   }
 
   async expectWarehouseSuppliersSummary(): Promise<void> {
-    await expect(this.page.getByRole("heading", { name: "Top suppliers" })).toBeVisible();
+    await expect(this.page.getByRole("heading", { name: "Supplier portfolio" })).toBeVisible();
   }
 
   async expectMoneyFlowTab(): Promise<void> {
