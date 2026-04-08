@@ -3,6 +3,9 @@
   "extends": ["config:best-practices", "mergeConfidence:all-badges"],
   "commitMessageTopic": "{{depName}}",
   "dependencyDashboardApproval": true,
+  "aliases": {
+    "allure-cli": "npm:allure"
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -25,6 +28,16 @@
       "datasourceTemplate": "python-version",
       "depNameTemplate": "python",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Allure Report 3 CLI (npm package `allure`) pinned in report.yml; depName uses alias allure-cli",
+      "managerFilePatterns": ["/^\\.github\\/workflows\\/report\\.ya?ml$/"],
+      "matchStrings": [
+        "npx --yes allure@(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+) generate"
+      ],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "allure-cli"
     }
   ],
   "packageRules": [
@@ -67,6 +80,11 @@
       "description": "Do not update @e965/xlsx because this project intentionally uses that fork",
       "matchPackageNames": ["@e965/xlsx"],
       "enabled": false
+    },
+    {
+      "description": "Group Allure Report 3: CLI (report.yml, depName allure-cli) + npm packages allure-*",
+      "matchPackagePatterns": ["/^allure/"],
+      "groupName": "allure report"
     }
   ]
 }
