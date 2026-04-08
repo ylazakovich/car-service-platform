@@ -57,12 +57,26 @@ export type DashboardWarehouseInvoiceSplit = {
 };
 
 export type DashboardWarehouseSupplierRow = {
+  parts: DashboardWarehouseSupplierPartRow[];
   supplier_id: number;
   supplier_name: string;
   current_buy_total: number;
   in_stock_buy_total: number;
   in_transit_buy_total: number;
-  quantity_total: number;
+  current_quantity_total: number;
+  in_stock_quantity_total: number;
+  in_transit_quantity_total: number;
+  quantity_total?: number;
+};
+
+export type DashboardWarehouseSupplierPartRow = {
+  part_name: string;
+  current_buy_total: number;
+  in_stock_buy_total: number;
+  in_transit_buy_total: number;
+  current_quantity_total: number;
+  in_stock_quantity_total: number;
+  in_transit_quantity_total: number;
 };
 
 export type DashboardWarehousePayload = {
@@ -153,6 +167,11 @@ export type DashboardAnalyticsResponse = {
       master_id: number;
       display_name: string;
       assigned_open_current: number;
+      current_status_counts: {
+        new: number;
+        in_progress: number;
+        waiting_parts: number;
+      };
       waiting_parts_current: number;
       estimated_assigned_value_current: number;
     }>;
@@ -225,6 +244,11 @@ export async function fetchDashboardAnalytics(params: {
     !Array.isArray(warehouse.suppliers_top_current)
   ) {
     throw new Error("Invalid dashboard analytics warehouse payload");
+  }
+  for (const supplier of warehouse.suppliers_top_current) {
+    if (!Array.isArray(supplier.parts)) {
+      throw new Error("Invalid dashboard analytics warehouse supplier parts payload");
+    }
   }
   return data as DashboardAnalyticsResponse;
 }

@@ -211,10 +211,37 @@ class StaffDashboardAnalyticsView(APIView):
                 current_buy_total=Sum(line_buy_amount),
                 in_stock_buy_total=Sum(line_buy_amount, filter=Q(delivered=True)),
                 in_transit_buy_total=Sum(line_buy_amount, filter=Q(delivered=False)),
-                quantity_total=Sum("quantity"),
+                current_quantity_total=Sum("quantity"),
+                in_stock_quantity_total=Sum("quantity", filter=Q(delivered=True)),
+                in_transit_quantity_total=Sum("quantity", filter=Q(delivered=False)),
             )
-            .order_by("-current_buy_total", "supplier__name")[:5]
+            .order_by("-current_buy_total", "supplier__name")
         )
+        supplier_part_rows = (
+            all_purchases_qs.values("supplier_id", "part_name")
+            .annotate(
+                current_buy_total=Sum(line_buy_amount),
+                in_stock_buy_total=Sum(line_buy_amount, filter=Q(delivered=True)),
+                in_transit_buy_total=Sum(line_buy_amount, filter=Q(delivered=False)),
+                current_quantity_total=Sum("quantity"),
+                in_stock_quantity_total=Sum("quantity", filter=Q(delivered=True)),
+                in_transit_quantity_total=Sum("quantity", filter=Q(delivered=False)),
+            )
+            .order_by("supplier_id", "-current_buy_total", "part_name")
+        )
+        supplier_parts_by_supplier: dict[int | None, list[dict]] = {}
+        for row in supplier_part_rows:
+            supplier_parts_by_supplier.setdefault(row["supplier_id"], []).append(
+                {
+                    "part_name": (row["part_name"] or "").strip() or "Unnamed part",
+                    "current_buy_total": _decimal_to_float(row["current_buy_total"]),
+                    "in_stock_buy_total": _decimal_to_float(row["in_stock_buy_total"]),
+                    "in_transit_buy_total": _decimal_to_float(row["in_transit_buy_total"]),
+                    "current_quantity_total": row["current_quantity_total"] or 0,
+                    "in_stock_quantity_total": row["in_stock_quantity_total"] or 0,
+                    "in_transit_quantity_total": row["in_transit_quantity_total"] or 0,
+                }
+            )
         return {
             "snapshot_as_of": timezone.now().isoformat(),
             "stock_totals": stock_totals,
@@ -234,7 +261,10 @@ class StaffDashboardAnalyticsView(APIView):
                     "current_buy_total": _decimal_to_float(row["current_buy_total"]),
                     "in_stock_buy_total": _decimal_to_float(row["in_stock_buy_total"]),
                     "in_transit_buy_total": _decimal_to_float(row["in_transit_buy_total"]),
-                    "quantity_total": row["quantity_total"] or 0,
+                    "current_quantity_total": row["current_quantity_total"] or 0,
+                    "in_stock_quantity_total": row["in_stock_quantity_total"] or 0,
+                    "in_transit_quantity_total": row["in_transit_quantity_total"] or 0,
+                    "parts": supplier_parts_by_supplier.get(row["supplier_id"], []),
                 }
                 for row in supplier_rows
             ],
@@ -493,6 +523,8 @@ class StaffDashboardAnalyticsView(APIView):
         current_open_by_master = list(
             current_open_qs.filter(master_id__isnull=False).values("master_id").annotate(
                 assigned_open_current=Count("id"),
+                new_current=Count("id", filter=Q(status=Repair.Status.NEW)),
+                in_progress_current=Count("id", filter=Q(status=Repair.Status.IN_PROGRESS)),
                 waiting_parts_current=Count("id", filter=Q(status=Repair.Status.WAITING_PARTS)),
             )
         )
@@ -558,6 +590,11 @@ class StaffDashboardAnalyticsView(APIView):
                     "master_id": master.id,
                     "display_name": display_name,
                     "assigned_open_current": current_counts.get("assigned_open_current", 0),
+                    "current_status_counts": {
+                        "new": current_counts.get("new_current", 0),
+                        "in_progress": current_counts.get("in_progress_current", 0),
+                        "waiting_parts": current_counts.get("waiting_parts_current", 0),
+                    },
                     "waiting_parts_current": current_counts.get("waiting_parts_current", 0),
                     "estimated_assigned_value_current": _decimal_to_float(estimated_value_by_master.get(master.id)),
                 }
