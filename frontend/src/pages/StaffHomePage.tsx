@@ -5,7 +5,11 @@ import api from "../api/client";
 import { exportRepairPdf, fetchStaffUsers, openRepairPdfForPreview, type StaffUser } from "../api/repairs";
 import { PdfPreviewModal } from "../components/PdfPreviewModal";
 import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
-import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from "../api/analytics";
+import {
+  fetchDashboardAnalytics,
+  type DashboardAnalyticsResponse,
+  type DashboardWarehouseSupplierRow,
+} from "../api/analytics";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
@@ -2671,24 +2675,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         <span>{formatCurrency(amount)}</span>
       </div>
     );
-    const renderWarehouseSupplierBreakdown = (
-      rows: Array<{
-        supplier_id: number;
-        supplier_name: string;
-        current_buy_total: number;
-        current_quantity_total: number;
-        quantity_total?: number;
-        parts: Array<{
-          part_name: string;
-          current_buy_total: number;
-          current_quantity_total: number;
-          in_stock_buy_total: number;
-          in_stock_quantity_total: number;
-          in_transit_buy_total: number;
-          in_transit_quantity_total: number;
-        }>;
-      }>
-    ) => (
+    const renderWarehouseSupplierBreakdown = (rows: DashboardWarehouseSupplierRow[]) => (
       <table className="dashboard-table dashboard-supplier-table">
         <thead>
           <tr>
