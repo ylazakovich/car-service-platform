@@ -3,7 +3,7 @@
   "extends": ["config:best-practices", "mergeConfidence:all-badges"],
   "commitMessageTopic": "{{depName}}",
   "dependencyDashboardApproval": true,
-  "registryAliases": {
+  "aliases": {
     "allure-cli": "npm:allure"
   },
   "customManagers": [
@@ -31,13 +31,14 @@
     },
     {
       "customType": "regex",
-      "description": "Allure Report 3 CLI (npm package `allure`) pinned in report.yml; depName uses alias allure-cli",
+      "description": "Allure Report 3 CLI: `npx allure@…` in report.yml. Registry package is `allure`; depName `allure-cli` is display-only (packageNameTemplate required — top-level `aliases` does not change npm lookup for regex manager).",
       "managerFilePatterns": ["/^\\.github\\/workflows\\/report\\.ya?ml$/"],
       "matchStrings": [
         "npx --yes allure@(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+) generate"
       ],
       "datasourceTemplate": "npm",
-      "depNameTemplate": "allure-cli"
+      "depNameTemplate": "allure-cli",
+      "packageNameTemplate": "allure"
     }
   ],
   "packageRules": [
@@ -83,10 +84,8 @@
     },
     {
       "description": "Group Allure Report 3: CLI (report.yml, depName allure-cli) + npm packages allure-*",
-      "groupName": "allure report",
-      "matchPackageNames": [
-        "//^allure//"
-      ]
+      "matchPackagePatterns": ["/^allure/"],
+      "groupName": "allure report"
     }
   ]
 }
