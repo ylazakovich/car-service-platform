@@ -155,6 +155,11 @@ class RepairPdfExportView(APIView):
                 {"detail": "PDF export is only available for completed repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if repair.mileage_at_service is None:
+            return Response(
+                {"detail": "Fill in Odometer when returned (km) before exporting the act."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         from .pdf_export import export_repair_pdf_and_snapshot
 
         pdf_bytes, doc = export_repair_pdf_and_snapshot(repair, request.user)

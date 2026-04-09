@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -23,10 +24,11 @@ class RepairServiceLineSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False,
     )
+    catalog_service_price = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True, required=False, write_only=True)
 
     class Meta:
         model = RepairServiceLine
-        fields = ("id", "name", "catalog_service_id", "sort_order")
+        fields = ("id", "name", "catalog_service_id", "catalog_service_price", "sort_order")
         read_only_fields = ("id",)
 
     def validate_name(self, value):
@@ -135,6 +137,22 @@ class RepairSerializer(serializers.ModelSerializer):
     def get_after_photos(self, obj):
         return []
 
+    def validate(self, attrs):
+        effective_status = attrs.get("status", getattr(self.instance, "status", None))
+        effective_mileage = attrs.get(
+            "mileage_at_service",
+            getattr(self.instance, "mileage_at_service", None),
+        )
+        if effective_status == Repair.Status.COMPLETED and effective_mileage is None:
+            raise serializers.ValidationError(
+                {
+                    "mileage_at_service": (
+                        "Fill in Odometer when returned (km) before marking the repair as completed."
+                    )
+                }
+            )
+        return attrs
+
     @staticmethod
     def _can_edit_service_lines(request, repair) -> bool:
         if not request or not request.user.is_authenticated:
@@ -151,10 +169,28 @@ class RepairSerializer(serializers.ModelSerializer):
             if len(lines_data) == 0:
                 raise ValidationError({"service_lines": "At least one service line is required."})
             for i, line in enumerate(lines_data):
+                catalog_service = line.get("catalog_service")
+                line_name = line["name"].strip()
+                if catalog_service is None:
+                    catalog_service = Service.objects.filter(name__iexact=line_name).first()
+                if catalog_service is None:
+                    catalog_service_price = line.get("catalog_service_price")
+                    if catalog_service_price is None:
+                        raise ValidationError(
+                            {"service_lines": f'Add a price for the new service "{line_name}".'}
+                        )
+                    catalog_service = Service.objects.create(
+                        name=line_name,
+                        price=catalog_service_price,
+                        is_active=True,
+                    )
+                    line_name = catalog_service.name
+                else:
+                    line_name = catalog_service.name
                 RepairServiceLine.objects.create(
                     repair=repair,
-                    name=line["name"],
-                    catalog_service=line.get("catalog_service"),
+                    name=line_name,
+                    catalog_service=catalog_service,
                     sort_order=line.get("sort_order", i),
                 )
         else:
@@ -165,6 +201,7 @@ class RepairSerializer(serializers.ModelSerializer):
                 )
             RepairServiceLine.objects.create(repair=repair, name=fn, sort_order=0)
 
+    @transaction.atomic
     def create(self, validated_data):
         lines_data = validated_data.pop("service_lines", None)
         repair = Repair.objects.create(**validated_data)
@@ -178,6 +215,7 @@ class RepairSerializer(serializers.ModelSerializer):
         repair.refresh_from_db()
         return repair
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         request = self.context.get("request")
         lines_data = validated_data.pop("service_lines", serializers.empty)

@@ -56,6 +56,7 @@ export interface StaffUser {
 export interface RepairServiceLineWrite {
   name: string;
   catalog_service_id?: number | null;
+  catalog_service_price?: number | null;
   sort_order?: number;
 }
 

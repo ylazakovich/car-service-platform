@@ -11,6 +11,7 @@ from services.models import Service
 from vehicles.models import Vehicle
 
 from .models import Repair, RepairDocument, RepairFinancialSnapshot, RepairNote
+from .pdf_generator import _repair_info_rows
 
 
 class RepairApiTests(TestCase):
@@ -81,6 +82,60 @@ class RepairApiTests(TestCase):
         self.assertTrue(data["tracking_code"].startswith("TOR-"))
         self.assertIn(self.vehicle.license_plate, data["vehicle_label"])
         self.assertEqual(data["owner_name"], self.customer.full_name)
+
+    def test_create_repair_creates_catalog_service_for_new_line_with_price(self):
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.post(
+            "/api/repairs/",
+            {
+                "vehicle_id": self.vehicle.id,
+                "service_name": "Custom Paint Job",
+                "issue_notes": "Customer wants a fresh color update",
+                "status": "new",
+                "master_id": self.staff_user.id,
+                "service_lines": [
+                    {
+                        "name": "Custom Paint Job",
+                        "catalog_service_price": "650.00",
+                        "sort_order": 0,
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        created_service = Service.objects.get(name="Custom Paint Job")
+        self.assertEqual(created_service.price, Decimal("650.00"))
+        repair = Repair.objects.get(pk=response.json()["id"])
+        line = repair.service_lines.get()
+        self.assertEqual(line.catalog_service_id, created_service.id)
+        self.assertEqual(line.name, created_service.name)
+
+    def test_create_repair_requires_price_for_new_service_line(self):
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.post(
+            "/api/repairs/",
+            {
+                "vehicle_id": self.vehicle.id,
+                "service_name": "Custom Bodywork",
+                "issue_notes": "Need custom bodywork estimate",
+                "status": "new",
+                "master_id": self.staff_user.id,
+                "service_lines": [
+                    {
+                        "name": "Custom Bodywork",
+                        "sort_order": 0,
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("service_lines", response.json())
 
     def test_tracking_code_auto_generated(self):
         first_response = self._create_repair(service_name="Oil Change")
@@ -160,13 +215,34 @@ class RepairApiTests(TestCase):
 
         response = self.client.patch(
             f"/api/repairs/{repair.id}",
-            {"status": "completed"},
+            {"status": "completed", "mileage_at_service": 128450},
             format="json",
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "completed")
         self.assertIsNotNone(response.json()["completed_at"])
+        self.assertEqual(response.json()["mileage_at_service"], 128450)
+
+    def test_completed_status_requires_returned_odometer(self):
+        self.client.force_authenticate(self.staff_user)
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Clutch Repair",
+            status="in_progress",
+        )
+
+        response = self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"status": "completed"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["mileage_at_service"][0],
+            "Fill in Odometer when returned (km) before marking the repair as completed.",
+        )
 
     def test_completed_at_can_be_overridden_manually(self):
         self.client.force_authenticate(self.staff_user)
@@ -175,11 +251,12 @@ class RepairApiTests(TestCase):
             service_name="Alignment",
             status="completed",
             completed_at="2025-03-05",
+            mileage_at_service=140000,
         )
 
         response = self.client.patch(
             f"/api/repairs/{repair.id}",
-            {"status": "completed", "completed_at": "2025-03-08"},
+            {"status": "completed", "completed_at": "2025-03-08", "mileage_at_service": 140250},
             format="json",
         )
 
@@ -193,6 +270,7 @@ class RepairApiTests(TestCase):
             service_name="Alignment",
             status="completed",
             completed_at="2025-03-05",
+            mileage_at_service=140000,
         )
 
         response = self.client.patch(
@@ -568,6 +646,7 @@ class RepairPdfViewTests(TestCase):
             status="new",
         )
         repair.status = "completed"
+        repair.mileage_at_service = 123456
         repair.save()
         return repair
 
@@ -647,6 +726,23 @@ class RepairPdfViewTests(TestCase):
         response = self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
         self.assertEqual(response.status_code, 400)
 
+    def test_pdf_export_post_requires_returned_odometer(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Full Service",
+            status="completed",
+            completed_at="2026-01-10",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["detail"],
+            "Fill in Odometer when returned (km) before exporting the act.",
+        )
+
     def test_pdf_export_persists_document_and_snapshot(self):
         repair = self._create_completed_repair()
         supplier = Supplier.objects.create(name="Parts Co")
@@ -724,3 +820,10 @@ class RepairPdfViewTests(TestCase):
         by_id = {row["id"]: row for row in response.json()}
         self.assertIsNone(by_id[without_pdf.id]["latest_act_document_total"])
         self.assertEqual(by_id[with_pdf.id]["latest_act_document_total"], 349.0)
+
+    def test_pdf_info_rows_include_returned_odometer(self):
+        repair = self._create_completed_repair()
+
+        rows = _repair_info_rows(repair)
+
+        self.assertIn(("ODOMETER WHEN RETURNED", "123,456 km"), rows)
