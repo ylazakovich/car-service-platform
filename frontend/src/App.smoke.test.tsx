@@ -1489,6 +1489,33 @@ describe("bootstrap application", () => {
       if (url === "/uploads/invoice/") {
         return Promise.resolve({ data: { url: "blob:test-invoice", name: "invoice.pdf" } });
       }
+      if (url === "/purchases/bulk/") {
+        const line = (data?.lines as Array<Record<string, unknown>> | undefined)?.[0];
+        return Promise.resolve({
+          data: [
+            {
+              id: 99,
+              order_date: data?.order_date,
+              approximate_delivery_date: null,
+              supplier: { id: 1, name: data?.supplier_name, nip: "", phone: "", email: "", notes: "" },
+              part_name: line?.part_name,
+              quantity: line?.quantity,
+              purchase_price: String(line?.purchase_price),
+              sale_price: String(line?.sale_price ?? 0),
+              repair_code: line?.repair_code,
+              vehicle: line?.vehicle_id,
+              vehicle_license_plate: "WB 1234K",
+              unit_of_measure: SMOKE_UOM_PCS,
+              is_shop_consumable: false,
+              invoice_name: "",
+              invoice_url: "",
+              delivered: false,
+              created_at: "2025-04-05T10:00:00Z",
+              updated_at: "2025-04-05T10:00:00Z",
+            },
+          ],
+        });
+      }
       if (isPurchasesIndexGet(url)) {
         return Promise.resolve({
           data: {
@@ -1539,13 +1566,17 @@ describe("bootstrap application", () => {
 
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith(
-        "/purchases/",
+        "/purchases/bulk/",
         expect.objectContaining({
           order_date: "2025-04-05",
           supplier_name: "AutoParts Pro",
-          part_name: "Brake Sensor",
-          repair_code: "TOR-1011",
-          vehicle_id: 1,
+          lines: expect.arrayContaining([
+            expect.objectContaining({
+              part_name: "Brake Sensor",
+              repair_code: "TOR-1011",
+              vehicle_id: 1,
+            }),
+          ]),
         })
       );
     });
@@ -1554,6 +1585,33 @@ describe("bootstrap application", () => {
   it("lets staff explicitly unlink a purchase from repair before saving", async () => {
     const user = userEvent.setup();
     mockApi.post.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/purchases/bulk/") {
+        const line = (data?.lines as Array<Record<string, unknown>> | undefined)?.[0];
+        return Promise.resolve({
+          data: [
+            {
+              id: 100,
+              order_date: data?.order_date,
+              approximate_delivery_date: null,
+              supplier: { id: 1, name: data?.supplier_name, nip: "", phone: "", email: "", notes: "" },
+              part_name: line?.part_name,
+              quantity: line?.quantity,
+              purchase_price: String(line?.purchase_price),
+              sale_price: String(line?.sale_price ?? 0),
+              repair_code: typeof line?.repair_code === "string" ? line.repair_code : "",
+              vehicle: typeof line?.vehicle_id === "number" ? line.vehicle_id : null,
+              vehicle_license_plate: typeof line?.vehicle_id === "number" ? "WB 1234K" : "",
+              unit_of_measure: SMOKE_UOM_PCS,
+              is_shop_consumable: false,
+              invoice_name: "",
+              invoice_url: "",
+              delivered: false,
+              created_at: "2025-04-05T10:00:00Z",
+              updated_at: "2025-04-05T10:00:00Z",
+            },
+          ],
+        });
+      }
       if (isPurchasesIndexGet(url)) {
         return Promise.resolve({
           data: {
@@ -1591,7 +1649,7 @@ describe("bootstrap application", () => {
 
     expect(screen.getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
     expect(
-      screen.getByText(/Leave vehicle and repair empty for stock or parts not tied to a job yet/)
+      screen.getByText(/Leave vehicle and repair empty on a line for stock or parts not tied to a job yet/)
     ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
@@ -1611,16 +1669,17 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Save line" }));
 
     await waitFor(() => {
-      const purchaseCall = mockApi.post.mock.calls.find(([url]) => url === "/purchases/");
+      const purchaseCall = mockApi.post.mock.calls.find(([u]) => u === "/purchases/bulk/");
       expect(purchaseCall).toBeTruthy();
       const payload = purchaseCall?.[1] as Record<string, unknown>;
       expect(payload).toMatchObject({
         order_date: "2025-04-05",
         supplier_name: "AutoParts Pro",
-        part_name: "Brake Sensor",
-        vehicle_id: 1,
       });
-      expect(payload).not.toHaveProperty("repair_code");
+      const lines = payload.lines as Array<Record<string, unknown>>;
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toMatchObject({ part_name: "Brake Sensor", vehicle_id: 1 });
+      expect(lines[0]).not.toHaveProperty("repair_code");
     });
   });
 

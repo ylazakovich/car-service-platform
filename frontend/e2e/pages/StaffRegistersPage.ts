@@ -48,8 +48,11 @@ export class StaffRegistersPage {
     return this.page.getByRole("searchbox", { name: "Search services" });
   }
 
+  /** Service names render as `<input value="…">` — match display value, not text nodes. */
   serviceRowByNameSnippet(snippet: string | RegExp): Locator {
-    return this.page.locator(".services-register-editor-table tbody tr").filter({ hasText: snippet });
+    return this.page
+      .locator(".services-register-editor-table tbody tr")
+      .filter({ has: this.page.getByDisplayValue(snippet) });
   }
 
   async expectCustomersWorkspaceVisible(): Promise<void> {
