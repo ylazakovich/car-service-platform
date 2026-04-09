@@ -2,8 +2,8 @@
 
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
-- Last updated: `2026-04-06`
-- Status: `m3 продуктовый контур pdf/snapshot/dashboard в работе; усиление E2E+CI (без ретраев) вынесено в активный трек — см. docs/testing/playwright-e2e-framework.md и NOW ниже`
+- Last updated: `2026-04-09`
+- Status: `m3 продуктовый контур pdf/snapshot/dashboard в работе; E2E+CI — см. docs/testing/playwright-e2e-framework.md; добавлен бэклог CMR + закупки/инвойсы (см. NOW → CMR / Dashboard masters / Purchases & suppliers)`
 
 ## NOW
 
@@ -62,6 +62,20 @@
 - [ ] Скрыть для `staff` customer PII на уровне API и UI: имя клиента, телефон, email и любые другие контактные данные не должны попадать в vehicle-centric workflow.
 - [ ] Ограничить `staff` только vehicle-centric surface: работа с customer records и customer identity должна остаться исключительно у `admin`.
 
+### CMR / field app (`f-cmr-template` + backend)
+- [ ] Контракт создания/обновления услуги из CMR: **всегда передавать цену**; валидация и маппинг в `Service.price` (или явная line-item модель, если уйдём от плоского Service).
+- [ ] Исправить рассинхрон: услуги, созданные через CMR, **появляются в Django Admin** (`/admin/`) в том же реестре `Service`, что и остальные (проверить API, права, отдельные таблицы/черновики, кэш).
+- [ ] Убрать **загрузку фотографий** из сценариев CMR (UI + любые вызовы `uploads`/media из полевого клиента).
+
+### Dashboard: мастера и расходники
+- [ ] **Связать вкладку MoneyFlow (1) и ServiceBoard (3)** в части мастеров: общий фильтр/дреллдаун по мастеру, deep-link или синхронизация query state — спецификация UX и границы данных (snapshot vs live).
+- [ ] Добавить **новую вкладку/подвкладку** для **consumables / расходников**, **не включаемых в стоимость акта** (PDF/snapshot): модель учёта, API, UI; зафиксировать в `DOMAIN_RULES.md` исключение из act totals.
+
+### Purchases, инвойсы, поставщики
+- [ ] **Несколько товарных позиций на один инвойс/закупку** (как несколько services на repair): схема БД (header + lines), API, миграция существующих записей при необходимости, UI на экране закупок.
+- [ ] **OCR / разбор скана инвойса:** извлечение позиций (товар, цена, количество при наличии), поставщик, референсы; черновик + подтверждение пользователем перед сохранением (выбор движка: локально / внешний API — решение в ADR или open decisions).
+- [ ] Экран **Purchases**: **создание заказа поставщику** (purchase order / supplier order flow) и явное **ведение базы поставщиков** (CRUD, поиск, привязка к заказам и к строкам закупки; расширить текущий `Supplier` + UX).
+
 ## NEXT
 - [ ] Реализовать monthly history на snapshot-backed данных с фильтрами по клиенту, машине и периоду.
 - [ ] Реализовать supplier reporting на тех же финансовых основаниях, что и PDF/dashboard.
@@ -94,6 +108,7 @@
 - Пятый приоритет M3: зафиксировать moneyflow на стабильном дефолтном диапазоне `today - 30 days` -> `today`.
 - Шестой приоритет M3: перевести staff на vehicle-only access model без доступа к customer PII.
 - Сводка закупок на **MoneyFlow** и подвкладка **No invoice / No vehicles** в **Dashboard** — закрывают UX-разрыв после упрощения экрана **Purchases** (метрики и фильтры переносятся в аналитический/операционный контур дашборда).
+- **Продуктовый ввод 2026-04-09:** CMR (цена услуги, admin parity, без фото), дашборд (мастера между вкладками, расходники вне акта), закупки (multi-line invoice, OCR, заказы поставщикам + реестр) — детализация в NOW выше и в `DEVELOPMENT_PLAN.md` §3 п.10–12.
 
 ## Completed (M3 partial)
 - [x] PDF export кнопка на `completed` repair + preview modal (`PdfPreviewModal`, `pdf_generator.py`) — `2026-04-02`
