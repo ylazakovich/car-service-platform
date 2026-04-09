@@ -40,6 +40,15 @@ export default defineConfig({
       "/media": apiProxy,
     },
   },
+  /* `vite preview` (default :4173) does not reuse server.proxy unless configured — same proxy as dev for local build preview + Django on VITE_DEV_PROXY_TARGET */
+  preview: {
+    host: true,
+    port: 4173,
+    proxy: {
+      "/api": apiProxy,
+      "/media": apiProxy,
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: ["allure-vitest/setup", "./vitest.setup.ts"],
