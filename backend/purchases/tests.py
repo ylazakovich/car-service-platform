@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 from customers.models import Customer
 from vehicles.models import Vehicle
 
-from .models import Purchase, Supplier
+from .models import Purchase, Supplier, UnitOfMeasure
 
 
 class SupplierApiTests(TestCase):
@@ -85,6 +85,7 @@ class PurchaseApiTests(TestCase):
             make="Ford",
             model="Focus",
         )
+        self.uom_pcs = UnitOfMeasure.objects.get(code="pcs")
 
     def _purchase_payload(self, **overrides):
         payload = {
@@ -109,6 +110,7 @@ class PurchaseApiTests(TestCase):
             quantity=1,
             purchase_price="15.00",
             supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
         )
 
         response = self.client.get("/api/purchases/")
@@ -143,6 +145,71 @@ class PurchaseApiTests(TestCase):
         self.assertEqual(Supplier.objects.count(), supplier_count_before)
         self.assertEqual(response.json()["supplier"]["name"], self.supplier.name)
 
+    def test_bulk_create_purchases_shared_invoice(self):
+        self.client.force_authenticate(self.user)
+        supplier_count_before = Supplier.objects.count()
+
+        response = self.client.post(
+            "/api/purchases/bulk/",
+            {
+                "order_date": "2026-04-01",
+                "supplier_name": "Bulk Supplier",
+                "invoice_name": "inv.pdf",
+                "invoice_url": "https://example.com/inv.pdf",
+                "delivered": True,
+                "is_shop_consumable": False,
+                "lines": [
+                    {
+                        "part_name": "Part A",
+                        "quantity": 2,
+                        "purchase_price": "10.00",
+                        "sale_price": "15.00",
+                        "vehicle_id": self.vehicle.id,
+                        "repair_code": "TOR-1001",
+                    },
+                    {
+                        "part_name": "Part B",
+                        "quantity": 1,
+                        "purchase_price": "5.50",
+                        "sale_price": "8.00",
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0]["part_name"], "Part A")
+        self.assertEqual(data[1]["part_name"], "Part B")
+        self.assertEqual(data[0]["invoice_name"], "inv.pdf")
+        self.assertEqual(data[1]["invoice_name"], "inv.pdf")
+        self.assertTrue(data[0]["delivered"])
+        self.assertEqual(Supplier.objects.filter(name="Bulk Supplier").count(), 1)
+        self.assertEqual(Supplier.objects.count(), supplier_count_before + 1)
+
+    def test_bulk_create_shop_consumables_rejects_vehicle(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(
+            "/api/purchases/bulk/",
+            {
+                "order_date": "2026-04-02",
+                "supplier_name": "Chem Co",
+                "is_shop_consumable": True,
+                "lines": [
+                    {
+                        "part_name": "Gloves",
+                        "quantity": 5,
+                        "purchase_price": "1.00",
+                        "vehicle_id": self.vehicle.id,
+                    },
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_create_purchase_without_repair_or_vehicle(self):
         self.client.force_authenticate(self.user)
 
@@ -158,6 +225,8 @@ class PurchaseApiTests(TestCase):
         self.assertIsNone(purchase.vehicle)
         self.assertEqual(response.json()["repair_code"], "")
         self.assertIsNone(response.json()["vehicle"])
+        self.assertFalse(response.json()["is_shop_consumable"])
+        self.assertEqual(response.json()["unit_of_measure"]["code"], "pcs")
 
     def test_search_filters_by_part_name(self):
         self.client.force_authenticate(self.user)
@@ -167,6 +236,7 @@ class PurchaseApiTests(TestCase):
             quantity=4,
             purchase_price="45.00",
             supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
         )
         Purchase.objects.create(
             order_date="2026-03-21",
@@ -174,6 +244,7 @@ class PurchaseApiTests(TestCase):
             quantity=1,
             purchase_price="12.00",
             supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
         )
 
         response = self.client.get("/api/purchases/", {"q": "brake"})
@@ -190,6 +261,7 @@ class PurchaseApiTests(TestCase):
             quantity=4,
             purchase_price="8.50",
             supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
         )
 
         response = self.client.get(f"/api/purchases/{purchase.id}")
@@ -209,6 +281,7 @@ class PurchaseApiTests(TestCase):
             quantity=1,
             purchase_price="20.00",
             supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
         )
 
         response = self.client.patch(
@@ -228,6 +301,7 @@ class PurchaseApiTests(TestCase):
             quantity=1,
             purchase_price="120.00",
             supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
         )
 
         response = self.client.patch(
@@ -249,9 +323,171 @@ class PurchaseApiTests(TestCase):
             quantity=1,
             purchase_price="5.00",
             supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
         )
 
         response = self.client.delete(f"/api/purchases/{purchase.id}")
 
         self.assertEqual(response.status_code, 204)
         self.assertFalse(Purchase.objects.filter(id=purchase.id).exists())
+
+    def test_filter_shop_consumable_param(self):
+        self.client.force_authenticate(self.user)
+        Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Brake Disc",
+            quantity=1,
+            purchase_price="50.00",
+            supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=False,
+        )
+        Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Gloves",
+            quantity=10,
+            purchase_price="2.00",
+            supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
+        )
+
+        parts = self.client.get("/api/purchases/", {"shop_consumable": "false"})
+        cons = self.client.get("/api/purchases/", {"shop_consumable": "true"})
+        self.assertEqual(parts.status_code, 200)
+        self.assertEqual(cons.status_code, 200)
+        self.assertEqual(len(parts.json()["results"]), 1)
+        self.assertEqual(len(cons.json()["results"]), 1)
+        self.assertEqual(parts.json()["results"][0]["part_name"], "Brake Disc")
+        self.assertEqual(cons.json()["results"][0]["part_name"], "Gloves")
+
+    def test_list_units_of_measure(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.get("/api/purchases/units/")
+        self.assertEqual(response.status_code, 200)
+        codes = {row["code"] for row in response.json()}
+        self.assertIn("pcs", codes)
+        self.assertIn("L", codes)
+
+    def test_staff_cannot_create_unit_of_measure(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(
+            "/api/purchases/units/",
+            {"code": "box", "name": "Box", "is_active": True, "sort_order": 99},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_can_create_and_list_inactive_units(self):
+        admin = get_user_model().objects.create_user(
+            email="admin-uom@test.local",
+            password="admin12345",
+            role="admin",
+            is_staff=True,
+        )
+        UnitOfMeasure.objects.create(
+            code="old-uom",
+            name="Legacy",
+            is_active=False,
+            sort_order=999,
+        )
+        self.client.force_authenticate(self.user)
+        staff_list = self.client.get("/api/purchases/units/")
+        self.assertEqual(staff_list.status_code, 200)
+        staff_codes = {row["code"] for row in staff_list.json()}
+        self.assertNotIn("old-uom", staff_codes)
+
+        self.client.force_authenticate(admin)
+        admin_list = self.client.get("/api/purchases/units/", {"include_inactive": "true"})
+        self.assertEqual(admin_list.status_code, 200)
+        admin_codes = {row["code"] for row in admin_list.json()}
+        self.assertIn("old-uom", admin_codes)
+
+        response = self.client.post(
+            "/api/purchases/units/",
+            {"code": "srv", "name": "Service unit", "is_active": True, "sort_order": 15},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["code"], "srv")
+
+    def test_staff_cannot_patch_unit_of_measure(self):
+        self.client.force_authenticate(self.user)
+        u = UnitOfMeasure.objects.get(code="L")
+        response = self.client.patch(f"/api/purchases/units/{u.id}", {"name": "Litres"}, format="json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_cannot_delete_unit_referenced_by_purchase(self):
+        admin = get_user_model().objects.create_user(
+            email="admin-del@test.local",
+            password="admin12345",
+            role="admin",
+            is_staff=True,
+        )
+        u = UnitOfMeasure.objects.create(code="del-uom", name="To delete", is_active=True, sort_order=900)
+        Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Part",
+            quantity=1,
+            purchase_price="10.00",
+            supplier=self.supplier,
+            unit_of_measure=u,
+        )
+        self.client.force_authenticate(admin)
+        response = self.client.delete(f"/api/purchases/units/{u.id}")
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(UnitOfMeasure.objects.filter(id=u.id).exists())
+
+    def test_admin_can_reorder_units(self):
+        admin = get_user_model().objects.create_user(
+            email="admin-reorder@test.local",
+            password="admin12345",
+            role="admin",
+            is_staff=True,
+        )
+        self.client.force_authenticate(admin)
+        listed = self.client.get("/api/purchases/units/", {"include_inactive": "true"})
+        self.assertEqual(listed.status_code, 200)
+        ids = [row["id"] for row in listed.json()]
+        rev = list(reversed(ids))
+        resp = self.client.post("/api/purchases/units/reorder/", {"order": rev}, format="json")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual([row["id"] for row in resp.json()], rev)
+        again = self.client.get("/api/purchases/units/", {"include_inactive": "true"})
+        self.assertEqual([row["id"] for row in again.json()], rev)
+
+    def test_staff_cannot_reorder_units(self):
+        self.client.force_authenticate(self.user)
+        listed = self.client.get("/api/purchases/units/")
+        ids = [row["id"] for row in listed.json()]
+        resp = self.client.post("/api/purchases/units/reorder/", {"order": list(reversed(ids))}, format="json")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_reorder_units_requires_full_id_set(self):
+        admin = get_user_model().objects.create_user(
+            email="admin-reorder2@test.local",
+            password="admin12345",
+            role="admin",
+            is_staff=True,
+        )
+        self.client.force_authenticate(admin)
+        listed = self.client.get("/api/purchases/units/", {"include_inactive": "true"})
+        ids = [row["id"] for row in listed.json()]
+        resp = self.client.post("/api/purchases/units/reorder/", {"order": ids[:-1]}, format="json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_admin_create_unit_without_sort_order_appends(self):
+        admin = get_user_model().objects.create_user(
+            email="admin-append@test.local",
+            password="admin12345",
+            role="admin",
+            is_staff=True,
+        )
+        self.client.force_authenticate(admin)
+        resp = self.client.post(
+            "/api/purchases/units/",
+            {"code": "no-sort", "name": "No sort sent", "is_active": True},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertIn("sort_order", resp.json())

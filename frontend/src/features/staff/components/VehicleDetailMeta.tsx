@@ -136,13 +136,24 @@ export function VehicleHeroTitle({ icon, children }: { icon: ReactNode; children
   );
 }
 
-export function VehicleMetaRow({ icon, text, title }: { icon: ReactNode; text: string; title?: string }) {
+export function VehicleMetaRow({
+  icon,
+  text,
+  title,
+  textClassName,
+}: {
+  icon: ReactNode;
+  text: string;
+  title?: string;
+  /** e.g. phone-display for formatted numbers */
+  textClassName?: string;
+}) {
   return (
     <div className="vehicle-detail-meta-row">
       <span className="vehicle-detail-meta-icon" aria-hidden>
         {icon}
       </span>
-      <span className="vehicle-detail-meta-text" title={title ?? text}>
+      <span className={`vehicle-detail-meta-text${textClassName ? ` ${textClassName}` : ""}`} title={title ?? text}>
         {text}
       </span>
     </div>

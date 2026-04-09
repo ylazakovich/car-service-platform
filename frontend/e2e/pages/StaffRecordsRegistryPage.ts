@@ -47,7 +47,7 @@ export class StaffRecordsRegistryPage {
 
   purchaseRowByPartSnippet(partSnippet: string | RegExp): Locator {
     return this.page
-      .locator(".purchases-workspace .purchases-compact-list .purchases-compact-row")
+      .locator(".purchases-workspace .purchases-registry-table .purchases-compact-row")
       .filter({ hasText: partSnippet });
   }
 

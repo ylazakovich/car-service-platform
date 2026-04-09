@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
@@ -12,8 +12,12 @@ import {
 } from "../api/analytics";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
+import { createSupplier } from "../api/purchases";
 import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
 import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
+import { RegistersCustomersPanel } from "../features/staff/components/RegistersCustomersPanel";
+import { ServicesRegisterPanel } from "../features/staff/components/ServicesRegisterPanel";
+import { UnitsOfMeasureAdminPanel } from "../features/staff/components/UnitsOfMeasureAdminPanel";
 import {
   formatRepairVehicleOptionLabel,
   RepairVehiclePicker,
@@ -50,6 +54,7 @@ import {
 import { StaffRepairsKanban } from "../features/staff/web/StaffRepairsKanban";
 import { StaffVehicleDetailPanel } from "../features/staff/web/StaffVehicleDetailPanel";
 import { StaffVehiclesRegistry } from "../features/staff/web/StaffVehiclesRegistry";
+import { formatPolishPhoneDisplay } from "../lib/formatPolishPhone";
 
 type Customer = {
   id: number;
@@ -90,7 +95,9 @@ type StaffHomePageProps = {
 };
 
 type UserAccessTab = "owner" | "admins" | "masters";
-type DashboardTab = "moneyflow" | "service_board" | "warehouse";
+type PurchasesWorkspaceTab = "warehouse" | "consumables" | "suppliers";
+type ReferenceWorkspaceTab = "units" | "services" | "customers";
+type DashboardTab = "moneyflow" | "service_board" | "warehouse" | "consumables";
 type DashboardDateRange = {
   start_date: string;
   end_date: string;
@@ -997,6 +1004,11 @@ const sectionMeta: Record<StaffSection, { eyebrow: string; title: string; copy: 
     title: "Purchases",
     copy: "Track ordered parts, supplier costs and resale values before they are attached to repair accounting.",
   },
+  reference: {
+    eyebrow: "Settings",
+    title: "Registers",
+    copy: "Reference data for the workshop: units of measure, service catalog prices, and customers who own registered vehicles.",
+  },
   users: {
     eyebrow: "Access Control",
     title: "Users",
@@ -1091,17 +1103,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const customers = useMemo(() => [...serverCustomers, ...demoCustomers], [serverCustomers, demoCustomers]);
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
 
+  const [activePurchasesTab, setActivePurchasesTab] = useState<PurchasesWorkspaceTab>("warehouse");
+  const [activeReferenceTab, setActiveReferenceTab] = useState<ReferenceWorkspaceTab>("units");
+  const [supplierRegistrySearch, setSupplierRegistrySearch] = useState("");
+
   const {
+    unitsOfMeasure,
     purchases,
-    setPurchases,
     purchaseSearch,
     setPurchaseSearch,
     purchaseForm,
     setPurchaseForm,
+    purchaseLineRows,
+    addPurchaseLineRow,
+    removePurchaseLineRowAt,
+    updatePurchaseLineRow,
     purchaseError,
     purchaseModalError,
     isSavingPurchase,
-    isPurchaseFormOpen,
     selectedPurchaseId,
     selectedPurchase,
     purchaseModalForm,
@@ -1110,8 +1129,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     purchaseInvoiceUrl,
     purchaseModalInvoiceName,
     purchaseModalInvoiceUrl,
+    isPurchaseCreateModalOpen,
+    purchaseCreateMode,
     openPurchaseCreateModal,
-    closePurchaseFormModal,
+    closePurchaseCreateModal,
+    suppliers,
+    consumablePurchases,
+    consumableSearch,
+    setConsumableSearch,
+    consumableCount,
+    consumableHasMore,
+    consumableLoadingMore,
+    loadMoreConsumables,
     openPurchaseDetailModal,
     closePurchaseDetailModal,
     handlePurchaseSubmit,
@@ -1134,9 +1163,61 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleCreateSupplierSelect,
     handleModalSupplierInput,
     handleModalSupplierSelect,
-  } = usePurchases(vehicles);
+    refreshUnitsOfMeasure,
+    refreshSuppliers,
+  } = usePurchases(vehicles, {
+    enableConsumablesFetch: activeSection === "purchases" && activePurchasesTab === "consumables",
+  });
+
+  const filteredSuppliers = useMemo(() => {
+    const q = supplierRegistrySearch.trim().toLowerCase();
+    if (!q) {
+      return suppliers;
+    }
+    return suppliers.filter((s) => {
+      const hay = `${s.name} ${s.nip ?? ""} ${s.email ?? ""} ${s.phone ?? ""} ${s.notes ?? ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [supplierRegistrySearch, suppliers]);
 
   const [purchaseDetailModalTab, setPurchaseDetailModalTab] = useState<"order" | "invoice">("order");
+  const [supplierCreateOpen, setSupplierCreateOpen] = useState(false);
+  const [supplierCreateForm, setSupplierCreateForm] = useState({
+    name: "",
+    nip: "",
+    phone: "",
+    email: "",
+    notes: "",
+  });
+  const [supplierCreateError, setSupplierCreateError] = useState("");
+  const [supplierCreateSaving, setSupplierCreateSaving] = useState(false);
+
+  async function handleSupplierCreateSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSupplierCreateError("");
+    const name = supplierCreateForm.name.trim();
+    if (!name) {
+      setSupplierCreateError("Supplier name is required.");
+      return;
+    }
+    setSupplierCreateSaving(true);
+    try {
+      await createSupplier({
+        name,
+        nip: supplierCreateForm.nip.trim() || undefined,
+        phone: supplierCreateForm.phone.trim() || undefined,
+        email: supplierCreateForm.email.trim() || undefined,
+        notes: supplierCreateForm.notes.trim() || undefined,
+      });
+      await refreshSuppliers();
+      setSupplierCreateOpen(false);
+      setSupplierCreateForm({ name: "", nip: "", phone: "", email: "", notes: "" });
+    } catch {
+      setSupplierCreateError("Could not create supplier. The name may already exist.");
+    } finally {
+      setSupplierCreateSaving(false);
+    }
+  }
 
   function toggleMoneyflowCalendarLayer(layer: "repairs" | "parts") {
     if (layer === "repairs") {
@@ -1308,6 +1389,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }, []);
 
   useEffect(() => {
+    fetchServices().then(setApiServices).catch(() => {});
+  }, []);
+
+  const refreshServiceCatalog = useCallback(() => {
     fetchServices().then(setApiServices).catch(() => {});
   }, []);
 
@@ -1504,8 +1589,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
-      if (isPurchaseFormOpen) {
-        closePurchaseFormModal();
+      if (isPurchaseCreateModalOpen) {
+        closePurchaseCreateModal();
+      } else if (supplierCreateOpen) {
+        setSupplierCreateOpen(false);
+        setSupplierCreateError("");
       } else if (selectedPurchaseId !== null) {
         closePurchaseDetailModal();
       } else if (isVehicleFormOpen) {
@@ -1527,7 +1615,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [
-    isPurchaseFormOpen,
+    isPurchaseCreateModalOpen,
+    supplierCreateOpen,
+    closePurchaseCreateModal,
     selectedPurchaseId,
     isVehicleFormOpen,
     selectedVehicleId,
@@ -1535,7 +1625,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     selectedCustomerId,
     isRepairFormOpen,
     selectedRepairId,
-    closePurchaseFormModal,
     closePurchaseDetailModal,
     closeVehicleFormModal,
     closeVehicleDetailModal,
@@ -2085,9 +2174,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const selectedRepairPurchases = selectedRepair
     ? purchases.filter((entry) => entry.repair_code === selectedRepair.tracking_code)
     : [];
-  const purchaseCreateRepairOptions = purchaseForm.vehicle_id
-    ? repairs.filter((repair) => String(repair.vehicle_id) === purchaseForm.vehicle_id)
-    : repairs;
   const purchaseModalRepairOptions = purchaseModalForm.vehicle_id
     ? repairs.filter((repair) => String(repair.vehicle_id) === purchaseModalForm.vehicle_id)
     : repairs;
@@ -2182,7 +2268,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
     return repairs
       .map((repair) => {
-        const linkedParts = purchases.filter((entry) => entry.repair_code.trim() === repair.tracking_code);
+        const linkedParts = purchases.filter(
+          (entry) => !entry.is_shop_consumable && entry.repair_code.trim() === repair.tracking_code
+        );
         const createdKey = toIsoDateKey(repair.created_at);
         if (!createdKey) {
           return null;
@@ -2263,7 +2351,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     () =>
       purchases.reduce(
         (sum, entry) =>
-          entry.repair_code && completedRepairCodesInMoneyflowRange.has(entry.repair_code)
+          entry.repair_code &&
+          !entry.is_shop_consumable &&
+          completedRepairCodesInMoneyflowRange.has(entry.repair_code)
             ? sum + entry.sale_price * entry.quantity
             : sum,
         0
@@ -2502,6 +2592,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const dashboardTabs: Array<{ id: DashboardTab; label: string; shortLabel: string }> = [
     { id: "moneyflow", label: "MoneyFlow", shortLabel: "Money" },
     { id: "warehouse", label: "Warehouse", shortLabel: "Stock" },
+    { id: "consumables", label: "Consumables", shortLabel: "Consumables" },
     { id: "service_board", label: "ServiceBoard", shortLabel: "Jobs" },
   ];
 
@@ -3265,6 +3356,41 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
             ) : null}
 
+            {activeDashboardTab === "consumables" ? (
+              <div className="workspace-stack">
+                <section className="dashboard-report-section" aria-label="Shop consumables">
+                  <div className="dashboard-report-head">
+                    <div>
+                      <p className="eyebrow">Outside completion act</p>
+                      <h3>Shop consumables</h3>
+                    </div>
+                  </div>
+                  <p className="workspace-copy">
+                    Shop supplies (chemistry, gloves, fluids, etc.) recorded as purchases. They are excluded from
+                    completion act totals and from warehouse stock KPIs. Range totals here mirror MoneyFlow; each line
+                    is listed under Purchases → Consumables.
+                  </p>
+                  {dashboardAnalytics?.moneyflow?.shop_consumables ? (
+                    <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple">
+                      <article className="metric-card">
+                        <span className="metric-label">Lines in range</span>
+                        <strong>{formatCount(dashboardAnalytics.moneyflow.shop_consumables.line_count)}</strong>
+                        <p>Purchase lines flagged as shop consumables.</p>
+                      </article>
+                      <article className="metric-card">
+                        <span className="metric-label">Buy total (range)</span>
+                        <strong>{formatCurrency(dashboardAnalytics.moneyflow.shop_consumables.buy_total)}</strong>
+                        <p>Sum of quantity × purchase price in the selected period.</p>
+                      </article>
+                    </div>
+                  ) : null}
+                  <p className="workspace-note">
+                    Line-level consumables are listed under Purchases → Consumables.
+                  </p>
+                </section>
+              </div>
+            ) : null}
+
             {activeDashboardTab === "service_board" ? (
               <div className="workspace-stack">
                 {serviceBoardAnalytics ? (
@@ -3502,7 +3628,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 <article className="registry-card customer-card" key={customer.id} onClick={() => openCustomerDetailModal(customer)}>
                   <div>
                     <h4>{customer.full_name}</h4>
-                    <p>{customer.phone}</p>
+                    <p className="phone-display">{formatPolishPhoneDisplay(customer.phone) || "—"}</p>
                     {customer.email ? <p>{customer.email}</p> : null}
                     <p className="meta-line">Vehicles: {customerVehicleCounts[customer.id] ?? 0}</p>
                   </div>
@@ -3646,7 +3772,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               <div className="customer-detail-stack">
                 <div className="detail-card">
                   <strong>Contact</strong>
-                  <VehicleMetaRow icon={<IconPhone />} text={selectedCustomer.phone} title="Phone" />
+                  <VehicleMetaRow
+                    icon={<IconPhone />}
+                    text={formatPolishPhoneDisplay(selectedCustomer.phone) || "—"}
+                    title="Phone"
+                    textClassName="phone-display"
+                  />
                   <VehicleMetaRow
                     icon={<IconEmail />}
                     text={selectedCustomer.email || "No email provided"}
@@ -3920,7 +4051,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <option value="">Select existing customer</option>
                         {customers.map((customer) => (
                           <option key={customer.id} value={customer.id}>
-                            {customer.full_name} {customer.phone ? `· ${customer.phone}` : ""}
+                            {customer.full_name}
+                            {customer.phone ? ` · ${formatPolishPhoneDisplay(customer.phone)}` : ""}
                           </option>
                         ))}
                       </select>
@@ -4233,9 +4365,36 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   function renderPurchasesSection() {
-    const emptyServerList = purchases.length === 0;
-    const loadedRemaining = Math.max(0, purchaseCount - purchases.length);
+    const emptyWarehouse = purchases.length === 0;
+    const warehouseLoadedRemaining = Math.max(0, purchaseCount - purchases.length);
+    const emptyConsumables = consumablePurchases.length === 0;
+    const consumableLoadedRemaining = Math.max(0, consumableCount - consumablePurchases.length);
     const meta = sectionMeta.purchases;
+
+    const purchasesWorkspaceTabs: Array<{ id: PurchasesWorkspaceTab; label: string; shortLabel: string }> = [
+      { id: "warehouse", label: "Warehouse", shortLabel: "Stock" },
+      { id: "consumables", label: "Consumables", shortLabel: "Consume" },
+      { id: "suppliers", label: "Suppliers", shortLabel: "Supp." },
+    ];
+
+    const purchasesAddButtonLabel =
+      activePurchasesTab === "warehouse"
+        ? "+ Add part line"
+        : activePurchasesTab === "consumables"
+          ? "+ Add consumable"
+          : "+ Add supplier";
+
+    function handlePurchasesPrimaryAdd() {
+      if (activePurchasesTab === "warehouse") {
+        openPurchaseCreateModal("warehouse");
+      } else if (activePurchasesTab === "consumables") {
+        openPurchaseCreateModal("consumables");
+      } else {
+        setSupplierCreateForm({ name: "", nip: "", phone: "", email: "", notes: "" });
+        setSupplierCreateError("");
+        setSupplierCreateOpen(true);
+      }
+    }
 
     return (
       <div className="workspace-stack purchases-workspace">
@@ -4243,113 +4402,305 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           <div>
             <p className="eyebrow">{meta.eyebrow}</p>
             <h2>{meta.title}</h2>
-            {purchaseCount > 0 ? (
+            {activePurchasesTab === "warehouse" && purchaseCount > 0 ? (
               <span className="registry-count">
                 {purchaseCount} total
                 {purchases.length !== purchaseCount ? ` · ${purchases.length} loaded` : ""}
               </span>
             ) : null}
+            {activePurchasesTab === "consumables" && consumableCount > 0 ? (
+              <span className="registry-count">
+                {consumableCount} total
+                {consumablePurchases.length !== consumableCount ? ` · ${consumablePurchases.length} loaded` : ""}
+              </span>
+            ) : null}
+            {activePurchasesTab === "suppliers" ? (
+              <span className="registry-count">
+                {suppliers.length} {suppliers.length === 1 ? "supplier" : "suppliers"}
+              </span>
+            ) : null}
           </div>
           <div className="workspace-top-actions purchases-top-actions">
-            <label className="kanban-search">
-              <input
-                value={purchaseSearch}
-                onChange={(event) => setPurchaseSearch(event.target.value)}
-                placeholder="Search purchases…"
-                type="search"
-              />
-            </label>
-            <button type="button" className="button" onClick={openPurchaseCreateModal}>
-              + Add Purchase
+            {activePurchasesTab === "warehouse" ? (
+              <label className="kanban-search">
+                <input
+                  value={purchaseSearch}
+                  onChange={(event) => setPurchaseSearch(event.target.value)}
+                  placeholder="Search warehouse lines…"
+                  type="search"
+                />
+              </label>
+            ) : null}
+            {activePurchasesTab === "consumables" ? (
+              <label className="kanban-search">
+                <input
+                  value={consumableSearch}
+                  onChange={(event) => setConsumableSearch(event.target.value)}
+                  placeholder="Search consumables…"
+                  type="search"
+                />
+              </label>
+            ) : null}
+            {activePurchasesTab === "suppliers" ? (
+              <label className="kanban-search">
+                <input
+                  value={supplierRegistrySearch}
+                  onChange={(event) => setSupplierRegistrySearch(event.target.value)}
+                  placeholder="Search suppliers…"
+                  type="search"
+                />
+              </label>
+            ) : null}
+            <button type="button" className="button" onClick={handlePurchasesPrimaryAdd}>
+              {purchasesAddButtonLabel}
             </button>
           </div>
         </div>
 
-        <div className="purchases-list-outer">
-          {emptyServerList ? (
-            <div className="purchases-empty-panel">
-              <p className="workspace-note">
-                {purchaseSearch.trim() ? "No purchases match your search." : "No purchases yet."}
-              </p>
-              {!purchaseSearch.trim() ? (
-                <>
-                  <p className="workspace-note purchases-empty-copy">{meta.copy}</p>
-                  <button type="button" className="button" onClick={openPurchaseCreateModal}>
-                    + Add Purchase
-                  </button>
-                </>
-              ) : null}
-            </div>
-          ) : (
-            <div className="purchases-compact-list">
-              {purchases.map((entry) => {
-                const saleTotal = entry.quantity * entry.sale_price;
-                const marginVal = saleTotal - entry.quantity * entry.purchase_price;
-                const overdue =
-                  !entry.delivered && isPurchaseDeliveryOverdue(entry.approximate_delivery_date);
-                const missingInv = !hasPurchaseInvoice(entry);
-                const attention = overdue || missingInv;
-                const hints: string[] = [];
-                if (overdue) {
-                  hints.push("Delivery overdue");
-                }
-                if (missingInv) {
-                  hints.push("No invoice");
-                }
-                if (!entry.vehicle_id && !entry.vehicle_label?.trim()) {
-                  hints.push("No vehicle");
-                }
-                if (!entry.repair_code.trim()) {
-                  hints.push("No repair");
-                }
-                return (
+        <div className="dashboard-folder-tabs purchases-folder-tabs" role="tablist" aria-label="Purchases sections">
+          {purchasesWorkspaceTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-label={tab.label}
+              aria-selected={activePurchasesTab === tab.id}
+              className={`dashboard-folder-tab ${activePurchasesTab === tab.id ? "dashboard-folder-tab-active" : ""}`}
+              onClick={() => setActivePurchasesTab(tab.id)}
+            >
+              <span className="dashboard-folder-label">
+                <span className="dashboard-folder-label-long">{tab.label}</span>
+                <span className="dashboard-folder-label-short">{tab.shortLabel}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="dashboard-folder-panel purchases-folder-panel">
+          {activePurchasesTab === "warehouse" ? (
+            <div className="purchases-list-outer">
+              {emptyWarehouse ? (
+                <div className="purchases-empty-panel">
+                  <p className="workspace-note">
+                    {purchaseSearch.trim() ? "No warehouse lines match your search." : "No warehouse lines yet."}
+                  </p>
+                  {!purchaseSearch.trim() ? (
+                    <>
+                      <p className="workspace-note purchases-empty-copy">{meta.copy}</p>
+                      <button type="button" className="button" onClick={() => openPurchaseCreateModal("warehouse")}>
+                        + Add part line
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="purchases-registry-table-wrap">
+                  <table className="dashboard-table purchases-registry-table">
+                    <thead>
+                      <tr>
+                        <th>Part</th>
+                        <th>Supplier</th>
+                        <th>Order</th>
+                        <th>Delivery</th>
+                        <th>Qty</th>
+                        <th>Repair</th>
+                        <th>Sale</th>
+                        <th>Margin</th>
+                      </tr>
+                    </thead>
+                    <tbody className="purchases-compact-list">
+                      {purchases.map((entry) => {
+                        const saleTotal = entry.quantity * entry.sale_price;
+                        const marginVal = saleTotal - entry.quantity * entry.purchase_price;
+                        const overdue =
+                          !entry.delivered && isPurchaseDeliveryOverdue(entry.approximate_delivery_date);
+                        const missingInv = !hasPurchaseInvoice(entry);
+                        const attention = overdue || missingInv;
+                        const hints: string[] = [];
+                        if (overdue) {
+                          hints.push("Delivery overdue");
+                        }
+                        if (missingInv) {
+                          hints.push("No invoice");
+                        }
+                        if (!entry.vehicle_id && !entry.vehicle_label?.trim()) {
+                          hints.push("No vehicle");
+                        }
+                        if (!entry.repair_code.trim()) {
+                          hints.push("No repair");
+                        }
+                        const repairLabel = entry.repair_code.trim() || "—";
+                        return (
+                          <tr
+                            key={entry.id}
+                            role="button"
+                            tabIndex={0}
+                            className={`purchases-compact-row${attention ? " purchases-compact-row--attention" : ""}`}
+                            onClick={() => openPurchaseDetailModal(entry)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                openPurchaseDetailModal(entry);
+                              }
+                            }}
+                            title={hints.length ? hints.join(" · ") : undefined}
+                          >
+                            <td>{entry.part_name}</td>
+                            <td>{entry.supplier_name}</td>
+                            <td>{formatDisplayDate(entry.order_date)}</td>
+                            <td>
+                              {entry.approximate_delivery_date ? formatDisplayDate(entry.approximate_delivery_date) : "—"}
+                            </td>
+                            <td>{entry.quantity}</td>
+                            <td>{repairLabel}</td>
+                            <td>{formatCurrency(saleTotal)}</td>
+                            <td
+                              className={marginVal >= 0 ? "purchase-margin-pos" : "purchase-margin-neg"}
+                            >
+                              {marginVal >= 0 ? "+" : ""}
+                              {formatCurrency(marginVal)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {purchaseHasMore && !emptyWarehouse ? (
+                <div className="load-more-bar">
                   <button
                     type="button"
-                    className={`purchases-compact-row${attention ? " purchases-compact-row--attention" : ""}`}
-                    key={entry.id}
-                    onClick={() => openPurchaseDetailModal(entry)}
-                    title={hints.length ? hints.join(" · ") : undefined}
+                    className="button button-secondary"
+                    onClick={() => void loadMorePurchases()}
+                    disabled={purchaseLoadingMore}
                   >
-                    <div className="purchases-compact-row-main">
-                      <span className="purchases-compact-cell purchases-compact-part">
-                        <span className="purchases-compact-part-text">{entry.part_name}</span>
-                      </span>
-                      <span className="purchases-compact-cell purchases-compact-supplier">{entry.supplier_name}</span>
-                      <span className="purchases-compact-cell purchases-compact-narrow">
-                        {formatDisplayDate(entry.order_date)}
-                      </span>
-                      <span className="purchases-compact-cell purchases-compact-narrow">
-                        {entry.approximate_delivery_date ? formatDisplayDate(entry.approximate_delivery_date) : "—"}
-                      </span>
-                      <span
-                        className="purchases-compact-cell purchases-compact-qty-cell"
-                        title={`Quantity ${entry.quantity}`}
-                      >
-                        ×{entry.quantity}
-                      </span>
-                      <span className="purchases-compact-cell purchases-compact-money">{formatCurrency(saleTotal)}</span>
-                      <span
-                        className={`purchases-compact-cell purchases-compact-money${marginVal >= 0 ? " purchase-margin-pos" : " purchase-margin-neg"}`}
-                      >
-                        {marginVal >= 0 ? "+" : ""}
-                        {formatCurrency(marginVal)}
-                      </span>
-                    </div>
+                    {purchaseLoadingMore ? "Loading…" : `Load more (${warehouseLoadedRemaining} remaining)`}
                   </button>
-                );
-              })}
+                </div>
+              ) : null}
             </div>
-          )}
-          {purchaseHasMore && !emptyServerList ? (
-            <div className="load-more-bar">
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => void loadMorePurchases()}
-                disabled={purchaseLoadingMore}
-              >
-                {purchaseLoadingMore ? "Loading…" : `Load more (${loadedRemaining} remaining)`}
-              </button>
+          ) : null}
+
+          {activePurchasesTab === "consumables" ? (
+            <div className="purchases-list-outer">
+              {emptyConsumables ? (
+                <div className="purchases-empty-panel">
+                  <p className="workspace-note">
+                    {consumableSearch.trim() ? "No consumables match your search." : "No shop consumables yet."}
+                  </p>
+                  <button type="button" className="button" onClick={() => openPurchaseCreateModal("consumables")}>
+                    + Add consumable
+                  </button>
+                </div>
+              ) : (
+                <div className="purchases-registry-table-wrap">
+                  <table className="dashboard-table purchases-registry-table">
+                    <thead>
+                      <tr>
+                        <th>Part</th>
+                        <th>Supplier</th>
+                        <th>Order</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Buy</th>
+                        <th>Delivered</th>
+                        <th>Invoice</th>
+                      </tr>
+                    </thead>
+                    <tbody className="purchases-compact-list">
+                      {consumablePurchases.map((entry) => (
+                        <tr
+                          key={entry.id}
+                          role="button"
+                          tabIndex={0}
+                          className="purchases-compact-row"
+                          onClick={() => openPurchaseDetailModal(entry)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              openPurchaseDetailModal(entry);
+                            }
+                          }}
+                        >
+                          <td>{entry.part_name}</td>
+                          <td>{entry.supplier_name}</td>
+                          <td>{formatDisplayDate(entry.order_date)}</td>
+                          <td>{entry.quantity}</td>
+                          <td>{entry.unit_of_measure_code}</td>
+                          <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
+                          <td>{entry.delivered ? "Yes" : "No"}</td>
+                          <td>
+                            {entry.invoice_url ? (
+                              <button
+                                type="button"
+                                className="purchase-inline-action"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleOpenInvoice(entry.invoice_url);
+                                }}
+                              >
+                                Open
+                              </button>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {consumableHasMore && !emptyConsumables ? (
+                <div className="load-more-bar">
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => void loadMoreConsumables()}
+                    disabled={consumableLoadingMore}
+                  >
+                    {consumableLoadingMore ? "Loading…" : `Load more (${consumableLoadedRemaining} remaining)`}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {activePurchasesTab === "suppliers" ? (
+            <div className="purchases-list-outer">
+              {filteredSuppliers.length === 0 ? (
+                <div className="purchases-empty-panel">
+                  <p className="workspace-note">
+                    {supplierRegistrySearch.trim() ? "No suppliers match your search." : "No suppliers yet."}
+                  </p>
+                </div>
+              ) : (
+                <div className="purchases-registry-table-wrap">
+                  <table className="dashboard-table purchases-registry-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>NIP</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSuppliers.map((s) => (
+                        <tr key={s.id}>
+                          <td>{s.name}</td>
+                          <td>{s.nip || "—"}</td>
+                          <td className="phone-display">{s.phone ? formatPolishPhoneDisplay(s.phone) : "—"}</td>
+                          <td>{s.email || "—"}</td>
+                          <td>{s.notes || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
@@ -4544,6 +4895,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           step="1"
                         />
                       </label>
+                      <label>
+                        <span>Unit of measure</span>
+                        <select
+                          value={purchaseModalForm.unit_of_measure_id}
+                          onChange={(event) =>
+                            setPurchaseModalForm((current) => ({ ...current, unit_of_measure_id: event.target.value }))
+                          }
+                        >
+                          {unitsOfMeasure.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name} ({u.code})
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                     </div>
 
                     <div className="form-grid">
@@ -4575,6 +4941,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         />
                       </label>
                     </div>
+
+                    <label className="purchases-delivered-field">
+                      <input
+                        type="checkbox"
+                        checked={purchaseModalForm.is_shop_consumable}
+                        onChange={(event) =>
+                          setPurchaseModalForm((current) => ({ ...current, is_shop_consumable: event.target.checked }))
+                        }
+                      />
+                      <span>Shop consumable (excluded from completion act)</span>
+                    </label>
 
                     <label className="purchases-delivered-field">
                       <input
@@ -4666,223 +5043,401 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           </div>
         ) : null}
 
-        {isPurchaseFormOpen ? (
-          <div className="modal-overlay" role="presentation" onClick={closePurchaseFormModal}>
+        {isPurchaseCreateModalOpen && purchaseCreateMode ? (
+          <div className="modal-overlay" role="presentation" onClick={closePurchaseCreateModal}>
             <section
               className="modal-card modal-card-large purchase-form-modal"
               role="dialog"
               aria-modal="true"
+              aria-labelledby="purchase-create-modal-title"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="panel-header">
                 <div>
-                  <p className="eyebrow">New Purchase</p>
-                  <h3>Add Ordered Part</h3>
+                  <p className="eyebrow">New invoice</p>
+                  <h3 id="purchase-create-modal-title">
+                    {purchaseCreateMode === "warehouse" ? "Warehouse purchase" : "Shop consumables"}
+                  </h3>
                 </div>
               </div>
 
               <form className="stack-form purchase-form-stack" onSubmit={handlePurchaseSubmit}>
                 <div className="purchase-form-modal-scroll">
-                <div className="form-grid">
-                  <label>
-                    <span>Order Date</span>
-                    <FriendlyDateInput
-                      value={purchaseForm.order_date}
-                      onChange={(nextValue) =>
-                        setPurchaseForm((current) => ({ ...current, order_date: nextValue }))
-                      }
-                      required
-                    />
-                  </label>
-
-                  <label>
-                    <span>Approximate Delivery Date</span>
-                    <FriendlyDateInput
-                      value={purchaseForm.approximate_delivery_date}
-                      onChange={(nextValue) =>
-                        setPurchaseForm((current) => ({ ...current, approximate_delivery_date: nextValue }))
-                      }
-                    />
-                  </label>
-
-                  <label>
-                    <span>Supplier</span>
-                    <div className="autocomplete-wrapper">
-                      <input
-                        value={purchaseForm.supplier_name}
-                        onChange={(event) => handleCreateSupplierInput(event.target.value)}
-                        onFocus={() => setShowCreateSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowCreateSuggestions(false), 150)}
-                        type="text"
-                        placeholder="Supplier name"
+                  <p className="workspace-note">
+                    {purchaseCreateMode === "warehouse"
+                      ? "One supplier and one invoice file for all lines below. Each line can be a different part; link vehicle and repair per line when the part is for a specific job, or leave unlinked for stock."
+                      : "One supplier and one invoice for multiple consumable lines (fluids, gloves, chemistry, etc.). No vehicle or repair links. Lines are excluded from completion acts."}
+                  </p>
+                  <div className="form-grid">
+                    <label>
+                      <span>Order Date</span>
+                      <FriendlyDateInput
+                        value={purchaseForm.order_date}
+                        onChange={(nextValue) =>
+                          setPurchaseForm((current) => ({ ...current, order_date: nextValue }))
+                        }
                         required
                       />
-                      {createSupplierSuggestions.length > 0 && (
-                        <ul className="autocomplete-dropdown">
-                          {createSupplierSuggestions.map((s) => (
-                            <li key={s.id} onMouseDown={() => handleCreateSupplierSelect(s)}>
-                              <span>{s.name}</span>
-                              {s.nip && <span className="autocomplete-nip">{s.nip}</span>}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </label>
+                    </label>
 
-                  <label>
-                    <span>NIP</span>
-                    <input
-                      value={purchaseForm.supplier_nip}
-                      onChange={(event) =>
-                        setPurchaseForm((current) => ({ ...current, supplier_nip: event.target.value }))
-                      }
-                      type="text"
-                      placeholder="1234567890"
-                    />
-                  </label>
-                </div>
+                    <label>
+                      <span>Approximate Delivery Date</span>
+                      <FriendlyDateInput
+                        value={purchaseForm.approximate_delivery_date}
+                        onChange={(nextValue) =>
+                          setPurchaseForm((current) => ({ ...current, approximate_delivery_date: nextValue }))
+                        }
+                      />
+                    </label>
 
-                <label>
-                  <span>Part</span>
-                  <input
-                    value={purchaseForm.part_name}
-                    onChange={(event) => setPurchaseForm((current) => ({ ...current, part_name: event.target.value }))}
-                    type="text"
-                    placeholder="Part or consumable"
-                    required
-                  />
-                </label>
+                    <label>
+                      <span>Supplier</span>
+                      <div className="autocomplete-wrapper">
+                        <input
+                          value={purchaseForm.supplier_name}
+                          onChange={(event) => handleCreateSupplierInput(event.target.value)}
+                          onFocus={() => setShowCreateSuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowCreateSuggestions(false), 150)}
+                          type="text"
+                          placeholder="Supplier name"
+                          required
+                        />
+                        {createSupplierSuggestions.length > 0 && (
+                          <ul className="autocomplete-dropdown">
+                            {createSupplierSuggestions.map((s) => (
+                              <li key={s.id} onMouseDown={() => handleCreateSupplierSelect(s)}>
+                                <span>{s.name}</span>
+                                {s.nip && <span className="autocomplete-nip">{s.nip}</span>}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </label>
 
-                <label>
-                  <span>Vehicle</span>
-                  <select
-                    value={purchaseForm.vehicle_id}
-                    onChange={(event) =>
-                      setPurchaseForm((current) => ({
-                        ...current,
-                        vehicle_id: event.target.value,
-                        repair_code: "",
-                      }))
-                    }
-                  >
-                    <option value="">Optional</option>
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.license_plate} • {vehicle.make} {vehicle.model}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <label>
+                      <span>NIP</span>
+                      <input
+                        value={purchaseForm.supplier_nip}
+                        onChange={(event) =>
+                          setPurchaseForm((current) => ({ ...current, supplier_nip: event.target.value }))
+                        }
+                        type="text"
+                        placeholder="1234567890"
+                      />
+                    </label>
+                  </div>
 
-                <label>
-                  <span>Linked Repair</span>
-                  <select
-                    value={purchaseForm.repair_code}
-                    onChange={(event) =>
-                      setPurchaseForm((current) => {
-                        const linkedRepair = repairs.find((repair) => repair.tracking_code === event.target.value);
-                        return {
-                          ...current,
-                          repair_code: event.target.value,
-                          vehicle_id: linkedRepair ? String(linkedRepair.vehicle_id) : current.vehicle_id,
-                        };
-                      })
-                    }
-                  >
-                    <option value="">No repair linked</option>
-                    {purchaseCreateRepairOptions.map((repair) => (
-                      <option key={repair.id} value={repair.tracking_code}>
-                        {repair.tracking_code} • {repair.vehicle_label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {purchaseForm.repair_code ? (
-                  <div className="inline-actions">
-                    <button
-                      type="button"
-                      className="purchase-inline-action"
-                      onClick={() =>
-                        setPurchaseForm((current) => ({
-                          ...current,
-                          repair_code: "",
-                        }))
-                      }
-                    >
-                      Unlink repair
+                  <div className="purchase-invoice-lines">
+                    {purchaseLineRows.map((row, lineIndex) => {
+                      const lineRepairOptions = row.vehicle_id
+                        ? repairs.filter((repair) => String(repair.vehicle_id) === row.vehicle_id)
+                        : repairs;
+                      return (
+                        <div key={lineIndex} className="purchase-invoice-line-card">
+                          <div className="purchase-invoice-line-card-header">
+                            <span className="purchase-invoice-line-title">
+                              {purchaseLineRows.length > 1 ? `Line ${lineIndex + 1}` : "Line"}
+                            </span>
+                            {purchaseLineRows.length > 1 ? (
+                              <button
+                                type="button"
+                                className="purchase-inline-action purchase-inline-action-danger"
+                                onClick={() => removePurchaseLineRowAt(lineIndex)}
+                              >
+                                Remove line
+                              </button>
+                            ) : null}
+                          </div>
+
+                          <label>
+                            <span>{purchaseCreateMode === "warehouse" ? "Part" : "Item"}</span>
+                            <input
+                              value={row.part_name}
+                              onChange={(event) =>
+                                updatePurchaseLineRow(lineIndex, { part_name: event.target.value })
+                              }
+                              type="text"
+                              placeholder={
+                                purchaseCreateMode === "warehouse" ? "Part name or SKU" : "Consumable name"
+                              }
+                              required
+                            />
+                          </label>
+
+                          {purchaseCreateMode === "warehouse" ? (
+                            <>
+                              <label>
+                                <span>Vehicle</span>
+                                <select
+                                  value={row.vehicle_id}
+                                  onChange={(event) =>
+                                    updatePurchaseLineRow(lineIndex, {
+                                      vehicle_id: event.target.value,
+                                      repair_code: "",
+                                    })
+                                  }
+                                >
+                                  <option value="">Optional</option>
+                                  {vehicles.map((vehicle) => (
+                                    <option key={vehicle.id} value={vehicle.id}>
+                                      {vehicle.license_plate} • {vehicle.make} {vehicle.model}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+
+                              <label>
+                                <span>Linked Repair</span>
+                                <select
+                                  value={row.repair_code}
+                                  onChange={(event) => {
+                                    const linkedRepair = repairs.find(
+                                      (repair) => repair.tracking_code === event.target.value
+                                    );
+                                    updatePurchaseLineRow(lineIndex, {
+                                      repair_code: event.target.value,
+                                      vehicle_id: linkedRepair
+                                        ? String(linkedRepair.vehicle_id)
+                                        : row.vehicle_id,
+                                    });
+                                  }}
+                                >
+                                  <option value="">No repair linked</option>
+                                  {lineRepairOptions.map((repair) => (
+                                    <option key={repair.id} value={repair.tracking_code}>
+                                      {repair.tracking_code} • {repair.vehicle_label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              {row.repair_code ? (
+                                <div className="inline-actions">
+                                  <button
+                                    type="button"
+                                    className="purchase-inline-action"
+                                    onClick={() => updatePurchaseLineRow(lineIndex, { repair_code: "" })}
+                                  >
+                                    Unlink repair
+                                  </button>
+                                </div>
+                              ) : null}
+                            </>
+                          ) : null}
+
+                          <div className="form-grid">
+                            <label>
+                              <span>Quantity</span>
+                              <input
+                                value={row.quantity}
+                                onChange={(event) =>
+                                  updatePurchaseLineRow(lineIndex, { quantity: event.target.value })
+                                }
+                                type="number"
+                                min="1"
+                                step="1"
+                                required
+                              />
+                            </label>
+                            <label>
+                              <span>Unit of measure</span>
+                              <select
+                                value={row.unit_of_measure_id}
+                                onChange={(event) =>
+                                  updatePurchaseLineRow(lineIndex, {
+                                    unit_of_measure_id: event.target.value,
+                                  })
+                                }
+                              >
+                                {unitsOfMeasure.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name} ({u.code})
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+
+                          <div className="form-grid">
+                            <label>
+                              <span>Purchase Price</span>
+                              <input
+                                value={row.purchase_price}
+                                onChange={(event) =>
+                                  updatePurchaseLineRow(lineIndex, { purchase_price: event.target.value })
+                                }
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                required
+                              />
+                            </label>
+
+                            <label>
+                              <span>Sale Price</span>
+                              <input
+                                value={row.sale_price}
+                                onChange={(event) =>
+                                  updatePurchaseLineRow(lineIndex, { sale_price: event.target.value })
+                                }
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                disabled={purchaseCreateMode === "consumables"}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="purchase-invoice-add-line-wrap">
+                    <button type="button" className="button button-secondary" onClick={addPurchaseLineRow}>
+                      + Add another line
                     </button>
                   </div>
-                ) : null}
-                <p className="workspace-note">Leave this empty for stock or reserve parts that are not tied to a repair.</p>
 
-                <div className="form-grid">
-                  <label>
-                    <span>Quantity</span>
-                    <input
-                      value={purchaseForm.quantity}
-                      onChange={(event) => setPurchaseForm((current) => ({ ...current, quantity: event.target.value }))}
-                      type="number"
-                      min="1"
-                      step="1"
-                      required
-                    />
-                  </label>
-                </div>
+                  {purchaseCreateMode === "warehouse" ? (
+                    <p className="workspace-note">
+                      Leave vehicle and repair empty on a line for stock or parts not tied to a job yet.
+                    </p>
+                  ) : null}
 
-                <div className="form-grid">
-                  <label>
-                    <span>Purchase Price</span>
+                  <label className="purchases-delivered-field">
                     <input
-                      value={purchaseForm.purchase_price}
-                      onChange={(event) => setPurchaseForm((current) => ({ ...current, purchase_price: event.target.value }))}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      required
+                      type="checkbox"
+                      checked={purchaseForm.delivered}
+                      onChange={(event) =>
+                        setPurchaseForm((current) => ({ ...current, delivered: event.target.checked }))
+                      }
                     />
+                    <span>Delivered (received at workshop)</span>
                   </label>
 
                   <label>
-                    <span>Sale Price</span>
+                    <span>Invoice</span>
                     <input
-                      value={purchaseForm.sale_price}
-                      onChange={(event) => setPurchaseForm((current) => ({ ...current, sale_price: event.target.value }))}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
+                      accept=".pdf,image/*,.doc,.docx,.xls,.xlsx"
+                      onChange={handlePurchaseInvoiceChange}
+                      type="file"
                     />
+                    {purchaseInvoiceName ? <small className="field-hint">Attached: {purchaseInvoiceName}</small> : null}
                   </label>
-                </div>
 
-                <label className="purchases-delivered-field">
-                  <input
-                    type="checkbox"
-                    checked={purchaseForm.delivered}
-                    onChange={(event) =>
-                      setPurchaseForm((current) => ({ ...current, delivered: event.target.checked }))
-                    }
-                  />
-                  <span>Delivered (received at workshop)</span>
-                </label>
-
-                <label>
-                  <span>Invoice</span>
-                  <input accept=".pdf,image/*,.doc,.docx,.xls,.xlsx" onChange={handlePurchaseInvoiceChange} type="file" />
-                  {purchaseInvoiceName ? <small className="field-hint">Attached: {purchaseInvoiceName}</small> : null}
-                </label>
-
-                {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
-
+                  {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
                 </div>
 
                 <div className="form-actions purchase-modal-actions repair-modal-footer-bar">
                   <button type="submit" className="button" disabled={isSavingPurchase}>
-                    {isSavingPurchase ? "Saving..." : "Add Purchase"}
+                    {isSavingPurchase
+                      ? "Saving…"
+                      : purchaseLineRows.length > 1
+                        ? `Save invoice (${purchaseLineRows.length} lines)`
+                        : "Save line"}
                   </button>
-                  <button type="button" className="button button-secondary" onClick={closePurchaseFormModal}>
+                  <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        ) : null}
+
+        {supplierCreateOpen ? (
+          <div
+            className="modal-overlay"
+            role="presentation"
+            onClick={() => {
+              setSupplierCreateOpen(false);
+              setSupplierCreateError("");
+            }}
+          >
+            <section
+              className="modal-card modal-card-large"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="supplier-create-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Directory</p>
+                  <h3 id="supplier-create-title">Add supplier</h3>
+                </div>
+              </div>
+              <form className="stack-form" onSubmit={handleSupplierCreateSubmit}>
+                <label>
+                  <span>Name</span>
+                  <input
+                    value={supplierCreateForm.name}
+                    onChange={(event) =>
+                      setSupplierCreateForm((current) => ({ ...current, name: event.target.value }))
+                    }
+                    type="text"
+                    required
+                    autoComplete="organization"
+                  />
+                </label>
+                <div className="form-grid">
+                  <label>
+                    <span>NIP</span>
+                    <input
+                      value={supplierCreateForm.nip}
+                      onChange={(event) =>
+                        setSupplierCreateForm((current) => ({ ...current, nip: event.target.value }))
+                      }
+                      type="text"
+                    />
+                  </label>
+                  <label>
+                    <span>Phone</span>
+                    <input
+                      value={supplierCreateForm.phone}
+                      onChange={(event) =>
+                        setSupplierCreateForm((current) => ({ ...current, phone: event.target.value }))
+                      }
+                      type="text"
+                    />
+                  </label>
+                </div>
+                <label>
+                  <span>Email</span>
+                  <input
+                    value={supplierCreateForm.email}
+                    onChange={(event) =>
+                      setSupplierCreateForm((current) => ({ ...current, email: event.target.value }))
+                    }
+                    type="email"
+                    autoComplete="email"
+                  />
+                </label>
+                <label>
+                  <span>Notes</span>
+                  <textarea
+                    value={supplierCreateForm.notes}
+                    onChange={(event) =>
+                      setSupplierCreateForm((current) => ({ ...current, notes: event.target.value }))
+                    }
+                    rows={3}
+                  />
+                </label>
+                {supplierCreateError ? <p className="form-error">{supplierCreateError}</p> : null}
+                <div className="form-actions repair-modal-footer-bar">
+                  <button type="submit" className="button" disabled={supplierCreateSaving}>
+                    {supplierCreateSaving ? "Saving…" : "Create supplier"}
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => {
+                      setSupplierCreateOpen(false);
+                      setSupplierCreateError("");
+                    }}
+                  >
                     Cancel
                   </button>
                 </div>
@@ -5127,6 +5682,72 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     );
   }
 
+  function renderReferenceSection() {
+    const meta = sectionMeta.reference;
+    if (!isAdmin) {
+      return (
+        <div className="workspace-stack reference-workspace">
+          <p className="section-empty">This section is available to administrators only.</p>
+        </div>
+      );
+    }
+
+    const referenceWorkspaceTabs: Array<{ id: ReferenceWorkspaceTab; label: string; shortLabel: string }> = [
+      { id: "units", label: "Units of measure", shortLabel: "Units" },
+      { id: "services", label: "Services", shortLabel: "Serv." },
+      { id: "customers", label: "Customers", shortLabel: "Cust." },
+    ];
+
+    return (
+      <div className="workspace-stack reference-workspace">
+        <div className="kanban-topbar purchases-section-topbar">
+          <div>
+            <p className="eyebrow">{meta.eyebrow}</p>
+            <h2>{meta.title}</h2>
+            <p className="workspace-copy">{meta.copy}</p>
+          </div>
+        </div>
+
+        <div className="dashboard-folder-tabs purchases-folder-tabs" role="tablist" aria-label="Registers sections">
+          {referenceWorkspaceTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-label={tab.label}
+              aria-selected={activeReferenceTab === tab.id}
+              className={`dashboard-folder-tab ${activeReferenceTab === tab.id ? "dashboard-folder-tab-active" : ""}`}
+              onClick={() => setActiveReferenceTab(tab.id)}
+            >
+              <span className="dashboard-folder-label">
+                <span className="dashboard-folder-label-long">{tab.label}</span>
+                <span className="dashboard-folder-label-short">{tab.shortLabel}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="dashboard-folder-panel purchases-folder-panel">
+          {activeReferenceTab === "units" ? (
+            <UnitsOfMeasureAdminPanel
+              embedded
+              sectionEyebrow={meta.eyebrow}
+              sectionTitle={meta.title}
+              sectionCopy={meta.copy}
+              onSaved={() => void refreshUnitsOfMeasure()}
+            />
+          ) : null}
+          {activeReferenceTab === "services" ? (
+            <ServicesRegisterPanel onServicesChanged={refreshServiceCatalog} />
+          ) : null}
+          {activeReferenceTab === "customers" ? (
+            <RegistersCustomersPanel customers={customers} onRefresh={() => void loadRegistries()} />
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
   function renderPrimaryAction() {
     switch (activeSection) {
       case "customers":
@@ -5157,7 +5778,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }
 
   const currentSectionMeta = sectionMeta[activeSection];
-  const showTopbar = !["dashboard", "customers", "vehicles", "repairs", "purchases", "users"].includes(activeSection);
+  const showTopbar = !["dashboard", "customers", "vehicles", "repairs", "purchases", "reference", "users"].includes(
+    activeSection,
+  );
 
   return (
     <div className="workspace">
@@ -5185,6 +5808,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       {activeSection === "vehicles" ? renderVehiclesSection() : null}
       {activeSection === "repairs" ? renderRepairsPreview() : null}
       {activeSection === "purchases" ? renderPurchasesSection() : null}
+      {activeSection === "reference" ? renderReferenceSection() : null}
       {activeSection === "users" ? renderUsersSection() : null}
 
         {isRepairFormOpen ? (
@@ -5593,10 +6217,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <div className="detail-list">
                       {selectedRepairPurchases.map((entry) => (
                         <article className="detail-item" key={entry.id}>
-                          <h4>{entry.part_name}</h4>
+                          <h4>
+                            {entry.part_name}
+                            {entry.is_shop_consumable ? (
+                              <span className="workspace-note"> — shop consumable (not on act)</span>
+                            ) : null}
+                          </h4>
                           <p>{entry.supplier_name}</p>
                           <p className="meta-line">
-                            Qty {entry.quantity} • Buy {formatCurrency(entry.purchase_price)} • Sell {formatCurrency(entry.sale_price)}
+                            Qty {entry.quantity} {entry.unit_of_measure_code} • Buy {formatCurrency(entry.purchase_price)}{" "}
+                            • Sell {formatCurrency(entry.sale_price)}
                           </p>
                           <p className="meta-line">Ordered {formatDisplayDate(entry.order_date)}</p>
                         </article>

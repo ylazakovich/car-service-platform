@@ -12,6 +12,7 @@ import {
   type VehicleOwnerDetails,
   type VehicleUiDetails,
 } from "../shared/vehicles";
+import { formatPolishPhoneDisplay } from "../../../lib/formatPolishPhone";
 import {
   IconCalendarAdded,
   IconCalendarService,
@@ -128,7 +129,14 @@ export function StaffVehicleDetailPanel({
         <div className="vehicle-info-col">
           <strong>Owner</strong>
           <VehicleHeroTitle icon={<IconUser />}>{owner?.full_name ?? vehicle.customer.full_name}</VehicleHeroTitle>
-          {owner?.phone ? <VehicleMetaRow icon={<IconPhone />} text={owner.phone} title="Phone" /> : null}
+          {owner?.phone ? (
+            <VehicleMetaRow
+              icon={<IconPhone />}
+              text={formatPolishPhoneDisplay(owner.phone)}
+              title="Phone"
+              textClassName="phone-display"
+            />
+          ) : null}
           {owner?.email ? <VehicleMetaRow icon={<IconEmail />} text={owner.email} title="Email" /> : null}
           {owner?.notes ? <VehicleMetaRow icon={<IconNote />} text={owner.notes} title="Owner notes" /> : null}
           {!owner ? <p className="meta-line">Customer details not loaded</p> : null}
