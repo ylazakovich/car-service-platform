@@ -1,0 +1,1 @@
+{"id":"d5819513256c94f8b0b634fd14f058d0","fullName":"src/api/purchases.test.ts#uploadInvoiceFile posts FormData without overriding multipart headers","name":"posts FormData without overriding multipart headers","status":"passed","testResultsByEnv":{"frontend":"e4e2948c608b9d9d8c9763582679ad3d"}}
