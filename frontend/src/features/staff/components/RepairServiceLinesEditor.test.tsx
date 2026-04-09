@@ -3,13 +3,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { RepairServiceLinesEditor } from "./RepairServiceLinesEditor";
+import type { RepairServiceLineDraft } from "../shared/repairs";
 
 describe("RepairServiceLinesEditor", () => {
   it("lets the user pick a catalog service from the styled suggestions list", async () => {
     const user = userEvent.setup();
 
     function TestHarness() {
-      const [lines, setLines] = useState([
+      const [lines, setLines] = useState<RepairServiceLineDraft[]>([
         { key: "1", persisted_id: null, name: "", catalog_service_id: null, catalog_service_price: "" },
       ]);
 
@@ -41,7 +42,7 @@ describe("RepairServiceLinesEditor", () => {
     const user = userEvent.setup();
 
     function TestHarness() {
-      const [lines, setLines] = useState([
+      const [lines, setLines] = useState<RepairServiceLineDraft[]>([
         { key: "1", persisted_id: null, name: "", catalog_service_id: null, catalog_service_price: "" },
       ]);
 
