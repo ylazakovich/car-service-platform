@@ -107,8 +107,12 @@ export function IconVin() {
 export function IconColor() {
   return (
     <svg {...svgBase} aria-hidden>
-      <path d="M7 21a4 4 0 01-4-4c0-1.473 1.333-6 4-10a5 5 0 0110 0c2.667 4 4 8.527 4 10a4 4 0 01-4 4H7z" />
-      <circle cx={9} cy={15} r={1} />
+      <rect x="11" y="5" width="9" height="11" rx="1.8" />
+      <path d="M7 9H3.8a1.8 1.8 0 100 3.6H11" />
+      <path d="M5.7 10.8h3.1" />
+      <path d="M13.5 5v11" />
+      <path d="M17 8.1v1.2M17 11.4v1.2" />
+      <path d="M20 16v3.2M17.6 16v2.2" />
     </svg>
   );
 }
