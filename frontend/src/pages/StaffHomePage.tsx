@@ -2966,6 +2966,109 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <p className="workspace-note">Billing analytics unavailable (check connection or sign-in).</p>
                   )}
                 </section>
+
+                {serviceBoardAnalytics ? (
+                  <section className="dashboard-report-section" aria-label="Masters">
+                    <div className="dashboard-report-head">
+                      <div>
+                        <p className="eyebrow">Masters</p>
+                        <h3>Current load and performance</h3>
+                        <p className="workspace-copy">
+                          {formatCount(serviceBoardAnalytics.all_time_totals.masters_total)} masters in the workshop roster.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="dashboard-grid">
+                      <section className="panel dashboard-mini-panel">
+                        <div className="panel-header">
+                          <div>
+                            <p className="eyebrow">Current load</p>
+                            <h3>Assigned now</h3>
+                          </div>
+                        </div>
+                        <div className="dashboard-worker-grid dashboard-worker-grid-masters">
+                          {serviceBoardAnalytics.masters_current.length === 0 ? (
+                            <p className="workspace-note">No masters configured yet.</p>
+                          ) : null}
+                          {serviceBoardAnalytics.masters_current.map((master) => (
+                            <article
+                              className="dashboard-worker-card dashboard-worker-card-master dashboard-worker-card-master-current service-board-card-with-info"
+                              key={`current-${master.master_id}`}
+                            >
+                              <ServiceBoardInfoButton
+                                title={`${master.display_name} current load`}
+                                summary="This card shows the current live workload for the selected master."
+                                formula="Open now = New + In progress + Waiting parts for repairs currently assigned to this master and not yet completed."
+                                notes={[
+                                  "These counts reflect the current board state, not a historical range snapshot.",
+                                  "Money is intentionally not shown here; financial value stays in Completed work.",
+                                ]}
+                              />
+                              <div className="dashboard-worker-topline">
+                                <strong>{master.display_name}</strong>
+                                <span className="tag">{formatCount(master.assigned_open_current)} open</span>
+                              </div>
+                              <div
+                                className="dashboard-worker-status-grid dashboard-worker-status-grid-master"
+                                aria-label={`${master.display_name} current status breakdown`}
+                              >
+                                <div className="dashboard-worker-status-cell">
+                                  <span>New</span>
+                                  <strong>{formatCount(master.current_status_counts.new)}</strong>
+                                </div>
+                                <div className="dashboard-worker-status-cell">
+                                  <span>In progress</span>
+                                  <strong>{formatCount(master.current_status_counts.in_progress)}</strong>
+                                </div>
+                                <div className="dashboard-worker-status-cell">
+                                  <span>Waiting parts</span>
+                                  <strong>{formatCount(master.current_status_counts.waiting_parts)}</strong>
+                                </div>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="panel dashboard-mini-panel">
+                        <div className="panel-header">
+                          <div>
+                            <p className="eyebrow">Range performance</p>
+                            <h3>Completed work</h3>
+                          </div>
+                        </div>
+                        <div className="dashboard-worker-grid dashboard-worker-grid-masters">
+                          {serviceBoardAnalytics.masters_range.length === 0 ? (
+                            <p className="workspace-note">No range performance data available.</p>
+                          ) : null}
+                          {serviceBoardAnalytics.masters_range.map((master) => (
+                            <article
+                              className="dashboard-worker-card dashboard-worker-card-master dashboard-worker-card-master-range service-board-card-with-info"
+                              key={`range-${master.master_id}`}
+                            >
+                              <ServiceBoardInfoButton
+                                title={`${master.display_name} range performance`}
+                                summary="This card shows how the selected master performed inside the active Service Board range."
+                                formula="Done = completed repairs in range; Median = median cycle time for the master's completed repairs in range; Actual = sum of completed service value in range."
+                              />
+                              <div className="dashboard-worker-topline">
+                                <strong>{master.display_name}</strong>
+                                <span className="tag">{formatCount(master.completed_in_range)} done</span>
+                              </div>
+                              <div className="dashboard-worker-stats">
+                                <span>
+                                  Median{" "}
+                                  {master.median_cycle_time_days != null ? `${master.median_cycle_time_days} d` : "—"}
+                                </span>
+                                <span>Actual {formatCurrency(master.actual_service_value_completed)}</span>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  </section>
+                ) : null}
               </div>
             ) : null}
 
@@ -3270,107 +3373,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <strong>{formatCount(serviceBoardAnalytics.range_summary.customers_in_range)}</strong>
                               <p>Unique customers represented by those repairs.</p>
                             </article>
-                          </div>
-                        </section>
-                      </div>
-                    </section>
-
-                    <section className="dashboard-report-section" aria-label="Masters">
-                      <div className="dashboard-report-head">
-                        <div>
-                          <p className="eyebrow">Masters</p>
-                          <h3>Current load and performance</h3>
-                          <p className="workspace-copy">
-                            {formatCount(serviceBoardAnalytics.all_time_totals.masters_total)} masters in the workshop roster.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="dashboard-grid">
-                        <section className="panel dashboard-mini-panel">
-                          <div className="panel-header">
-                            <div>
-                              <p className="eyebrow">Current load</p>
-                              <h3>Assigned now</h3>
-                            </div>
-                          </div>
-                          <div className="dashboard-worker-grid dashboard-worker-grid-masters">
-                            {serviceBoardAnalytics.masters_current.length === 0 ? (
-                              <p className="workspace-note">No masters configured yet.</p>
-                            ) : null}
-                            {serviceBoardAnalytics.masters_current.map((master) => (
-                              <article
-                                className="dashboard-worker-card dashboard-worker-card-master dashboard-worker-card-master-current service-board-card-with-info"
-                                key={`current-${master.master_id}`}
-                              >
-                                <ServiceBoardInfoButton
-                                  title={`${master.display_name} current load`}
-                                  summary="This card shows the current live workload for the selected master."
-                                  formula="Open now = New + In progress + Waiting parts for repairs currently assigned to this master and not yet completed."
-                                  notes={[
-                                    "These counts reflect the current board state, not a historical range snapshot.",
-                                    "Money is intentionally not shown here; financial value stays in Completed work.",
-                                  ]}
-                                />
-                                <div className="dashboard-worker-topline">
-                                  <strong>{master.display_name}</strong>
-                                  <span className="tag">{formatCount(master.assigned_open_current)} open</span>
-                                </div>
-                                <div
-                                  className="dashboard-worker-status-grid dashboard-worker-status-grid-master"
-                                  aria-label={`${master.display_name} current status breakdown`}
-                                >
-                                  <div className="dashboard-worker-status-cell">
-                                    <span>New</span>
-                                    <strong>{formatCount(master.current_status_counts.new)}</strong>
-                                  </div>
-                                  <div className="dashboard-worker-status-cell">
-                                    <span>In progress</span>
-                                    <strong>{formatCount(master.current_status_counts.in_progress)}</strong>
-                                  </div>
-                                  <div className="dashboard-worker-status-cell">
-                                    <span>Waiting parts</span>
-                                    <strong>{formatCount(master.current_status_counts.waiting_parts)}</strong>
-                                  </div>
-                                </div>
-                              </article>
-                            ))}
-                          </div>
-                        </section>
-
-                        <section className="panel dashboard-mini-panel">
-                          <div className="panel-header">
-                            <div>
-                              <p className="eyebrow">Range performance</p>
-                              <h3>Completed work</h3>
-                            </div>
-                          </div>
-                          <div className="dashboard-worker-grid dashboard-worker-grid-masters">
-                            {serviceBoardAnalytics.masters_range.length === 0 ? (
-                              <p className="workspace-note">No range performance data available.</p>
-                            ) : null}
-                            {serviceBoardAnalytics.masters_range.map((master) => (
-                              <article
-                                className="dashboard-worker-card dashboard-worker-card-master dashboard-worker-card-master-range service-board-card-with-info"
-                                key={`range-${master.master_id}`}
-                              >
-                                <ServiceBoardInfoButton
-                                  title={`${master.display_name} range performance`}
-                                  summary="This card shows how the selected master performed inside the active Service Board range."
-                                  formula="Done = completed repairs in range; Median = median cycle time for the master's completed repairs in range; Actual = sum of completed service value in range."
-                                />
-                                <div className="dashboard-worker-topline">
-                                  <strong>{master.display_name}</strong>
-                                  <span className="tag">{formatCount(master.completed_in_range)} done</span>
-                                </div>
-                                <div className="dashboard-worker-stats">
-                                  <span>
-                                    Median{" "}
-                                    {master.median_cycle_time_days != null ? `${master.median_cycle_time_days} d` : "—"}
-                                  </span>
-                                  <span>Actual {formatCurrency(master.actual_service_value_completed)}</span>
-                                </div>
-                              </article>
-                            ))}
                           </div>
                         </section>
                       </div>
