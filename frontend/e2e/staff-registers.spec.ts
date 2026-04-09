@@ -74,7 +74,7 @@ test.describe("Registers workspace @mobile-only", () => {
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
     await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
-    await expect(page.getByRole("button", { name: "Registers" })).toBeVisible({ timeout: 30_000 });
+    // Narrow viewport: "Registers" lives in the workspace drawer, not as a persistently visible shell button.
   });
 
   test("admin reaches Registers tabs and Services catalog on narrow viewport", async ({ page }) => {
