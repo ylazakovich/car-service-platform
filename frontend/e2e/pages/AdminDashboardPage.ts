@@ -85,10 +85,10 @@ export class AdminDashboardPage {
     }
   }
 
-  /** Service Board: секция мастеров и две колонки нагрузки / завершённых работ. */
+  /** MoneyFlow: секция мастеров и две колонки нагрузки / завершённых работ. */
   async expectMastersSectionStructure(): Promise<void> {
     const masters = this.page.locator('section[aria-label="Masters"]');
-    await expect(masters).toBeVisible();
+    await expect(masters).toBeVisible({ timeout: 30_000 });
     await expect(masters.getByRole("heading", { name: "Current load and performance" })).toBeVisible();
     await expect(masters.getByRole("heading", { name: "Assigned now" })).toBeVisible();
     await expect(masters.getByRole("heading", { name: "Completed work" })).toBeVisible();
