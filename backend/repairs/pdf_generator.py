@@ -105,6 +105,12 @@ def _master_name(repair: Any) -> str:
     return name or repair.master.email
 
 
+def _format_odometer(val: Any) -> str:
+    if val is None:
+        return "—"
+    return f"{val:,.0f} km"
+
+
 def _fmt(amount: Any) -> str:
     return f"{amount:,.2f} PLN"
 
@@ -132,21 +138,27 @@ def _divider(width: float) -> Table:
     return t
 
 
-def _info_block(repair: Any, font: str, width: float) -> Table:
-    s = _styles(font)
+def _repair_info_rows(repair: Any) -> list[tuple[str, str]]:
     vehicle = repair.vehicle
     vehicle_text = f"{vehicle.license_plate} \u2022 {vehicle.make} {vehicle.model}"
+
+    return [
+        ("VEHICLE", vehicle_text),
+        ("CLIENT", vehicle.customer.full_name),
+        ("MASTER", _master_name(repair)),
+        ("DATE CREATED", _format_date(repair.created_at)),
+        ("DATE COMPLETED", _format_date(repair.completed_at)),
+        ("ODOMETER WHEN RETURNED", _format_odometer(repair.mileage_at_service)),
+    ]
+
+
+def _info_block(repair: Any, font: str, width: float) -> Table:
+    s = _styles(font)
 
     def row(label: str, value: str) -> list:
         return [Paragraph(label, s["info_label"]), Paragraph(value, s["info_value"])]
 
-    data = [
-        row("VEHICLE", vehicle_text),
-        row("CLIENT", vehicle.customer.full_name),
-        row("MASTER", _master_name(repair)),
-        row("DATE CREATED", _format_date(repair.created_at)),
-        row("DATE COMPLETED", _format_date(repair.completed_at)),
-    ]
+    data = [row(label, value) for label, value in _repair_info_rows(repair)]
 
     col_l = 32 * mm
     col_v = width * 0.55 - col_l

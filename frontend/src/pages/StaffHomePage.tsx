@@ -15,6 +15,10 @@ import { useAuth } from "../context/AuthContext";
 import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
 import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
 import {
+  formatRepairVehicleOptionLabel,
+  RepairVehiclePicker,
+} from "../features/staff/components/RepairVehiclePicker";
+import {
   IconEmail,
   IconNote,
   IconPhone,
@@ -1010,6 +1014,10 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+const ACT_EXPORT_ODOMETER_REQUIRED_MESSAGE =
+  "Fill in Odometer when returned (km) before exporting the act.";
+const ODOMETER_NUMBER_MESSAGE = "Odometer must be a whole number (km), or leave empty.";
+
 export function StaffHomePage({ activeSection, onSelectSection, openRepairComposerRequest }: StaffHomePageProps) {
   const { user, isStaff, isAdmin } = useAuth();
   const lastHandledRepairComposerRequest = useRef(0);
@@ -1227,7 +1235,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     repairError,
     isSavingRepair,
     isRepairFormOpen,
-    repairPhotoPreviews,
     selectedRepairId,
     repairModalStatus,
     setRepairModalStatus,
@@ -1237,6 +1244,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairModalCompletedAt,
     repairModalMileageAtService,
     setRepairModalMileageAtService,
+    repairModalNeedsMileageAttention,
     repairModalNewNote,
     setRepairModalNewNote,
     repairModalServiceLines,
@@ -1255,15 +1263,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     openRepairCreateModal,
     closeRepairCreateModal,
     openRepairModal,
+    requestRepairMileageAttention,
     handleRepairSubmit,
     handleRepairNoteAdd,
     handleRepairNoteDelete,
     handleRepairModalSave,
     handleRepairDelete,
-    handleRepairPhotosChange,
-    handleRepairBeforePhotosChange,
-    handleRepairDuringPhotosChange,
-    handleRepairAfterPhotosChange,
     handleCardDragStart,
     handleCardDragEnd,
     handleColumnDragOver,
@@ -1280,6 +1285,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairModalEstimatedDate,
   } = useRepairs(vehicles, staffUsers, user?.role === "staff" ? user?.id : undefined);
   const currentUserLabel = user ? `${user.first_name} ${user.last_name}`.trim() || user.email : "Unknown User";
+  const repairMileageInputRef = useRef<HTMLInputElement | null>(null);
   const servicePriceByName = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of apiServices) {
@@ -1398,27 +1404,57 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     }
   }
 
+  function getActOdometerValidationMessage(repairId: number): string | null {
+    const repair = repairs.find((item) => item.id === repairId);
+    if (!repair) {
+      return null;
+    }
+    if (selectedRepair?.id === repairId && repairModalStatus === "completed") {
+      const normalized = repairModalMileageAtService.trim().replace(/,/g, "").replace(/\s/g, "");
+      if (!normalized) {
+        return ACT_EXPORT_ODOMETER_REQUIRED_MESSAGE;
+      }
+      if (!/^\d+$/.test(normalized)) {
+        return ODOMETER_NUMBER_MESSAGE;
+      }
+      return null;
+    }
+    return repair.mileage_at_service == null ? ACT_EXPORT_ODOMETER_REQUIRED_MESSAGE : null;
+  }
+
   async function handleDownloadRepairPdf(repairId: number) {
+    const odometerMessage = getActOdometerValidationMessage(repairId);
+    if (odometerMessage) {
+      requestRepairMileageAttention();
+      window.alert(odometerMessage);
+      return;
+    }
     setRepairPdfLoading(true);
     try {
       const blob = await openRepairPdfForPreview(repairId);
       setRepairPdfBlob(blob);
       markRepairPdfAvailable(repairId);
-    } catch {
-      // silently ignore
+    } catch (error) {
+      window.alert(getErrorMessage(error, "Unable to open the act."));
     } finally {
       setRepairPdfLoading(false);
     }
   }
 
   async function handleExportNewRepairPdfVersion(repairId: number) {
+    const odometerMessage = getActOdometerValidationMessage(repairId);
+    if (odometerMessage) {
+      requestRepairMileageAttention();
+      window.alert(odometerMessage);
+      return;
+    }
     setRepairPdfExportBusy(true);
     try {
       const blob = await exportRepairPdf(repairId);
       setRepairPdfBlob(blob);
       markRepairPdfAvailable(repairId);
-    } catch {
-      // silently ignore
+    } catch (error) {
+      window.alert(getErrorMessage(error, "Unable to export a new act version."));
     } finally {
       setRepairPdfExportBusy(false);
     }
@@ -1429,6 +1465,25 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     setRepairPdfLoading(false);
     closeRepairModal();
   }
+
+  useEffect(() => {
+    if (!repairModalNeedsMileageAttention || selectedRepairId === null || repairModalStatus !== "completed") {
+      return;
+    }
+
+    const input = repairMileageInputRef.current;
+    if (!input) {
+      return;
+    }
+
+    if (typeof input.scrollIntoView === "function") {
+      input.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+    window.requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  }, [repairModalNeedsMileageAttention, repairModalStatus, selectedRepairId]);
 
   useEffect(() => {
     let ignore = false;
@@ -5152,18 +5207,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 <div className="repair-form-modal-scroll">
                 <label>
                   <span>Vehicle</span>
-                  <select
-                    value={repairForm.vehicle_id}
-                    onChange={(event) => setRepairForm((current) => ({ ...current, vehicle_id: event.target.value }))}
-                    required
-                  >
-                    <option value="">Select vehicle</option>
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.license_plate} • {vehicle.make} {vehicle.model}
-                      </option>
-                    ))}
-                  </select>
+                  <RepairVehiclePicker
+                    vehicles={vehicles}
+                    query={repairForm.vehicle_query}
+                    selectedVehicleId={repairForm.vehicle_id}
+                    onQueryChange={(value) =>
+                      setRepairForm((current) => ({ ...current, vehicle_query: value, vehicle_id: "" }))
+                    }
+                    onSelect={(vehicle) =>
+                      setRepairForm((current) => ({
+                        ...current,
+                        vehicle_id: String(vehicle.id),
+                        vehicle_query: formatRepairVehicleOptionLabel(vehicle),
+                      }))
+                    }
+                  />
                 </label>
 
                 <label>
@@ -5246,21 +5304,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       ))}
                     </select>
                   </label>
-
-                  <label>
-                    <span>Before Repair Photos</span>
-                    <input accept="image/*" capture="environment" multiple onChange={handleRepairPhotosChange} type="file" disabled title="Photo upload coming soon" />
-                  </label>
                 </div>
-
-                {repairPhotoPreviews.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairPhotoPreviews.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); blob: URLs are browser-generated via URL.createObjectURL
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
-                    ))}
-                  </div>
-                ) : null}
 
                 <label>
                   <span>Issue Notes</span>
@@ -5414,13 +5458,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                           required
                         />
                       </div>
-                      <div className="repair-modal-mileage-at-service">
+                      <div
+                        className={`repair-modal-mileage-at-service ${repairModalNeedsMileageAttention && !repairModalMileageAtService.trim() ? "repair-modal-mileage-at-service--attention" : ""}`}
+                      >
                         <span className="repair-modal-field-label">Odometer when returned (km)</span>
                         {canEditRepairWorkDetails ? (
                           <input
+                            ref={repairMileageInputRef}
                             type="text"
                             inputMode="numeric"
-                            className="repair-modal-mileage-input"
+                            className={`repair-modal-mileage-input ${repairModalNeedsMileageAttention && !repairModalMileageAtService.trim() ? "repair-modal-mileage-input--attention" : ""}`}
                             autoComplete="off"
                             placeholder="e.g. 87400"
                             value={repairModalMileageAtService}
@@ -5599,42 +5646,39 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   )}
                 </div>
 
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Photos Before Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairBeforePhotosChange} type="file" disabled title="Photo upload coming soon" />
-                </label>
                 {repairBeforePhotos.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairBeforePhotos.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
-                    ))}
+                  <div className="detail-card repair-modal-panel">
+                    <strong>Photos Before Repair</strong>
+                    <div className="photo-preview-grid">
+                      {repairBeforePhotos.map((preview) => (
+                        // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                        <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="Before repair preview" />
+                      ))}
+                    </div>
                   </div>
                 ) : null}
 
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Photos During Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairDuringPhotosChange} type="file" disabled title="Photo upload coming soon" />
-                </label>
                 {repairDuringPhotos.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairDuringPhotos.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="During repair preview" />
-                    ))}
+                  <div className="detail-card repair-modal-panel">
+                    <strong>Photos During Repair</strong>
+                    <div className="photo-preview-grid">
+                      {repairDuringPhotos.map((preview) => (
+                        // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                        <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="During repair preview" />
+                      ))}
+                    </div>
                   </div>
                 ) : null}
 
-                <label className="detail-card repair-status-field repair-modal-panel">
-                  <span>Photos After Repair</span>
-                  <input accept="image/*" capture="environment" multiple onChange={handleRepairAfterPhotosChange} type="file" disabled title="Photo upload coming soon" />
-                </label>
                 {repairAfterPhotos.length > 0 ? (
-                  <div className="photo-preview-grid">
-                    {repairAfterPhotos.map((preview) => (
-                      // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
-                      <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="After repair preview" />
-                    ))}
+                  <div className="detail-card repair-modal-panel">
+                    <strong>Photos After Repair</strong>
+                    <div className="photo-preview-grid">
+                      {repairAfterPhotos.map((preview) => (
+                        // lgtm[js/xss-through-dom] -- sanitizeImageUrl enforces protocol allowlist (blob:/https:/http:/); API-sourced URLs are validated before use
+                        <img className="photo-preview" key={preview} src={sanitizeImageUrl(preview)} alt="After repair preview" />
+                      ))}
+                    </div>
                   </div>
                 ) : null}
 

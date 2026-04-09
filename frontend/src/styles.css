@@ -3855,6 +3855,7 @@ button.moneyflow-series-toggle {
   display: flex;
   flex-direction: column;
   gap: var(--s1);
+  position: relative;
 }
 
 .repair-service-line-input {
@@ -3881,6 +3882,51 @@ button.moneyflow-series-toggle {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+.repair-service-suggestions {
+  display: grid;
+  gap: 1px;
+  margin-top: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 94%, black 6%);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+}
+
+.repair-service-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.repair-service-suggestion:hover,
+.repair-service-suggestion-selected {
+  background: rgba(205, 216, 58, 0.12);
+  color: #f4f6d0;
+}
+
+.repair-service-suggestion-name {
+  min-width: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.repair-service-suggestion-price {
+  flex-shrink: 0;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .repair-service-line-hint {
   margin: 0;
   font-size: 0.78rem;
@@ -3890,6 +3936,106 @@ button.moneyflow-series-toggle {
 .repair-service-line-hint-catalog { color: var(--accent); }
 
 .repair-service-line-hint-custom { color: var(--text-soft); }
+
+.repair-service-line-custom-fields {
+  display: grid;
+  gap: var(--s2);
+}
+
+.repair-service-line-price {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 10rem;
+}
+
+.repair-service-line-price > span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.repair-service-line-price-input,
+.repair-vehicle-picker-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 2.35rem;
+  padding: 0.55rem var(--s3);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-mid);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.repair-service-line-price-input:hover,
+.repair-vehicle-picker-input:hover {
+  border-color: var(--border-strong);
+}
+
+.repair-service-line-price-input:focus,
+.repair-vehicle-picker-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.repair-vehicle-picker {
+  display: grid;
+  gap: var(--s2);
+}
+
+.repair-vehicle-picker-selected {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.repair-vehicle-picker-results {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 13rem;
+  overflow-y: auto;
+}
+
+.repair-vehicle-picker-option {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.8rem 0.95rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s, transform 0.14s, background 0.14s;
+}
+
+.repair-vehicle-picker-option:hover {
+  border-color: var(--accent);
+  background: var(--surface-mid);
+  transform: translateY(-1px);
+}
+
+.repair-vehicle-picker-option-selected {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.repair-vehicle-picker-option-main {
+  font-weight: 700;
+}
+
+.repair-vehicle-picker-option-meta,
+.repair-vehicle-picker-empty {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-soft);
+}
 
 .repair-service-line-add {
   align-self: flex-start;
@@ -4580,6 +4726,14 @@ button.moneyflow-series-toggle {
   margin-top: var(--s4);
 }
 
+.repair-update-modal .repair-modal-mileage-at-service--attention {
+  padding: var(--s3);
+  margin-inline: calc(var(--s3) * -1);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--warning, #c27803) 11%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warning, #c27803) 34%, var(--border));
+}
+
 .repair-update-modal .repair-modal-mileage-input {
   width: 100%;
   border-radius: 10px;
@@ -4599,6 +4753,13 @@ button.moneyflow-series-toggle {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.repair-update-modal .repair-modal-mileage-input--attention,
+.repair-update-modal .repair-modal-mileage-input--attention:hover,
+.repair-update-modal .repair-modal-mileage-input--attention:focus {
+  border-color: color-mix(in srgb, var(--warning, #c27803) 72%, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning, #c27803) 24%, transparent);
 }
 
 .repair-update-modal .repair-modal-mileage-readonly {
@@ -5322,8 +5483,8 @@ button.moneyflow-series-toggle {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--s2);
-  padding: var(--s5);
+  gap: 0.42rem;
+  padding: var(--s4);
   min-width: 0;
 }
 
@@ -5333,7 +5494,7 @@ button.moneyflow-series-toggle {
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--text-soft);
-  margin-bottom: var(--s1);
+  margin-bottom: 0.05rem;
 }
 
 .vehicle-info-col p {
@@ -5345,53 +5506,63 @@ button.moneyflow-series-toggle {
 
 .vehicle-detail-hero-title {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 0.65rem;
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text);
-  line-height: 1.4;
+  line-height: 1.25;
   min-width: 0;
 }
 
 .vehicle-detail-hero-title-icon {
   flex-shrink: 0;
   display: inline-flex;
-  margin-top: 2px;
+  margin-top: 0;
   color: rgba(205, 216, 58, 0.82);
 }
 
 .vehicle-detail-hero-title-text {
   min-width: 0;
+  line-height: 1.3;
 }
 
 .vehicle-detail-meta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.55rem;
   min-width: 0;
+  margin: 0;
+  min-height: 1.55rem;
+}
+
+.vehicle-detail-meta-row--vin {
+  align-items: center;
 }
 
 .vehicle-vin-inline {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.45rem 0.55rem;
+  gap: 0.42rem;
   flex: 1;
   min-width: 0;
 }
 
 .vehicle-detail-meta-row--vin .vehicle-detail-meta-text--vin-wrap {
+  display: inline-flex;
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
+  line-height: 1;
 }
 
 .vehicle-detail-meta-icon {
   flex-shrink: 0;
   display: inline-flex;
   color: rgba(205, 216, 58, 0.78);
+  margin-top: 0;
 }
 
 .vehicle-detail-meta-text {
@@ -5412,18 +5583,21 @@ button.moneyflow-series-toggle {
 .vehicle-detail-meta-text--vin-wrap {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 0.35rem 0.5rem;
   font-family: ui-monospace, monospace;
 }
 
 .vehicle-vin-label {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   color: rgba(205, 216, 58, 0.88);
   text-transform: uppercase;
+  line-height: 1;
 }
 
 .vehicle-vin-digits {
@@ -5433,6 +5607,7 @@ button.moneyflow-series-toggle {
   letter-spacing: 0.02em;
   word-break: break-all;
   color: var(--text-mid);
+  line-height: 1.1;
 }
 
 .vin-copy-button {
@@ -5442,7 +5617,9 @@ button.moneyflow-series-toggle {
   justify-content: center;
   gap: 0.28rem;
   flex-shrink: 0;
-  padding: 0.32rem 0.55rem;
+  align-self: center;
+  min-height: 1.9rem;
+  padding: 0.22rem 0.58rem;
   border-radius: 8px;
   border: 1px solid rgba(205, 216, 58, 0.4);
   background: rgba(205, 216, 58, 0.12);
@@ -5500,18 +5677,16 @@ button.moneyflow-series-toggle {
 }
 
 .vehicle-mobile-detail-surface .vehicle-detail-meta-row {
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 .vehicle-mobile-detail-surface .vehicle-mobile-plate-row + .vehicle-detail-hero-title {
   margin-top: 0;
 }
 
-.detail-card .vehicle-detail-meta-row {
-  margin-top: 6px;
-}
-
-.detail-card .vehicle-detail-meta-row:first-of-type {
+.vehicle-info-col > .vehicle-detail-meta-row,
+.vehicle-info-col > .vehicle-detail-hero-title,
+.vehicle-info-col > .meta-line {
   margin-top: 0;
 }
 
