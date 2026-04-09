@@ -956,7 +956,7 @@ describe("bootstrap application", () => {
     });
   });
 
-  it("renders the redesigned service board with range, live, master, and all-time sections", async () => {
+  it("renders service board sections and shows masters in the moneyflow tab", async () => {
     mockApi.get.mockImplementation((url: string) => {
       if (url === "/auth/csrf") {
         return Promise.resolve({ data: { detail: "CSRF cookie set" } });
@@ -1042,14 +1042,25 @@ describe("bootstrap application", () => {
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Operations Dashboard")).toBeInTheDocument());
-    await user.click(screen.getByRole("tab", { name: "ServiceBoard" }));
+    const moneyflowTab = screen.getByRole("tab", { name: "MoneyFlow" });
+    const mastersSection = await screen.findByRole("region", { name: "Masters" });
 
+    expect(screen.getByRole("heading", { name: "Current load and performance", level: 3 })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(mastersSection).getByText("3 masters in the workshop roster.")).toBeInTheDocument();
+      expect(within(mastersSection).getByText("New")).toBeInTheDocument();
+      expect(within(mastersSection).getByText("In progress")).toBeInTheDocument();
+      expect(within(mastersSection).getAllByText("Waiting parts").length).toBeGreaterThan(0);
+      expect(within(mastersSection).getByText(/1800,00\s*zł/)).toBeInTheDocument();
+      expect(within(mastersSection).getAllByText("Chris North")).toHaveLength(2);
+      expect(within(mastersSection).queryByText(/950,00\s*zł/)).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("tab", { name: "ServiceBoard" }));
     const selectedRange = await screen.findByRole("region", { name: "Selected range" });
-    const mastersSection = screen.getByRole("region", { name: "Masters" });
     const allTimeSection = screen.getByRole("region", { name: "All-time totals" });
 
     expect(screen.getByRole("heading", { name: "Service Board KPIs", level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Current load and performance", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Registry baseline", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Repair flow", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Vehicles and clients", level: 3 })).toBeInTheDocument();
@@ -1062,6 +1073,8 @@ describe("bootstrap application", () => {
     expect(screen.queryByText("Cycle p90")).not.toBeInTheDocument();
     expect(screen.queryByText("Created in range")).not.toBeInTheDocument();
     expect(screen.queryByText("Returning / non-returning")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Current load and performance", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Masters" })).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(within(selectedRange).getByText("5")).toBeInTheDocument();
@@ -1070,24 +1083,20 @@ describe("bootstrap application", () => {
       expect(within(selectedRange).getByText("3")).toBeInTheDocument();
       expect(within(selectedRange).getAllByText("6 d").length).toBeGreaterThan(0);
       expect(within(selectedRange).getByText("7")).toBeInTheDocument();
-      expect(within(mastersSection).getByText("3 masters in the workshop roster.")).toBeInTheDocument();
-      expect(within(mastersSection).getByText("New")).toBeInTheDocument();
-      expect(within(mastersSection).getByText("In progress")).toBeInTheDocument();
-      expect(within(mastersSection).getAllByText("Waiting parts").length).toBeGreaterThan(0);
-      expect(within(mastersSection).getByText(/1800,00\s*zł/)).toBeInTheDocument();
-      expect(within(mastersSection).getAllByText("Chris North")).toHaveLength(2);
       expect(within(allTimeSection).getByText("18")).toBeInTheDocument();
       expect(within(allTimeSection).getByText("11")).toBeInTheDocument();
       expect(within(allTimeSection).getByText("9")).toBeInTheDocument();
       expect(within(allTimeSection).getByText("4")).toBeInTheDocument();
       expect(within(allTimeSection).getByText("5")).toBeInTheDocument();
-      expect(within(mastersSection).queryByText(/950,00\s*zł/)).not.toBeInTheDocument();
     });
 
     await user.click(within(selectedRange).getByRole("button", { name: "More info about Open repairs" }));
     expect(await screen.findByRole("dialog", { name: "Open repairs details" })).toBeInTheDocument();
     expect(screen.getByText("This card shows backlog at the end of the selected Service Board range.")).toBeInTheDocument();
     expect(screen.getByText("Count repairs that were still not completed on the selected range end date.")).toBeInTheDocument();
+
+    await user.click(moneyflowTab);
+    expect(await screen.findByRole("region", { name: "Masters" })).toBeInTheDocument();
   });
 
   it("shows a partial act coverage state when completed repairs still miss acts", async () => {
