@@ -97,6 +97,22 @@ async function pickDashboardDateRange(user: ReturnType<typeof userEvent.setup>, 
   });
 }
 
+/** Matches `PurchaseItem.unit_of_measure` for smoke mocks (`mapApiPurchaseToPurchaseEntry`). */
+const SMOKE_UOM_PCS = { id: 1, code: "pcs", name: "Pieces", is_active: true, sort_order: 10 };
+
+const SMOKE_UNITS_OF_MEASURE_LIST = [
+  SMOKE_UOM_PCS,
+  { id: 2, code: "L", name: "Liters", is_active: true, sort_order: 20 },
+];
+
+function isPurchasesIndexGet(url: string) {
+  return url.split("?")[0] === "/purchases/";
+}
+
+function isPurchasesUnitsGet(url: string) {
+  return url.split("?")[0] === "/purchases/units/";
+}
+
 /** Default `/repairs/` mock uses this plate + model in `vehicle_label` (modal `aria-labelledby`). */
 const SMOKE_DEFAULT_REPAIR_DIALOG_NAME = /WB 1234K\s*•\s*Toyota Corolla/;
 
@@ -175,6 +191,7 @@ function createStubDashboardAnalyticsResponse(): DashboardAnalyticsResponse {
       supplier_spend_top: [],
       purchases_unlinked: { count: 0, total_spend: 0 },
       exports_by_exporter: [],
+      shop_consumables: { line_count: 0, buy_total: 0 },
     },
     warehouse: {
       snapshot_as_of: "2025-03-31T12:30:00Z",
@@ -249,6 +266,9 @@ describe("bootstrap application", () => {
         return Promise.resolve({
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
       }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({
@@ -370,6 +390,7 @@ describe("bootstrap application", () => {
               supplier_spend_top: [],
               purchases_unlinked: { count: 0, total_spend: 0 },
               exports_by_exporter: [],
+              shop_consumables: { line_count: 0, buy_total: 0 },
             },
             warehouse: {
               snapshot_as_of: "2025-04-30T12:00:00Z",
@@ -393,7 +414,7 @@ describe("bootstrap application", () => {
           },
         });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({
           data: {
             results: [
@@ -409,6 +430,8 @@ describe("bootstrap application", () => {
                 sale_price: "120.00",
                 repair_code: "TOR-1011",
                 vehicle: null,
+                unit_of_measure: SMOKE_UOM_PCS,
+                is_shop_consumable: false,
                 invoice_name: "",
                 invoice_url: "",
                 delivered: false,
@@ -483,6 +506,9 @@ describe("bootstrap application", () => {
         return Promise.resolve({
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
       }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({
@@ -568,6 +594,7 @@ describe("bootstrap application", () => {
               export_count: 2,
             },
           ],
+          shop_consumables: { line_count: 0, buy_total: 0 },
         };
         analytics.warehouse = {
           snapshot_as_of: "2025-03-31T09:15:00Z",
@@ -739,7 +766,7 @@ describe("bootstrap application", () => {
           ],
         });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({
           data: {
             results: [
@@ -755,6 +782,8 @@ describe("bootstrap application", () => {
                 sale_price: "120.00",
                 repair_code: "TOR-1011",
                 vehicle: null,
+                unit_of_measure: SMOKE_UOM_PCS,
+                is_shop_consumable: false,
                 invoice_name: "",
                 invoice_url: "",
                 delivered: false,
@@ -773,6 +802,8 @@ describe("bootstrap application", () => {
                 sale_price: "150.00",
                 repair_code: "TOR-1012",
                 vehicle: null,
+                unit_of_measure: SMOKE_UOM_PCS,
+                is_shop_consumable: false,
                 invoice_name: "",
                 invoice_url: "",
                 delivered: false,
@@ -791,6 +822,8 @@ describe("bootstrap application", () => {
                 sale_price: "80.00",
                 repair_code: "TOR-1013",
                 vehicle: null,
+                unit_of_measure: SMOKE_UOM_PCS,
+                is_shop_consumable: false,
                 invoice_name: "",
                 invoice_url: "",
                 delivered: false,
@@ -809,6 +842,8 @@ describe("bootstrap application", () => {
                 sale_price: "110.00",
                 repair_code: "TOR-1014",
                 vehicle: null,
+                unit_of_measure: SMOKE_UOM_PCS,
+                is_shop_consumable: false,
                 invoice_name: "",
                 invoice_url: "",
                 delivered: false,
@@ -827,6 +862,8 @@ describe("bootstrap application", () => {
                 sale_price: "260.00",
                 repair_code: "TOR-1014",
                 vehicle: null,
+                unit_of_measure: SMOKE_UOM_PCS,
+                is_shop_consumable: false,
                 invoice_name: "",
                 invoice_url: "",
                 delivered: false,
@@ -966,6 +1003,9 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/analytics/dashboard/")) {
         const analytics = createStubDashboardAnalyticsResponse();
         analytics.service_board = {
@@ -1032,7 +1072,7 @@ describe("bootstrap application", () => {
       if (url === "/auth/users/") {
         return Promise.resolve({ data: [] });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       return Promise.resolve({ data: [] });
@@ -1109,6 +1149,9 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/analytics/dashboard/")) {
         const analytics = createStubDashboardAnalyticsResponse();
         analytics.pdf.latest_act_totals.repairs_with_latest_act = 1;
@@ -1136,7 +1179,7 @@ describe("bootstrap application", () => {
       if (url === "/users/") {
         return Promise.resolve({ data: [] });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       return Promise.resolve({ data: [] });
@@ -1173,6 +1216,9 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
       }
@@ -1194,7 +1240,7 @@ describe("bootstrap application", () => {
       if (url === "/users/") {
         return Promise.resolve({ data: [] });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       return Promise.resolve({ data: [] });
@@ -1270,6 +1316,9 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({
           data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
@@ -1319,7 +1368,7 @@ describe("bootstrap application", () => {
           ],
         });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       if (url.startsWith("/analytics/dashboard/")) {
@@ -1440,7 +1489,7 @@ describe("bootstrap application", () => {
       if (url === "/uploads/invoice/") {
         return Promise.resolve({ data: { url: "blob:test-invoice", name: "invoice.pdf" } });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({
           data: {
             id: 99,
@@ -1454,6 +1503,8 @@ describe("bootstrap application", () => {
             repair_code: data?.repair_code,
             vehicle: data?.vehicle_id,
             vehicle_license_plate: "WB 1234K",
+            unit_of_measure: SMOKE_UOM_PCS,
+            is_shop_consumable: false,
             invoice_name: "",
             invoice_url: "",
             delivered: false,
@@ -1470,7 +1521,7 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
-    await user.click(await screen.findByRole("button", { name: "+ Add Purchase" }));
+    await user.click(await screen.findByRole("button", { name: "+ Add part line" }));
 
     await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
     await user.tab();
@@ -1484,7 +1535,7 @@ describe("bootstrap application", () => {
 
     expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
 
-    await user.click(screen.getByRole("button", { name: "Add Purchase" }));
+    await user.click(screen.getByRole("button", { name: "Save line" }));
 
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith(
@@ -1503,7 +1554,7 @@ describe("bootstrap application", () => {
   it("lets staff explicitly unlink a purchase from repair before saving", async () => {
     const user = userEvent.setup();
     mockApi.post.mockImplementation((url: string, data?: Record<string, unknown>) => {
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({
           data: {
             id: 100,
@@ -1517,6 +1568,8 @@ describe("bootstrap application", () => {
             repair_code: typeof data?.repair_code === "string" ? data.repair_code : "",
             vehicle: typeof data?.vehicle_id === "number" ? data.vehicle_id : null,
             vehicle_license_plate: typeof data?.vehicle_id === "number" ? "WB 1234K" : "",
+            unit_of_measure: SMOKE_UOM_PCS,
+            is_shop_consumable: false,
             invoice_name: "",
             invoice_url: "",
             delivered: false,
@@ -1534,11 +1587,11 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
-    await user.click(await screen.findByRole("button", { name: "+ Add Purchase" }));
+    await user.click(await screen.findByRole("button", { name: "+ Add part line" }));
 
     expect(screen.getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
     expect(
-      screen.getByText("Leave this empty for stock or reserve parts that are not tied to a repair.")
+      screen.getByText(/Leave vehicle and repair empty for stock or parts not tied to a job yet/)
     ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
@@ -1555,7 +1608,7 @@ describe("bootstrap application", () => {
     expect(screen.getByLabelText("Linked Repair")).toHaveValue("");
     expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
 
-    await user.click(screen.getByRole("button", { name: "Add Purchase" }));
+    await user.click(screen.getByRole("button", { name: "Save line" }));
 
     await waitFor(() => {
       const purchaseCall = mockApi.post.mock.calls.find(([url]) => url === "/purchases/");
@@ -1588,6 +1641,8 @@ describe("bootstrap application", () => {
             repair_code: typeof data?.repair_code === "string" ? data.repair_code : "TOR-1011",
             vehicle: typeof data?.vehicle_id === "number" ? data.vehicle_id : null,
             vehicle_license_plate: typeof data?.vehicle_id === "number" ? "WB 1234K" : "",
+            unit_of_measure: SMOKE_UOM_PCS,
+            is_shop_consumable: false,
             invoice_name: "",
             invoice_url: "",
             delivered: Boolean(data?.delivered),
@@ -1711,6 +1766,9 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({ data: [] });
       }
@@ -1765,7 +1823,7 @@ describe("bootstrap application", () => {
           ],
         });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       if (url.startsWith("/analytics/dashboard/")) {
@@ -1824,6 +1882,9 @@ describe("bootstrap application", () => {
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({ data: [] });
       }
@@ -1833,7 +1894,7 @@ describe("bootstrap application", () => {
       if (url === "/repairs/") {
         return Promise.resolve({ data: repairs });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       if (url.startsWith("/analytics/dashboard/")) {
@@ -1888,6 +1949,9 @@ describe("bootstrap application", () => {
       if (url === "/auth/me") {
         return Promise.reject(new Error("temporary network issue"));
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({
           data: [{ id: 1, full_name: "Alex Johnson", phone: "+48 555 100 200", email: "", notes: "", vehicle_count: 1 }],
@@ -1914,7 +1978,7 @@ describe("bootstrap application", () => {
       if (url === "/repairs/") {
         return Promise.resolve({ data: [] });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       if (url === "/purchases/suppliers/" || url === "/services/" || url === "/auth/staff/") {
@@ -1991,6 +2055,9 @@ describe("bootstrap application", () => {
           data: { id: 2, email: "staff@test.local", first_name: "Staff", last_name: "User", role: "staff", is_staff: false },
         });
       }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({ data: [] });
       }
@@ -2023,6 +2090,9 @@ describe("bootstrap application", () => {
             },
           ],
         });
+      }
+      if (isPurchasesIndexGet(url)) {
+        return Promise.resolve({ data: { results: [], count: 0 } });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -2088,6 +2158,9 @@ describe("bootstrap application", () => {
         return Promise.resolve({
           data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
         });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
       }
       if (url.startsWith("/customers/")) {
         return Promise.resolve({
@@ -2206,7 +2279,7 @@ describe("bootstrap application", () => {
       if (url === "/repairs/12/pdf/") {
         return Promise.resolve({ status: 200, data: pdfBlob });
       }
-      if (url === "/purchases/") {
+      if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
       return Promise.resolve({ data: [] });

@@ -2,7 +2,15 @@ from django.contrib import admin
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 
-from .models import Purchase, Supplier
+from .models import Purchase, Supplier, UnitOfMeasure
+
+
+@admin.register(UnitOfMeasure)
+class UnitOfMeasureAdmin(ModelAdmin):
+    list_display = ("code", "name", "is_active", "sort_order")
+    list_filter = ("is_active",)
+    search_fields = ("code", "name")
+    ordering = ("sort_order", "code")
 
 
 @admin.register(Supplier)
@@ -14,9 +22,20 @@ class SupplierAdmin(ModelAdmin):
 
 @admin.register(Purchase)
 class PurchaseAdmin(ModelAdmin):
-    list_display = ("order_date", "part_name", "supplier", "vehicle", "quantity", "purchase_price", "sale_price", "invoice_link")
-    list_filter = ("order_date", "supplier")
-    list_select_related = ("supplier", "vehicle")
+    list_display = (
+        "order_date",
+        "part_name",
+        "supplier",
+        "vehicle",
+        "unit_of_measure",
+        "quantity",
+        "purchase_price",
+        "sale_price",
+        "is_shop_consumable",
+        "invoice_link",
+    )
+    list_filter = ("order_date", "supplier", "is_shop_consumable")
+    list_select_related = ("supplier", "vehicle", "unit_of_measure")
     search_fields = ("part_name", "supplier__name", "vehicle__license_plate", "repair_code")
     readonly_fields = ("created_at", "updated_at")
 

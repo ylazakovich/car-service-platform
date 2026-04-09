@@ -20,6 +20,9 @@ test.describe("admin dashboard (Docker stack) @desktop", () => {
     await dashboard.openTab("Warehouse");
     await dashboard.expectWarehouseSuppliersSummary();
 
+    await dashboard.openTab("Consumables");
+    await dashboard.expectConsumablesTab();
+
     await dashboard.openTab("MoneyFlow");
     await dashboard.expectMoneyFlowTab();
   });
