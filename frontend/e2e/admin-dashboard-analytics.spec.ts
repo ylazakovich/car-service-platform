@@ -43,14 +43,14 @@ test.describe("admin dashboard analytics (Docker stack) @desktop", () => {
     await dashboard.closeMetricInfoPopover("On stock total");
   });
 
-  test("Service Board shows Masters workload panels", async ({ page }) => {
-    await e2eBehaviors("admin", "dashboard · service board masters");
+  test("MoneyFlow shows Masters workload panels", async ({ page }) => {
+    await e2eBehaviors("admin", "dashboard · moneyflow masters");
     await openAdminApp(page);
 
     const dashboard = new AdminDashboardPage(page);
     await dashboard.expectOperationsDashboardVisible();
-    await dashboard.openTab("ServiceBoard");
-    await dashboard.expectServiceBoardTab();
+    await dashboard.openTab("MoneyFlow");
+    await dashboard.expectMoneyFlowLandmarks();
     await dashboard.expectMastersSectionStructure();
   });
 });
