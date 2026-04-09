@@ -20,12 +20,20 @@ export type RepairServiceLineEntry = {
 /** Local row for forms (React key + draft fields). */
 export type RepairServiceLineDraft = {
   key: string;
+  persisted_id: string | null;
   name: string;
   catalog_service_id: number | null;
+  catalog_service_price: string;
 };
 
 export function newRepairServiceLineDraft(): RepairServiceLineDraft {
-  return { key: crypto.randomUUID(), name: "", catalog_service_id: null };
+  return {
+    key: crypto.randomUUID(),
+    persisted_id: null,
+    name: "",
+    catalog_service_id: null,
+    catalog_service_price: "",
+  };
 }
 
 export type RepairEntry = {
