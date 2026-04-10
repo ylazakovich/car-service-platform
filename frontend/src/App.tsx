@@ -24,6 +24,7 @@ export type StaffSection =
   | "vehicles"
   | "repairs"
   | "purchases"
+  | "reference"
   | "users";
 
 const sectionLabels: Record<StaffSection, string> = {
@@ -32,6 +33,7 @@ const sectionLabels: Record<StaffSection, string> = {
   vehicles:  "Vehicles",
   repairs:   "Repairs",
   purchases: "Purchases",
+  reference: "Registers",
   users:     "Users",
 };
 
@@ -41,6 +43,7 @@ const sectionOrder: StaffSection[] = [
   "vehicles",
   "repairs",
   "purchases",
+  "reference",
   "users",
 ];
 
@@ -107,12 +110,23 @@ function IconUsers() {
   );
 }
 
+/** Registers (reference data: units, services, …) */
+function IconReference() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 2.5h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z" />
+      <path d="M5 5.5v5M7.5 4v7M10 6.5v3" />
+    </svg>
+  );
+}
+
 const sectionIcons: Record<StaffSection, ReactElement> = {
   dashboard: <IconDashboard />,
   customers: <IconCustomers />,
   vehicles:  <IconVehicles />,
   repairs:   <IconRepairs />,
   purchases: <IconPurchases />,
+  reference: <IconReference />,
   users:     <IconUsers />,
 };
 
@@ -122,7 +136,7 @@ const navGroups: { label: string; items: StaffSection[] }[] = [
   { label: "Overview",   items: ["dashboard"] },
   { label: "Records",    items: ["vehicles"] },
   { label: "Operations", items: ["repairs", "purchases"] },
-  { label: "Settings",   items: ["users"] },
+  { label: "Settings",   items: ["reference", "users"] },
 ];
 
 /* ── LocalStorage helpers ───────────────────────────────── */
@@ -182,7 +196,7 @@ function useShellMobileNarrow() {
 
 function StaffShell() {
   const shellMobileNarrow = useShellMobileNarrow();
-  const { user, logout, isStaff, setUser } = useAuth();
+  const { user, logout, isStaff, isAdmin, setUser } = useAuth();
   const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
   const [isMobilePickerOpen, setIsMobilePickerOpen] = useState(false);
   const [openRepairComposerRequest, setOpenRepairComposerRequest] = useState(0);
@@ -212,12 +226,19 @@ function StaffShell() {
     }
   }
 
-  const visibleNavGroups = isStaff
-    ? [
+  const visibleNavGroups = useMemo(() => {
+    if (isStaff) {
+      return [
         { label: "Records",    items: ["vehicles"] as StaffSection[] },
         { label: "Operations", items: ["repairs"]  as StaffSection[] },
-      ]
-    : navGroups;
+      ];
+    }
+    return navGroups.map((group) => {
+      if (group.label !== "Settings") return group;
+      const settingsItems: StaffSection[] = isAdmin ? ["reference", "users"] : ["users"];
+      return { ...group, items: settingsItems };
+    });
+  }, [isStaff, isAdmin]);
   const pickerSections = useMemo(() => visibleNavGroups.flatMap((g) => g.items), [visibleNavGroups]);
 
   useEffect(() => {
@@ -233,6 +254,12 @@ function StaffShell() {
       setActiveSection("vehicles");
     }
   }, [isStaff, activeSection]);
+
+  useEffect(() => {
+    if (activeSection === "reference" && !isAdmin) {
+      setActiveSection("users");
+    }
+  }, [activeSection, isAdmin]);
 
   useEffect(() => {
     setIsMobilePickerOpen(false);

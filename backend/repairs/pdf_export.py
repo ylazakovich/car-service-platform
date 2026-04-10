@@ -33,7 +33,9 @@ def export_repair_pdf_and_snapshot(repair: Repair, user: AbstractBaseUser) -> tu
     version = (max_v or 0) + 1
 
     purchases = list(
-        Purchase.objects.filter(repair_code=repair_locked.tracking_code).select_related("supplier")
+        Purchase.objects.filter(repair_code=repair_locked.tracking_code)
+        .exclude(is_shop_consumable=True)
+        .select_related("supplier", "unit_of_measure")
     )
     labor_rows = build_labor_rows_for_pdf(repair_locked)
     labor_prices = [price for _name, price in labor_rows]

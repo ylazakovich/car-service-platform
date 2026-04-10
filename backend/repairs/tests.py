@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from customers.models import Customer
-from purchases.models import Purchase, Supplier
+from purchases.models import Purchase, Supplier, UnitOfMeasure
 from services.models import Service
 from vehicles.models import Vehicle
 
@@ -638,6 +638,7 @@ class RepairPdfViewTests(TestCase):
             make="Toyota",
             model="Yaris",
         )
+        self.uom_pcs = UnitOfMeasure.objects.get(code="pcs")
 
     def _create_completed_repair(self):
         repair = Repair.objects.create(
@@ -755,6 +756,7 @@ class RepairPdfViewTests(TestCase):
             purchase_price=Decimal("40.00"),
             sale_price=Decimal("99.50"),
             repair_code=repair.tracking_code,
+            unit_of_measure=self.uom_pcs,
         )
         Service.objects.create(name="Full Service", price=Decimal("150.00"))
 
@@ -810,6 +812,7 @@ class RepairPdfViewTests(TestCase):
             purchase_price=Decimal("40.00"),
             sale_price=Decimal("99.50"),
             repair_code=with_pdf.tracking_code,
+            unit_of_measure=self.uom_pcs,
         )
         Service.objects.create(name="Full Service", price=Decimal("150.00"))
         self.client.force_authenticate(self.staff_user)
@@ -827,3 +830,37 @@ class RepairPdfViewTests(TestCase):
         rows = _repair_info_rows(repair)
 
         self.assertIn(("ODOMETER WHEN RETURNED", "123,456 km"), rows)
+
+    def test_pdf_export_excludes_shop_consumable_from_act_totals(self):
+        repair = self._create_completed_repair()
+        supplier = Supplier.objects.create(name="Parts Co")
+        Purchase.objects.create(
+            order_date="2026-01-10",
+            supplier=supplier,
+            vehicle=self.vehicle,
+            part_name="Brake pad",
+            quantity=2,
+            purchase_price=Decimal("40.00"),
+            sale_price=Decimal("99.50"),
+            repair_code=repair.tracking_code,
+            unit_of_measure=self.uom_pcs,
+        )
+        Purchase.objects.create(
+            order_date="2026-01-10",
+            supplier=supplier,
+            vehicle=self.vehicle,
+            part_name="Gloves",
+            quantity=10,
+            purchase_price=Decimal("1.00"),
+            sale_price=Decimal("0.00"),
+            repair_code=repair.tracking_code,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
+        )
+        Service.objects.create(name="Full Service", price=Decimal("150.00"))
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.post(f"/api/repairs/{repair.id}/pdf/export/")
+        self.assertEqual(response.status_code, 200)
+        snap = RepairFinancialSnapshot.objects.get(document__repair=repair)
+        self.assertEqual(snap.parts_client_total, Decimal("199.00"))
+        self.assertEqual(snap.document_total, Decimal("349.00"))

@@ -33,6 +33,10 @@ allure-pr-comment.md
 # Local MCP tokens merged by scripts/mcp/install-user.mjs
 mcp/local.overrides.json
 
+# MemPalace — local wing wiring and entity scan (keep out of git for personal setups)
+/mempalace.yaml
+/entities.json
+
 # Editor / OS (optional local noise)
 .idea/
 *.swp

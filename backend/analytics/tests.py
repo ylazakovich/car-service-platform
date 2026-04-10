@@ -9,7 +9,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from customers.models import Customer
-from purchases.models import Purchase, Supplier
+from purchases.models import Purchase, Supplier, UnitOfMeasure
 from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot
 from services.models import Service
 from vehicles.models import Vehicle
@@ -35,6 +35,7 @@ class StaffDashboardAnalyticsTests(TestCase):
             make="Toyota",
             model="Yaris",
         )
+        self.uom_pcs = UnitOfMeasure.objects.get(code="pcs")
 
     def _completed_repair(self, completed_on: date):
         r = Repair.objects.create(
@@ -177,6 +178,7 @@ class StaffDashboardAnalyticsTests(TestCase):
             purchase_price=Decimal("10.00"),
             sale_price=Decimal("25.00"),
             repair_code="",
+            unit_of_measure=self.uom_pcs,
         )
         Purchase.objects.create(
             order_date=date(2026, 1, 6),
@@ -186,6 +188,18 @@ class StaffDashboardAnalyticsTests(TestCase):
             purchase_price=Decimal("5.00"),
             sale_price=Decimal("12.00"),
             repair_code="ABC",
+            unit_of_measure=self.uom_pcs,
+        )
+        Purchase.objects.create(
+            order_date=date(2026, 1, 7),
+            supplier=sup,
+            part_name="Shop gloves",
+            quantity=1,
+            purchase_price=Decimal("100.00"),
+            sale_price=Decimal("0.00"),
+            repair_code="",
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
         )
 
         repair = self._completed_repair(date(2026, 1, 10))
@@ -215,6 +229,8 @@ class StaffDashboardAnalyticsTests(TestCase):
         self.assertEqual(mf["supplier_spend_top"][0]["total_spend"], 25.0)
         self.assertEqual(mf["purchases_unlinked"]["count"], 1)
         self.assertEqual(mf["purchases_unlinked"]["total_spend"], 20.0)
+        self.assertEqual(mf["shop_consumables"]["line_count"], 1)
+        self.assertEqual(mf["shop_consumables"]["buy_total"], 100.0)
         self.assertEqual(len(mf["exports_by_exporter"]), 1)
         self.assertEqual(mf["exports_by_exporter"][0]["user_id"], self.user.id)
         self.assertEqual(mf["exports_by_exporter"][0]["export_count"], 1)
@@ -233,6 +249,7 @@ class StaffDashboardAnalyticsTests(TestCase):
             repair_code="TOR-1001",
             invoice_name="invoice-filter.pdf",
             delivered=True,
+            unit_of_measure=self.uom_pcs,
         )
         Purchase.objects.create(
             order_date=date(2026, 1, 6),
@@ -244,6 +261,7 @@ class StaffDashboardAnalyticsTests(TestCase):
             repair_code="",
             invoice_url="https://files.test/invoice-bolt.pdf",
             delivered=True,
+            unit_of_measure=self.uom_pcs,
         )
         Purchase.objects.create(
             order_date=date(2026, 1, 7),
@@ -254,6 +272,7 @@ class StaffDashboardAnalyticsTests(TestCase):
             sale_price=Decimal("30.00"),
             repair_code="",
             delivered=False,
+            unit_of_measure=self.uom_pcs,
         )
         Purchase.objects.create(
             order_date=date(2026, 2, 1),
@@ -264,6 +283,7 @@ class StaffDashboardAnalyticsTests(TestCase):
             sale_price=Decimal("140.00"),
             repair_code="TOR-2000",
             delivered=False,
+            unit_of_measure=self.uom_pcs,
         )
 
         self.client.force_authenticate(self.user)
