@@ -2,8 +2,8 @@
 
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
-- Last updated: `2026-04-09`
-- Status: `m3 продуктовый контур pdf/snapshot/dashboard в работе; E2E+CI — см. docs/testing/playwright-e2e-framework.md; добавлен бэклог CMR + закупки/инвойсы (см. NOW → CMR / Dashboard masters / Purchases & suppliers)`
+- Last updated: `2026-04-10`
+- Status: `M3 pdf/snapshot/dashboard — в работе; добавлены Registers (admin) + UoM + каталог услуг + bulk-закупки и shop consumables (дашборд/акты); E2E+CI — см. docs/testing/playwright-e2e-framework.md; CMR / masters link / полноформатные инвойсы — в backlog`
 
 ## NOW
 
@@ -15,6 +15,8 @@
 - [x] **Playwright global setup:** `frontend/e2e/global-setup.ts` (poll `/api/health`, опциональный пропуск `E2E_SKIP_GLOBAL_SETUP=1`).
 - [ ] **Сиды PDF:** явное начальное состояние для сценария «View PDF без лишнего POST» (два ремонта или расширение `demo/demo_data.sql` / отдельный SQL для E2E) — убрать зависимость от порядка прогонов.
 - [ ] Расширить assert’ы dashboard E2E: не только headings, а ключевые KPI/тексты виджетов при фикстурных данных.
+- [x] E2E **Registers** (admin): `frontend/e2e/staff-registers.spec.ts`, POM `StaffRegistersPage.ts` — вкладки Units / Services / Customers, поиск услуг, сиды в `e2e-seed.ts`.
+- [x] Локальный **`vite preview`**: прокси `/api` и `/media` как у dev-сервера (`frontend/vite.config.ts` → `preview.proxy`) — стабильные запросы с `:4173`.
 - [x] Задокументировать рекомендуемый набор MCP и выравнивание с ECC: `docs/dev/agents-and-mcp.md` (поддерживать при изменении практик команды).
 
 ### PDF + Financial Snapshot
@@ -67,12 +69,18 @@
 - [ ] Исправить рассинхрон: услуги, созданные через CMR, **появляются в Django Admin** (`/admin/`) в том же реестре `Service`, что и остальные (проверить API, права, отдельные таблицы/черновики, кэш).
 - [ ] Убрать **загрузку фотографий** из сценариев CMR (UI + любые вызовы `uploads`/media из полевого клиента).
 
+### Registers & reference data (admin) — **сделано**
+- [x] Секция **Registers**: вкладки **Units of measure** (CRUD, reorder, поиск), **Services** (инлайн-редактирование, поиск, переключатель Active/Inactive), **Customers with vehicles** (таблица + модалка правки контактов).
+- [x] Справочник **`UnitOfMeasure`**, связь с строками закупки; API `/api/purchases/units/` и флаг **`is_shop_consumable`** на закупке.
+- [x] Отображение телефонов в формате витрины **`+48 …`** (`formatPolishPhone`) на staff vehicle/customer surfaces где применимо.
+
 ### Dashboard: мастера и расходники
 - [ ] **Связать вкладку MoneyFlow (1) и ServiceBoard (3)** в части мастеров: общий фильтр/дреллдаун по мастеру, deep-link или синхронизация query state — спецификация UX и границы данных (snapshot vs live).
-- [ ] Добавить **новую вкладку/подвкладку** для **consumables / расходников**, **не включаемых в стоимость акта** (PDF/snapshot): модель учёта, API, UI; зафиксировать в `DOMAIN_RULES.md` исключение из act totals.
+- [x] **Расходники вне акта (baseline):** флаг `is_shop_consumable`, исключение строк из completion PDF / `RepairFinancialSnapshot`, блок **`shop_consumables`** в MoneyFlow API, вкладка **Dashboard → Consumables** и **Purchases → Consumables** — см. `DOMAIN_RULES.md`. Остаётся полировка UX и любые расширения модели по мере необходимости.
 
 ### Purchases, инвойсы, поставщики
-- [ ] **Несколько товарных позиций на один инвойс/закупку** (как несколько services на repair): схема БД (header + lines), API, миграция существующих записей при необходимости, UI на экране закупок.
+- [x] **Несколько строк в одном запросе:** `POST /api/purchases/bulk/` (общие поля заказа + массив `lines`) — без отдельной сущности «invoice header» в БД; UI закупок использует bulk-текущий контур.
+- [ ] **Полноценный инвойс header + lines** как доменная сущность (если понадобится отчётность/версии), миграция с плоских `Purchase` при необходимости.
 - [ ] **OCR / разбор скана инвойса:** извлечение позиций (товар, цена, количество при наличии), поставщик, референсы; черновик + подтверждение пользователем перед сохранением (выбор движка: локально / внешний API — решение в ADR или open decisions).
 - [ ] Экран **Purchases**: **создание заказа поставщику** (purchase order / supplier order flow) и явное **ведение базы поставщиков** (CRUD, поиск, привязка к заказам и к строкам закупки; расширить текущий `Supplier` + UX).
 
@@ -82,9 +90,10 @@
 - [ ] Довести completion act до финального документа и определить, это тот же PDF-поток или отдельный документный сценарий.
 - [ ] Подготовить карточку автомобиля с реальной историей ремонтов и документами по завершенным работам.
 - [ ] Подготовить карточку клиента с реальной историей обращений и завершенных ремонтов.
-- [x] Добавить e2e-сценарий для **дашборда** (минимум: `frontend/e2e/admin-dashboard-visit.spec.ts` — вход admin, вкладки MoneyFlow / Procurement / ServiceBoard).
+- [x] Добавить e2e-сценарий для **дашборда** (минимум: `frontend/e2e/admin-dashboard-visit.spec.ts` — вход admin, вкладки MoneyFlow / Procurement / ServiceBoard / Consumables).
+- [x] E2E **Registers**: `frontend/e2e/staff-registers.spec.ts` (admin, desktop + mobile).
 - [ ] Расширить e2e: проверка загрузки `/analytics/dashboard/` и ключевых KPI (после стабильных фикстур).
-- [ ] E2E дашборда: блок сводки закупок на **MoneyFlow** + подвкладка **No invoice / No vehicles** (открытие, базовые данные при фикстурах).
+- [ ] E2E дашборда: сводка закупок на **MoneyFlow** (buy/sale/margin slice) + подвкладка **No invoice / No vehicles** (открытие, базовые данные при фикстурах); блок **shop consumables** уже есть в API/UI — при необходимости отдельный assert.
 - [ ] Добавить e2e-сценарий для QuickFocus/VPR flow: `поиск vehicle -> create vehicle -> create customer if needed -> create repair`.
 - [ ] Добавить тесты и e2e-сценарий для admin user revocation flow.
 - [ ] Добавить тесты и e2e-сценарии для service board calendar: текущий день, waiting parts, легенда, переключение периода.
@@ -108,7 +117,8 @@
 - Пятый приоритет M3: зафиксировать moneyflow на стабильном дефолтном диапазоне `today - 30 days` -> `today`.
 - Шестой приоритет M3: перевести staff на vehicle-only access model без доступа к customer PII.
 - Сводка закупок на **MoneyFlow** и подвкладка **No invoice / No vehicles** в **Dashboard** — закрывают UX-разрыв после упрощения экрана **Purchases** (метрики и фильтры переносятся в аналитический/операционный контур дашборда).
-- **Продуктовый ввод 2026-04-09:** CMR (цена услуги, admin parity, без фото), дашборд (мастера между вкладками, расходники вне акта), закупки (multi-line invoice, OCR, заказы поставщикам + реестр) — детализация в NOW выше и в `DEVELOPMENT_PLAN.md` §3 п.10–12.
+- **Продуктовый ввод 2026-04-09:** CMR (цена услуги, admin parity, без фото), дашборд (мастера между вкладками), закупки (OCR, PO, реестр поставщиков, опционально отдельный invoice-header) — детализация в NOW и в `DEVELOPMENT_PLAN.md` §3 п.10–12.
+- **Срез 2026-04-10 (реестры + закупки):** Registers (admin), `UnitOfMeasure`, bulk `POST /purchases/bulk/`, `is_shop_consumable` + исключение из акта + Consumables в dashboard/purchases, E2E Registers, `vite preview` proxy.
 
 ## Completed (M3 partial)
 - [x] PDF export кнопка на `completed` repair + preview modal (`PdfPreviewModal`, `pdf_generator.py`) — `2026-04-02`
