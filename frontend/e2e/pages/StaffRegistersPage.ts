@@ -48,11 +48,14 @@ export class StaffRegistersPage {
     return this.page.getByRole("searchbox", { name: "Search services" });
   }
 
-  /** Service names render as `<input value="…">` — match display value, not text nodes. */
+  /** Service names are `<input value="…">`; match via `value` attribute (avoids `page.getByDisplayValue`, unavailable in CI). */
   serviceRowByNameSnippet(snippet: string | RegExp): Locator {
-    return this.page
-      .locator(".services-register-editor-table tbody tr")
-      .filter({ has: this.page.getByDisplayValue(snippet) });
+    const rows = this.page.locator(".services-register-editor-table tbody tr");
+    if (typeof snippet === "string") {
+      const escaped = snippet.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      return rows.filter({ has: this.page.locator(`input[value="${escaped}"]`) });
+    }
+    return rows.filter({ hasText: snippet });
   }
 
   async expectCustomersWorkspaceVisible(): Promise<void> {
