@@ -29,3 +29,9 @@ export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Castrol EDGE";
  * Vehicles registry shows `.vehicles-compact-row--needs-act` for any vehicle with such a repair.
  */
 export const E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE = E2E_DEMO_REPAIR_VEHICLE_PLATE;
+
+/** `demo/demo_data.sql` — stable service name in catalog (Registers → Services). */
+export const E2E_DEMO_SERVICE_NAME_IN_CATALOG = "AC service";
+
+/** Demo customer with ≥1 vehicle (Registers → Customers with vehicles). */
+export const E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME = "Oleksandr Kovalenko";

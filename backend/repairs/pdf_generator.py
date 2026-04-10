@@ -210,9 +210,11 @@ def _items_table(
         data.append([td(service_name or "—"), td_r("1"), td_r(svc_price_str), td_r(svc_total_str)])
     for p in purchase_list:
         line_total = p.quantity * p.sale_price
+        uom = getattr(getattr(p, "unit_of_measure", None), "code", None) or "pcs"
+        qty_label = f"{p.quantity} {uom}".strip()
         data.append([
             td(p.part_name),
-            td_r(str(p.quantity)),
+            td_r(qty_label),
             td_r(_fmt(p.sale_price)),
             td_r(_fmt(line_total)),
         ])

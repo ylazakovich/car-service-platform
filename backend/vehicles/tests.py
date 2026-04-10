@@ -3,7 +3,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from customers.models import Customer
-from purchases.models import Purchase, Supplier
+from purchases.models import Purchase, Supplier, UnitOfMeasure
 from .models import Vehicle
 
 
@@ -20,6 +20,7 @@ class VehicleApiTests(TestCase):
             phone="+48 555 100 200",
             assigned_to=self.user,
         )
+        self.uom_pcs = UnitOfMeasure.objects.get(code="pcs")
 
     def test_staff_can_create_list_search_and_update_vehicles(self):
         self.client.force_authenticate(self.user)
@@ -193,6 +194,7 @@ class VehicleOwnershipTests(TestCase):
             phone="+48 100 000 002",
             assigned_to=self.staff_b,
         )
+        self.uom_pcs = UnitOfMeasure.objects.get(code="pcs")
 
     def test_staff_cannot_create_vehicle_for_others_customer(self):
         self.client.force_authenticate(self.staff_a)
@@ -264,6 +266,7 @@ class VehicleOwnershipTests(TestCase):
             part_name="Engine Oil",
             quantity=2,
             purchase_price="25.50",
+            unit_of_measure=self.uom_pcs,
         )
 
         response = self.client.delete(f"/api/vehicles/{vehicle.id}")

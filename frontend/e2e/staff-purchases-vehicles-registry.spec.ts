@@ -30,7 +30,7 @@ test.describe("Purchases registry — table-only chrome @desktop", () => {
 
     const row = reg.purchaseRowByPartSnippet(E2E_DEMO_PURCHASE_PART_SUBSTRING);
     await expect(row).toBeVisible({ timeout: 20_000 });
-    await expect(row).toHaveAttribute("type", "button");
+    await expect(row).toHaveAttribute("role", "button");
   });
 
   test("clicking a purchase row opens detail dialog", async ({ page }) => {

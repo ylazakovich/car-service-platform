@@ -88,9 +88,12 @@ class StaffDashboardAnalyticsView(APIView):
             output_field=DecimalField(max_digits=14, decimal_places=2),
         )
 
+        in_range = Purchase.objects.filter(order_date__gte=start, order_date__lte=end)
+        parts_in_range = in_range.filter(is_shop_consumable=False)
+        consumables_in_range = in_range.filter(is_shop_consumable=True)
+
         supplier_rows = (
-            Purchase.objects.filter(order_date__gte=start, order_date__lte=end)
-            .values("supplier_id", "supplier__name")
+            parts_in_range.values("supplier_id", "supplier__name")
             .annotate(total_spend=Sum(line_amount), line_count=Count("id"))
             .order_by("-total_spend")[:10]
         )
@@ -105,13 +108,21 @@ class StaffDashboardAnalyticsView(APIView):
         ]
 
         unlinked_agg = (
-            Purchase.objects.filter(order_date__gte=start, order_date__lte=end)
-            .filter(Q(repair_code="") | Q(repair_code__isnull=True))
+            parts_in_range.filter(Q(repair_code="") | Q(repair_code__isnull=True))
             .aggregate(count=Count("id"), total_spend=Sum(line_amount))
         )
         purchases_unlinked = {
             "count": unlinked_agg["count"] or 0,
             "total_spend": _decimal_to_float(unlinked_agg["total_spend"]),
+        }
+
+        consumables_agg = consumables_in_range.aggregate(
+            line_count=Count("id"),
+            buy_total=Sum(line_amount),
+        )
+        shop_consumables = {
+            "line_count": consumables_agg["line_count"] or 0,
+            "buy_total": _decimal_to_float(consumables_agg["buy_total"]),
         }
 
         export_rows = (
@@ -152,6 +163,7 @@ class StaffDashboardAnalyticsView(APIView):
             "supplier_spend_top": supplier_spend_top,
             "purchases_unlinked": purchases_unlinked,
             "exports_by_exporter": exports_by_exporter,
+            "shop_consumables": shop_consumables,
         }
 
     def _warehouse_block(self, start: date, end: date) -> dict:
@@ -166,6 +178,8 @@ class StaffDashboardAnalyticsView(APIView):
         missing_repair_code = Q(repair_code="") | Q(repair_code__isnull=True)
         missing_invoice = Q(invoice_name="") & Q(invoice_url="")
 
+        parts_qs = Purchase.objects.filter(is_shop_consumable=False)
+
         def _value_triplet(queryset) -> dict:
             agg = queryset.aggregate(
                 buy_total=Sum(line_buy_amount),
@@ -179,9 +193,9 @@ class StaffDashboardAnalyticsView(APIView):
                 "margin_total": sale_total - buy_total,
             }
 
-        delivered_qs = Purchase.objects.filter(delivered=True)
-        in_transit_qs = Purchase.objects.filter(delivered=False)
-        all_purchases_qs = Purchase.objects.all()
+        delivered_qs = parts_qs.filter(delivered=True)
+        in_transit_qs = parts_qs.filter(delivered=False)
+        all_purchases_qs = parts_qs.all()
 
         stock_totals = {
             "delivered_quantity_total": delivered_qs.aggregate(total=Sum("quantity"))["total"] or 0,

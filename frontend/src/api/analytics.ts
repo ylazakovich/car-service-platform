@@ -38,10 +38,16 @@ export type DashboardMoneyflowExporterRow = {
   export_count: number;
 };
 
+export type DashboardMoneyflowShopConsumables = {
+  line_count: number;
+  buy_total: number;
+};
+
 export type DashboardMoneyflowPayload = {
   supplier_spend_top: DashboardMoneyflowSupplierRow[];
   purchases_unlinked: DashboardMoneyflowUnlinked;
   exports_by_exporter: DashboardMoneyflowExporterRow[];
+  shop_consumables: DashboardMoneyflowShopConsumables;
 };
 
 export type DashboardWarehouseValueTriplet = {
@@ -229,9 +235,15 @@ export async function fetchDashboardAnalytics(params: {
     !Array.isArray(mf.supplier_spend_top) ||
     mf.purchases_unlinked == null ||
     typeof mf.purchases_unlinked !== "object" ||
-    !Array.isArray(mf.exports_by_exporter)
+    !Array.isArray(mf.exports_by_exporter) ||
+    mf.shop_consumables == null ||
+    typeof mf.shop_consumables !== "object"
   ) {
     throw new Error("Invalid dashboard analytics moneyflow payload");
+  }
+  const sc = mf.shop_consumables as Record<string, unknown>;
+  if (typeof sc.line_count !== "number" || typeof sc.buy_total !== "number") {
+    throw new Error("Invalid dashboard analytics shop_consumables payload");
   }
   if (
     typeof warehouse.snapshot_as_of !== "string" ||

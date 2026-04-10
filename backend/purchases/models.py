@@ -4,6 +4,26 @@ from django.utils import timezone
 from vehicles.models import Vehicle
 
 
+class UnitOfMeasure(models.Model):
+    """
+    Extensible catalog of units (pcs, liters, kg, …) for purchase line quantities.
+    """
+
+    code = models.SlugField(max_length=32, unique=True)
+    name = models.CharField(max_length=64)
+    is_active = models.BooleanField(default=True, db_default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0, db_default=0)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "units_of_measure"
+        ordering = ("sort_order", "code", "id")
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
 class Supplier(models.Model):
     name = models.CharField(max_length=255, unique=True)
     nip = models.CharField(max_length=50, blank=True)
@@ -32,6 +52,11 @@ class Purchase(models.Model):
         on_delete=models.SET_NULL,
         related_name="purchases",
     )
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.PROTECT,
+        related_name="purchases",
+    )
     part_name = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField(default=1)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -40,6 +65,11 @@ class Purchase(models.Model):
     invoice_name = models.CharField(max_length=255, blank=True)
     invoice_url = models.CharField(max_length=500, blank=True)
     delivered = models.BooleanField(default=False, db_default=False)
+    is_shop_consumable = models.BooleanField(
+        default=False,
+        db_default=False,
+        help_text="Shop supplies not included on the completion act / PDF line items.",
+    )
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 
