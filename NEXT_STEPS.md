@@ -3,7 +3,7 @@
 Только актуальный backlog. Историю и закрытые большие блоки переносить в `docs/planning/archive/`.
 
 - Last updated: `2026-04-10`
-- Status: `M3 pdf/snapshot/dashboard — в работе; добавлены Registers (admin) + UoM + каталог услуг + bulk-закупки и shop consumables (дашборд/акты); E2E+CI — см. docs/testing/playwright-e2e-framework.md; CMR / masters link / полноформатные инвойсы — в backlog`
+- Status: `M3 pdf/snapshot/dashboard — в работе; Registers (admin): функционал + E2E/CI есть, **UX не финализирован** — см. NOW → Registers UX; bulk-закупки и shop consumables (дашборд/акты); CMR / masters link / полноформатные инвойсы — в backlog`
 
 ## NOW
 
@@ -69,10 +69,21 @@
 - [ ] Исправить рассинхрон: услуги, созданные через CMR, **появляются в Django Admin** (`/admin/`) в том же реестре `Service`, что и остальные (проверить API, права, отдельные таблицы/черновики, кэш).
 - [ ] Убрать **загрузку фотографий** из сценариев CMR (UI + любые вызовы `uploads`/media из полевого клиента).
 
-### Registers & reference data (admin) — **сделано**
+### Registers & reference data (admin) — **функционал + тесты; UX — в backlog**
 - [x] Секция **Registers**: вкладки **Units of measure** (CRUD, reorder, поиск), **Services** (инлайн-редактирование, поиск, переключатель Active/Inactive), **Customers with vehicles** (таблица + модалка правки контактов).
 - [x] Справочник **`UnitOfMeasure`**, связь с строками закупки; API `/api/purchases/units/` и флаг **`is_shop_consumable`** на закупке.
 - [x] Отображение телефонов в формате витрины **`+48 …`** (`formatPolishPhone`) на staff vehicle/customer surfaces где применимо.
+- [x] E2E Registers (desktop + mobile), стабильные локаторы без хрупких API раннера.
+
+**Registers — что сделать по UX (следующий проход):**
+- [ ] **Пустые и краевые состояния:** нет UoM / нет услуг / нет клиентов — понятный текст, CTA (куда идти), без «немой» таблицы.
+- [ ] **Ошибки и сохранение:** инлайн-редактирование Services и формы Customers — явные сообщения при 4xx/5xx, откат или блок повторной отправки, индикатор сохранения.
+- [ ] **Согласованность UI:** таблицы, отступы, кнопки и модалки в одном стиле с **Purchases / Vehicles / Repairs** (плотность строк, заголовки, мобильные брейкпоинты).
+- [ ] **Узкая ширина (mobile / drawer):** табы Registers, горизонтальный скролл таблиц, не обрезать первичные действия (**+ Add service**, поиск, reorder handles).
+- [ ] **Деструктивные действия:** удаление единицы измерения, деактивация услуги, опасные правки — подтверждение и последствия в копирайте (связь с закупками / строками).
+- [ ] **Доступность и клавиатура:** фокус при открытии модалки, порядок таба в инлайн-полях каталога услуг, `aria` для табов и поиска (в рамках существующих паттернов приложения).
+- [ ] **EN-only поверхность:** пройти строки Registers и связанных модалок — убрать остатки RU, выровнять термины с `DOMAIN_RULES.md` / остальным staff UI.
+- [ ] **Подсказки контекста:** короткие подписи/tooltip где нужно (зачем UoM в закупках, что значит Active/Inactive для услуги в каталоге vs в ремонте).
 
 ### Dashboard: мастера и расходники
 - [ ] **Связать вкладку MoneyFlow (1) и ServiceBoard (3)** в части мастеров: общий фильтр/дреллдаун по мастеру, deep-link или синхронизация query state — спецификация UX и границы данных (snapshot vs live).
@@ -118,7 +129,7 @@
 - Шестой приоритет M3: перевести staff на vehicle-only access model без доступа к customer PII.
 - Сводка закупок на **MoneyFlow** и подвкладка **No invoice / No vehicles** в **Dashboard** — закрывают UX-разрыв после упрощения экрана **Purchases** (метрики и фильтры переносятся в аналитический/операционный контур дашборда).
 - **Продуктовый ввод 2026-04-09:** CMR (цена услуги, admin parity, без фото), дашборд (мастера между вкладками), закупки (OCR, PO, реестр поставщиков, опционально отдельный invoice-header) — детализация в NOW и в `DEVELOPMENT_PLAN.md` §3 п.10–12.
-- **Срез 2026-04-10 (реестры + закупки):** Registers (admin), `UnitOfMeasure`, bulk `POST /purchases/bulk/`, `is_shop_consumable` + исключение из акта + Consumables в dashboard/purchases, E2E Registers, `vite preview` proxy.
+- **Срез 2026-04-10 (реестры + закупки):** Registers (admin) — **функционал и E2E**; UX-полировка вынесена в NOW → **Registers — что сделать по UX**; `UnitOfMeasure`, bulk `POST /purchases/bulk/`, `is_shop_consumable` + исключение из акта + Consumables в dashboard/purchases, `vite preview` proxy.
 
 ## Completed (M3 partial)
 - [x] PDF export кнопка на `completed` repair + preview modal (`PdfPreviewModal`, `pdf_generator.py`) — `2026-04-02`
