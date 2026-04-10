@@ -7,6 +7,45 @@
 
 ## NOW
 
+### Figma — дизайн-макет для шаринга с клиентами (активный трек)
+
+Цель: собрать Desktop + Mobile Figma-макет на основе реального UI приложения, чтобы его можно было показать клиентам через Figma view-only link и отслеживать дизайн-решения централизованно.
+
+**Инструмент:** локальный Figma MCP fork (`tools/figma-mcp/`) + канал `zmelolz5` (меняется при перезапуске плагина).
+
+**Step 1 — Design System ✅ (2026-04-10)**
+- [x] 20 компонентов с Auto Layout и corner radius
+- [x] 15 color styles (Bg/*, Text/*, Primary, Danger, Warning, Success, Info)
+- [x] 6 text styles (Heading/H1–H3, Body, Small, XS/Label)
+- [x] 4 дополнительных компонента: Chip/Tracking, Chip/Date, Badge/Parts, Card/Registry
+
+**Step 2 — Заменить raw Desktop фреймы на component instances (в работе)**
+- [x] Nav items (9 шт: Active + Inactive)
+- [x] Chips: Date chip, Status chips ×4 (New/InProgress/Done/Cancelled), Tracking chips ×20
+- [x] Badges: Parts badge ×14
+- [x] Cards: Registry ×2, Metric ×7, User/Worker ×2
+- [x] Inputs: Default ×5, Compact ×6
+- [x] Buttons: Primary ×3 (topbar CTAs), Primary/Small ×5 (sidebar, partial)
+- [ ] Sidebar buttons — дорешить оставшиеся 7 пар (parent IDs: 5:309, 5:678, 5:967, 5:1074)
+- [ ] UOM inline buttons ×13 (5:1006, 5:1029–5:1070 в теле 5:966)
+- [ ] Vehicles screen buttons ×2 (5:1107 → Button/Primary/Small, 5:1113 → Button/Secondary)
+
+**Step 3 — Собрать Mobile mockup (frame 5:6, 393px)**
+- [ ] Bottom nav bar (Nav компоненты)
+- [ ] Single-column layout: kanban cards, metric cards, registry cards
+- [ ] Адаптировать sidebar → hamburger/drawer
+
+**Step 4 — Применить color tokens к fills/strokes**
+- [ ] Backgrounds → Color/Bg/* styles
+- [ ] Text nodes → Color/Text/* styles
+
+**Step 5 — Подготовить к шарингу**
+- [ ] Открыть Figma view-only / comment-only ссылку для клиентов
+- [ ] Проставить аннотации ключевых экранов (Figma Annotations)
+- [ ] Сгруппировать экраны в Figma по flow: Dashboard → Kanban → Registry → UOM Admin
+
+---
+
 ### E2E / Playwright / CI (активный трек качества)
 - [x] Зафиксировать целевой дизайн framework: `docs/testing/playwright-e2e-framework.md`.
 - [x] Политика **без ретраев** в `frontend/playwright.config.ts` (`retries: 0`).
