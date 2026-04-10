@@ -1,6 +1,6 @@
 # Playwright E2E — целевой framework (car-service-platform)
 
-- Last updated: 2026-04-06
+- Last updated: 2026-04-10
 - Статус: **целевой дизайн** (реализация поэтапно через `NEXT_STEPS.md`)
 - Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `DOMAIN_RULES.md`
 
@@ -23,16 +23,16 @@
 | **Глобальная подготовка** | poll `GET /api/health` (тот же origin, что `baseURL`); пропуск: `E2E_SKIP_GLOBAL_SETUP=1` | `e2e/global-setup.ts` (+ `globalSetup` в `playwright.config.ts`) |
 | **Фикстуры** | авторизация по роли, сохранение storageState | `e2e/fixtures/auth.ts` |
 | **Page objects / экраны** | стабильные селекторы, переиспользование | `e2e/pages/*.ts` (эволюция из `helpers/`) |
-| **Данные** | константы, синхрон с `demo/demo_data.sql` | `e2e/e2e-seed.ts` (TOR-1001 + имя услуги) |
+| **Данные** | константы, синхрон с `demo/demo_data.sql` | `e2e/e2e-seed.ts` (TOR-1001, услуга для ремонта, константы Registers) |
 | **Allure** | epic/feature/story | `e2e/allure-helpers.ts` |
 
 ## 3) Сценарная матрица (покрытие vs сейчас)
 
-Сейчас: логин staff/admin, доска ремонтов, PDF view/export smoke, админ — перекладки вкладок dashboard.
+Сейчас: логин staff/admin, доска ремонтов, PDF view/export smoke, админ — вкладки dashboard (включая Consumables), **Registers** (`staff-registers.spec.ts`: Units / Services / Customers).
 
 Целевое покрытие (связка с `DEVELOPMENT_PLAN.md` §11 и M3):
 
-- **Admin:** dashboard KPI (assert на ключевые числа/состояния после стабильных фикстур), MoneyFlow procurement summary, QuickFocus VPR, users revoke.
+- **Admin:** dashboard KPI (assert на ключевые числа/состояния после стабильных фикстур), MoneyFlow procurement summary (buy/sale/margin + No invoice / No vehicles), QuickFocus VPR, users revoke.
 - **Staff:** полный vehicle registry без PII, repairs, PDF только completed.
 - **Портал клиента** (token): отдельный лёгкий spec без staff-сессии.
 
