@@ -99,6 +99,17 @@
 - **извлечение данных со сканов/фото инвойса** (OCR / structured capture): товарные строки, цены, поставщик — с human-in-the-loop подтверждением до записи в БД
 - экран/контур **Purchases**: возможность **создания заказа поставщику** и ведение **реестра поставщиков** (расширить текущий `Supplier` + UX заказа; не только auto-create из строки закупки)
 
+13. Figma — дизайн-макет для шаринга с клиентами
+- Цель: иметь готовый Desktop + Mobile Figma-макет, который можно открыть клиенту через view-only/comment ссылку, не показывая живое приложение.
+- Инструмент: локальный Figma MCP fork (`tools/figma-mcp/`) + Figma plugin (dev mode).
+- **Design System** (базис): 20 компонентов с Auto Layout, 15 color styles, 6 text styles — все создаются через MCP, не вручную.
+- **Desktop mockup**: все `body`-фреймы заполняются component instances вместо raw-фреймов; экраны: Dashboard, Kanban, Purchases/Services list, UOM Admin, Vehicles Registry.
+- **Mobile mockup** (393px): bottom nav, single-column card stacks, адаптация sidebar → drawer/hamburger.
+- **Color tokens**: apply Color/Bg/* и Color/Text/* к fills/strokes фреймов после завершения instance-замен.
+- **Шаринг**: Figma share link (view-only или comment-only) — клиент открывает в браузере без аккаунта, может оставлять комментарии прямо на макете.
+- **Отслеживание**: все дизайн-решения фиксируются через Figma Annotations; структура страниц отражает реальные flow приложения.
+- Технические детали и прогресс — в `NEXT_STEPS.md → Figma`.
+
 ## 4) Active Milestone
 `M3: PDF Export, Analyst Dashboard, And Historical Snapshots`
 
@@ -122,6 +133,7 @@ Milestone включает:
 15. **CMR:** цена услуги при синхронизации; услуги из CMR видны в Django Admin; без photo upload в CMR.
 16. **Dashboard:** навигационная/фильтровая связь MoneyFlow ↔ ServiceBoard по мастерам; учёт расходников вне акта — **baseline** (вкладки Consumables, `DOMAIN_RULES.md`).
 17. **Purchases / invoices:** мультилайн через **bulk API** — **сделано**; OCR/скан инвойса; заказы поставщикам; явный реестр поставщиков в UI — **в backlog**.
+18. **Figma mockup:** Desktop + Mobile макет на component instances, sharable ссылка для клиентов, аннотации ключевых экранов — Design System создан (2026-04-10); instance-замены и Mobile mockup — в работе.
 
 ## 5) Delivery Roadmap
 
