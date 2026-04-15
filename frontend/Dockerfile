@@ -8,7 +8,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.29-alpine@sha256:582c496ccf79d8aa6f8203a79d32aaf7ffd8b13362c60a701a2f9ac64886c93d
+FROM nginx:1.30-alpine@sha256:bf593fe2f307f7e423e44aacd870e7e327f60a41f09db349ae3d328c918a77c2
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
