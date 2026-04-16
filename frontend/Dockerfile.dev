@@ -1,5 +1,5 @@
 # Vite dev server for Docker hot-reload (use with docker-compose.dev.yml).
-FROM node:24-alpine@sha256:01743339035a5c3c11a373cd7c83aeab6ed1457b55da6a69e014a95ac4e4700b
+FROM node:24-alpine@sha256:ff2c02f071f9e56778013b47d70f7524f5d4eacb032027f0f434838d77cf25e0
 
 RUN apk add --no-cache wget
 
