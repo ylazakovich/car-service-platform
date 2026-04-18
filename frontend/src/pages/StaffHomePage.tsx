@@ -12,7 +12,7 @@ import {
 } from "../api/analytics";
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
-import { createSupplier } from "../api/purchases";
+import { createSupplier, updateSupplier, type SupplierItem } from "../api/purchases";
 import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
 import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
 import { RegistersCustomersPanel } from "../features/staff/components/RegistersCustomersPanel";
@@ -381,6 +381,13 @@ function isPurchaseDeliveryOverdue(approximateDeliveryDate: string): boolean {
 
 function hasPurchaseInvoice(entry: Pick<PurchaseEntry, "invoice_name" | "invoice_url">): boolean {
   return Boolean(entry.invoice_name?.trim() || entry.invoice_url?.trim());
+}
+
+function formatInventoryInputValue(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, "");
 }
 
 function formatDateInputValue(value: string): string {
@@ -1121,6 +1128,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     purchaseError,
     purchaseModalError,
     isSavingPurchase,
+    isDownloadingPurchaseOrder,
     selectedPurchaseId,
     selectedPurchase,
     purchaseModalForm,
@@ -1144,7 +1152,10 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     openPurchaseDetailModal,
     closePurchaseDetailModal,
     handlePurchaseSubmit,
+    handlePurchaseOrderDownload,
     handlePurchaseModalSave,
+    handlePurchaseDelete,
+    handleConsumableStockSave,
     handlePurchaseInvoiceChange,
     handlePurchaseModalInvoiceChange,
     handlePurchaseModalInvoiceRemove,
@@ -1175,7 +1186,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return suppliers;
     }
     return suppliers.filter((s) => {
-      const hay = `${s.name} ${s.nip ?? ""} ${s.email ?? ""} ${s.phone ?? ""} ${s.notes ?? ""}`.toLowerCase();
+      const hay = `${s.name} ${s.nip ?? ""} ${s.email ?? ""} ${s.phone ?? ""} ${s.registered_address ?? ""} ${s.notes ?? ""}`.toLowerCase();
       return hay.includes(q);
     });
   }, [supplierRegistrySearch, suppliers]);
@@ -1187,10 +1198,40 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     nip: "",
     phone: "",
     email: "",
+    registered_address: "",
     notes: "",
   });
   const [supplierCreateError, setSupplierCreateError] = useState("");
   const [supplierCreateSaving, setSupplierCreateSaving] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
+  const [supplierEditForm, setSupplierEditForm] = useState({
+    name: "",
+    nip: "",
+    phone: "",
+    email: "",
+    registered_address: "",
+    notes: "",
+  });
+  const [supplierEditError, setSupplierEditError] = useState("");
+  const [supplierEditSaving, setSupplierEditSaving] = useState(false);
+
+  function openSupplierEditModal(supplier: SupplierItem) {
+    setSelectedSupplier(supplier);
+    setSupplierEditForm({
+      name: supplier.name,
+      nip: supplier.nip,
+      phone: supplier.phone,
+      email: supplier.email,
+      registered_address: supplier.registered_address ?? "",
+      notes: supplier.notes,
+    });
+    setSupplierEditError("");
+  }
+
+  function closeSupplierEditModal() {
+    setSelectedSupplier(null);
+    setSupplierEditError("");
+  }
 
   async function handleSupplierCreateSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1207,15 +1248,48 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         nip: supplierCreateForm.nip.trim() || undefined,
         phone: supplierCreateForm.phone.trim() || undefined,
         email: supplierCreateForm.email.trim() || undefined,
+        registered_address: supplierCreateForm.registered_address.trim() || undefined,
         notes: supplierCreateForm.notes.trim() || undefined,
       });
       await refreshSuppliers();
       setSupplierCreateOpen(false);
-      setSupplierCreateForm({ name: "", nip: "", phone: "", email: "", notes: "" });
+      setSupplierCreateForm({ name: "", nip: "", phone: "", email: "", registered_address: "", notes: "" });
     } catch {
       setSupplierCreateError("Could not create supplier. The name may already exist.");
     } finally {
       setSupplierCreateSaving(false);
+    }
+  }
+
+  async function handleSupplierEditSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedSupplier) {
+      return;
+    }
+
+    setSupplierEditError("");
+    const name = supplierEditForm.name.trim();
+    if (!name) {
+      setSupplierEditError("Supplier name is required.");
+      return;
+    }
+
+    setSupplierEditSaving(true);
+    try {
+      await updateSupplier(selectedSupplier.id, {
+        name,
+        nip: supplierEditForm.nip.trim(),
+        phone: supplierEditForm.phone.trim(),
+        email: supplierEditForm.email.trim(),
+        registered_address: supplierEditForm.registered_address.trim(),
+        notes: supplierEditForm.notes.trim(),
+      });
+      await refreshSuppliers();
+      closeSupplierEditModal();
+    } catch {
+      setSupplierEditError("Could not update supplier. The name may already exist.");
+    } finally {
+      setSupplierEditSaving(false);
     }
   }
 
@@ -1594,6 +1668,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       } else if (supplierCreateOpen) {
         setSupplierCreateOpen(false);
         setSupplierCreateError("");
+      } else if (selectedSupplier) {
+        closeSupplierEditModal();
       } else if (selectedPurchaseId !== null) {
         closePurchaseDetailModal();
       } else if (isVehicleFormOpen) {
@@ -1617,6 +1693,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   }, [
     isPurchaseCreateModalOpen,
     supplierCreateOpen,
+    selectedSupplier,
+    closeSupplierEditModal,
     closePurchaseCreateModal,
     selectedPurchaseId,
     isVehicleFormOpen,
@@ -4390,7 +4468,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       } else if (activePurchasesTab === "consumables") {
         openPurchaseCreateModal("consumables");
       } else {
-        setSupplierCreateForm({ name: "", nip: "", phone: "", email: "", notes: "" });
+        setSupplierCreateForm({ name: "", nip: "", phone: "", email: "", registered_address: "", notes: "" });
         setSupplierCreateError("");
         setSupplierCreateOpen(true);
       }
@@ -4505,13 +4583,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <th>Qty</th>
                         <th>Repair</th>
                         <th>Sale</th>
-                        <th>Margin</th>
                       </tr>
                     </thead>
                     <tbody className="purchases-compact-list">
                       {purchases.map((entry) => {
                         const saleTotal = entry.quantity * entry.sale_price;
-                        const marginVal = saleTotal - entry.quantity * entry.purchase_price;
                         const overdue =
                           !entry.delivered && isPurchaseDeliveryOverdue(entry.approximate_delivery_date);
                         const missingInv = !hasPurchaseInvoice(entry);
@@ -4554,12 +4630,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             <td>{entry.quantity}</td>
                             <td>{repairLabel}</td>
                             <td>{formatCurrency(saleTotal)}</td>
-                            <td
-                              className={marginVal >= 0 ? "purchase-margin-pos" : "purchase-margin-neg"}
-                            >
-                              {marginVal >= 0 ? "+" : ""}
-                              {formatCurrency(marginVal)}
-                            </td>
                           </tr>
                         );
                       })}
@@ -4606,6 +4676,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <th>Buy</th>
                         <th>Delivered</th>
                         <th>Invoice</th>
+                        <th>Inventory</th>
                       </tr>
                     </thead>
                     <tbody className="purchases-compact-list">
@@ -4646,6 +4717,24 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               "—"
                             )}
                           </td>
+                          <td>
+                            <input
+                              className="inventory-stock-input"
+                              defaultValue={formatInventoryInputValue(entry.current_stock_quantity)}
+                              aria-label={`Inventory ${entry.part_name}`}
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              onClick={(event) => event.stopPropagation()}
+                              onKeyDown={(event) => {
+                                event.stopPropagation();
+                                if (event.key === "Enter") {
+                                  event.currentTarget.blur();
+                                }
+                              }}
+                              onBlur={(event) => void handleConsumableStockSave(entry, event.currentTarget.value)}
+                            />
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -4684,16 +4773,30 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <th>NIP</th>
                         <th>Phone</th>
                         <th>Email</th>
+                        <th>Reg. Address</th>
                         <th>Notes</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredSuppliers.map((s) => (
-                        <tr key={s.id}>
+                        <tr
+                          key={s.id}
+                          role="button"
+                          tabIndex={0}
+                          className="purchases-compact-row"
+                          onClick={() => openSupplierEditModal(s)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              openSupplierEditModal(s);
+                            }
+                          }}
+                        >
                           <td>{s.name}</td>
                           <td>{s.nip || "—"}</td>
                           <td className="phone-display">{s.phone ? formatPolishPhoneDisplay(s.phone) : "—"}</td>
                           <td>{s.email || "—"}</td>
+                          <td>{s.registered_address || "—"}</td>
                           <td>{s.notes || "—"}</td>
                         </tr>
                       ))}
@@ -4752,7 +4855,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 <div className="detail-card">
                   <strong>Purchase Info</strong>
                   <div className="stack-form">
-                    <div className="form-grid">
+                    <div className="form-grid purchase-detail-date-grid">
                       <label>
                         <span>Order Date</span>
                         <FriendlyDateInput
@@ -4764,7 +4867,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       </label>
 
                       <label>
-                        <span>Approximate Delivery Date</span>
+                        <span>Delivery Date</span>
                         <FriendlyDateInput
                           value={purchaseModalForm.approximate_delivery_date}
                           onChange={(nextValue) =>
@@ -5037,6 +5140,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </button>
                   <button type="button" className="button button-secondary" onClick={closePurchaseDetailModal}>
                     Cancel
+                  </button>
+                  <button type="button" className="button button-danger" onClick={() => void handlePurchaseDelete()}>
+                    Delete Purchase
                   </button>
                 </div>
             </section>
@@ -5338,6 +5444,14 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         ? `Save invoice (${purchaseLineRows.length} lines)`
                         : "Save line"}
                   </button>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => void handlePurchaseOrderDownload()}
+                    disabled={isDownloadingPurchaseOrder}
+                  >
+                    {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
+                  </button>
                   <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
                     Cancel
                   </button>
@@ -5416,6 +5530,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   />
                 </label>
                 <label>
+                  <span>Reg. Address</span>
+                  <textarea
+                    value={supplierCreateForm.registered_address}
+                    onChange={(event) =>
+                      setSupplierCreateForm((current) => ({ ...current, registered_address: event.target.value }))
+                    }
+                    rows={3}
+                    autoComplete="street-address"
+                  />
+                </label>
+                <label>
                   <span>Notes</span>
                   <textarea
                     value={supplierCreateForm.notes}
@@ -5438,6 +5563,102 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       setSupplierCreateError("");
                     }}
                   >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        ) : null}
+
+        {selectedSupplier ? (
+          <div className="modal-overlay" role="presentation" onClick={closeSupplierEditModal}>
+            <section
+              className="modal-card modal-card-large"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="supplier-edit-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Directory</p>
+                  <h3 id="supplier-edit-title">Edit supplier</h3>
+                </div>
+              </div>
+              <form className="stack-form" onSubmit={handleSupplierEditSubmit}>
+                <label>
+                  <span>Name</span>
+                  <input
+                    value={supplierEditForm.name}
+                    onChange={(event) =>
+                      setSupplierEditForm((current) => ({ ...current, name: event.target.value }))
+                    }
+                    type="text"
+                    required
+                    autoComplete="organization"
+                  />
+                </label>
+                <div className="form-grid">
+                  <label>
+                    <span>NIP</span>
+                    <input
+                      value={supplierEditForm.nip}
+                      onChange={(event) =>
+                        setSupplierEditForm((current) => ({ ...current, nip: event.target.value }))
+                      }
+                      type="text"
+                    />
+                  </label>
+                  <label>
+                    <span>Phone</span>
+                    <input
+                      value={supplierEditForm.phone}
+                      onChange={(event) =>
+                        setSupplierEditForm((current) => ({ ...current, phone: event.target.value }))
+                      }
+                      type="text"
+                    />
+                  </label>
+                </div>
+                <label>
+                  <span>Email</span>
+                  <input
+                    value={supplierEditForm.email}
+                    onChange={(event) =>
+                      setSupplierEditForm((current) => ({ ...current, email: event.target.value }))
+                    }
+                    type="email"
+                    autoComplete="email"
+                  />
+                </label>
+                <label>
+                  <span>Reg. Address</span>
+                  <textarea
+                    value={supplierEditForm.registered_address}
+                    onChange={(event) =>
+                      setSupplierEditForm((current) => ({ ...current, registered_address: event.target.value }))
+                    }
+                    rows={3}
+                    autoComplete="street-address"
+                  />
+                </label>
+                <label>
+                  <span>Notes</span>
+                  <textarea
+                    value={supplierEditForm.notes}
+                    onChange={(event) =>
+                      setSupplierEditForm((current) => ({ ...current, notes: event.target.value }))
+                    }
+                    rows={3}
+                  />
+                </label>
+                {supplierEditError ? <p className="form-error">{supplierEditError}</p> : null}
+                <div className="form-actions repair-modal-footer-bar">
+                  <button type="submit" className="button" disabled={supplierEditSaving}>
+                    {supplierEditSaving ? "Saving…" : "Save supplier"}
+                  </button>
+                  <button type="button" className="button button-secondary" onClick={closeSupplierEditModal}>
                     Cancel
                   </button>
                 </div>

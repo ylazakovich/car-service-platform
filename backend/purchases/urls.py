@@ -4,6 +4,7 @@ from .views import (
     PurchaseBulkCreateView,
     PurchaseDetailView,
     PurchaseListCreateView,
+    PurchaseOrderPdfView,
     SupplierDetailView,
     SupplierListCreateView,
     UnitOfMeasureDetailView,
@@ -14,6 +15,7 @@ from .views import (
 urlpatterns = [
     path("", PurchaseListCreateView.as_view(), name="purchase-list"),
     path("bulk/", PurchaseBulkCreateView.as_view(), name="purchase-bulk-create"),
+    path("po/pdf/", PurchaseOrderPdfView.as_view(), name="purchase-order-pdf"),
     path("<int:pk>", PurchaseDetailView.as_view(), name="purchase-detail"),
     path("suppliers/", SupplierListCreateView.as_view(), name="supplier-list"),
     path("suppliers/<int:pk>", SupplierDetailView.as_view(), name="supplier-detail"),

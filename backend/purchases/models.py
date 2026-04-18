@@ -29,6 +29,7 @@ class Supplier(models.Model):
     nip = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     email = models.EmailField(blank=True)
+    registered_address = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -59,6 +60,7 @@ class Purchase(models.Model):
     )
     part_name = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField(default=1)
+    current_stock_quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, db_default=0)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     repair_code = models.CharField(max_length=32, blank=True)
@@ -79,4 +81,3 @@ class Purchase(models.Model):
 
     def __str__(self):
         return f"{self.part_name} ({self.order_date})"
-

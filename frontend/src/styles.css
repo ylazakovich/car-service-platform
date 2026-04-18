@@ -3162,6 +3162,24 @@ button.moneyflow-series-toggle {
 .purchase-margin-pos { color: var(--success); font-weight: 600; }
 .purchase-margin-neg { color: #e07070; font-weight: 600; }
 
+.inventory-stock-input {
+  width: 7.5rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.45rem var(--s3);
+  font-size: 0.86rem;
+}
+
+.inventory-stock-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
 /* ── Purchases workspace (controls bar, summary, compact list, modal drawer) ── */
 
 /* Units of measure — admin (Settings → Registers) */
@@ -4188,6 +4206,14 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
 
 .purchase-modal-stack {
   min-height: 12rem;
+}
+
+.purchase-detail-date-grid {
+  align-items: end;
+}
+
+.purchase-detail-date-grid > label {
+  align-self: end;
 }
 
 @media (min-width: 900px) {

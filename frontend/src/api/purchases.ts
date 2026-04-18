@@ -6,6 +6,7 @@ export interface SupplierItem {
   nip: string;
   phone: string;
   email: string;
+  registered_address?: string;
   notes: string;
 }
 
@@ -24,6 +25,7 @@ export interface PurchaseItem {
   supplier: SupplierItem;
   part_name: string;
   quantity: number;
+  current_stock_quantity: string;
   purchase_price: string;
   sale_price: string;
   repair_code: string;
@@ -44,6 +46,7 @@ export interface PurchaseWritePayload {
   supplier_name: string;
   part_name: string;
   quantity: number;
+  current_stock_quantity?: number;
   purchase_price: number;
   sale_price: number;
   repair_code?: string;
@@ -75,6 +78,19 @@ export interface PurchaseBulkWritePayload {
   delivered?: boolean;
   is_shop_consumable?: boolean;
   lines: PurchaseBulkLinePayload[];
+}
+
+export interface PurchaseOrderPdfPayload {
+  order_date: string;
+  approximate_delivery_date?: string | null;
+  supplier_name: string;
+  is_shop_consumable?: boolean;
+  lines: Array<{
+    part_name: string;
+    quantity: number;
+    purchase_price: number;
+    unit_of_measure_id?: number;
+  }>;
 }
 
 export interface PurchasePage {
@@ -126,6 +142,11 @@ export async function deletePurchase(id: number): Promise<void> {
   await api.delete(`/purchases/${id}`);
 }
 
+export async function exportPurchaseOrderPdf(data: PurchaseOrderPdfPayload): Promise<Blob> {
+  const response = await api.post("/purchases/po/pdf/", data, { responseType: "blob" });
+  return response.data as Blob;
+}
+
 export async function uploadInvoiceFile(file: File): Promise<{ url: string; name: string }> {
   const form = new FormData();
   form.append("file", file);
@@ -145,11 +166,17 @@ export type SupplierWritePayload = {
   nip?: string;
   phone?: string;
   email?: string;
+  registered_address?: string;
   notes?: string;
 };
 
 export async function createSupplier(data: SupplierWritePayload): Promise<SupplierItem> {
   const response = await api.post<SupplierItem>("/purchases/suppliers/", data);
+  return response.data;
+}
+
+export async function updateSupplier(id: number, data: Partial<SupplierWritePayload>): Promise<SupplierItem> {
+  const response = await api.patch<SupplierItem>(`/purchases/suppliers/${id}`, data);
   return response.data;
 }
 
