@@ -15,8 +15,8 @@ class UnitOfMeasureAdmin(ModelAdmin):
 
 @admin.register(Supplier)
 class SupplierAdmin(ModelAdmin):
-    list_display = ("name", "phone", "email", "created_at")
-    search_fields = ("name", "phone", "email")
+    list_display = ("name", "phone", "email", "registered_address", "created_at")
+    search_fields = ("name", "phone", "email", "registered_address")
     readonly_fields = ("created_at", "updated_at")
 
 
@@ -29,6 +29,7 @@ class PurchaseAdmin(ModelAdmin):
         "vehicle",
         "unit_of_measure",
         "quantity",
+        "current_stock_quantity",
         "purchase_price",
         "sale_price",
         "is_shop_consumable",
@@ -44,4 +45,3 @@ class PurchaseAdmin(ModelAdmin):
         if obj.invoice_url:
             return format_html('<a href="{}" target="_blank" rel="noopener noreferrer">View</a>', obj.invoice_url)
         return "—"
-

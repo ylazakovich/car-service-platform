@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from vehicles.models import Vehicle
@@ -10,7 +12,7 @@ MAX_PURCHASE_BULK_LINES = 100
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
-        fields = ("id", "name", "nip", "phone", "email", "notes", "created_at", "updated_at")
+        fields = ("id", "name", "nip", "phone", "email", "registered_address", "notes", "created_at", "updated_at")
         read_only_fields = ("id", "created_at", "updated_at")
 
 
@@ -46,6 +48,9 @@ def default_pcs_unit() -> UnitOfMeasure:
 class PurchaseSerializer(serializers.ModelSerializer):
     supplier = SupplierSerializer(read_only=True)
     supplier_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    current_stock_quantity = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=Decimal("0"), required=False
+    )
     unit_of_measure = UnitOfMeasureSerializer(read_only=True)
     unit_of_measure_id = serializers.PrimaryKeyRelatedField(
         queryset=UnitOfMeasure.objects.filter(is_active=True),
@@ -82,6 +87,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "unit_of_measure_id",
             "part_name",
             "quantity",
+            "current_stock_quantity",
             "purchase_price",
             "sale_price",
             "repair_code",
@@ -179,3 +185,42 @@ class PurchaseBulkCreateSerializer(serializers.Serializer):
                         }
                     )
         return attrs
+
+
+class PurchaseOrderLineSerializer(serializers.Serializer):
+    part_name = serializers.CharField(max_length=255)
+    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
+    purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0"))
+    unit_of_measure_id = serializers.PrimaryKeyRelatedField(
+        queryset=UnitOfMeasure.objects.filter(is_active=True),
+        source="unit_of_measure",
+        allow_null=True,
+        required=False,
+    )
+
+    def validate_part_name(self, value):
+        text = (value or "").strip()
+        if not text:
+            raise serializers.ValidationError("Part name is required.")
+        return text
+
+
+class PurchaseOrderPdfSerializer(serializers.Serializer):
+    order_date = serializers.DateField()
+    approximate_delivery_date = serializers.DateField(required=False, allow_null=True)
+    supplier_name = serializers.CharField(max_length=255)
+    is_shop_consumable = serializers.BooleanField(required=False, default=False)
+    lines = PurchaseOrderLineSerializer(many=True)
+
+    def validate_supplier_name(self, value):
+        text = (value or "").strip()
+        if not text:
+            raise serializers.ValidationError("Supplier name is required.")
+        return text
+
+    def validate_lines(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one line is required.")
+        if len(value) > MAX_PURCHASE_BULK_LINES:
+            raise serializers.ValidationError(f"At most {MAX_PURCHASE_BULK_LINES} lines per PO.")
+        return value

@@ -688,12 +688,12 @@ LEFT JOIN services s ON s.name = 'Tire service'
 WHERE r.tracking_code = 'TOR-1001';
 
 -- Suppliers
-INSERT INTO suppliers (name, nip, phone, email, notes, created_at, updated_at)
+INSERT INTO suppliers (name, nip, phone, email, registered_address, notes, created_at, updated_at)
 VALUES
-    ('AutoParts Sp. z o.o.', '5213456789', '+48221234567', 'orders@autoparts.pl',  'Main parts supplier. Net 14 payment terms.', NOW(), NOW()),
-    ('MotoTrade S.A.',       '6789012345', '+48223456789', 'sales@mototrade.pl',    'Oil and consumables specialist. Free delivery above 500 PLN.', NOW(), NOW()),
-    ('LKQ Euro Car Parts',   '9871234560', '+48222987654', 'ukraine@lkq.eu',        'Wide OEM and aftermarket range. 24h delivery to Kyiv.', NOW(), NOW()),
-    ('Gates Distribution',   '4561237890', '+48221357924', 'orders@gates-dist.pl', 'Belt kits, water pumps, and tensioners specialist.', NOW(), NOW())
+    ('AutoParts Sp. z o.o.', '5213456789', '+48221234567', 'orders@autoparts.pl',  'ul. Prosta 12, 00-850 Warszawa, Poland', 'Main parts supplier. Net 14 payment terms.', NOW(), NOW()),
+    ('MotoTrade S.A.',       '6789012345', '+48223456789', 'sales@mototrade.pl',    'ul. Szeroka 8, 31-053 Krakow, Poland', 'Oil and consumables specialist. Free delivery above 500 PLN.', NOW(), NOW()),
+    ('LKQ Euro Car Parts',   '9871234560', '+48222987654', 'ukraine@lkq.eu',        'ul. Przemyslowa 4, 53-611 Wroclaw, Poland', 'Wide OEM and aftermarket range. 24h delivery to Kyiv.', NOW(), NOW()),
+    ('Gates Distribution',   '4561237890', '+48221357924', 'orders@gates-dist.pl', 'ul. Techniczna 21, 40-203 Katowice, Poland', 'Belt kits, water pumps, and tensioners specialist.', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
 -- Purchases
