@@ -1,6 +1,9 @@
+import re
+
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
+from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
@@ -9,14 +12,23 @@ from rest_framework.views import APIView
 
 from foundation.pagination import StandardPagination
 from .models import Purchase, Supplier, UnitOfMeasure
+from .pdf_generator import generate_purchase_order_pdf
 from .serializers import (
     PurchaseBulkCreateSerializer,
+    PurchaseOrderPdfSerializer,
     PurchaseSerializer,
     SupplierSerializer,
     UnitOfMeasureReorderSerializer,
     UnitOfMeasureSerializer,
     default_pcs_unit,
 )
+
+
+def _po_filename(supplier_name: str, order_date) -> str:
+    slug = re.sub(r"[^A-Za-z0-9_-]+", "_", supplier_name.strip()).strip("_").lower()
+    if not slug:
+        slug = "supplier"
+    return f"po_{slug}_{order_date.isoformat()}.pdf"
 
 
 class SupplierListCreateView(generics.ListCreateAPIView):
@@ -126,6 +138,23 @@ class PurchaseListCreateView(generics.ListCreateAPIView):
 class PurchaseDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PurchaseSerializer
     queryset = Purchase.objects.select_related("supplier", "vehicle", "unit_of_measure").all()
+
+
+class PurchaseOrderPdfView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = PurchaseOrderPdfSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        supplier = Supplier.objects.filter(name=payload["supplier_name"]).first()
+        payload["supplier_registered_address"] = supplier.registered_address if supplier else ""
+        payload["supplier_nip"] = supplier.nip if supplier else ""
+        pdf_bytes = generate_purchase_order_pdf(payload)
+        filename = _po_filename(payload["supplier_name"], payload["order_date"])
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 class PurchaseBulkCreateView(APIView):

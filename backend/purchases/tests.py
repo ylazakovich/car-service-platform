@@ -32,7 +32,12 @@ class SupplierApiTests(TestCase):
 
         response = self.client.post(
             "/api/purchases/suppliers/",
-            {"name": "TopGear Parts", "nip": "1234567890", "phone": "+48 600 100 200"},
+            {
+                "name": "TopGear Parts",
+                "nip": "1234567890",
+                "phone": "+48 600 100 200",
+                "registered_address": "ul. Prosta 1, 00-001 Warszawa",
+            },
             format="json",
         )
 
@@ -41,16 +46,44 @@ class SupplierApiTests(TestCase):
         self.assertEqual(data["name"], "TopGear Parts")
         self.assertEqual(data["nip"], "1234567890")
         self.assertEqual(data["phone"], "+48 600 100 200")
+        self.assertEqual(data["registered_address"], "ul. Prosta 1, 00-001 Warszawa")
 
     def test_detail_supplier(self):
         self.client.force_authenticate(self.user)
-        supplier = Supplier.objects.create(name="Detail Supplier", nip="9876543210")
+        supplier = Supplier.objects.create(
+            name="Detail Supplier",
+            nip="9876543210",
+            registered_address="ul. Testowa 5, Krakow",
+        )
 
         response = self.client.get(f"/api/purchases/suppliers/{supplier.id}")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["name"], "Detail Supplier")
         self.assertEqual(response.json()["nip"], "9876543210")
+        self.assertEqual(response.json()["registered_address"], "ul. Testowa 5, Krakow")
+
+    def test_update_supplier(self):
+        self.client.force_authenticate(self.user)
+        supplier = Supplier.objects.create(name="Old Supplier", nip="111")
+
+        response = self.client.patch(
+            f"/api/purchases/suppliers/{supplier.id}",
+            {
+                "name": "Updated Supplier",
+                "phone": "+48 600 222 333",
+                "registered_address": "Updated address 10",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["name"], "Updated Supplier")
+        self.assertEqual(response.json()["phone"], "+48 600 222 333")
+        self.assertEqual(response.json()["registered_address"], "Updated address 10")
+        supplier.refresh_from_db()
+        self.assertEqual(supplier.name, "Updated Supplier")
+        self.assertEqual(supplier.registered_address, "Updated address 10")
 
     def test_search_suppliers_by_name(self):
         self.client.force_authenticate(self.user)
@@ -210,6 +243,50 @@ class PurchaseApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_purchase_order_pdf_returns_pdf(self):
+        self.client.force_authenticate(self.user)
+        self.supplier.registered_address = "Supplier HQ, Warsaw"
+        self.supplier.save(update_fields=["registered_address"])
+
+        response = self.client.post(
+            "/api/purchases/po/pdf/",
+            {
+                "order_date": "2026-03-20",
+                "approximate_delivery_date": "2026-03-25",
+                "supplier_name": "Existing Supplier",
+                "is_shop_consumable": False,
+                "lines": [
+                    {
+                        "part_name": "Brake Disc",
+                        "quantity": "2",
+                        "purchase_price": "89.99",
+                        "unit_of_measure_id": self.uom_pcs.id,
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn("po_existing_supplier_2026-03-20.pdf", response["Content-Disposition"])
+        self.assertTrue(response.content.startswith(b"%PDF"))
+
+    def test_purchase_order_pdf_requires_lines(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/purchases/po/pdf/",
+            {
+                "order_date": "2026-03-20",
+                "supplier_name": "Existing Supplier",
+                "lines": [],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
     def test_create_purchase_without_repair_or_vehicle(self):
         self.client.force_authenticate(self.user)
 
@@ -314,6 +391,29 @@ class PurchaseApiTests(TestCase):
         self.assertTrue(response.json()["delivered"])
         purchase.refresh_from_db()
         self.assertTrue(purchase.delivered)
+
+    def test_update_consumable_current_stock_quantity(self):
+        self.client.force_authenticate(self.user)
+        purchase = Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Gloves",
+            quantity=10,
+            purchase_price="2.00",
+            supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
+        )
+
+        response = self.client.patch(
+            f"/api/purchases/{purchase.id}",
+            {"current_stock_quantity": "4.50"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["current_stock_quantity"], "4.50")
+        purchase.refresh_from_db()
+        self.assertEqual(str(purchase.current_stock_quantity), "4.50")
 
     def test_delete_purchase(self):
         self.client.force_authenticate(self.user)
