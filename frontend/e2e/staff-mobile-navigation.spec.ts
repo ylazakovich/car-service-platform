@@ -17,10 +17,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     await e2eBehaviors("staff", "mobile · workspace menu · section header");
     const nav = new StaffMobileNavigationPage(page);
     await nav.waitForStaffNavigationChrome();
-
-    if (!(await nav.workspaceMenuToggle().isVisible())) {
-      test.skip(true, "Mobile workspace header toggle not visible (desktop layout?)");
-    }
+    await nav.expectMobileWorkspaceMenuToggle();
 
     // На ≤820px `.staff-mobile-switcher` скрыт в CSS — смена секций только через shell picker.
     await nav.openWorkspaceMenu();
@@ -36,10 +33,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     await e2eBehaviors("staff", "mobile · workspace menu · backdrop");
     const nav = new StaffMobileNavigationPage(page);
     await nav.waitForStaffNavigationChrome();
-
-    if (!(await nav.workspaceMenuToggle().isVisible())) {
-      test.skip(true, "Mobile workspace header toggle not visible (desktop layout?)");
-    }
+    await nav.expectMobileWorkspaceMenuToggle();
 
     await nav.openWorkspaceMenu();
     const quickSections = page.locator(".shell-mobile-quick-sections");
@@ -55,10 +49,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     await e2eBehaviors("staff", "mobile · Add New Repair · modal");
     const nav = new StaffMobileNavigationPage(page);
     await nav.waitForStaffNavigationChrome();
-
-    if (!(await nav.workspaceMenuToggle().isVisible())) {
-      test.skip(true, "Mobile workspace header toggle not visible (desktop layout?)");
-    }
+    await nav.expectMobileWorkspaceMenuToggle();
 
     await nav.openWorkspaceMenu();
     await page.getByRole("button", { name: "Add New Repair" }).click();
@@ -73,17 +64,12 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     await e2eBehaviors("staff", "mobile · vehicles list · detail");
     const nav = new StaffMobileNavigationPage(page);
     await nav.gotoStaffSection("Vehicles");
+    await nav.expectMobileWorkspaceMenuToggle();
 
     const openVehicle = page.getByRole("button", { name: /^Open vehicle / }).first();
-    try {
-      await openVehicle.waitFor({ state: "visible", timeout: 25_000 });
-    } catch {
-      test.skip(
-        true,
-        "Нет ТС в API (ожидается demo/demo_data.sql или иной сид с ТС) — в пустом реестре нет Mobile vehicles list",
-      );
-      return;
-    }
+    await expect(openVehicle).toBeVisible({
+      timeout: 35_000,
+    });
 
     await expect(page.getByLabel("Mobile vehicles list")).toBeVisible();
     await openVehicle.click();
@@ -98,6 +84,8 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     const repairs = new StaffRepairsPage(page);
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();
+    await nav.waitForStaffNavigationChrome();
+    await nav.expectMobileWorkspaceMenuToggle();
 
     // FAB only mounts when scrollHeight > clientHeight + threshold and user is near the bottom.
     await expect

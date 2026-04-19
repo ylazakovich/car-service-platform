@@ -176,10 +176,35 @@ jobs:
             < demo/demo_data.sql
 
       - name: Run Playwright
-        working-directory: frontend
+        env:
+          DOCKER_STATS_INTERVAL: "5"
+          DOCKER_STATS_LOG: ${{ github.workspace }}/docker-metrics/samples.tsv
         run: |
-          mkdir -p allure-results test-results
-          npx playwright test
+          set -euo pipefail
+          mkdir -p docker-metrics frontend/allure-results frontend/test-results
+          bash scripts/ci/e2e-docker-stats-sampler.sh &
+          SAMPLER_PID=$!
+          cleanup() {
+            kill "$SAMPLER_PID" 2>/dev/null || true
+            wait "$SAMPLER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT INT TERM
+          ( cd frontend && npx playwright test )
+          cleanup
+          trap - EXIT INT TERM
+
+      - name: Docker container resource summary (E2E window)
+        if: always()
+        env:
+          DOCKER_METRICS_DIR: ${{ github.workspace }}/docker-metrics
+          DOCKER_STATS_LOG: ${{ github.workspace }}/docker-metrics/samples.tsv
+          DOCKER_STATS_INTERVAL: "5"
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_REF: ${{ github.ref }}
+        run: bash scripts/ci/e2e-docker-stats-summarize.sh
 
       - uses: ./.github/actions/junit-step-summary
         if: always()
@@ -237,6 +262,15 @@ jobs:
           name: docker-logs
           path: docker-logs/
           retention-days: 30
+
+      - name: Upload Docker resource metrics (E2E)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: docker-resource-metrics-e2e
+          path: docker-metrics/
+          if-no-files-found: ignore
+          retention-days: 90
 
       - name: Stop stack
         if: always()

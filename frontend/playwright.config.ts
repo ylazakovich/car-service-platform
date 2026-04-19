@@ -27,10 +27,13 @@ const junitReporter = [
   { outputFile: "test-results/e2e-junit.xml" },
 ] as const;
 
-/** Локально — параллельно; в CI — github + list и один воркер для читаемого лога шага */
+/** Локально — list + Allure/HTML/JUnit; в CI — ещё github для аннотаций в Checks */
 const reporters = isCi
   ? [["github"], ["list"], allureReporter, htmlReporter, junitReporter]
   : [["list"], allureReporter, htmlReporter, junitReporter];
+
+/** В CI — 3 воркера (ориентир: до 5 одновременных пользователей, активных ~3). */
+const e2eWorkersCi = 3;
 
 /**
  * E2E against local Docker stack: `docker compose up` (frontend :4173, API via /api proxy).
@@ -41,7 +44,8 @@ const reporters = isCi
  * - mobile-chrome — Pixel 5 (viewport < 820px CSS breakpoint); пропускает `@desktop`.
  * - setup — `e2e/auth.setup.ts` пишет `e2e/.auth/*.json` (staff по умолчанию для обоих браузеров).
  *
- * В CI тесты идут последовательно (workers=1, fullyParallel=false) — лог ближе к Vitest.
+ * В CI — workers=3 (несколько файлов/spec параллельно), fullyParallel=false — тесты в одном файле по порядку (меньше гонок на общих демо-строках).
+ * mobile-chrome ждёт desktop-chrome, чтобы не накладываться на мутации TOR-1001 (PDF и т.п.) из desktop-сьюта.
  */
 export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
@@ -50,7 +54,7 @@ export default defineConfig({
   forbidOnly: isCi,
   /** Политика проекта: без ретраев — флаки чиним детерминизмом и готовностью стека (см. docs/testing/playwright-e2e-framework.md). */
   retries: 0,
-  workers: isCi ? 1 : undefined,
+  workers: isCi ? e2eWorkersCi : undefined,
   reporter: reporters,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173",
@@ -73,7 +77,7 @@ export default defineConfig({
     },
     {
       name: "mobile-chrome",
-      dependencies: ["setup"],
+      dependencies: ["setup", "desktop-chrome"],
       grepInvert: /@desktop/,
       use: {
         ...devices["Pixel 5"],

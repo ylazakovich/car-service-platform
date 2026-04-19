@@ -3,6 +3,42 @@
 # Default `scripts/start.sh` keeps 127.0.0.1-only bindings — run this only when you want devices on your LAN to connect.
 set -euo pipefail
 
+# Prefer the interface used for the default route (Wi‑Fi vs Ethernet); en0 alone is often wrong on MacBooks.
+detect_lan_ip_darwin() {
+  local ifname ip
+  ifname=$(route -n get default 2>/dev/null | awk '/interface: / { print $2; exit }')
+  if [[ -n "${ifname}" ]] && ip=$(ipconfig getifaddr "${ifname}" 2>/dev/null) && [[ -n "${ip}" ]]; then
+    printf '%s\n' "${ip}"
+    return 0
+  fi
+  for iface in en0 en1 bridge100 en2; do
+    if ip=$(ipconfig getifaddr "${iface}" 2>/dev/null) && [[ -n "${ip}" ]]; then
+      printf '%s\n' "${ip}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+detect_lan_ip_linux() {
+  local ip
+  if command -v ip >/dev/null 2>&1; then
+    ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") { print $(i + 1); exit }}')
+    if [[ -n "${ip}" ]]; then
+      printf '%s\n' "${ip}"
+      return 0
+    fi
+  fi
+  if command -v hostname >/dev/null 2>&1; then
+    ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    if [[ -n "${ip}" ]]; then
+      printf '%s\n' "${ip}"
+      return 0
+    fi
+  fi
+  return 1
+}
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
@@ -23,10 +59,10 @@ DEV_LAN_IP="${DEV_LAN_IP:-}"
 if [[ -z "${DEV_LAN_IP}" ]]; then
   case "$(uname -s)" in
     Darwin)
-      DEV_LAN_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true)
+      DEV_LAN_IP=$(detect_lan_ip_darwin || true)
       ;;
     Linux)
-      DEV_LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
+      DEV_LAN_IP=$(detect_lan_ip_linux || true)
       ;;
   esac
 fi
@@ -57,6 +93,9 @@ if [[ "${_hosts}" != *"${DEV_LAN_IP}"* ]]; then
 fi
 export DJANGO_ALLOWED_HOSTS="${_hosts}"
 
+# Django FRONTEND_URL (emails, admin “View site”) should match what the phone uses, not only localhost.
+export FRONTEND_DEV_URL="${DEV_LAN_ORIGIN}"
+
 export GIT_COMMIT
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -73,5 +112,8 @@ echo "${COMPOSE_PROJECT_NAME:-car-service-platform} dev is reachable on the LAN 
 echo "  Phone/tablet (same Wi‑Fi): http://${DEV_LAN_IP}:${FRONTEND_DEV_PORT}"
 echo "  This machine: http://localhost:${FRONTEND_DEV_PORT}"
 echo "  Backend (if needed): http://${DEV_LAN_IP}:${BACKEND_PORT:-8000}"
+echo ""
+echo "If the phone still cannot load the app: same Wi‑Fi as this Mac, no guest/VPN isolation; on macOS check"
+echo "  System Settings → Network → Firewall (allow Docker). Wrong IP? set DEV_LAN_IP in .env and re-run."
 echo ""
 echo "Bind to localhost only again: bash scripts/start.sh"
