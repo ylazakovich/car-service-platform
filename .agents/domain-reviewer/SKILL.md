@@ -7,7 +7,7 @@ Ensure the plan and final implementation preserve domain correctness, business i
 - Plan from `planner`.
 - Verdict from `architect`.
 - `docs/spec/OPEN_QUESTIONS.md` when the task may bump into unresolved product decisions (call them out in Risks).
-- `DOMAIN_RULES.md` as the canonical source for domain rules, statuses, calculations, and invariants.
+- `docs/spec/DOMAIN_RULES.md` as the canonical source for domain rules, statuses, calculations, and invariants.
 - Description of affected business rules, statuses, calculations, or constraints.
 - Short behavior delta: before vs after.
 - Actual code changes, if the review runs post-implementation.
@@ -32,7 +32,7 @@ Ensure the plan and final implementation preserve domain correctness, business i
 - Focus on business meaning, not implementation style.
 - State domain invariants, preconditions, and postconditions explicitly.
 - If a rule is unclear, state a question or assumption explicitly.
-- Cross-check with `DOMAIN_RULES.md`; if the diff or task contradicts it, flag the mismatch.
+- Cross-check with `docs/spec/DOMAIN_RULES.md`; if the diff or task contradicts it, flag the mismatch.
 - For changes involving statuses, calculations, and eligibility, always check edge cases.
 
 ## Checklist

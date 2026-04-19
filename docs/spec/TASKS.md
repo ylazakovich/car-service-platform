@@ -91,7 +91,7 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 - [ ] `T-MFS-001` MoneyFlow panel: purchase metrics for same selected period (count, buy, sale, margin) — parity with removed Purchases summary
 - [ ] `T-MFS-002` Server-side aggregate (extend dashboard API or new endpoint); not tied to client purchase pagination
-- [ ] `T-MFS-003` Document in `DOMAIN_RULES.md` or API note: which fields/states count; `delivered` effect explicit yes/no
+- [ ] `T-MFS-003` Document in [`DOMAIN_RULES.md`](./DOMAIN_RULES.md) or API note: which fields/states count; `delivered` effect explicit yes/no
 
 ---
 
@@ -127,7 +127,7 @@ Update checkboxes in the **same change set** as the implementation unless the us
 - [ ] `T-REG-004` Mobile/narrow: Registers tabs, horizontal scroll, primary actions always reachable
 - [ ] `T-REG-005` Destructive actions: confirm dialogs + consequence copy (UoM delete, service deactivate, …)
 - [ ] `T-REG-006` a11y: modal focus, tab order in inline fields, aria on tabs/search (match app patterns)
-- [ ] `T-REG-007` EN-only sweep for Registers strings; align terms with `DOMAIN_RULES.md`
+- [ ] `T-REG-007` EN-only sweep for Registers strings; align terms with [`DOMAIN_RULES.md`](./DOMAIN_RULES.md)
 - [ ] `T-REG-008` Context tooltips/help (UoM purpose, Active vs inactive catalog semantics)
 
 ---
@@ -188,7 +188,7 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ## Localization / EN-only product surface
 
-- [ ] `T-I18-001` Repository-wide sweep: production UI + public API errors + PDF templates → EN-only; align glossary with `DOMAIN_RULES.md` post-translation
+- [ ] `T-I18-001` Repository-wide sweep: production UI + public API errors + PDF templates → EN-only; align glossary with [`DOMAIN_RULES.md`](./DOMAIN_RULES.md) post-translation
 
 ---
 

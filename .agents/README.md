@@ -28,7 +28,8 @@ Project-local role skills.
 - `docs/spec/TASKS.md` — active backlog with `T-*` IDs.
 - `docs/spec/OPEN_QUESTIONS.md` — unresolved decisions for planners/architects.
 - Root `DEVELOPMENT_PLAN.md` / `NEXT_STEPS.md` — short pointers to `docs/spec/`.
-- `DOMAIN_RULES.md` — required domain context when tasks touch business rules, statuses, calculations, or invariants.
+- `docs/spec/DOMAIN_RULES.md` — required domain context when tasks touch business rules, statuses, calculations, or invariants (root `DOMAIN_RULES.md` is a pointer).
+- `docs/spec/TECH_STACK.md`, `docs/spec/RUNBOOK.md` — stack and how to run the app locally or on LAN.
 - `docs/planning/archive/` — history and old snapshot plans.
 
 ## Templates

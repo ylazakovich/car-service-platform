@@ -27,7 +27,7 @@ Core capabilities:
 
 1. **Operations** — repairs, notes, purchases, services, vehicle history.
 2. **Documents** — completion PDF + stored snapshot per export version.
-3. **Analytics** — dashboard from snapshots + live preview rules per `DOMAIN_RULES.md`.
+3. **Analytics** — dashboard from snapshots + live preview rules per [`DOMAIN_RULES.md`](./DOMAIN_RULES.md).
 4. **QuickFocus / VPR** — inline `Vehicle` and `Customer` creation without leaving flow, same validation as registry screens.
 5. **Admin user management** — revoke/delete/deactivate staff with explicit model decision.
 6. **Service board** — large operational calendar from “today”, status visualization + legend.
@@ -77,7 +77,8 @@ High-signal items:
 | Strategy (this doc) | `docs/spec/PRODUCT.md` |
 | Execution backlog | `docs/spec/TASKS.md` |
 | Open decisions | `docs/spec/OPEN_QUESTIONS.md` |
-| Domain calculations / statuses | `DOMAIN_RULES.md` |
-| Stack | `TECH_STACK.md` |
+| Domain calculations / statuses | [`DOMAIN_RULES.md`](./DOMAIN_RULES.md) |
+| Stack | [`TECH_STACK.md`](./TECH_STACK.md) |
+| Run dev / prod / LAN | [`RUNBOOK.md`](./RUNBOOK.md) |
 | E2E target design | `docs/testing/playwright-e2e-framework.md` |
 | Agent session bootstrap | `docs/dev/agent-session-bootstrap.md`, root `AGENTS.md` |

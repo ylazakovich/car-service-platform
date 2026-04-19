@@ -7,6 +7,8 @@
 - `docs/spec/PRODUCT.md` — стратегия и приёмочные темы.
 - `docs/spec/TASKS.md` — backlog с идентификаторами `T-*` (секции NOW/NEXT/LATER внутри файла).
 - `docs/spec/OPEN_QUESTIONS.md` — открытые решения.
+- `docs/spec/RUNBOOK.md` — запуск dev / prod-like / LAN, демо-данные.
+- `docs/spec/DOMAIN_RULES.md`, `docs/spec/TECH_STACK.md` — домен и стек (корневые `DOMAIN_RULES.md` / `TECH_STACK.md` — указатели).
 - Корневые `DEVELOPMENT_PLAN.md` и `NEXT_STEPS.md` — короткие указатели на `docs/spec/` (удобные старые пути).
 
 ## Archive
