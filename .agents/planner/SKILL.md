@@ -6,8 +6,10 @@ Turn the incoming task into a short, executable, verifiable plan.
 ## Input
 - Task description from the user.
 - Project context and current constraints.
-- `DEVELOPMENT_PLAN.md`.
-- `NEXT_STEPS.md`.
+- `docs/spec/PRODUCT.md` (strategy / scope).
+- `docs/spec/TASKS.md` (backlog rows and `T-*` IDs relevant to the task).
+- `docs/spec/OPEN_QUESTIONS.md` (blockers and decisions not yet closed).
+- Root `DEVELOPMENT_PLAN.md` / `NEXT_STEPS.md` are pointers only — follow links into `docs/spec/`.
 
 ## Output
 - A plan with 3–7 steps.

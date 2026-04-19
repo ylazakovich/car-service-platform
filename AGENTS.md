@@ -47,8 +47,11 @@
 
 ## Обязательные Источники Контекста
 
-- `DEVELOPMENT_PLAN.md` — active стратегический план.
-- `NEXT_STEPS.md` — active backlog (`NOW/NEXT/LATER`).
+- `docs/spec/PRODUCT.md` — стратегия и приёмочные темы (SDD).
+- `docs/spec/TASKS.md` — backlog с стабильными идентификаторами `T-*` (`NOW` / `NEXT` / `LATER` внутри файла).
+- `docs/spec/OPEN_QUESTIONS.md` — открытые решения; планировщик обязан явно фиксировать допущения, пока вопросы открыты.
+- `docs/spec/README.md`, `docs/spec/SDD_WORKFLOW.md` — вход в SDD и связка с ролями/валидацией.
+- `DEVELOPMENT_PLAN.md`, `NEXT_STEPS.md` в корне — короткие указатели на `docs/spec/` (стабильные пути для ссылок).
 - `DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов.
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
 - `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
@@ -223,7 +226,7 @@ flowchart TD
 
 ## Hygiene For Planning
 
-1. Active-файлы (`DEVELOPMENT_PLAN.md`, `NEXT_STEPS.md`) должны оставаться короткими.
+1. Active-контент планирования живёт в `docs/spec/` (`PRODUCT.md`, `TASKS.md`, …). Корневые `DEVELOPMENT_PLAN.md` / `NEXT_STEPS.md` — только указатели; сами спеки держать сфокусированными, историю — в `docs/planning/archive/`.
 2. Исторические completed-блоки переносить в `docs/planning/archive/`.
 3. Перед крупной переработкой active-планов сохранять snapshot в архив.
 

@@ -3,9 +3,11 @@
 ## Цель
 Держать активный контекст коротким и устойчивым для агентной работы.
 
-## Active Files
-- `DEVELOPMENT_PLAN.md` — стратегия и критерии приемки без длинной истории.
-- `NEXT_STEPS.md` — только актуальный backlog (`NOW/NEXT/LATER`).
+## Active Files (SDD)
+- `docs/spec/PRODUCT.md` — стратегия и приёмочные темы.
+- `docs/spec/TASKS.md` — backlog с идентификаторами `T-*` (секции NOW/NEXT/LATER внутри файла).
+- `docs/spec/OPEN_QUESTIONS.md` — открытые решения.
+- Корневые `DEVELOPMENT_PLAN.md` и `NEXT_STEPS.md` — короткие указатели на `docs/spec/` (удобные старые пути).
 
 ## Archive
 - Путь: `docs/planning/archive/`

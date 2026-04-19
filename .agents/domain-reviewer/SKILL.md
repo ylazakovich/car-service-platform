@@ -6,6 +6,7 @@ Ensure the plan and final implementation preserve domain correctness, business i
 ## Input
 - Plan from `planner`.
 - Verdict from `architect`.
+- `docs/spec/OPEN_QUESTIONS.md` when the task may bump into unresolved product decisions (call them out in Risks).
 - `DOMAIN_RULES.md` as the canonical source for domain rules, statuses, calculations, and invariants.
 - Description of affected business rules, statuses, calculations, or constraints.
 - Short behavior delta: before vs after.
