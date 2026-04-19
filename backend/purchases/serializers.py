@@ -4,7 +4,8 @@ from rest_framework import serializers
 
 from vehicles.models import Vehicle
 
-from .models import Purchase, Supplier, UnitOfMeasure
+from .models import InvoiceLineParseTemplate, Purchase, Supplier, UnitOfMeasure
+from .invoice_line_parse import REQUIRED_REGEX_GROUPS, SUPPLIER_REGEX_GROUP, compile_line_pattern, compile_pattern_or_raise
 
 MAX_PURCHASE_BULK_LINES = 100
 
@@ -224,3 +225,77 @@ class PurchaseOrderPdfSerializer(serializers.Serializer):
         if len(value) > MAX_PURCHASE_BULK_LINES:
             raise serializers.ValidationError(f"At most {MAX_PURCHASE_BULK_LINES} lines per PO.")
         return value
+
+
+class InvoiceLineParseTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceLineParseTemplate
+        fields = (
+            "id",
+            "name",
+            "description",
+            "line_pattern",
+            "supplier_pattern",
+            "is_active",
+            "sort_order",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+    def validate_supplier_pattern(self, value):
+        text = (value or "").strip()
+        if not text:
+            return ""
+        try:
+            rx = compile_pattern_or_raise(text)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        if SUPPLIER_REGEX_GROUP not in rx.groupindex:
+            raise serializers.ValidationError(
+                f"Supplier regex must define named group (?P<{SUPPLIER_REGEX_GROUP}>…)."
+            )
+        return text
+
+    def validate_line_pattern(self, value):
+        text = (value or "").strip()
+        if not text:
+            raise serializers.ValidationError("line_pattern is required.")
+        try:
+            rx = compile_line_pattern(text)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        names = frozenset(rx.groupindex.keys())
+        missing = REQUIRED_REGEX_GROUPS - names
+        if missing:
+            raise serializers.ValidationError(
+                f"Regex must define named groups: {', '.join(sorted(REQUIRED_REGEX_GROUPS))}. "
+                f"Missing: {', '.join(sorted(missing))}."
+            )
+        return text
+
+
+class InvoiceParseSuggestSerializer(serializers.Serializer):
+    raw_text = serializers.CharField()
+
+
+class InvoiceParsePreviewSerializer(serializers.Serializer):
+    raw_text = serializers.CharField(required=False, allow_blank=True, default="")
+    line_pattern = serializers.CharField(required=False, allow_blank=True, default="")
+    supplier_pattern = serializers.CharField(required=False, allow_blank=True, default="")
+    template_id = serializers.IntegerField(required=False, allow_null=True)
+    file = serializers.FileField(required=False)
+
+    def validate(self, attrs):
+        raw = (attrs.get("raw_text") or "").strip()
+        file = attrs.get("file")
+        if not raw and not file:
+            raise serializers.ValidationError("Provide raw_text and/or file.")
+
+        tid = attrs.get("template_id")
+        pattern = (attrs.get("line_pattern") or "").strip()
+        if tid is None and not pattern:
+            raise serializers.ValidationError("Provide template_id or line_pattern.")
+        if tid is not None and pattern:
+            raise serializers.ValidationError("Use either template_id or line_pattern, not both.")
+        return attrs

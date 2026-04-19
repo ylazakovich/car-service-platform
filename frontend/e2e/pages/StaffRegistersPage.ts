@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
 
-export type RegistersWorkspaceTab = "Units of measure" | "Services" | "Customers";
+export type RegistersWorkspaceTab = "Units of measure" | "Services" | "Customers" | "Invoice lines";
 
 /**
  * Admin-only **Registers** (reference data): units of measure, services catalog, customers with vehicles.

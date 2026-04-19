@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FV/DEMO/2026/04/1842 — faktura demonstracyjna</title>
+  <style>
+    :root {
+      --ink: #111;
+      --muted: #444;
+      --line: #ccc;
+      --bg: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .banner {
+      border: 2px dashed #c62828;
+      color: #c62828;
+      font-weight: 700;
+      text-align: center;
+      padding: 8px 12px;
+      margin-bottom: 16px;
+      letter-spacing: 0.04em;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px;
+      letter-spacing: 0.02em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .box {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+    }
+    .box h2 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .box p { margin: 2px 0; line-height: 1.45; }
+    .meta {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 4px 12px;
+      max-width: 420px;
+      margin-bottom: 16px;
+    }
+    .meta dt { font-weight: 600; color: var(--muted); }
+    .meta dd { margin: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+    th {
+      background: #f4f4f4;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    td.c { text-align: center; }
+    tfoot td {
+      font-weight: 700;
+      border-top: 2px solid var(--ink);
+    }
+    .totals { margin-top: 12px; text-align: right; }
+    .totals table { max-width: 320px; margin-left: auto; }
+    .foot {
+      margin-top: 24px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    @media print {
+      body { padding: 12mm; }
+      .banner { border-style: solid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">DOKUMENT DEMONSTRACYJNY — DANE FIKCYJNE, BEZ SKUTKÓW PRAWNYCH I KSIĘGOWYCH</div>
+
+  <h1>Faktura VAT</h1>
+
+  <dl class="meta">
+    <dt>Numer faktury</dt><dd>FV/DEMO/2026/04/1842</dd>
+    <dt>Data wystawienia</dt><dd>2026-04-19</dd>
+    <dt>Data sprzedaży</dt><dd>2026-04-18</dd>
+    <dt>Waluta</dt><dd>PLN</dd>
+  </dl>
+
+  <div class="grid">
+    <div class="box">
+      <h2>Sprzedawca</h2>
+      <p><strong>DEMO-CZĘŚCI SP. Z O.O.</strong></p>
+      <p>ul. Przykładowa 12<br />00-001 Warszawa, Polska</p>
+      <p>NIP: <strong>PL5270000000</strong> (fikcyjny)</p>
+      <p>Tel: +48 22 000 00 00</p>
+    </div>
+    <div class="box">
+      <h2>Nabywca</h2>
+      <p><strong>WARSZTAT DEMO SERWIS</strong></p>
+      <p>ul. Serwisowa 3<br />02-001 Warszawa, Polska</p>
+      <p>NIP: <strong>PL5270000001</strong> (fikcyjny)</p>
+    </div>
+  </div>
+
+  <table aria-label="Pozycje faktury">
+    <thead>
+      <tr>
+        <th style="width:32px">Lp.</th>
+        <th>Opis towaru / usługi</th>
+        <th class="c" style="width:48px">Ilość</th>
+        <th class="c" style="width:40px">JM</th>
+        <th class="num" style="width:88px">Cena netto</th>
+        <th class="num" style="width:96px">Wartość netto</th>
+        <th class="c" style="width:52px">VAT</th>
+        <th class="num" style="width:88px">Kwota VAT</th>
+        <th class="num" style="width:96px">Brutto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="c">1</td>
+        <td>Filtr oleju Bosch OF-512 (demo)</td>
+        <td class="c">2</td>
+        <td class="c">szt</td>
+        <td class="num">42,50</td>
+        <td class="num">85,00</td>
+        <td class="c">23%</td>
+        <td class="num">19,55</td>
+        <td class="num">104,55</td>
+      </tr>
+      <tr>
+        <td class="c">2</td>
+        <td>Klocki hamulcowe przód Textar DEMO</td>
+        <td class="c">1</td>
+        <td class="c">kompl</td>
+        <td class="num">189,00</td>
+        <td class="num">189,00</td>
+        <td class="c">23%</td>
+        <td class="num">43,47</td>
+        <td class="num">232,47</td>
+      </tr>
+      <tr>
+        <td class="c">3</td>
+        <td>Płyn chłodniczy G12++ 5L (demo)</td>
+        <td class="c">1</td>
+        <td class="c">szt</td>
+        <td class="num">79,90</td>
+        <td class="num">79,90</td>
+        <td class="c">23%</td>
+        <td class="num">18,38</td>
+        <td class="num">98,28</td>
+      </tr>
+      <tr>
+        <td class="c">4</td>
+        <td>Świeca zapłonowa NGK DEMO (kpl 4 szt)</td>
+        <td class="c">1</td>
+        <td class="c">kpl</td>
+        <td class="num">156,00</td>
+        <td class="num">156,00</td>
+        <td class="c">23%</td>
+        <td class="num">35,88</td>
+        <td class="num">191,88</td>
+      </tr>
+      <tr>
+        <td class="c">5</td>
+        <td>Olej silnikowy 5W-30 4L (demo)</td>
+        <td class="c">3</td>
+        <td class="c">szt</td>
+        <td class="num">112,30</td>
+        <td class="num">336,90</td>
+        <td class="c">23%</td>
+        <td class="num">77,49</td>
+        <td class="num">414,39</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <table>
+      <tbody>
+        <tr>
+          <td>Razem netto</td>
+          <td class="num">846,80 PLN</td>
+        </tr>
+        <tr>
+          <td>Razem VAT 23%</td>
+          <td class="num">194,77 PLN</td>
+        </tr>
+        <tr>
+          <td>Do zapłaty (brutto)</td>
+          <td class="num">1&nbsp;041,57 PLN</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="foot">
+    Ten plik służy wyłącznie jako przykład układu faktury i tabeli pozycji w repozytorium
+    <code>car-service-platform</code>. Nie używać w obrocie prawnym ani księgowym.
+  </p>
+</body>
+</html>

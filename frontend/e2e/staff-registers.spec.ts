@@ -55,6 +55,17 @@ test.describe("Registers workspace @desktop", () => {
     await expect(row.getByRole("group", { name: new RegExp(E2E_DEMO_SERVICE_NAME_IN_CATALOG, "i") })).toBeVisible();
   });
 
+  test("admin opens Invoice lines tab and sees seeded parse template", async ({ page }) => {
+    await e2eBehaviors("admin", "registers · invoice line templates");
+    const reg = new StaffRegistersPage(page);
+    await reg.gotoRegistersSection();
+    await reg.openTab("Invoice lines");
+    await expect(page.getByRole("heading", { name: "Invoice line parse templates", level: 3 })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByRole("cell", { name: "Pipe table (demo PL)", exact: true })).toBeVisible({ timeout: 20_000 });
+  });
+
   test("admin switches to Customers and sees demo customer with vehicles", async ({ page }) => {
     await e2eBehaviors("admin", "registers · customers with vehicles");
     const reg = new StaffRegistersPage(page);
