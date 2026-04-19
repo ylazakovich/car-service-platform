@@ -5,6 +5,7 @@ Verify the solution fits the project architecture and does not create hidden tec
 
 ## Input
 - Plan from `planner`.
+- `docs/spec/PRODUCT.md` for milestone boundaries and non-goals.
 - Existing module layout and API/data contracts.
 
 ## Output

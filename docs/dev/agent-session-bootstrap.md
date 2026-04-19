@@ -1,6 +1,8 @@
-# Обязательная подготовка агентной сессии (любой провайдер)
+# Подготовка сессии AI-агента в IDE (опционально)
 
-Документ — **канон** для шага «сначала подготовь среду», на который ссылается корневой `AGENTS.md`. Провайдер (Cursor, Claude Code, Codex, и т.д.) не отменяет эти шаги: сначала читается `AGENTS.md`, затем выполняется bootstrap.
+Документ описывает **MCP, verify и хостовые deps** для работы через Cursor / Claude Code / Codex. Он **не** входит в продуктовую спеку (`docs/spec/`): для сборки и запуска приложения достаточно [`docs/spec/RUNBOOK.md`](../spec/RUNBOOK.md).
+
+Корневой [`AGENTS.md`](../../AGENTS.md) задаёт **роли, scope и маршрутизацию**; технические шаги IDE — **здесь** (и в [`mcp-deduplication.md`](./mcp-deduplication.md), [`agents-and-mcp.md`](./agents-and-mcp.md)).
 
 ## Зачем
 
@@ -57,7 +59,7 @@ node scripts/agents/verify-agent-environment.mjs --strict
 node scripts/agents/verify-agent-environment.mjs --skip-user-mcp-file
 ```
 
-Политика и обязанность агента: корневой **`AGENTS.md`** → раздел «Политика проверки».
+Политика проверки MCP и ожидания по `verify-agent-environment` — **в этом документе** (разделы «Проверка» и чеклист ниже). В **`AGENTS.md`** остаётся только краткая отсылка сюда.
 
 ## Пошагово (если агент делает вручную)
 
@@ -91,4 +93,8 @@ bash scripts/agents/bootstrap-environment.sh
 2. Выполнен `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **auto**: cursor → claude → codex; явный `--mcp-target` при необходимости; `--strict` — не допускать пустой `mcpServers` в JSON). При ошибке для Cursor/Claude — `bootstrap-agent-session.sh`, затем verify снова; для Codex — правка `~/.codex/config.toml` по `mcp/README.md`.
 3. **Не** требовать `npm ci` / `pip install` на хосте, если задача выполняется в Docker; при сомнении — подтвердить у пользователя или использовать `--with-host-deps` только при явной необходимости запуска тулов на хосте.
 4. Пользователь уведомлён о **перезапуске** клиента для подхвата MCP.
-5. **MCP hygiene:** напоминание отключить нерелевантные глобальные MCP (см. `docs/dev/mcp-deduplication.md`); в ответе — поле **`MCP hygiene`** по шаблону `AGENTS.md`.
+5. **MCP hygiene:** напоминание отключить нерелевантные глобальные MCP (см. `docs/dev/mcp-deduplication.md`); в ответе агента — поле **`MCP hygiene`** по шаблону в корневом `AGENTS.md`.
+
+## Напоминание пользователю (hygiene)
+
+Подключённые глобальные MCP участвуют в сессии (схемы инструментов → расход контекста), даже если задача их не использует. Имеет смысл **один раз за сессию** напомнить пользователю отключить лишнее в настройках Cursor / Claude Code / Codex. Репозиторий **не может** автоматически отключить чужие MCP; для Codex в проекте см. пример **`.codex/config.toml`**. Полный текст: **`docs/dev/mcp-deduplication.md`** (раздел «Предупреждение пользователю»).

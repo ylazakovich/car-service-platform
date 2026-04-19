@@ -6,8 +6,11 @@ Turn the incoming task into a short, executable, verifiable plan.
 ## Input
 - Task description from the user.
 - Project context and current constraints.
-- `DEVELOPMENT_PLAN.md`.
-- `NEXT_STEPS.md`.
+- `docs/spec/PRODUCT.md` (strategy / scope).
+- `docs/spec/TASKS.md` (backlog rows and `T-*` IDs relevant to the task).
+- `docs/spec/OPEN_QUESTIONS.md` (blockers and decisions not yet closed).
+- `docs/spec/RUNBOOK.md` if the task depends on how the app is run locally, on LAN, or with demo data.
+- `docs/spec/DOMAIN_RULES.md` when the task may touch business rules, statuses, or calculations.
 
 ## Output
 - A plan with 3–7 steps.
@@ -24,3 +27,4 @@ Turn the incoming task into a short, executable, verifiable plan.
 1. Does every step have a concrete outcome?
 2. Can completion of each step be verified?
 3. Are backend, frontend, and architectural intersections covered?
+4. Did you read **`docs/spec/OPEN_QUESTIONS.md`** for conflicts, and tie the plan to relevant **`T-*`** rows in **`docs/spec/TASKS.md`** when applicable? If something is underspecified, call it out instead of guessing.

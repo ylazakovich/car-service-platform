@@ -22,11 +22,13 @@ Project-local role skills.
 
 ## Required context
 
-- Root `AGENTS.md` — **session bootstrap** (MCP; host npm/pip optional — Docker) before substantive work.
-- `docs/dev/agent-session-bootstrap.md` — step-by-step bootstrap for any provider.
-- `DEVELOPMENT_PLAN.md` — active strategy.
-- `NEXT_STEPS.md` — active backlog.
-- `DOMAIN_RULES.md` — required domain context when tasks touch business rules, statuses, calculations, or invariants.
+- Root `AGENTS.md` — workflow (roles, scope). **Product work** uses `docs/spec/` + Docker per RUNBOOK.
+- `docs/dev/agent-session-bootstrap.md` — **optional** MCP / verify / host deps for **IDE AI agents** only.
+- `docs/spec/PRODUCT.md` — active strategy (SDD).
+- `docs/spec/TASKS.md` — active backlog with `T-*` IDs.
+- `docs/spec/OPEN_QUESTIONS.md` — unresolved decisions for planners/architects.
+- `docs/spec/DOMAIN_RULES.md` — required domain context when tasks touch business rules, statuses, calculations, or invariants.
+- `docs/spec/TECH_STACK.md`, `docs/spec/RUNBOOK.md` — stack and how to run the app locally or on LAN.
 - `docs/planning/archive/` — history and old snapshot plans.
 
 ## Templates
