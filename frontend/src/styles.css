@@ -6040,6 +6040,78 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
   margin-top: var(--s2);
 }
 
+.purchase-invoice-import-block {
+  display: grid;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-mid);
+}
+
+.purchase-invoice-import-grid {
+  align-items: start;
+}
+
+.purchase-invoice-import-regex {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.purchase-invoice-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.purchase-invoice-import-warnings {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--warning, #c9a227);
+}
+
+.purchase-invoice-import-preview-table {
+  width: 100%;
+}
+
+.purchase-invoice-supplier-preview,
+.invoice-parse-supplier-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised, var(--surface));
+}
+
+.invoice-parse-supplier-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+}
+
+.invoice-parse-templates-panel {
+  display: grid;
+  gap: var(--s4);
+}
+
+.invoice-parse-templates-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+
+.invoice-parse-templates-regex {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.78rem;
+}
+
 /* ═══════════════════════════════════════════════
    INVOICE
    ═══════════════════════════════════════════════ */

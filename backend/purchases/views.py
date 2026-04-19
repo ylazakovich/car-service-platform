@@ -6,14 +6,26 @@ from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from foundation.pagination import StandardPagination
-from .models import Purchase, Supplier, UnitOfMeasure
+from .invoice_line_parse import (
+    extract_supplier,
+    extract_text_from_file,
+    parse_invoice_lines,
+    suggest_line_pattern,
+    suggest_supplier_pattern,
+)
+from .models import InvoiceLineParseTemplate, Purchase, Supplier, UnitOfMeasure
 from .pdf_generator import generate_purchase_order_pdf
 from .serializers import (
+    MAX_PURCHASE_BULK_LINES,
+    InvoiceLineParseTemplateSerializer,
+    InvoiceParsePreviewSerializer,
+    InvoiceParseSuggestSerializer,
     PurchaseBulkCreateSerializer,
     PurchaseOrderPdfSerializer,
     PurchaseSerializer,
@@ -205,3 +217,141 @@ class PurchaseBulkCreateView(APIView):
         loaded.sort(key=lambda p: order_index[p.pk])
         out = PurchaseSerializer(loaded, many=True, context={"request": request})
         return Response(out.data, status=status.HTTP_201_CREATED)
+
+
+class InvoiceLineParseTemplateListCreateView(generics.ListCreateAPIView):
+    """List saved regex templates (active only unless staff passes include_inactive=1)."""
+
+    serializer_class = InvoiceLineParseTemplateSerializer
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = InvoiceLineParseTemplate.objects.all().order_by("sort_order", "id")
+        if (
+            self.request.user.is_authenticated
+            and self.request.user.is_staff
+            and self.request.query_params.get("include_inactive") in ("1", "true", "yes")
+        ):
+            return qs
+        return qs.filter(is_active=True)
+
+
+class InvoiceLineParseTemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = InvoiceLineParseTemplateSerializer
+
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminUser()]
+
+    def get_queryset(self):
+        qs = InvoiceLineParseTemplate.objects.all()
+        if self.request.user.is_authenticated and self.request.user.is_staff:
+            return qs
+        return qs.filter(is_active=True)
+
+
+class InvoiceParseSuggestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = InvoiceParseSuggestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        raw = serializer.validated_data["raw_text"].strip()
+        if not raw:
+            return Response({"detail": "raw_text is empty."}, status=status.HTTP_400_BAD_REQUEST)
+        pattern, label, preview = suggest_line_pattern(raw)
+        sup_pat, sup_name = suggest_supplier_pattern(raw)
+        if not pattern:
+            return Response(
+                {
+                    "matched": False,
+                    "detail": "Could not guess a matching pattern for this text.",
+                    "suggested_supplier_pattern": sup_pat,
+                    "preview_supplier_name": sup_name,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {
+                "matched": True,
+                "suggested_name": label,
+                "line_pattern": pattern,
+                "preview_lines": preview,
+                "suggested_supplier_pattern": sup_pat,
+                "preview_supplier_name": sup_name,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class InvoiceParsePreviewView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = InvoiceParsePreviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        raw = (data.get("raw_text") or "").strip()
+        upload = data.get("file")
+        template_id = data.get("template_id")
+        line_pattern = (data.get("line_pattern") or "").strip()
+        supplier_pattern_inline = (data.get("supplier_pattern") or "").strip()
+
+        if upload:
+            try:
+                extracted = extract_text_from_file(upload)
+            except ValueError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            except RuntimeError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raw = f"{raw}\n{extracted}".strip() if raw else extracted
+
+        if not raw:
+            return Response(
+                {"detail": "No text to parse. Paste invoice text or upload a text-based PDF."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        supplier_pattern_effective = supplier_pattern_inline
+        if template_id is not None:
+            template = InvoiceLineParseTemplate.objects.filter(pk=template_id).first()
+            if template is None:
+                return Response({"detail": "Template not found."}, status=status.HTTP_404_NOT_FOUND)
+            if not template.is_active and not request.user.is_staff:
+                return Response({"detail": "Template not found."}, status=status.HTTP_404_NOT_FOUND)
+            pattern = template.line_pattern
+            if not supplier_pattern_effective:
+                supplier_pattern_effective = (template.supplier_pattern or "").strip()
+        else:
+            pattern = line_pattern
+
+        try:
+            lines, warnings = parse_invoice_lines(raw, pattern)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        supplier_name, supplier_warnings = extract_supplier(raw, supplier_pattern_effective or None)
+        warnings = list(warnings) + list(supplier_warnings)
+
+        if len(lines) > MAX_PURCHASE_BULK_LINES:
+            return Response(
+                {"detail": f"Too many matched lines ({len(lines)}); max is {MAX_PURCHASE_BULK_LINES}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "lines": lines,
+                "warnings": warnings,
+                "matched_count": len(lines),
+                "supplier_name": supplier_name,
+                "supplier_pattern_used": supplier_pattern_effective or None,
+            },
+            status=status.HTTP_200_OK,
+        )

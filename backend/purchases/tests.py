@@ -1,11 +1,17 @@
+import base64
+import shutil
+import unittest
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 from customers.models import Customer
 from vehicles.models import Vehicle
 
-from .models import Purchase, Supplier, UnitOfMeasure
+from .invoice_line_parse import extract_text_from_file
+from .models import InvoiceLineParseTemplate, Purchase, Supplier, UnitOfMeasure
 
 
 class SupplierApiTests(TestCase):
@@ -591,3 +597,101 @@ class PurchaseApiTests(TestCase):
         )
         self.assertEqual(resp.status_code, 201)
         self.assertIn("sort_order", resp.json())
+
+
+class InvoiceParseApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.staff = get_user_model().objects.create_user(
+            email="staff-invoice-parse@test.local",
+            password="staff12345",
+            role="staff",
+        )
+        self.admin = get_user_model().objects.create_user(
+            email="admin-invoice-parse@test.local",
+            password="admin12345",
+            role="admin",
+            is_staff=True,
+        )
+
+    def test_preview_parses_demo_pipe_line_with_template(self):
+        template = InvoiceLineParseTemplate.objects.filter(name="Pipe table (demo PL)").first()
+        self.assertIsNotNone(template)
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "  1  | Filtr oleju Bosch OF-512 (demo)                   |   2   | szt |    42,50   |      85,00    |  23%"
+        )
+        response = self.client.post(
+            "/api/purchases/invoice-parse/preview/",
+            {"raw_text": raw, "template_id": template.pk},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["matched_count"], 1)
+        self.assertEqual(body["lines"][0]["part_name"], "Filtr oleju Bosch OF-512 (demo)")
+        self.assertEqual(body["lines"][0]["quantity"], 2)
+        self.assertEqual(body["lines"][0]["purchase_price"], "85.00")
+
+    def test_suggest_returns_pattern_for_multi_line_demo(self):
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "  1  | Part A |   1   | szt | 10,00 | 10,00\n"
+            "  2  | Part B |   2   | szt | 5,00 | 10,00\n"
+        )
+        response = self.client.post("/api/purchases/invoice-parse/suggest/", {"raw_text": raw}, format="json")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("matched"))
+        self.assertIn("line_pattern", data)
+
+    def test_staff_cannot_create_template(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.post(
+            "/api/purchases/invoice-parse-templates/",
+            {
+                "name": "X",
+                "description": "",
+                "line_pattern": r"(?P<part_name>.+)\s(?P<quantity>\d+)\s(?P<purchase_price>[\d.]+)",
+                "is_active": True,
+                "sort_order": 99,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_create_template_requires_named_groups(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            "/api/purchases/invoice-parse-templates/",
+            {
+                "name": "Bad",
+                "description": "",
+                "line_pattern": r"(?P<x>.*)",
+                "is_active": True,
+                "sort_order": 5,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("line_pattern", response.json())
+
+    def test_staff_lists_active_templates(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.get("/api/purchases/invoice-parse-templates/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertGreaterEqual(len(data), 1)
+
+
+@unittest.skipUnless(shutil.which("tesseract"), "tesseract not installed")
+class InvoiceOcrExtractTests(TestCase):
+    """Requires Tesseract + language packs on PATH (Docker image and CI install them)."""
+
+    def test_extract_text_from_minimal_png_does_not_crash(self):
+        png = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        )
+        upload = SimpleUploadedFile("tiny.png", png, content_type="image/png")
+        text = extract_text_from_file(upload)
+        self.assertIsInstance(text, str)

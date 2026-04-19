@@ -71,6 +71,13 @@ export type PurchaseLineFormState = {
   unit_of_measure_id: string;
 };
 
+/** Parsed row from invoice regex preview before mapping into purchase line form state. */
+export type ParsedImportLine = {
+  part_name: string;
+  quantity: number;
+  purchase_price: string;
+};
+
 function emptyPurchaseForm(defaultUomId: string): PurchaseFormState {
   return {
     order_date: "",
@@ -771,6 +778,34 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     }
   }
 
+  function applyPurchaseLineImport(
+    parsed: ParsedImportLine[],
+    options?: {
+      supplierName?: string | null;
+    },
+  ) {
+    if (!parsed.length) {
+      return;
+    }
+    const supplier = options?.supplierName?.trim();
+    if (supplier) {
+      setPurchaseForm((current) => ({ ...current, supplier_name: supplier }));
+    }
+    const defaultUom = defaultUomIdFromList(unitsOfMeasure);
+    const saleZero = purchaseCreateMode === "consumables";
+    setPurchaseLineRows(
+      parsed.map((row) => ({
+        part_name: row.part_name,
+        quantity: String(row.quantity),
+        purchase_price: row.purchase_price,
+        sale_price: saleZero ? "0" : "",
+        repair_code: "",
+        vehicle_id: "",
+        unit_of_measure_id: defaultUom,
+      })),
+    );
+  }
+
   async function handleConsumableStockSave(entry: PurchaseEntry, value: string) {
     const normalized = value.trim().replace(",", ".");
     const nextQuantity = normalized === "" ? 0 : Number(normalized);
@@ -852,5 +887,6 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     handleModalSupplierSelect,
     refreshUnitsOfMeasure,
     refreshSuppliers,
+    applyPurchaseLineImport,
   };
 }

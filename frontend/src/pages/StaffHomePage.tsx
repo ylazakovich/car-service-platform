@@ -15,6 +15,8 @@ import { useAuth } from "../context/AuthContext";
 import { createSupplier, updateSupplier, type SupplierItem } from "../api/purchases";
 import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
 import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
+import { InvoiceParseTemplatesPanel } from "../features/staff/components/InvoiceParseTemplatesPanel";
+import { PurchaseInvoiceImportBlock } from "../features/staff/components/PurchaseInvoiceImportBlock";
 import { RegistersCustomersPanel } from "../features/staff/components/RegistersCustomersPanel";
 import { ServicesRegisterPanel } from "../features/staff/components/ServicesRegisterPanel";
 import { UnitsOfMeasureAdminPanel } from "../features/staff/components/UnitsOfMeasureAdminPanel";
@@ -96,7 +98,7 @@ type StaffHomePageProps = {
 
 type UserAccessTab = "owner" | "admins" | "masters";
 type PurchasesWorkspaceTab = "warehouse" | "consumables" | "suppliers";
-type ReferenceWorkspaceTab = "units" | "services" | "customers";
+type ReferenceWorkspaceTab = "units" | "services" | "customers" | "invoice_lines";
 type DashboardTab = "moneyflow" | "service_board" | "warehouse" | "consumables";
 type DashboardDateRange = {
   start_date: string;
@@ -1176,6 +1178,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handleModalSupplierSelect,
     refreshUnitsOfMeasure,
     refreshSuppliers,
+    applyPurchaseLineImport,
   } = usePurchases(vehicles, {
     enableConsumablesFetch: activeSection === "purchases" && activePurchasesTab === "consumables",
   });
@@ -5174,6 +5177,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       ? "One supplier and one invoice file for all lines below. Each line can be a different part; link vehicle and repair per line when the part is for a specific job, or leave unlinked for stock."
                       : "One supplier and one invoice for multiple consumable lines (fluids, gloves, chemistry, etc.). No vehicle or repair links. Lines are excluded from completion acts."}
                   </p>
+                  <PurchaseInvoiceImportBlock onApplyParsed={applyPurchaseLineImport} />
                   <div className="form-grid">
                     <label>
                       <span>Order Date</span>
@@ -5917,6 +5921,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       { id: "units", label: "Units of measure", shortLabel: "Units" },
       { id: "services", label: "Services", shortLabel: "Serv." },
       { id: "customers", label: "Customers", shortLabel: "Cust." },
+      { id: "invoice_lines", label: "Invoice lines", shortLabel: "Inv." },
     ];
 
     return (
@@ -5964,6 +5969,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           {activeReferenceTab === "customers" ? (
             <RegistersCustomersPanel customers={customers} onRefresh={() => void loadRegistries()} />
           ) : null}
+          {activeReferenceTab === "invoice_lines" ? <InvoiceParseTemplatesPanel /> : null}
         </div>
       </div>
     );
