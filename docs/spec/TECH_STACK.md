@@ -192,10 +192,10 @@
 
 ## 10) Source Of Truth
 
-- Product strategy: [`PRODUCT.md`](./PRODUCT.md) (root `DEVELOPMENT_PLAN.md` is a pointer)
-- Execution backlog: [`TASKS.md`](./TASKS.md) (root `NEXT_STEPS.md` is a pointer)
-- Domain rules: [`DOMAIN_RULES.md`](./DOMAIN_RULES.md) (root `DOMAIN_RULES.md` is a pointer)
-- Technical baseline: this file ([`TECH_STACK.md`](./TECH_STACK.md); root `TECH_STACK.md` is a pointer)
+- Product strategy: [`PRODUCT.md`](./PRODUCT.md)
+- Execution backlog: [`TASKS.md`](./TASKS.md)
+- Domain rules: [`DOMAIN_RULES.md`](./DOMAIN_RULES.md)
+- Technical baseline: this file ([`TECH_STACK.md`](./TECH_STACK.md))
 - Run / dev / prod / LAN: [`RUNBOOK.md`](./RUNBOOK.md)
 - E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`
 - IDE / AI-агенты (вне продуктовой спеки): `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `mcp/README.md`

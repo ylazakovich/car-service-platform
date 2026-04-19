@@ -30,9 +30,8 @@
 - `docs/spec/TASKS.md` — backlog с стабильными идентификаторами `T-*` (`NOW` / `NEXT` / `LATER` внутри файла).
 - `docs/spec/OPEN_QUESTIONS.md` — открытые решения; планировщик обязан явно фиксировать допущения, пока вопросы открыты.
 - `docs/spec/README.md`, `docs/spec/SDD_WORKFLOW.md` — вход в SDD и связка с ролями/валидацией.
-- `DEVELOPMENT_PLAN.md`, `NEXT_STEPS.md` в корне — короткие указатели на `docs/spec/` (стабильные пути для ссылок).
-- `docs/spec/DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов (корневой `DOMAIN_RULES.md` — указатель).
-- `docs/spec/TECH_STACK.md` — технический baseline и форма архитектуры (корневой `TECH_STACK.md` — указатель).
+- `docs/spec/DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов.
+- `docs/spec/TECH_STACK.md` — технический baseline и форма архитектуры.
 - `docs/spec/RUNBOOK.md` — запуск dev/prod-like, демо-данные, публикация на LAN для мобильных.
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
 - `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
@@ -203,7 +202,7 @@ flowchart TD
 
 ## Hygiene For Planning
 
-1. Active-контент планирования живёт в `docs/spec/` (`PRODUCT.md`, `TASKS.md`, …). Корневые `DEVELOPMENT_PLAN.md` / `NEXT_STEPS.md` — только указатели; сами спеки держать сфокусированными, историю — в `docs/planning/archive/`.
+1. Active-контент планирования живёт в `docs/spec/` (`PRODUCT.md`, `TASKS.md`, …). Сами спеки держать сфокусированными, историю — в `docs/planning/archive/`.
 2. Исторические completed-блоки переносить в `docs/planning/archive/`.
 3. Перед крупной переработкой active-планов сохранять snapshot в архив.
 

@@ -1,6 +1,6 @@
 # Specification-driven development (SDD) — project entry
 
-This folder is the **canonical spec surface** for product intent, execution backlog, operations, domain, and stack. Root files `DEVELOPMENT_PLAN.md`, `NEXT_STEPS.md`, `DOMAIN_RULES.md`, and `TECH_STACK.md` are **thin pointers** where we keep stable paths at repo root.
+This folder is the **canonical spec surface** for product intent, execution backlog, operations, domain, and stack. **Entry:** this file → links below (there are no duplicate root copies of these specs).
 
 ## Spec index
 

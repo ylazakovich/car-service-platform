@@ -7,7 +7,7 @@ Snapshots of planning documents before large edits or migrations.
 
 ## Current active specs (SDD)
 
-Canonical content lives in **`docs/spec/`** (`PRODUCT.md`, `TASKS.md`, `OPEN_QUESTIONS.md`). Root `DEVELOPMENT_PLAN.md` and `NEXT_STEPS.md` are short pointers.
+Canonical content lives in **`docs/spec/`** (`PRODUCT.md`, `TASKS.md`, `OPEN_QUESTIONS.md`, `DOMAIN_RULES.md`, `TECH_STACK.md`, `RUNBOOK.md`, …).
 
 ## Recent snapshots
 
