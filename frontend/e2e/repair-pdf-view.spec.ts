@@ -8,6 +8,7 @@ import { StaffRepairsPage } from "./pages/StaffRepairsPage";
  */
 /** @desktop — счётчики POST /pdf/export и модалка превью стабильны на широком layout; mobile-chrome см. staff-repairs-mobile. */
 test.describe("Repair PDF: view without new export @desktop", () => {
+  test.describe.configure({ mode: "serial" });
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
   });

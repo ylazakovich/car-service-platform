@@ -53,6 +53,14 @@ export class StaffMobileNavigationPage {
   }
 
   /**
+   * Сценарии @mobile-only опираются на shell ≤820px: кнопка workspace в шапке должна быть в DOM и видима.
+   * (Общий `waitForStaffNavigationChrome` может пройти по sidebar/task rail в смешанных вьюпортах.)
+   */
+  async expectMobileWorkspaceMenuToggle(): Promise<void> {
+    await expect(this.workspaceMenuToggle()).toBeVisible({ timeout: 25_000 });
+  }
+
+  /**
    * Перейти в секцию (меню шапки, иначе task switcher, иначе sidebar).
    * Staff видит только Vehicles / Repairs; admin — также Dashboard, Purchases, Users.
    */

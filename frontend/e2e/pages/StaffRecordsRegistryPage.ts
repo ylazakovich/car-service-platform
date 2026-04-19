@@ -21,10 +21,19 @@ export class StaffRecordsRegistryPage {
 
   async gotoVehiclesSection(): Promise<void> {
     const nav = new StaffMobileNavigationPage(this.page);
+    // Ждём успешный список ТС: при ошибке API `loadSectionVehicles` в UI остаётся empty panel без `.vehicle-web-surface` списка.
+    const vehiclesListResponse = this.page.waitForResponse((res) => {
+      const url = res.url();
+      return (
+        res.request().method() === "GET" &&
+        res.status() === 200 &&
+        url.includes("/api/vehicles") &&
+        url.includes("page_size")
+      );
+    }, { timeout: 45_000 });
     await nav.gotoStaffSection("Vehicles");
-    // При пустом списке ТС реестр (vehicle-web-surface) не рендерится — достаточно контейнера секции.
-    // На staff-mobile заголовок h2 в topbar скрыт CSS — не ждём heading.
     await expect(this.page.locator(".vehicles-workspace")).toBeVisible({ timeout: 25_000 });
+    await vehiclesListResponse;
   }
 
   /** Убраны переключатель Cards/Compact и селекты сортировки/группировки. */
@@ -52,12 +61,14 @@ export class StaffRecordsRegistryPage {
   }
 
   /**
-   * Строка ТС в видимом списке. В DOM одновременно mobile + desktop поверхности;
-   * таргетим обе, чтобы не ловить strict violation на скрытой копии.
+   * Строка ТС. На широком viewport в DOM часто **обе** поверхности (mobile + desktop);
+   * для `expect().toBeVisible()` в strict mode нужен один вариант — `surface`.
    */
-  vehicleRowByPlate(plate: string): Locator {
+  vehicleRowByPlate(plate: string, surface: "desktop" | "mobile" | "any" = "any"): Locator {
     const desktopRow = this.page.locator(".vehicle-web-surface .vehicles-compact-row").filter({ hasText: plate });
     const mobileRow = this.page.locator(".vehicles-mobile-surface .vehicles-compact-row").filter({ hasText: plate });
+    if (surface === "desktop") return desktopRow;
+    if (surface === "mobile") return mobileRow;
     return desktopRow.or(mobileRow);
   }
 }

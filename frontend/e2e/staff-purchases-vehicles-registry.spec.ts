@@ -48,6 +48,8 @@ test.describe("Purchases registry — table-only chrome @desktop", () => {
 });
 
 test.describe("Vehicles registry — table-only + act export hint @desktop", () => {
+  test.describe.configure({ mode: "serial", timeout: 90_000 });
+
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
   });
@@ -58,16 +60,12 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
     await reg.gotoVehiclesSection();
     await reg.expectVehiclesRegistryChrome();
 
-    if (await page.getByText("No vehicles yet.").isVisible()) {
-      test.skip(true, "Load demo data: bash scripts/load-demo.sh");
-    }
-
     await expect(page.locator(".vehicle-web-surface .purchases-compact-list")).toBeVisible({
-      timeout: 20_000,
+      timeout: 45_000,
     });
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE);
-    await expect(row).toBeVisible({ timeout: 20_000 });
+    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "desktop");
+    await expect(row).toBeVisible({ timeout: 45_000 });
   });
 
   test("demo vehicle with completed repair and no PDF shows act-pending affordance", async ({ page }) => {
@@ -75,12 +73,8 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
     const reg = new StaffRecordsRegistryPage(page);
     await reg.gotoVehiclesSection();
 
-    if (await page.getByText("No vehicles yet.").isVisible()) {
-      test.skip(true, "Load demo data: bash scripts/load-demo.sh");
-    }
-
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE);
-    await expect(row).toBeVisible({ timeout: 20_000 });
+    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "desktop");
+    await expect(row).toBeVisible({ timeout: 45_000 });
     await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
     await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
   });
@@ -96,16 +90,12 @@ test.describe("Vehicles registry — mobile compact list @mobile-only", () => {
     const reg = new StaffRecordsRegistryPage(page);
     await reg.gotoVehiclesSection();
 
-    if (await page.getByText("No vehicles yet.").isVisible()) {
-      test.skip(true, "Load demo data: bash scripts/load-demo.sh");
-    }
-
     await expect(page.locator(".vehicles-mobile-surface .vehicles-mobile-compact-list")).toBeVisible({
-      timeout: 20_000,
+      timeout: 45_000,
     });
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE);
-    await expect(row).toBeVisible({ timeout: 20_000 });
+    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "mobile");
+    await expect(row).toBeVisible({ timeout: 45_000 });
     await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
     await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
   });
