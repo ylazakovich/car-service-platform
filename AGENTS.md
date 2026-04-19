@@ -4,34 +4,13 @@
 
 Цель: единый workflow для планирования, реализации и верификации изменений в `car-service-platform` без привязки к одному ассистенту.
 
-## Обязательная подготовка агентной сессии (любой провайдер)
+## Для кого этот файл
 
-Перед первым осмысленным действием в репозитории агент **обязан** выполнить подготовку среды (или явно подтвердить, что она уже сделана в этой среде):
+- **Разработка и запуск приложения (люди, CI):** достаточно [`docs/spec/RUNBOOK.md`](docs/spec/RUNBOOK.md) и остальных спек в `docs/spec/`. **MCP и проверки IDE здесь не нужны.**
 
-1. **MCP** — merge в user-level конфиг: `node scripts/mcp/install-user.mjs` (Cursor) или `--target claude` для Claude Code. По умолчанию профиль **пустой** (`mcp/car-service-platform.default.json`), чтобы **не дублировать** серверы, которые уже даёт плагин everything-claude-code (context7, playwright, github, …). Полный stdio-набор только если ECC нет: `--profile standalone`. Правила и чеклист: **`docs/dev/mcp-deduplication.md`**. Агент **не** добавляет в project-local `~/.claude.json` те же MCP, что уже «connected» из Built-in / User; при дубле — убрать **локальный** к проекту, оставить глобальный/plugin.
+- **Работа через AI-агента в Cursor / Claude Code / Codex по этому репозиторию:** перед содержательными шагами — опциональная подготовка из **[`docs/dev/agent-session-bootstrap.md`](docs/dev/agent-session-bootstrap.md)** (MCP merge, `verify-agent-environment`, хостовые пакеты только если реально гоняете тесты вне Docker). Дубли MCP, hygiene, Codex — **[`docs/dev/mcp-deduplication.md`](docs/dev/mcp-deduplication.md)**; сжатый обзор ролей и MCP — **[`docs/dev/agents-and-mcp.md`](docs/dev/agents-and-mcp.md)**.
 
-**Зависимости на хосте (npm/pip/playwright)** для основного рабочего процесса **не обязательны**: приложение и библиотеки живут в **Docker** с hot reload (`docker-compose.dev.yml` / `scripts/start.sh`). Устанавливать пакеты на машину нужно только если агент явно запускает тесты/сборку **вне** контейнеров — тогда опционально: `bash scripts/agents/bootstrap-environment.sh` или `bash scripts/agents/bootstrap-agent-session.sh --with-host-deps`.
-
-**Одной командой (MCP, без хостовых пакетов):** `bash scripts/agents/bootstrap-agent-session.sh` (опции: `--mcp-target claude`, `--mcp-profile default|standalone`, `--with-host-deps`, `--deps-only` — только хостовые пакеты без MCP).
-
-## Политика проверки: готово ли окружение для агентов
-
-Перед задачей (или сразу после bootstrap) агент **должен** убедиться, что среда соответствует ожиданиям репозитория:
-
-1. Запустить **`node scripts/agents/verify-agent-environment.mjs`**: по умолчанию **`--mcp-target auto`** — выбирается первый существующий конфиг в порядке **Cursor** (`~/.cursor/mcp.json`) → **Claude Code** (`~/.claude/settings.json`) → **Codex** (`~/.codex/config.toml`). Явно: **`--mcp-target cursor`**, **`claude`** или **`codex`**, если авто-выбор не подходит (например на машине есть несколько клиентов). Для Cursor/Claude пустой `mcpServers: {}` допустим (типично с ECC); скрипт выдаёт предупреждение, **`--strict`** — завершить с ошибкой при пустом списке.
-2. Если проверка **не прошла**: для **Cursor / Claude Code** — `bash scripts/agents/bootstrap-agent-session.sh` с тем же `--mcp-target` (и профилем MCP при необходимости), затем verify снова; для **Codex** — настроить `~/.codex/config.toml` (`[mcp_servers.*]`, см. `mcp/README.md` и [документацию Codex MCP](https://developers.openai.com/codex/mcp)), затем verify снова.
-3. Для **CI / только репозиторий** (без домашнего MCP-файла): **`--skip-user-mcp-file`**.
-
-В минимальном ответе агента поле **`Bootstrap`** допускает формулировку вроде: `verify-agent-environment OK` или `verify failed → bootstrap → verify OK`.
-
-## Политика MCP hygiene (предупреждение пользователю)
-
-Любые **уже подключённые** глобальные MCP продолжают участвовать в сессии (схемы инструментов → расход контекста), даже если задача их не использует.
-
-- Агент **обязан** напомнить пользователю **отключить ненужные** MCP в настройках клиента — обычно **один раз за сессию** (после verify/bootstrap или в первом содержательном ответе). Текст и нюансы: **`docs/dev/mcp-deduplication.md`** (раздел «Предупреждение пользователю»).
-- **Автоматически** запретить «лишние» MCP в следующих сессиях репозиторий **не может** — это настройка Cursor / Claude Code / Codex. Для **Codex** в этом репо есть проектный **`.codex/config.toml`**: при trusted-проекте можно задать `enabled = false` для лишних серверов **только в этом репозитории** (пример в файле).
-
-Полная инструкция, чеклист и нюансы провайдеров: **`docs/dev/agent-session-bootstrap.md`**.
+Эти три файла **не** входят в продуктовую спецификацию в `docs/spec/` — это вспомогательная документация для IDE-агентов.
 
 ## Структура
 
@@ -47,16 +26,27 @@
 
 ## Обязательные Источники Контекста
 
-- `DEVELOPMENT_PLAN.md` — active стратегический план.
-- `NEXT_STEPS.md` — active backlog (`NOW/NEXT/LATER`).
-- `DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов.
+- `docs/spec/PRODUCT.md` — стратегия и приёмочные темы (SDD).
+- `docs/spec/TASKS.md` — backlog с стабильными идентификаторами `T-*` (`NOW` / `NEXT` / `LATER` внутри файла).
+- `docs/spec/OPEN_QUESTIONS.md` — открытые решения; планировщик обязан явно фиксировать допущения, пока вопросы открыты.
+- `docs/spec/README.md`, `docs/spec/SDD_WORKFLOW.md` — вход в SDD и связка с ролями/валидацией.
+- `docs/spec/DOMAIN_RULES.md` — канонический источник доменных правил, статусов, расчетов и инвариантов.
+- `docs/spec/TECH_STACK.md` — технический baseline и форма архитектуры.
+- `docs/spec/RUNBOOK.md` — запуск dev/prod-like, демо-данные, публикация на LAN для мобильных.
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
 - `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
-- `docs/dev/agents-and-mcp.md` — сжатые рекомендации по ролям и MCP (в т.ч. ECC).
-- `mcp/README.md` — переносимый JSON-профиль MCP и `node scripts/mcp/install-user.mjs` (Cursor / Claude Code).
-- `docs/dev/mcp-deduplication.md` — дубли, MCP hygiene, ограничение MCP по проекту (в т.ч. Codex `.codex/config.toml`).
-- `docs/dev/agent-session-bootstrap.md` — обязательный bootstrap сессии (deps, MCP).
-- `scripts/agents/verify-agent-environment.mjs` — проверка готовности окружения перед работой агента.
+- Опционально для **IDE-агентов** (не спека продукта): `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `docs/dev/mcp-deduplication.md`.
+
+## Спеки и уточнения (SDD)
+
+Агент **не обязан** перечитывать все файлы в `docs/spec/` на каждый чих, но **обязан** зайти в спеки, когда задача про продукт, приоритет, домен или неоднозначна:
+
+1. **`docs/spec/TASKS.md`** — если пользователь сослался на `T-*`, эпик или «что дальше по плану»: сверить формулировку задачи с чекбоксом и не расходиться с ним без явного решения в чате.
+2. **`docs/spec/OPEN_QUESTIONS.md`** — если ответа нет в коде и вопрос про поведение/данные: **не придумывать**; зафиксировать допущение в `Assumptions` и предложить пользователю закрыть вопрос или обновить спеку.
+3. **`docs/spec/PRODUCT.md`** — если меняется смысл milestone, acceptance или scope (не только багфикс).
+4. **`docs/spec/DOMAIN_RULES.md`** — при любых статусах, деньгах, PDF/snapshot, dashboard, staff vs admin (см. триггеры `domain-reviewer`).
+
+Если пользователь дал **узкий** технический запрос (один файл, очевидная правка) и он **не** пересекается с доменом из `DOMAIN_RULES.md` — достаточно кода и минимальной верификации (`scope: iteration`).
 
 ## RUN_DIR (опционально)
 
@@ -91,7 +81,7 @@
 **Самоклассификация, если пользователь не указал `scope:`:** считать **`iteration`**, только если **одновременно**:
 
 - изменение локализовано (ориентир: порядка 1–3 файлов или один экран без нового API);
-- не затрагиваются статусы, расчёты и инварианты из `DOMAIN_RULES.md` (допустимы правки копирайта, комментариев, чисто презентационного UI без новой бизнес-логики);
+- не затрагиваются статусы, расчёты и инварианты из `docs/spec/DOMAIN_RULES.md` (допустимы правки копирайта, комментариев, чисто презентационного UI без новой бизнес-логики);
 - нет нового публичного API, нет миграций схемы БД.
 
 Иначе — **`full`**. При любой неуверенности — **`full`**.
@@ -133,7 +123,7 @@ flowchart TD
 
 ### `scope: iteration` (follow-up)
 
-1. Прочитать задачу и ограничения; при риске затронуть домен — свериться с `DOMAIN_RULES.md`.
+1. Прочитать задачу и ограничения; при риске затронуть домен — свериться с `docs/spec/DOMAIN_RULES.md`.
 2. Реализовать изменения через `backend-developer` и/или `frontend-developer` по триггерам из «Auto Routing Rules».
 3. `domain-reviewer` — **только если** правка затрагивает бизнес-правила, статусы, расчеты, eligibility, ограничения или инварианты; иначе в ответе явно указать строку вида: `domain-reviewer: skipped — <краткая причина>`.
 4. Верификация **минимально достаточная**: линт, unit или узко нацеленный тест по изменённому коду. `e2e-validator` / полный прогон Playwright — **только если** менялся UI или критичный пользовательский поток (или пользователь явно запросил E2E); не запускать «матричный» полный E2E без запроса.
@@ -141,7 +131,7 @@ flowchart TD
 
 Примечание по совместимости:
 
-- `DOMAIN_RULES.md` мог ранее ссылаться на роль `domain-rules-reviewer`; в текущем workflow это имя заменено на `domain-reviewer`.
+- `docs/spec/DOMAIN_RULES.md` мог ранее ссылаться на роль `domain-rules-reviewer`; в текущем workflow это имя заменено на `domain-reviewer`.
 
 Форматы выходных отчетов:
 
@@ -223,7 +213,7 @@ flowchart TD
 
 ## Hygiene For Planning
 
-1. Active-файлы (`DEVELOPMENT_PLAN.md`, `NEXT_STEPS.md`) должны оставаться короткими.
+1. Active-контент планирования живёт в `docs/spec/` (`PRODUCT.md`, `TASKS.md`, …). Сами спеки держать сфокусированными, историю — в `docs/planning/archive/`.
 2. Исторические completed-блоки переносить в `docs/planning/archive/`.
 3. Перед крупной переработкой active-планов сохранять snapshot в архив.
 
@@ -247,8 +237,8 @@ flowchart TD
 
 ```md
 Role: <planner|architect|domain-reviewer|backend-developer|frontend-developer|e2e-validator|plan-reviewer>
-Bootstrap: <`verify-agent-environment` OK | после bootstrap OK | deps-only | пропущено — причина>
-MCP hygiene: <напоминание пользователю выведено — см. docs/dev/mcp-deduplication.md | N/A — уже минимальный набор / пользователь явно отказался>
+Bootstrap: <`verify-agent-environment` OK | после bootstrap OK | deps-only | N/A — не IDE-агент / без MCP по задаче | пропущено — причина>
+MCP hygiene: <N/A — не агентная сессия | по agent-session-bootstrap.md: напоминание выведено | N/A — минимальный набор>
 Scope: <full|iteration>
 Skipped roles: <кратко, если scope: iteration и роли намеренно не запускались; иначе "—">
 Assumptions:

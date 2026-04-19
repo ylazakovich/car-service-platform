@@ -25,3 +25,5 @@ Review plan quality and whether the final implementation matches the plan and ar
 1. Are all plan steps closed and evidenced?
 2. Are architectural constraints respected?
 3. Are any critical paths untested?
+4. **SDD traceability:** if the user or plan referenced `T-*` task IDs from `docs/spec/TASKS.md`, does the implementation (and/or the same PR) update those rows or explicitly defer them with rationale?
+5. **Spec consistency:** no silent contradiction with `docs/spec/PRODUCT.md`, `docs/spec/OPEN_QUESTIONS.md`, or `docs/spec/DOMAIN_RULES.md` (flag conflicts instead of ignoring).

@@ -1,8 +1,8 @@
 # Playwright E2E — целевой framework (car-service-platform)
 
 - Last updated: 2026-04-10
-- Статус: **целевой дизайн** (реализация поэтапно через `NEXT_STEPS.md`)
-- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `DOMAIN_RULES.md`
+- Статус: **целевой дизайн** (реализация поэтапно через `docs/spec/TASKS.md`, секция E2E)
+- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `docs/spec/DOMAIN_RULES.md`
 
 ## 1) Принцип: проход с первого раза, без ретраев
 
@@ -30,7 +30,7 @@
 
 Сейчас: логин staff/admin, доска ремонтов, PDF view/export smoke, админ — вкладки dashboard (включая Consumables), **Registers** (`staff-registers.spec.ts`: Units / Services / Customers).
 
-Целевое покрытие (связка с `DEVELOPMENT_PLAN.md` §11 и M3):
+Целевое покрытие (связка с `docs/spec/PRODUCT.md` и M3):
 
 - **Admin:** dashboard KPI (assert на ключевые числа/состояния после стабильных фикстур), MoneyFlow procurement summary (buy/sale/margin + No invoice / No vehicles), QuickFocus VPR, users revoke.
 - **Staff:** полный vehicle registry без PII, repairs, PDF только completed.
@@ -62,8 +62,8 @@
 
 Любое изменение фикстурного ремонта в `demo/demo_data.sql` (TOR-1001 / услуга) → обновить `e2e-seed.ts` и при необходимости POM.
 
-Новые экраны в M3 → добавить story в Allure и строку в этой таблице или в `NEXT_STEPS.md`.
+Новые экраны в M3 → добавить story в Allure и строку в этой таблице или задачу в `docs/spec/TASKS.md`.
 
 ## 7) Ссылки на внешние практики
 
-Локальная копия skill **e2e-testing** (upstream ECC): `.agents/e2e-testing/SKILL.md` — [исходник в everything-claude-code](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md). Сначала таблица **Car-service-platform overrides** в том файле; домен — `DOMAIN_RULES.md` и этот документ.
+Локальная копия skill **e2e-testing** (upstream ECC): `.agents/e2e-testing/SKILL.md` — [исходник в everything-claude-code](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md). Сначала таблица **Car-service-platform overrides** в том файле; домен — `docs/spec/DOMAIN_RULES.md` и этот документ.

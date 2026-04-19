@@ -2,7 +2,7 @@ import * as allure from "allure-js-commons";
 
 /**
  * Allure Behaviors: epic END-TO-END → feature (role) → story (surface).
- * Matches DEVELOPMENT_PLAN.md LATER block and allure.config.mjs groupBy.
+ * Matches `docs/spec/TASKS.md` (Allure / LATER) and `allure.config.mjs` groupBy.
  *
  * Playwright attaches **trace** (retain-on-failure in CI) and screenshots; the `allure-playwright`
  * reporter maps them into the result (including `playwright-trace` for the zip). Open the attachment

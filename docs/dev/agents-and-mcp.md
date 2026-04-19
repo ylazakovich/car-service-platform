@@ -1,8 +1,10 @@
 # Агентский pipeline и MCP (car-service-platform)
 
-- Last updated: 2026-04-06
-- Bootstrap сессии (обязательно для агентов): `docs/dev/agent-session-bootstrap.md`, `bash scripts/agents/bootstrap-agent-session.sh` (по умолчанию без установки пакетов на хост — Docker + hot reload)
-- Проверка готовности окружения: `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **auto**: cursor → claude → codex; `--mcp-target` для явного выбора; `--strict` — ошибка при пустом `mcpServers` в Cursor/Claude; политика в `AGENTS.md`)
+**Не часть продуктовой спеки** (`docs/spec/`): только для работы через AI в IDE.
+
+- Last updated: 2026-04-19
+- Bootstrap сессии: `docs/dev/agent-session-bootstrap.md`, `bash scripts/agents/bootstrap-agent-session.sh` (по умолчанию без установки пакетов на хост — Docker + hot reload)
+- Проверка готовности окружения: `node scripts/agents/verify-agent-environment.mjs` (по умолчанию **auto**: cursor → claude → codex; `--mcp-target`; `--strict`; политика — в `agent-session-bootstrap.md`)
 - Цель: единая «базовая точка» для Codex / Claude / Cursor без угадывания ролей; согласование с [Everything Claude Code (ECC)](https://github.com/affaan-m/everything-claude-code).
 
 ## 1) Локальные роли проекта (source of truth)
@@ -13,7 +15,7 @@
 |------|-------------------|
 | `planner` | нет готового плана, крупная задача |
 | `architect` | контракты, границы модулей, риски |
-| `domain-reviewer` | статусы, расчёты, PDF/snapshot, dashboard — всё из `DOMAIN_RULES.md` |
+| `domain-reviewer` | статусы, расчёты, PDF/snapshot, dashboard — всё из `docs/spec/DOMAIN_RULES.md` |
 | `backend-developer` | API, модели, миграции, Django |
 | `frontend-developer` | UI, роутинг, клиент API |
 | `e2e-validator` | изменения UI / критичных потоков; поддержка Playwright в актуальном состоянии |
@@ -53,7 +55,7 @@
 
 ## 4) Оптимизация pipeline для «сокомандников»
 
-1. В начале задачи указывать **`scope: full` | `scope: iteration`** и ссылку на `NEXT_STEPS.md` пункт.
+1. В начале задачи указывать **`scope: full` | `scope: iteration`** и ссылку на строку в `docs/spec/TASKS.md` (идентификатор `T-*` или чекбокс).
 2. Для UI-задач сразу прикладывать **критерий готовности** в терминах E2E story (из `docs/testing/playwright-e2e-framework.md`).
 3. После изменений API — **сначала** `domain-reviewer`, затем контракт тестов (pytest), затем frontend.
 

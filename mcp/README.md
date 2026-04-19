@@ -1,5 +1,7 @@
 # MCP profile (provider-agnostic JSON + installer)
 
+**Not part of product spec** (`docs/spec/`): optional tooling for Cursor / Claude Code / Codex. App build and run: [`docs/spec/RUNBOOK.md`](../docs/spec/RUNBOOK.md).
+
 This folder holds a **portable** MCP server list in JSON. The format matches what **Cursor** (`~/.cursor/mcp.json`) and **Claude Code** (`~/.claude/settings.json` → `mcpServers`) expect: a top-level `mcpServers` object.
 
 It is **not** tied to a single vendor UI: you can copy the JSON manually, or run the Node installer once.

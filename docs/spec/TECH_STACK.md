@@ -192,11 +192,10 @@
 
 ## 10) Source Of Truth
 
-- Product strategy: `DEVELOPMENT_PLAN.md`
-- Execution backlog: `NEXT_STEPS.md`
-- Domain rules: `DOMAIN_RULES.md`
-- Technical baseline: `TECH_STACK.md`
+- Product strategy: [`PRODUCT.md`](./PRODUCT.md)
+- Execution backlog: [`TASKS.md`](./TASKS.md)
+- Domain rules: [`DOMAIN_RULES.md`](./DOMAIN_RULES.md)
+- Technical baseline: this file ([`TECH_STACK.md`](./TECH_STACK.md))
+- Run / dev / prod / LAN: [`RUNBOOK.md`](./RUNBOOK.md)
 - E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`
-- Агенты / MCP (рекомендации): `docs/dev/agents-and-mcp.md`
-- MCP user install: `mcp/README.md`, `scripts/mcp/install-user.mjs`
-- Agent session bootstrap (MCP; host deps optional — Docker): `docs/dev/agent-session-bootstrap.md`, `scripts/agents/bootstrap-agent-session.sh`
+- IDE / AI-агенты (вне продуктовой спеки): `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `mcp/README.md`

@@ -6,6 +6,7 @@ Implement UI/UX changes, API integration, and client-side validation without bre
 ## Input
 - Plan and architectural constraints.
 - UI requirements, API contracts, existing components and routes.
+- For UX that reflects domain rules (statuses, money, staff vs admin): **`docs/spec/DOMAIN_RULES.md`** and matching **`T-*`** in **`docs/spec/TASKS.md`** when the task is spec-tracked.
 
 ## Output
 - Frontend code changes.
