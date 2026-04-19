@@ -45,3 +45,9 @@ mcp/local.overrides.json
 # Django MEDIA_ROOT: PDF exports, invoices, uploads — not versioned (backup: scripts/media-backup.sh)
 backend/media/*
 !backend/media/.gitkeep
+
+# Figma / design pipeline: Playwright writes to repo-root output/ (see frontend/e2e/*-collect*.spec.ts)
+/output/
+
+# tools/figma-mcp — install deps locally (npm ci), do not commit node_modules
+tools/figma-mcp/node_modules/
