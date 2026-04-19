@@ -9,7 +9,7 @@ This document aligns **spec-driven development** with the **project-local agent 
 | `PRODUCT.md` | `planner`, `architect`, `domain-reviewer` | Strategy, scope, milestone boundaries. |
 | `TASKS.md` | `planner`, `plan-reviewer` | Executable backlog; planner turns selected `T-*` items into a 3–7 step plan. |
 | `OPEN_QUESTIONS.md` | `planner`, `architect` | Blockers: planner must call them out or record explicit assumptions. |
-| `DOMAIN_RULES.md` | `domain-reviewer`, dev roles | Domain source of truth (not moved under `docs/spec/`). |
+| [`DOMAIN_RULES.md`](./DOMAIN_RULES.md) | `domain-reviewer`, dev roles | Domain source of truth (canonical under `docs/spec/`; root file is a pointer). |
 
 ## Mapping to orchestrator phases (portable pattern)
 

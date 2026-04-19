@@ -37,4 +37,4 @@ Items here block **spec completeness** or **safe implementation**. Agents must s
 22. **Definition of “validation passed” for agents** — CI green on PR only vs mandatory local Playwright subset for UI tasks (recommend: document per-epic in `TASKS.md` notes column — optional follow-up).
 23. **Portal / client-facing scope** — Portal exists; English-only and branding for client portal not fully enumerated in old plans.
 
-When you answer any item, either remove it from this file (if fully decided) or move the decision to `DOMAIN_RULES.md` / `PRODUCT.md` and leave a short “Resolved YYYY-MM-DD: …” note in archive or git history.
+When you answer any item, either remove it from this file (if fully decided) or move the decision to [`DOMAIN_RULES.md`](./DOMAIN_RULES.md) / [`PRODUCT.md`](./PRODUCT.md) and leave a short “Resolved YYYY-MM-DD: …” note in archive or git history.

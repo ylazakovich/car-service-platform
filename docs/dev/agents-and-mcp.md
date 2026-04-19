@@ -13,7 +13,7 @@
 |------|-------------------|
 | `planner` | нет готового плана, крупная задача |
 | `architect` | контракты, границы модулей, риски |
-| `domain-reviewer` | статусы, расчёты, PDF/snapshot, dashboard — всё из `DOMAIN_RULES.md` |
+| `domain-reviewer` | статусы, расчёты, PDF/snapshot, dashboard — всё из `docs/spec/DOMAIN_RULES.md` |
 | `backend-developer` | API, модели, миграции, Django |
 | `frontend-developer` | UI, роутинг, клиент API |
 | `e2e-validator` | изменения UI / критичных потоков; поддержка Playwright в актуальном состоянии |

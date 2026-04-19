@@ -9,6 +9,8 @@ Turn the incoming task into a short, executable, verifiable plan.
 - `docs/spec/PRODUCT.md` (strategy / scope).
 - `docs/spec/TASKS.md` (backlog rows and `T-*` IDs relevant to the task).
 - `docs/spec/OPEN_QUESTIONS.md` (blockers and decisions not yet closed).
+- `docs/spec/RUNBOOK.md` if the task depends on how the app is run locally, on LAN, or with demo data.
+- `docs/spec/DOMAIN_RULES.md` when the task may touch business rules, statuses, or calculations.
 - Root `DEVELOPMENT_PLAN.md` / `NEXT_STEPS.md` are pointers only — follow links into `docs/spec/`.
 
 ## Output

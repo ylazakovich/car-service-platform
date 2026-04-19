@@ -21,7 +21,7 @@ Local source of truth for **this** repo supersedes generic examples below when t
 | Trace / screenshots | CI: `retain-on-failure`; align with existing reporters (Allure, HTML, JUnit) |
 | Stack | Docker Compose; `PLAYWRIGHT_BASE_URL` (e.g. `http://127.0.0.1:4173`); API via nginx `/api` |
 | Validation role | `.agents/e2e-validator/SKILL.md` — when to run E2E in the agent workflow |
-| Domain | `DOMAIN_RULES.md` for repair/PDF/dashboard/staff vs admin |
+| Domain | `docs/spec/DOMAIN_RULES.md` for repair/PDF/dashboard/staff vs admin |
 
 When extending tests, follow **this** `playwright.config.ts` and framework doc, not the sample `retries` / `webServer` blocks in the ECC snippets unless you intentionally change project policy.
 

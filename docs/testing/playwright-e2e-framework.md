@@ -2,7 +2,7 @@
 
 - Last updated: 2026-04-10
 - Статус: **целевой дизайн** (реализация поэтапно через `docs/spec/TASKS.md`, секция E2E)
-- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `DOMAIN_RULES.md`
+- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `docs/spec/DOMAIN_RULES.md`
 
 ## 1) Принцип: проход с первого раза, без ретраев
 
@@ -66,4 +66,4 @@
 
 ## 7) Ссылки на внешние практики
 
-Локальная копия skill **e2e-testing** (upstream ECC): `.agents/e2e-testing/SKILL.md` — [исходник в everything-claude-code](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md). Сначала таблица **Car-service-platform overrides** в том файле; домен — `DOMAIN_RULES.md` и этот документ.
+Локальная копия skill **e2e-testing** (upstream ECC): `.agents/e2e-testing/SKILL.md` — [исходник в everything-claude-code](https://github.com/affaan-m/everything-claude-code/blob/main/.agents/skills/e2e-testing/SKILL.md). Сначала таблица **Car-service-platform overrides** в том файле; домен — `docs/spec/DOMAIN_RULES.md` и этот документ.
