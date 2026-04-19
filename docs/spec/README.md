@@ -14,6 +14,8 @@ This folder is the **canonical spec surface** for product intent, execution back
 | [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md) | Explicit decisions still needed from product/tech owners. |
 | [SDD_WORKFLOW.md](./SDD_WORKFLOW.md) | How SDD maps to this repo’s **Agents** workflow and validation gates. |
 
+**Not listed here (on purpose):** IDE-only docs — MCP merge, `verify-agent-environment`, ECC alignment — live under **`docs/dev/`** (`agent-session-bootstrap.md`, `agents-and-mcp.md`, `mcp-deduplication.md`). They are not part of the product specification.
+
 ## Archives
 
 - Planning snapshots: `docs/planning/archive/` (`DEVELOPMENT_PLAN_YYYYMMDD.md`, `NEXT_STEPS_YYYYMMDD.md`, …).

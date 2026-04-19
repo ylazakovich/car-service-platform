@@ -120,6 +120,6 @@ bash scripts/start.sh
 ## D) Where this is referenced
 
 - CI: `.github/workflows/pr.yml`, `.github/actions/compose-up` — health checks and demo load for E2E.
-- Agent bootstrap: `docs/dev/agent-session-bootstrap.md`, root `AGENTS.md`.
+- Optional **IDE AI agents** (MCP / verify): `docs/dev/agent-session-bootstrap.md`. Role workflow: root `AGENTS.md`.
 
 For **what** the product enforces (money, statuses, PDF), use [`DOMAIN_RULES.md`](./DOMAIN_RULES.md). For **stack** choices, use [`TECH_STACK.md`](./TECH_STACK.md).
