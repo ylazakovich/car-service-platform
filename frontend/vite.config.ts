@@ -3,6 +3,8 @@ import type { ProxyOptions } from "vite";
 import { defineConfig } from "vitest/config";
 
 const devProxyTarget = process.env.VITE_DEV_PROXY_TARGET ?? "http://localhost:8000";
+/** Set by docker-compose.dev.lan.yml when publishing to LAN — Vite default CORS only allows localhost origins. */
+const viteLanDev = process.env.VITE_LAN_DEV === "1";
 
 /** Docker Compose service name — changeOrigin would send Host: backend, which is not in default ALLOWED_HOSTS. */
 function apiProxyOptions(): ProxyOptions {
@@ -35,6 +37,7 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    ...(viteLanDev ? { cors: true as const } : {}),
     proxy: {
       "/api": apiProxy,
       "/media": apiProxy,
@@ -44,6 +47,7 @@ export default defineConfig({
   preview: {
     host: true,
     port: 4173,
+    ...(viteLanDev ? { cors: true as const } : {}),
     proxy: {
       "/api": apiProxy,
       "/media": apiProxy,
