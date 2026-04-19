@@ -16,6 +16,7 @@ fi
 python3 - "$TSV" "$SUMMARY_JSON" <<'PY'
 import csv
 import json
+import re
 import sys
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -32,13 +33,37 @@ def parse_pct(s: str) -> Optional[float]:
     except ValueError:
         return None
 
+
+def parse_docker_mem_usage_to_mib(raw: str) -> Optional[float]:
+    """First segment of docker stats MemUsage, e.g. '245MiB / 7.653GiB' -> MiB."""
+    part = (raw or "").split("/")[0].strip()
+    if not part:
+        return None
+    m = re.match(r"^([\d.]+)\s*(B|KiB|MiB|GiB|TiB)\s*$", part, re.I)
+    if not m:
+        return None
+    val = float(m.group(1))
+    unit = m.group(2).lower()
+    to_mib = {
+        "b": 1.0 / 1024 / 1024,
+        "kib": 1.0 / 1024,
+        "mib": 1.0,
+        "gib": 1024.0,
+        "tib": 1024.0 * 1024,
+    }
+    mult = to_mib.get(unit)
+    if mult is None:
+        return None
+    return val * mult
+
+
 rows = []
 with open(tsv_path, newline="") as f:
     r = csv.DictReader(f, delimiter="\t")
     for row in r:
         rows.append(row)
 
-by_name: dict[str, list[tuple[float | None, float | None]]] = defaultdict(list)
+by_name: dict[str, list[tuple[Optional[float], Optional[float], Optional[float]]]] = defaultdict(list)
 timestamps: list[str] = []
 for row in rows:
     ts = (row.get("timestamp_iso") or "").strip()
@@ -49,13 +74,15 @@ for row in rows:
         continue
     cpu = parse_pct(row.get("cpu_percent") or "")
     mem = parse_pct(row.get("mem_percent") or "")
-    by_name[name].append((cpu, mem))
+    mib = parse_docker_mem_usage_to_mib(row.get("mem_usage_raw") or "")
+    by_name[name].append((cpu, mem, mib))
 
 containers = []
-for name, pairs in sorted(by_name.items()):
-    cpus = [c for c, _ in pairs if c is not None]
-    mems = [m for _, m in pairs if m is not None]
-    entry = {"name": name, "sample_count": len(pairs)}
+for name, triples in sorted(by_name.items()):
+    cpus = [c for c, _, _ in triples if c is not None]
+    mems = [m for _, m, _ in triples if m is not None]
+    mibs = [x for *_, x in triples if x is not None]
+    entry = {"name": name, "sample_count": len(triples)}
     if cpus:
         entry["cpu_percent"] = {
             "avg": round(sum(cpus) / len(cpus), 3),
@@ -65,6 +92,11 @@ for name, pairs in sorted(by_name.items()):
         entry["mem_percent"] = {
             "avg": round(sum(mems) / len(mems), 3),
             "max": round(max(mems), 3),
+        }
+    if mibs:
+        entry["mem_used_mib"] = {
+            "avg": round(sum(mibs) / len(mibs), 2),
+            "max": round(max(mibs), 2),
         }
     containers.append(entry)
 
@@ -114,15 +146,19 @@ print(f"- **Samples:** {w.get('row_count', 0)} rows (~every {w.get('interval_sec
 print(f"- **Window:** `{w.get('first_ts', '')}` → `{w.get('last_ts', '')}`")
 print(f"- **Run:** `{gh.get('run_id', '')}` attempt `{gh.get('run_attempt', '')}` · **SHA** `{short_sha}`")
 print("")
-print("| Container | CPU % max | CPU % avg | Mem % max | Mem % avg |")
-print("|-----------|-----------|-----------|-----------|-----------|")
+print("_Mem % is share of the **runner host** RAM (not a 2 GiB cap). `mem_used_mib` is the first value from `docker stats` MemUsage (RSS-ish usage in the container cgroup)._")
+print("")
+print("| Container | CPU % max | CPU % avg | Mem % max | Mem % avg | Mem used max (MiB) | Mem used avg (MiB) |")
+print("|-----------|-----------|-----------|-----------|-----------|--------------------|--------------------|")
 for c in d.get("containers", []):
     name = c.get("name", "")
     cpu = c.get("cpu_percent") or {}
     mem = c.get("mem_percent") or {}
+    mm = c.get("mem_used_mib") or {}
     print(
         f"| `{name}` | {cpu.get('max', '—')} | {cpu.get('avg', '—')} | "
-        f"{mem.get('max', '—')} | {mem.get('avg', '—')} |"
+        f"{mem.get('max', '—')} | {mem.get('avg', '—')} | "
+        f"{mm.get('max', '—')} | {mm.get('avg', '—')} |"
     )
 PY
   } >>"$GITHUB_STEP_SUMMARY"
