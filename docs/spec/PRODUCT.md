@@ -81,4 +81,4 @@ High-signal items:
 | Stack | [`TECH_STACK.md`](./TECH_STACK.md) |
 | Run dev / prod / LAN | [`RUNBOOK.md`](./RUNBOOK.md) |
 | E2E target design | `docs/testing/playwright-e2e-framework.md` |
-| Agent session bootstrap | `docs/dev/agent-session-bootstrap.md`, root `AGENTS.md` |
+| Agent workflow (not product spec) | Root `AGENTS.md`; optional IDE bootstrap [`../dev/agent-session-bootstrap.md`](../dev/agent-session-bootstrap.md) |
