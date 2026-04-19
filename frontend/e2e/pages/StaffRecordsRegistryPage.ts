@@ -61,12 +61,14 @@ export class StaffRecordsRegistryPage {
   }
 
   /**
-   * Строка ТС в видимом списке. В DOM одновременно mobile + desktop поверхности;
-   * таргетим обе, чтобы не ловить strict violation на скрытой копии.
+   * Строка ТС. На широком viewport в DOM часто **обе** поверхности (mobile + desktop);
+   * для `expect().toBeVisible()` в strict mode нужен один вариант — `surface`.
    */
-  vehicleRowByPlate(plate: string): Locator {
+  vehicleRowByPlate(plate: string, surface: "desktop" | "mobile" | "any" = "any"): Locator {
     const desktopRow = this.page.locator(".vehicle-web-surface .vehicles-compact-row").filter({ hasText: plate });
     const mobileRow = this.page.locator(".vehicles-mobile-surface .vehicles-compact-row").filter({ hasText: plate });
+    if (surface === "desktop") return desktopRow;
+    if (surface === "mobile") return mobileRow;
     return desktopRow.or(mobileRow);
   }
 }

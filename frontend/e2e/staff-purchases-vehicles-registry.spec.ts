@@ -64,7 +64,7 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
       timeout: 45_000,
     });
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE);
+    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "desktop");
     await expect(row).toBeVisible({ timeout: 45_000 });
   });
 
@@ -73,7 +73,7 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
     const reg = new StaffRecordsRegistryPage(page);
     await reg.gotoVehiclesSection();
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE);
+    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "desktop");
     await expect(row).toBeVisible({ timeout: 45_000 });
     await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
     await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
@@ -94,7 +94,7 @@ test.describe("Vehicles registry — mobile compact list @mobile-only", () => {
       timeout: 45_000,
     });
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE);
+    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "mobile");
     await expect(row).toBeVisible({ timeout: 45_000 });
     await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
     await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
