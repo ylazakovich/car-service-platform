@@ -192,8 +192,8 @@
 
 ## 10) Source Of Truth
 
-- Product strategy: `DEVELOPMENT_PLAN.md`
-- Execution backlog: `NEXT_STEPS.md`
+- Product strategy: `docs/spec/PRODUCT.md` (root `DEVELOPMENT_PLAN.md` is a pointer)
+- Execution backlog: `docs/spec/TASKS.md` (root `NEXT_STEPS.md` is a pointer)
 - Domain rules: `DOMAIN_RULES.md`
 - Technical baseline: `TECH_STACK.md`
 - E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`

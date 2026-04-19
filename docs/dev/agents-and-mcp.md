@@ -53,7 +53,7 @@
 
 ## 4) Оптимизация pipeline для «сокомандников»
 
-1. В начале задачи указывать **`scope: full` | `scope: iteration`** и ссылку на `NEXT_STEPS.md` пункт.
+1. В начале задачи указывать **`scope: full` | `scope: iteration`** и ссылку на строку в `docs/spec/TASKS.md` (идентификатор `T-*` или чекбокс).
 2. Для UI-задач сразу прикладывать **критерий готовности** в терминах E2E story (из `docs/testing/playwright-e2e-framework.md`).
 3. После изменений API — **сначала** `domain-reviewer`, затем контракт тестов (pytest), затем frontend.
 

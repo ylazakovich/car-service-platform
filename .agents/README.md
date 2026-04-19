@@ -24,8 +24,10 @@ Project-local role skills.
 
 - Root `AGENTS.md` — **session bootstrap** (MCP; host npm/pip optional — Docker) before substantive work.
 - `docs/dev/agent-session-bootstrap.md` — step-by-step bootstrap for any provider.
-- `DEVELOPMENT_PLAN.md` — active strategy.
-- `NEXT_STEPS.md` — active backlog.
+- `docs/spec/PRODUCT.md` — active strategy (SDD).
+- `docs/spec/TASKS.md` — active backlog with `T-*` IDs.
+- `docs/spec/OPEN_QUESTIONS.md` — unresolved decisions for planners/architects.
+- Root `DEVELOPMENT_PLAN.md` / `NEXT_STEPS.md` — short pointers to `docs/spec/`.
 - `DOMAIN_RULES.md` — required domain context when tasks touch business rules, statuses, calculations, or invariants.
 - `docs/planning/archive/` — history and old snapshot plans.
 
