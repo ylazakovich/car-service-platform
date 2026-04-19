@@ -117,6 +117,16 @@ VALUES
     ('Serhii Melnychenko',   '+380507778899', 's.melnychenko@gmail.com',    'Sports car enthusiast. Uses premium fluids only.', NULL, NOW(), NOW())
 ;
 
+-- Staff API scope: `VehicleListCreateView` returns only vehicles for customers assigned to the current staff user.
+UPDATE customers
+SET assigned_to_id = (SELECT id FROM users WHERE email = 'staff@autoservice.local'),
+    updated_at = NOW()
+WHERE phone IN (
+    '+380501234567','+380672345678','+380933456789',
+    '+380501112233','+380672223344','+380933334455',
+    '+380504445566','+380675556677','+380936667788','+380507778899'
+);
+
 -- Vehicles
 INSERT INTO vehicles (customer_id, license_plate, make, model, year, vin, color, notes, mileage, last_service_date, added_date, created_at, updated_at)
 VALUES
