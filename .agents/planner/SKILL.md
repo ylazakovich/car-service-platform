@@ -27,3 +27,4 @@ Turn the incoming task into a short, executable, verifiable plan.
 1. Does every step have a concrete outcome?
 2. Can completion of each step be verified?
 3. Are backend, frontend, and architectural intersections covered?
+4. Did you read **`docs/spec/OPEN_QUESTIONS.md`** for conflicts, and tie the plan to relevant **`T-*`** rows in **`docs/spec/TASKS.md`** when applicable? If something is underspecified, call it out instead of guessing.

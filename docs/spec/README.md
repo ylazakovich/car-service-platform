@@ -16,6 +16,8 @@ This folder is the **canonical spec surface** for product intent, execution back
 
 **Not listed here (on purpose):** IDE-only docs — MCP merge, `verify-agent-environment`, ECC alignment — live under **`docs/dev/`** (`agent-session-bootstrap.md`, `agents-and-mcp.md`, `mcp-deduplication.md`). They are not part of the product specification.
 
+**AI agents in this repo:** follow root **`AGENTS.md`** — it tells you *when* to open which spec (`TASKS`, `OPEN_QUESTIONS`, `PRODUCT`, `DOMAIN_RULES`) instead of guessing.
+
 ## Archives
 
 - Planning snapshots: `docs/planning/archive/` (`DEVELOPMENT_PLAN_YYYYMMDD.md`, `NEXT_STEPS_YYYYMMDD.md`, …).

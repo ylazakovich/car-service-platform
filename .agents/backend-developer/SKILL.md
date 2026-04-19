@@ -6,6 +6,7 @@ Implement the server side: API, business logic, data access, integrations.
 ## Input
 - Plan and architectural constraints.
 - API contracts, DB schema, domain invariants.
+- For product or money/status work: **`docs/spec/DOMAIN_RULES.md`** and the relevant **`T-*`** lines in **`docs/spec/TASKS.md`** (do not contradict them silently).
 
 ## Output
 - Backend code changes.
