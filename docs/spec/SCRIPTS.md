@@ -63,7 +63,7 @@ Canonical index of **`scripts/`** and related operational assets. Day-to-day com
 
 | File | Purpose |
 |------|---------|
-| `allurerc.mjs` | Allure Report 3 configuration (variables, environments, awesome plugin). CI invokes `npx allure generate … --config scripts/allure/allurerc.mjs` (see `.github/workflows/report.yml`). |
+| `allurerc.mjs` | Allure Report 3 configuration (variables, environments, awesome plugin). Merged `allure-variables.json` is split: shared CI/GitHub/runner keys stay global; `Frontend.*` / `Node`, `Backend.*` / `Python` / `Django`, and `E2E.*` attach to the matching Allure environment. CI: `npx allure generate … --config scripts/allure/allurerc.mjs` (see `.github/workflows/report.yml`). |
 
 ## `scripts/ci/`
 
