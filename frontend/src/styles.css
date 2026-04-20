@@ -6050,6 +6050,65 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
   background: var(--surface-mid);
 }
 
+.purchase-invoice-import-head {
+  display: grid;
+  gap: var(--s1);
+}
+
+.purchase-invoice-import-lead {
+  margin: 0;
+  max-width: 52rem;
+}
+
+.purchase-invoice-import-source {
+  display: grid;
+  gap: var(--s3);
+}
+
+@media (min-width: 640px) {
+  .purchase-invoice-import-source {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    align-items: start;
+  }
+}
+
+.purchase-invoice-import-label-text {
+  display: block;
+  margin-bottom: var(--s1);
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.purchase-invoice-import-template-row {
+  display: block;
+}
+
+.purchase-invoice-import-template-row select {
+  width: 100%;
+  max-width: 36rem;
+}
+
+.purchase-invoice-import-advanced {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 var(--s3);
+  background: var(--surface-raised, var(--surface));
+}
+
+.purchase-invoice-import-advanced > summary {
+  cursor: pointer;
+  padding: var(--s2) 0;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  list-style-position: outside;
+}
+
+.purchase-invoice-import-advanced-body {
+  display: grid;
+  gap: var(--s3);
+  padding-bottom: var(--s3);
+}
+
 .purchase-invoice-import-grid {
   align-items: start;
 }
@@ -6070,6 +6129,19 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
   margin: 0;
   padding-left: 1.1rem;
   color: var(--warning, #c9a227);
+}
+
+.purchase-invoice-supplier-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.purchase-invoice-import-match-pill {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .purchase-invoice-import-preview-table {
@@ -6095,6 +6167,277 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
   color: var(--text-soft);
 }
 
+.invoice-parse-register-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-height: 0;
+}
+
+.invoice-parse-list-region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex-shrink: 0;
+}
+
+.invoice-parse-list-head {
+  margin: 0;
+}
+
+.invoice-parse-list-lead {
+  margin: 0;
+}
+
+.invoice-parse-list-search {
+  margin-bottom: 0;
+}
+
+/* Список шаблонов: фиксированная высота — длинный каталог не растягивает страницу */
+.invoice-parse-templates-list-scroll {
+  max-height: min(40vh, 22rem);
+  min-height: 11rem;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  overscroll-behavior: contain;
+}
+
+.invoice-parse-templates-list-scroll .uom-admin-table {
+  margin: 0;
+}
+
+.invoice-parse-templates-list-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-raised, var(--surface-mid));
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.invoice-parse-register-page .invoice-parse-composer-card,
+.invoice-parse-register-page .invoice-parse-edit-card {
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  flex-shrink: 0;
+}
+
+.invoice-parse-register-page .invoice-parse-sub-block-title {
+  margin: 0 0 var(--s2);
+  font-size: 1rem;
+}
+
+.invoice-parse-register-source--stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.invoice-parse-stack-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  width: 100%;
+}
+
+.invoice-parse-stack-label-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.invoice-parse-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  padding: var(--s4) var(--s3);
+  min-height: 9rem;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.invoice-parse-dropzone:hover:not(.invoice-parse-dropzone--disabled) {
+  border-color: var(--accent);
+  background: var(--surface-mid);
+  box-shadow: 0 0 0 1px var(--accent-glow, rgba(255 255 255 / 0.06));
+}
+
+.invoice-parse-dropzone:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.invoice-parse-dropzone--active {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--surface-mid);
+}
+
+.invoice-parse-dropzone--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.invoice-parse-dropzone-icon {
+  color: var(--accent);
+  line-height: 0;
+}
+
+.invoice-parse-dropzone-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.invoice-parse-dropzone-hint {
+  font-size: 0.86rem;
+  color: var(--text-mid);
+  max-width: 28ch;
+}
+
+.invoice-parse-dropzone-formats {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* События мыши и drag — на самой зоне, без «дыр» от вложенных span (стабильный dragDepth). */
+.invoice-parse-dropzone > * {
+  pointer-events: none;
+}
+
+.invoice-parse-raw-textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 8rem;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.invoice-parse-file-meta {
+  margin: 0;
+}
+
+.invoice-parse-register-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin: var(--s2) 0 0;
+}
+
+.invoice-parse-register-toolbar .button {
+  min-height: 2.5rem;
+}
+
+.invoice-parse-form-grid {
+  display: grid;
+  gap: var(--s3);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.invoice-parse-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.invoice-parse-field > span:first-child {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.invoice-parse-field input.uom-admin-cell-input,
+.invoice-parse-field textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.invoice-parse-field input.uom-admin-cell-input {
+  padding: 0.5rem var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.invoice-parse-field textarea {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+
+.invoice-parse-field--inline-check {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.invoice-parse-field--inline-check span {
+  font-weight: 500;
+  color: var(--text-mid, var(--text));
+}
+
+.invoice-parse-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+
+.invoice-parse-form-actions .button {
+  min-height: 2.5rem;
+}
+
+.invoice-parse-composer-preview-scroll {
+  max-height: min(28vh, 14rem);
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.invoice-parse-composer-preview-scroll .uom-admin-table {
+  margin: 0;
+}
+
+.invoice-parse-form--composer {
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+
 .invoice-parse-templates-panel {
   display: grid;
   gap: var(--s4);
@@ -6110,6 +6453,24 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
 .invoice-parse-templates-regex {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.78rem;
+}
+
+.invoice-parse-add-from-file {
+  display: grid;
+  gap: var(--s2);
+  padding: 0 var(--s4) var(--s3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s3);
+}
+
+.invoice-parse-add-from-file-lead {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.invoice-parse-template-add-modal {
+  max-height: min(92vh, 900px);
+  overflow-y: auto;
 }
 
 /* ═══════════════════════════════════════════════
@@ -7729,6 +8090,19 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
 
   .reference-workspace .registers-search-field input {
     min-height: 44px;
+    font-size: 16px;
+  }
+
+  .reference-workspace .invoice-parse-register-toolbar .button,
+  .reference-workspace .invoice-parse-form-actions .button {
+    min-height: 44px;
+  }
+
+  .reference-workspace .invoice-parse-dropzone {
+    min-height: 10rem;
+  }
+
+  .reference-workspace .invoice-parse-raw-textarea {
     font-size: 16px;
   }
 

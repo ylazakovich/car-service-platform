@@ -76,6 +76,8 @@ export type ParsedImportLine = {
   part_name: string;
   quantity: number;
   purchase_price: string;
+  unit_of_measure_id?: number | null;
+  uom_raw?: string;
 };
 
 function emptyPurchaseForm(defaultUomId: string): PurchaseFormState {
@@ -508,6 +510,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       order_date: purchaseForm.order_date,
       approximate_delivery_date: purchaseForm.approximate_delivery_date || null,
       supplier_name: purchaseForm.supplier_name.trim(),
+      ...(purchaseForm.supplier_nip.trim() ? { supplier_nip: purchaseForm.supplier_nip.trim() } : {}),
       invoice_name: purchaseInvoiceName,
       invoice_url: purchaseInvoiceUrl,
       delivered: purchaseForm.delivered,
@@ -801,7 +804,10 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         sale_price: saleZero ? "0" : "",
         repair_code: "",
         vehicle_id: "",
-        unit_of_measure_id: defaultUom,
+        unit_of_measure_id:
+          row.unit_of_measure_id != null && unitsOfMeasure.some((u) => u.id === row.unit_of_measure_id)
+            ? String(row.unit_of_measure_id)
+            : defaultUom,
       })),
     );
   }

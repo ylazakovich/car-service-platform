@@ -24,6 +24,11 @@ class UnitOfMeasure(models.Model):
         return f"{self.name} ({self.code})"
 
 
+def supplier_alias_normalize(value: str) -> str:
+    """Lowercase + collapse whitespace for OCR / invoice supplier matching."""
+    return " ".join(value.strip().lower().split())
+
+
 class Supplier(models.Model):
     name = models.CharField(max_length=255, unique=True)
     nip = models.CharField(max_length=50, blank=True)
@@ -40,6 +45,32 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class SupplierAlias(models.Model):
+    """
+    Maps invoice / OCR vendor strings to a canonical Supplier (e.g. shorthand vs legal name).
+    ``normalized_key`` is unique so one alias string resolves to at most one supplier.
+    """
+
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name="aliases")
+    alias_text = models.CharField(max_length=255, help_text="Text as it appears on invoices (any casing).")
+    normalized_key = models.CharField(max_length=255, editable=False, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        db_table = "supplier_aliases"
+        ordering = ("supplier_id", "normalized_key", "id")
+        constraints = [
+            models.UniqueConstraint(fields=("normalized_key",), name="supplier_alias_normalized_key_unique"),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.normalized_key = supplier_alias_normalize(self.alias_text)[:255]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.alias_text} → {self.supplier_id}"
 
 
 class Purchase(models.Model):

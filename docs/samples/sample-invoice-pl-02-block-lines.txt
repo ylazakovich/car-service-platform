@@ -1,0 +1,44 @@
+================================================================================
+              FAKTURA VAT — WZÓR B (blok pod spodem, bez jednej tabeli)
+================================================================================
+Dostawca części: HURTOWNIA „ORZEŁ” SP. Z O.O., ul. Hutnicza 3, 40-001 Katowice
+Identyfikator podatkowy sprzedawcy (NIP): PL6340000002 — DANE FIKCYJNE
+
+Odbiorca: WARSZTAT MECHANICZNY „LIPOWA”
+Adres: ul. Lipowa 22, 80-001 Gdańsk
+NIP odbiorcy: PL5830000003 (fikcyjny)
+
+Numer dokumentu sprzedaży: ORZ/2026/04/441
+Data zakończenia dostawy: 2026-04-12
+Termin płatności: 2026-04-26
+
+--- POZYCJE (każda pozycja w kilku wierszach) ---
+
+Pozycja 1 z 4
+  Opis: amortyzator tył SACHS (wzór demonstracyjny)
+  Ilość: 2 sztuki   Cena jedn. netto: 198,50 PLN   Wartość netto: 397,00
+  VAT 23%: 91,31 PLN   Razem brutto poz.: 488,31 PLN
+
+Pozycja 2 z 4
+  Opis: sworzeń wahacza Lemförder (wzór)
+  Ilość: 4 szt.   Cena jedn. netto: 31,25 PLN   Wartość netto: 125,00
+  VAT 23%: 28,75 PLN   Razem brutto poz.: 153,75 PLN
+
+Pozycja 3 z 4
+  Opis: uszczelniacz półosi (kpl 2 szt) — demo
+  Ilość: 1 komplet   Cena jedn. netto: 44,80 PLN   Wartość netto: 44,80
+  VAT 23%: 10,30 PLN   Razem brutto poz.: 55,10 PLN
+
+Pozycja 4 z 4
+  Opis: płyn hamulcowy DOT4 1L (wzór)
+  Ilość: 6 sztuk   Cena jedn. netto: 19,90 PLN   Wartość netto: 119,40
+  VAT 23%: 27,46 PLN   Razem brutto poz.: 146,86 PLN
+
+================================================================================
+PODSUMOWANIE DOKUMENTU
+Wartość wszystkich pozycji netto: 686,20 PLN
+Należny podatek VAT 23%: 157,82 PLN
+Należność ogółem (brutto): 844,02 PLN
+================================================================================
+Treść fikcyjna — do testów rozpoznawania układu „blok w dół”, nie do księgowości.
+================================================================================
