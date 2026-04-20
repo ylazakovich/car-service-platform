@@ -1,1 +1,1 @@
-{"id":"6df5e5e0b32b2a09a88a755840f60435","fullName":"auth.setup.ts:16:1","name":"authenticate admin","status":"passed","testResultsByEnv":{"default":"a0b7369888516df2e0888cea347b2d3a"}}
+{"id":"6df5e5e0b32b2a09a88a755840f60435","fullName":"auth.setup.ts:16:1","name":"authenticate admin","status":"passed","testResultsByEnv":{"e2e":"699a565329588ccd1655302c878b0964"}}
