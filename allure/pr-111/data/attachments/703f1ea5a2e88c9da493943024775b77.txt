@@ -1,0 +1,1 @@
+{"timestamp": "2026-04-20 08:03:06,257", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Conflict: /api/customers/1", "request": "<WSGIRequest: DELETE '/api/customers/1'>", "status_code": 409}
