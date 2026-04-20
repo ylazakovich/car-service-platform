@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from vehicles.models import Vehicle
 
-from .models import InvoiceLineParseTemplate, Purchase, Supplier, UnitOfMeasure
+from .models import InvoiceLineParseTemplate, Purchase, Supplier, SupplierAlias, UnitOfMeasure, supplier_alias_normalize
 from .invoice_line_parse import REQUIRED_REGEX_GROUPS, SUPPLIER_REGEX_GROUP, compile_line_pattern, compile_pattern_or_raise
 
 MAX_PURCHASE_BULK_LINES = 100
@@ -15,6 +15,28 @@ class SupplierSerializer(serializers.ModelSerializer):
         model = Supplier
         fields = ("id", "name", "nip", "phone", "email", "registered_address", "notes", "created_at", "updated_at")
         read_only_fields = ("id", "created_at", "updated_at")
+
+
+class SupplierAliasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupplierAlias
+        fields = ("id", "supplier", "alias_text", "normalized_key", "created_at")
+        read_only_fields = ("id", "supplier", "normalized_key", "created_at")
+
+    def validate_alias_text(self, value):
+        text = (value or "").strip()
+        if not text:
+            raise serializers.ValidationError("alias_text is required.")
+        return text
+
+    def validate(self, attrs):
+        key = supplier_alias_normalize(attrs["alias_text"])
+        qs = SupplierAlias.objects.filter(normalized_key=key)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError({"alias_text": "This alias already maps to a supplier."})
+        return attrs
 
 
 class UnitOfMeasureSerializer(serializers.ModelSerializer):
@@ -157,6 +179,7 @@ class PurchaseBulkCreateSerializer(serializers.Serializer):
     order_date = serializers.DateField()
     approximate_delivery_date = serializers.DateField(required=False, allow_null=True)
     supplier_name = serializers.CharField(max_length=255)
+    supplier_nip = serializers.CharField(max_length=50, allow_blank=True, required=False, default="")
     invoice_name = serializers.CharField(max_length=255, allow_blank=True, required=False, default="")
     invoice_url = serializers.CharField(max_length=500, allow_blank=True, required=False, default="")
     delivered = serializers.BooleanField(required=False, default=False)
@@ -275,8 +298,20 @@ class InvoiceLineParseTemplateSerializer(serializers.ModelSerializer):
         return text
 
 
+class InvoiceParseExtractSerializer(serializers.Serializer):
+    file = serializers.FileField()
+
+
 class InvoiceParseSuggestSerializer(serializers.Serializer):
-    raw_text = serializers.CharField()
+    raw_text = serializers.CharField(required=False, allow_blank=True, default="")
+    file = serializers.FileField(required=False)
+
+    def validate(self, attrs):
+        raw = (attrs.get("raw_text") or "").strip()
+        file = attrs.get("file")
+        if not raw and not file:
+            raise serializers.ValidationError("Provide raw_text and/or file.")
+        return attrs
 
 
 class InvoiceParsePreviewSerializer(serializers.Serializer):

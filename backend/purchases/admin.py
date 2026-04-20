@@ -2,7 +2,14 @@ from django.contrib import admin
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 
-from .models import InvoiceLineParseTemplate, Purchase, Supplier, UnitOfMeasure
+from .models import InvoiceLineParseTemplate, Purchase, Supplier, SupplierAlias, UnitOfMeasure
+
+
+class SupplierAliasInline(admin.TabularInline):
+    model = SupplierAlias
+    extra = 0
+    fields = ("alias_text", "normalized_key", "created_at")
+    readonly_fields = ("normalized_key", "created_at")
 
 
 @admin.register(UnitOfMeasure)
@@ -18,6 +25,7 @@ class SupplierAdmin(ModelAdmin):
     list_display = ("name", "phone", "email", "registered_address", "created_at")
     search_fields = ("name", "phone", "email", "registered_address")
     readonly_fields = ("created_at", "updated_at")
+    inlines = (SupplierAliasInline,)
 
 
 @admin.register(InvoiceLineParseTemplate)

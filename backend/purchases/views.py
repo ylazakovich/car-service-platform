@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -13,22 +14,26 @@ from rest_framework.views import APIView
 
 from foundation.pagination import StandardPagination
 from .invoice_line_parse import (
+    enrich_parsed_lines,
     extract_supplier,
     extract_text_from_file,
     parse_invoice_lines,
+    resolve_supplier_name,
     suggest_line_pattern,
     suggest_supplier_pattern,
 )
-from .models import InvoiceLineParseTemplate, Purchase, Supplier, UnitOfMeasure
+from .models import InvoiceLineParseTemplate, Purchase, Supplier, SupplierAlias, UnitOfMeasure
 from .pdf_generator import generate_purchase_order_pdf
 from .serializers import (
     MAX_PURCHASE_BULK_LINES,
     InvoiceLineParseTemplateSerializer,
+    InvoiceParseExtractSerializer,
     InvoiceParsePreviewSerializer,
     InvoiceParseSuggestSerializer,
     PurchaseBulkCreateSerializer,
     PurchaseOrderPdfSerializer,
     PurchaseSerializer,
+    SupplierAliasSerializer,
     SupplierSerializer,
     UnitOfMeasureReorderSerializer,
     UnitOfMeasureSerializer,
@@ -57,6 +62,32 @@ class SupplierListCreateView(generics.ListCreateAPIView):
 class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = SupplierSerializer
     queryset = Supplier.objects.all()
+
+
+class SupplierAliasListCreateView(generics.ListCreateAPIView):
+    """List or create OCR / invoice aliases for a supplier (staff-authenticated)."""
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = SupplierAliasSerializer
+
+    def get_queryset(self):
+        supplier_id = int(self.kwargs["supplier_id"])
+        get_object_or_404(Supplier, pk=supplier_id)
+        return SupplierAlias.objects.filter(supplier_id=supplier_id).select_related("supplier")
+
+    def perform_create(self, serializer):
+        supplier = get_object_or_404(Supplier, pk=int(self.kwargs["supplier_id"]))
+        serializer.save(supplier=supplier)
+
+
+class SupplierAliasDetailView(generics.RetrieveDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SupplierAliasSerializer
+
+    def get_queryset(self):
+        supplier_id = int(self.kwargs["supplier_id"])
+        get_object_or_404(Supplier, pk=supplier_id)
+        return SupplierAlias.objects.filter(supplier_id=supplier_id).select_related("supplier")
 
 
 class UnitOfMeasureListCreateView(generics.ListCreateAPIView):
@@ -179,7 +210,11 @@ class PurchaseBulkCreateView(APIView):
         data = serializer.validated_data
         lines = data.pop("lines")
         supplier_name = data.pop("supplier_name")
-        supplier, _ = Supplier.objects.get_or_create(name=supplier_name)
+        supplier_nip = (data.pop("supplier_nip", "") or "").strip()
+        supplier, created = Supplier.objects.get_or_create(name=supplier_name)
+        if supplier_nip and (created or not (supplier.nip or "").strip()):
+            supplier.nip = supplier_nip[:50]
+            supplier.save(update_fields=["nip", "updated_at"])
         is_shop = data["is_shop_consumable"]
 
         created_pks = []
@@ -255,15 +290,48 @@ class InvoiceLineParseTemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
         return qs.filter(is_active=True)
 
 
+class InvoiceParseExtractView(APIView):
+    """Return plain text extracted from an uploaded invoice file (same pipeline as purchase import)."""
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = InvoiceParseExtractSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        upload = serializer.validated_data["file"]
+        try:
+            text = extract_text_from_file(upload)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except RuntimeError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"raw_text": text or ""})
+
+
 class InvoiceParseSuggestView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def post(self, request, *args, **kwargs):
         serializer = InvoiceParseSuggestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        raw = serializer.validated_data["raw_text"].strip()
+        data = serializer.validated_data
+        raw = (data.get("raw_text") or "").strip()
+        upload = data.get("file")
+        if upload:
+            try:
+                extracted = extract_text_from_file(upload)
+            except ValueError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            except RuntimeError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raw = f"{raw}\n{extracted}".strip() if raw else extracted
         if not raw:
-            return Response({"detail": "raw_text is empty."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "No text to analyze. Paste invoice text or upload a PDF / image / text file."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         pattern, label, preview = suggest_line_pattern(raw)
         sup_pat, sup_name = suggest_supplier_pattern(raw)
         if not pattern:
@@ -273,17 +341,20 @@ class InvoiceParseSuggestView(APIView):
                     "detail": "Could not guess a matching pattern for this text.",
                     "suggested_supplier_pattern": sup_pat,
                     "preview_supplier_name": sup_name,
+                    "supplier_resolution": resolve_supplier_name(sup_name),
                 },
                 status=status.HTTP_200_OK,
             )
+        enriched, sup_res = enrich_parsed_lines(preview, sup_name)
         return Response(
             {
                 "matched": True,
                 "suggested_name": label,
                 "line_pattern": pattern,
-                "preview_lines": preview,
+                "preview_lines": enriched,
                 "suggested_supplier_pattern": sup_pat,
                 "preview_supplier_name": sup_name,
+                "supplier_resolution": sup_res,
             },
             status=status.HTTP_200_OK,
         )
@@ -345,13 +416,28 @@ class InvoiceParsePreviewView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        enriched, supplier_resolution = enrich_parsed_lines(lines, supplier_name)
+        for idx, item in enumerate(enriched):
+            ur = item.get("uom_resolution") or {}
+            if item.get("uom_raw") and ur.get("match") == "none":
+                warnings.append(
+                    f"Line {idx + 1}: unit «{item['uom_raw']}» not mapped to the units catalog — pick UoM in the form."
+                )
+        if supplier_name and supplier_resolution.get("match") == "none":
+            warnings.append(
+                "Supplier string was not matched to the supplier catalog — verify the supplier field before save."
+            )
+        elif supplier_resolution.get("match") == "ambiguous":
+            warnings.append("Several similar suppliers found — pick the correct one in the form.")
+
         return Response(
             {
-                "lines": lines,
+                "lines": enriched,
                 "warnings": warnings,
-                "matched_count": len(lines),
+                "matched_count": len(enriched),
                 "supplier_name": supplier_name,
                 "supplier_pattern_used": supplier_pattern_effective or None,
+                "supplier_resolution": supplier_resolution,
             },
             status=status.HTTP_200_OK,
         )
