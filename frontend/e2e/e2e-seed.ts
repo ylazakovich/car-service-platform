@@ -1,7 +1,7 @@
 /**
- * Stable E2E fixture from `demo/demo_data.sql`:
+ * Stable E2E fixture from `scripts/demo/demo_data.sql`:
  * completed repair TOR-1001 — AA 1234 BB • Toyota Camry, service below (unique among that plate’s completed jobs in demo).
- * CI loads this file after compose-up (`.github/workflows/pr.yml`). Locally: `bash scripts/load-demo.sh`.
+ * CI loads this file after compose-up (`.github/workflows/pr.yml`). Locally: `bash scripts/db/load-demo.sh`.
  */
 export const E2E_DEMO_REPAIR_TRACKING_CODE = "TOR-1001";
 
@@ -20,7 +20,7 @@ export const E2E_DEMO_REPAIR_SERVICE_NAME = "Oil change + filter replacement";
 export const E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY = "Oil change + filter replacement +1";
 
 /**
- * `purchases.part_name` fragment from `demo/demo_data.sql` (vehicle `E2E_DEMO_REPAIR_VEHICLE_PLATE`, repair TOR-1001).
+ * `purchases.part_name` fragment from `scripts/demo/demo_data.sql` (vehicle `E2E_DEMO_REPAIR_VEHICLE_PLATE`, repair TOR-1001).
  */
 export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Castrol EDGE";
 
@@ -30,7 +30,7 @@ export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Castrol EDGE";
  */
 export const E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE = E2E_DEMO_REPAIR_VEHICLE_PLATE;
 
-/** `demo/demo_data.sql` — stable service name in catalog (Registers → Services). */
+/** `scripts/demo/demo_data.sql` — stable service name in catalog (Registers → Services). */
 export const E2E_DEMO_SERVICE_NAME_IN_CATALOG = "AC service";
 
 /** Demo customer with ≥1 vehicle (Registers → Customers with vehicles). */

@@ -33,8 +33,8 @@
 
 | Файл | Когда использовать |
 |------|---------------------|
-| `mcp/car-service-platform.default.json` | **Пустой** `mcpServers` — по умолчанию. `install-user` только мержит **существующее** + опциональный `local.overrides.json`. **Не** плодит дубли к ECC. |
-| `mcp/car-service-platform.standalone.json` | Полный набор stdio-серверов — если **нет** ECC / плагина и нужно поднять context7, playwright, … одной командой: `--profile standalone`. |
+| `scripts/mcp/car-service-platform.default.json` | **Пустой** `mcpServers` — по умолчанию. `install-user` только мержит **существующее** + опциональный `local.overrides.json`. **Не** плодит дубли к ECC. |
+| `scripts/mcp/car-service-platform.standalone.json` | Полный набор stdio-серверов — если **нет** ECC / плагина и нужно поднять context7, playwright, … одной командой: `--profile standalone`. |
 
 ## Verify и пустой `mcpServers` (Cursor / Claude Code)
 
@@ -42,7 +42,7 @@
 
 ## GitHub и плагин
 
-Если нужен GitHub из **плагина** ECC (`plugin:...:github`), настройте токен по документации плагина (env / UI). Для **stdio**-сервера с именем `github` можно положить секреты в **`mcp/local.overrides.json`** (шаблон — `local.overrides.json.example`); в репозиторий не коммитить. **Не** добавляйте второй экземпляр `github` (plugin + stdio) без необходимости — см. правило приоритета выше.
+Если нужен GitHub из **плагина** ECC (`plugin:...:github`), настройте токен по документации плагина (env / UI). Для **stdio**-сервера с именем `github` можно положить секреты в **`scripts/mcp/local.overrides.json`** (шаблон — `scripts/mcp/local.overrides.json.example`); в репозиторий не коммитить. **Не** добавляйте второй экземпляр `github` (plugin + stdio) без необходимости — см. правило приоритета выше.
 
 ## Предупреждение пользователю (лишние MCP)
 

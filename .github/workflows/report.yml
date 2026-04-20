@@ -178,7 +178,7 @@ jobs:
         run: |
           cp -f .github/allure/categories.json artifacts/allure-results/categories.json
           # Allure Report CLI: версия — renovate.json (alias allure-cli → npm:allure, customManagers regex).
-          npx --yes allure@3.6.0 generate artifacts/allure-results -o allure-report --config ./allurerc.mjs
+          npx --yes allure@3.6.0 generate artifacts/allure-results -o allure-report --config scripts/allure/allurerc.mjs
           node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"

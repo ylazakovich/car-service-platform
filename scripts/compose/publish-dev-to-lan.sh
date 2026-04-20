@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publish the Docker dev stack (Vite + Django) on all interfaces and allow browser origins for http://<LAN-IP>:FRONTEND_DEV_PORT.
-# Default `scripts/start.sh` keeps 127.0.0.1-only bindings — run this only when you want devices on your LAN to connect.
+# Default `scripts/compose/start.sh` keeps 127.0.0.1-only bindings — run this only when you want devices on your LAN to connect.
 set -euo pipefail
 
 # Prefer the interface used for the default route (Wi‑Fi vs Ethernet); en0 alone is often wrong on MacBooks.
@@ -39,7 +39,7 @@ detect_lan_ip_linux() {
   return 1
 }
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 if [[ ! -f .env ]]; then
@@ -116,4 +116,4 @@ echo ""
 echo "If the phone still cannot load the app: same Wi‑Fi as this Mac, no guest/VPN isolation; on macOS check"
 echo "  System Settings → Network → Firewall (allow Docker). Wrong IP? set DEV_LAN_IP in .env and re-run."
 echo ""
-echo "Bind to localhost only again: bash scripts/start.sh"
+echo "Bind to localhost only again: bash scripts/compose/start.sh"

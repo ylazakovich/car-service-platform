@@ -8,6 +8,7 @@
 - `docs/spec/TASKS.md` — backlog с идентификаторами `T-*` (секции NOW/NEXT/LATER внутри файла).
 - `docs/spec/OPEN_QUESTIONS.md` — открытые решения.
 - `docs/spec/RUNBOOK.md` — запуск dev / prod-like / LAN, демо-данные.
+- `docs/spec/SCRIPTS.md` — структура `scripts/` (compose, db, `scripts/demo/`, MCP, Allure).
 - `docs/spec/DOMAIN_RULES.md`, `docs/spec/TECH_STACK.md` — домен и стек.
 
 ## Archive

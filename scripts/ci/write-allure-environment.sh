@@ -99,7 +99,7 @@ if [[ -f "${req}" ]] && command -v sha256sum >/dev/null 2>&1; then
 fi
 
 # Allure Report 3: снимок env пишем во временный environment.properties, копируем в allure-variables.json
-# для allurerc.mjs (блок Variables). Файл .properties из results удаляем — иначе дублируется Metadata.
+# для scripts/allure/allurerc.mjs (блок Variables). Файл .properties из results удаляем — иначе дублируется Metadata.
 # JSON must NOT live inside ALLURE_RESULTS_DIR — the CLI treats unknown *.json there as result files.
 ALLURE_VARIABLES_JSON="${ALLURE_VARIABLES_JSON:-${REPO_ROOT}/artifacts/allure-variables.json}"
 if command -v python3 >/dev/null 2>&1; then
@@ -126,5 +126,5 @@ PY
 fi
 
 # Allure Report 3 Awesome: environment.properties в results даёт блок «Metadata», а те же пары
-# из allure-variables.json попадают в «Variables» через allurerc.mjs — дубликат. Оставляем только Variables.
+# из allure-variables.json попадают в «Variables» через scripts/allure/allurerc.mjs — дубликат. Оставляем только Variables.
 rm -f "${OUT}"

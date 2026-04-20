@@ -1,13 +1,13 @@
 # Hot-reload development: bind-mount source + Django runserver + Vite.
 #
 # Usage:
-#   bash scripts/start.sh
+#   bash scripts/compose/start.sh
 #   # or:
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 #
 # Frontend (Vite on host): http://localhost:${FRONTEND_DEV_PORT:-4173} -> container :5173
 # Ports are bound to 127.0.0.1 only so other devices on the LAN cannot reach dev by default.
-# For phone/tablet testing: bash scripts/publish-dev-to-lan.sh
+# For phone/tablet testing: bash scripts/compose/publish-dev-to-lan.sh
 # Backend (runserver): http://localhost:${BACKEND_PORT:-8000}
 #
 # Default host port matches prod FRONTEND_PORT (4173); do not run start-prod.sh and start.sh at once on the same machine without changing a port.

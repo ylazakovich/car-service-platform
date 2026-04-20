@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 if [[ ! -f .env ]]; then
@@ -21,7 +21,7 @@ DEMO_STAFF_PASSWORD="${DEMO_STAFF_PASSWORD:-staff12345}"
 if ! docker compose ps backend --format json | grep -q '"State":"running"'; then
   echo "Error: backend container is not running." >&2
   echo "Start the application first:"
-  echo "  bash scripts/start-prod.sh"
+  echo "  bash scripts/compose/start-prod.sh"
   exit 1
 fi
 

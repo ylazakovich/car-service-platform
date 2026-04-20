@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 if [[ ! -f .env ]]; then
@@ -19,7 +19,7 @@ export GIT_COMMIT
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 if docker compose ps db | grep -q "Up"; then
-  bash "${ROOT_DIR}/scripts/db-backup.sh" || true
+  bash "${ROOT_DIR}/scripts/db/db-backup.sh" || true
 fi
 
 # Match CI (.github/actions/compose-up): BuildKit + Compose uses `docker build` with the current buildx builder (default on Docker Desktop).

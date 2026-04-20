@@ -6,7 +6,7 @@ import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
  * @mobile-only — только проект mobile-chrome (см. playwright.config.ts grepInvert).
- * Проверяет мобильный список ремонтов и открытие демо-карточки (TOR-1001 из demo_data.sql).
+ * Проверяет мобильный список ремонтов и открытие демо-карточки (TOR-1001 из scripts/demo/demo_data.sql).
  */
 test.describe("Staff repairs mobile @mobile-only", () => {
   test.beforeEach(async ({ page }) => {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 if [[ ! -f .env ]]; then
@@ -15,10 +15,10 @@ set -a
 source .env
 set +a
 
-DEMO_FILE="${ROOT_DIR}/demo/demo_data.sql"
+DEMO_FILE="${ROOT_DIR}/scripts/demo/demo_data.sql"
 
 if [[ ! -f "${DEMO_FILE}" ]]; then
-  echo "Error: demo/demo_data.sql not found." >&2
+  echo "Error: scripts/demo/demo_data.sql not found." >&2
   exit 1
 fi
 

@@ -1,5 +1,6 @@
 /**
- * Allure Report 3 — подхватывается CLI как allurerc.* в корне репозитория.
+ * Allure Report 3 — конфиг в репозитории: `scripts/allure/allurerc.mjs`.
+ * Передаётся CLI явно: `npx allure generate … --config scripts/allure/allurerc.mjs` (см. `.github/workflows/report.yml`).
  * https://allurereport.org/docs/v3/configure/
  * CI: variables из artifacts/allure-variables.json (write-allure-environment.sh; .properties из results не кладём — иначе дубль Metadata/Variables).
  * Сводный отчёт по нескольким CI-джобам: в CI вызывается `npx allure@<версия> generate` (версия в report.yml, Renovate: alias allure-cli → npm:allure); одна папка results; merge — scripts/ci/merge-allure-result-dirs.sh + report.yml.

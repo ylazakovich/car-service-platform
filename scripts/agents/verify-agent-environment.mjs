@@ -118,7 +118,7 @@ function verifyCodexConfig(dest, quiet) {
   if (!existsSync(dest)) {
     console.error(`Codex config missing: ${dest}`);
     console.error(
-      "  Create ~/.codex/config.toml and add [mcp_servers.*] entries (see https://developers.openai.com/codex/mcp and mcp/README.md).",
+      "  Create ~/.codex/config.toml and add [mcp_servers.*] entries (see https://developers.openai.com/codex/mcp and scripts/mcp/README.md).",
     );
     process.exit(1);
   }
@@ -126,7 +126,7 @@ function verifyCodexConfig(dest, quiet) {
   if (!/\[\s*mcp_servers\s*[\].]/m.test(raw)) {
     console.error(`No [mcp_servers] section in ${dest}`);
     console.error(
-      "  Add at least one MCP server block, e.g. from mcp/car-service-platform.standalone.json → TOML (mcp/README.md).",
+      "  Add at least one MCP server block, e.g. from scripts/mcp/car-service-platform.standalone.json → TOML (scripts/mcp/README.md).",
     );
     process.exit(1);
   }

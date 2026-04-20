@@ -73,7 +73,7 @@ export class StaffRepairsPage {
   }
 
   /**
-   * Ждёт канбан, затем открывает демо-ремонт из `demo/demo_data.sql` (TOR-1001 в колонке Completed).
+   * Ждёт канбан, затем открывает демо-ремонт из `scripts/demo/demo_data.sql` (TOR-1001 в колонке Completed).
    */
   async openSeededRepairCard(): Promise<void> {
     const card = await this.seededRepairKanbanCard();
