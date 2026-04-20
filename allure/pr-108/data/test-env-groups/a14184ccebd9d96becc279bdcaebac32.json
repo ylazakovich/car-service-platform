@@ -1,1 +1,1 @@
-{"id":"a14184ccebd9d96becc279bdcaebac32","fullName":"src/lib/formatPolishPhone.test.ts#formatPolishPhoneDisplay formats +48 with spaces (11 digits)","name":"formats +48 with spaces (11 digits)","status":"passed","testResultsByEnv":{"frontend":"d3bba8f9f16207665b1588183dd37dd3"}}
+{"id":"a14184ccebd9d96becc279bdcaebac32","fullName":"src/lib/formatPolishPhone.test.ts#formatPolishPhoneDisplay formats +48 with spaces (11 digits)","name":"formats +48 with spaces (11 digits)","status":"passed","testResultsByEnv":{"frontend":"377cd5114e339683b3a70c314ab3fc41"}}

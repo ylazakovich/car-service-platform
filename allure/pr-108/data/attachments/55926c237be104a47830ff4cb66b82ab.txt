@@ -1,1 +1,0 @@
-{"timestamp": "2026-04-20 16:24:44,215", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/uploads/invoice/", "request": "<WSGIRequest: POST '/api/uploads/invoice/'>", "status_code": 403}
