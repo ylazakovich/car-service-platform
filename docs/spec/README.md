@@ -15,6 +15,8 @@ This folder is the **canonical spec surface** for product intent, execution back
 | [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md) | Explicit decisions still needed from product/tech owners. |
 | [SDD_WORKFLOW.md](./SDD_WORKFLOW.md) | How SDD maps to this repo’s **Agents** workflow and validation gates. |
 
+**Testing docs (engineering, not SDD product spec):** [`docs/testing/README.md`](../testing/README.md) — test pyramid, Allure snapshots, Playwright framework notes.
+
 **Not listed here (on purpose):** IDE-only docs — MCP merge, `verify-agent-environment`, ECC alignment — live under **`docs/dev/`** (`agent-session-bootstrap.md`, `agents-and-mcp.md`, `mcp-deduplication.md`). They are not part of the product specification.
 
 **AI agents in this repo:** follow root **`AGENTS.md`** — it tells you *when* to open which spec (`TASKS`, `OPEN_QUESTIONS`, `PRODUCT`, `DOMAIN_RULES`) instead of guessing.

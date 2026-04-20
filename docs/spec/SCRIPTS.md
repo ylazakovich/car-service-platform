@@ -67,7 +67,7 @@ Canonical index of **`scripts/`** and related operational assets. Day-to-day com
 
 ## `scripts/ci/`
 
-Shell helpers for GitHub Actions: Allure metadata (`write-allure-environment.sh`, `write-allure-ci-env-fragment.sh`, `merge-allure-result-dirs.sh`), junit step summary, E2E docker stats sampler/summarize. **Workflow-local** Node for PR badges: `.github/scripts/allure-ci.mjs` (not moved — tied to Actions layout).
+Shell helpers for GitHub Actions: Allure metadata (`write-allure-environment.sh`, `write-allure-ci-env-fragment.sh`, `merge-allure-result-dirs.sh`), junit step summary, E2E docker stats sampler/summarize. **Workflow-local** Node for PR badges and pyramid export: `.github/scripts/allure-ci.mjs` — `badges`, `pr-body`, `pyramid` (writes `docs/testing/pyramid-snapshot.{md,json}`, optional `--readme README.md`; see `docs/testing/test-pyramid.md`).
 
 ## `scripts/agents/`
 

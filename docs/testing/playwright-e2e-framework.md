@@ -2,7 +2,7 @@
 
 - Last updated: 2026-04-10
 - Статус: **целевой дизайн** (реализация поэтапно через `docs/spec/TASKS.md`, секция E2E)
-- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `scripts/demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `docs/spec/DOMAIN_RULES.md`
+- Связанные артефакты: `frontend/playwright.config.ts`, `frontend/e2e/`, `scripts/demo/demo_data.sql`, `.github/workflows/pr.yml` (шаг загрузки демо перед Playwright), `docs/spec/DOMAIN_RULES.md`, [test-pyramid.md](./test-pyramid.md) (вершина пирамиды — UI/E2E)
 
 ## 1) Принцип: проход с первого раза, без ретраев
 
