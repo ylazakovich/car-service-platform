@@ -17,15 +17,15 @@ Bootstrap for an autoservice operations platform: Django + DRF backend, React + 
 
 ### Test pyramid (live counts from Allure)
 
-Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md). Full breakdown + advisory text: [`docs/testing/pyramid-snapshot.md`](docs/testing/pyramid-snapshot.md). JSON for tooling: [`docs/testing/pyramid-snapshot.json`](docs/testing/pyramid-snapshot.json). Same-repo PRs: the **Test Report** workflow refreshes these files after a green **PR Pipeline** (merged Allure `*-result.json`). **Advisory quality gates** on pyramid shape run there too (`pyramid-check`: GitHub warning annotations + job summary, never fails the job — see `docs/testing/test-pyramid.md` § Quality gates).
+Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md). Full breakdown + advisory text: [`docs/testing/pyramid-snapshot.md`](docs/testing/pyramid-snapshot.md). JSON for tooling: [`docs/testing/pyramid-snapshot.json`](docs/testing/pyramid-snapshot.json). **Updates:** the **Test Report** workflow (triggered only after a **PR Pipeline** run on a `pull_request` to `main`) refreshes this table and the snapshot files; it does **not** run for a bare **`push` to `main`** (that path uses **Main Pipeline**, build-only). The bot commits to the **PR head branch** — merge that branch (including any `[ci] refresh test pyramid snapshot` commit) so `main` picks up non-zero counts, or refresh locally with `allure-ci.mjs pyramid` (see `docs/testing/test-pyramid.md`). **Advisory quality gates:** `pyramid-check` in Test Report (warnings only — see `docs/testing/test-pyramid.md` § Quality gates).
 
 <!-- CSP_PYRAMID_TABLE_START -->
-| Layer | Allure epic | Cases |
+| Layer | `epic` / `layer` | Cases |
 | :--- | :--- | ---: |
-| Unit (base) | `unit` | **0** |
-| API (middle) | `api` | **0** |
-| UI / E2E (top) | `end-to-end`, `ui` | **0** |
-| **Σ pyramid layers** | | **0** |
+| Unit (base) | `unit` | **63** |
+| Integration (middle) | `api` / `integration` | **130** |
+| UI / E2E (top) | `end-to-end` / `ui` | **26** |
+| **Σ pyramid layers** | | **219** |
 <!-- CSP_PYRAMID_TABLE_END -->
 
 Quick start (details in the runbook):
