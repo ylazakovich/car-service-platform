@@ -10,6 +10,8 @@
  *     --output allure-pr-comment.md --pages-url "https://..." --fork-pr false
  *   node .github/scripts/allure-ci.mjs pyramid --results allure-results \
  *     --output docs/testing/pyramid-snapshot.md --json docs/testing/pyramid-snapshot.json [--readme README.md]
+ *   node .github/scripts/allure-ci.mjs pyramid-check --results allure-results [--json docs/testing/pyramid-quality-gates.json]
+ *     (GitHub ::warning:: + job summary; exit 0 always — non-blocking quality gate)
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -28,7 +30,7 @@ const PYRAMID_LAYERS = [
   },
 ];
 
-/** Soft planning targets (shares of pyramid-layer totals); not CI gates. */
+/** Soft planning targets (shares of pyramid-layer totals); advisory quality gates only. */
 const PYRAMID_ADVISORY = {
   unitShareMin: 0.45,
   e2eShareMax: 0.28,
@@ -319,6 +321,185 @@ function pyramidAdvisoryNotes(unitShare, e2eShare, pyramidTotal) {
   return lines;
 }
 
+/** @param {string} s */
+function githubWorkflowEscape(s) {
+  return String(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+
+/** @param {string} title @param {string} message */
+function emitGithubWarning(title, message) {
+  process.stdout.write(
+    `::warning title=${githubWorkflowEscape(title)}::${githubWorkflowEscape(message)}\n`,
+  );
+}
+
+/** @param {string} md */
+function appendJobSummaryIfPresent(md) {
+  const p = process.env.GITHUB_STEP_SUMMARY;
+  if (!p) return;
+  fs.appendFileSync(p, md, "utf8");
+}
+
+/**
+ * Shared metrics for pyramid export and pyramid-check.
+ * @param {string} resultsDir
+ */
+function computePyramidMetrics(resultsDir) {
+  const { byEpic, total } = aggregateResults(resultsDir);
+  const other = byEpic.other || emptyStats();
+
+  const layers = PYRAMID_LAYERS.map((def) => ({
+    id: def.id,
+    label: def.label,
+    epics: def.epics,
+    stats: sumEpicStats(def.epics, byEpic),
+  }));
+
+  const pyramidTotal = layers.reduce((a, L) => a + L.stats.total, 0);
+  const unitStats = layers.find((L) => L.id === "unit").stats;
+  const apiStats = layers.find((L) => L.id === "api").stats;
+  const e2eLayer = layers.find((L) => L.id === "ui_e2e");
+  const unitShare = pyramidTotal ? unitStats.total / pyramidTotal : 0;
+  const apiShare = pyramidTotal ? apiStats.total / pyramidTotal : 0;
+  const e2eShare = pyramidTotal ? e2eLayer.stats.total / pyramidTotal : 0;
+
+  return {
+    byEpic,
+    total,
+    other,
+    layers,
+    pyramidTotal,
+    unitShare,
+    apiShare,
+    e2eShare,
+  };
+}
+
+/**
+ * Non-blocking quality gates: warnings only; `blockingFailures` reserved for future strict mode.
+ * @param {ReturnType<typeof computePyramidMetrics>} m
+ */
+function evaluatePyramidQualityGates(m) {
+  /** @type {{ id: string, message: string }[]} */
+  const warnings = [];
+  /** @type {{ id: string, message: string }[]} */
+  const blockingFailures = [];
+
+  if (m.pyramidTotal > 0) {
+    if (m.unitShare < PYRAMID_ADVISORY.unitShareMin) {
+      warnings.push({
+        id: "PYRAMID_UNIT_SHARE_LOW",
+        message: `Unit share ${(100 * m.unitShare).toFixed(1)}% is below soft target ${(100 * PYRAMID_ADVISORY.unitShareMin).toFixed(0)}% (see docs/testing/test-pyramid.md).`,
+      });
+    }
+    if (m.e2eShare > PYRAMID_ADVISORY.e2eShareMax) {
+      warnings.push({
+        id: "PYRAMID_E2E_SHARE_HIGH",
+        message: `UI/E2E share ${(100 * m.e2eShare).toFixed(1)}% exceeds soft ceiling ${(100 * PYRAMID_ADVISORY.e2eShareMax).toFixed(0)}%.`,
+      });
+    }
+  }
+
+  if (m.other.total > 0) {
+    warnings.push({
+      id: "PYRAMID_UNKNOWN_EPIC",
+      message: `${m.other.total} test(s) lack a known Allure epic — assign epic in Vitest/pytest/Playwright so they count toward the pyramid.`,
+    });
+  }
+
+  return {
+    blockingFailures,
+    warnings,
+    advisoryOnly: true,
+    thresholds: { ...PYRAMID_ADVISORY },
+  };
+}
+
+/** @param {ReturnType<typeof evaluatePyramidQualityGates>} gates @param {ReturnType<typeof computePyramidMetrics>} m */
+function formatQualityGatesMarkdownSection(gates, m) {
+  const lines = [];
+  lines.push("## Quality gates (non-blocking, advisory)");
+  lines.push("");
+  lines.push(
+    "These checks **never fail the workflow**; they surface in GitHub **Annotations** (warnings) and in the **Job summary** when `pyramid-check` runs (Test Report workflow).",
+  );
+  lines.push("");
+  if (m.pyramidTotal === 0) {
+    lines.push("| Check | Status |");
+    lines.push("| --- | --- |");
+    lines.push("| Pyramid layer totals | ⚠️ skipped (no `unit`/`api`/`end-to-end`/`ui` cases in merged results) |");
+    lines.push("");
+    if (m.other.total > 0) {
+      lines.push(
+        `**Note:** ${m.other.total} test(s) use an unknown or unsupported \`epic\` — they do not count toward Σ pyramid layers until labels are fixed.`,
+      );
+      lines.push("");
+    }
+    return lines.join("\n");
+  }
+  lines.push("| Gate id | Status | Detail |");
+  lines.push("| --- | --- | --- |");
+  const warnIds = new Set(gates.warnings.map((w) => w.id));
+  lines.push(
+    `| PYRAMID_UNIT_SHARE_LOW | ${warnIds.has("PYRAMID_UNIT_SHARE_LOW") ? "⚠️ warning" : "✓ ok"} | unit ≥ ${(100 * PYRAMID_ADVISORY.unitShareMin).toFixed(0)}% of Σ layers (actual ${(100 * m.unitShare).toFixed(1)}%) |`,
+  );
+  lines.push(
+    `| PYRAMID_E2E_SHARE_HIGH | ${warnIds.has("PYRAMID_E2E_SHARE_HIGH") ? "⚠️ warning" : "✓ ok"} | UI/E2E ≤ ${(100 * PYRAMID_ADVISORY.e2eShareMax).toFixed(0)}% of Σ layers (actual ${(100 * m.e2eShare).toFixed(1)}%) |`,
+  );
+  lines.push(
+    `| PYRAMID_UNKNOWN_EPIC | ${warnIds.has("PYRAMID_UNKNOWN_EPIC") ? "⚠️ warning" : "✓ ok"} | other epic count: ${m.other.total} |`,
+  );
+  lines.push("");
+  lines.push("_Blocking failures: none (reserved for a future strict mode)._");
+  lines.push("");
+  return lines.join("\n");
+}
+
+/**
+ * @param {string} resultsDir
+ * @param {string} outputJson optional path to write machine-readable gate result
+ */
+function cmdPyramidCheck(resultsDir, outputJson) {
+  const m = computePyramidMetrics(resultsDir);
+  const gates = evaluatePyramidQualityGates(m);
+  const titleBase = "Test pyramid (advisory)";
+
+  const outPayload = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    advisoryOnly: true,
+    exitCodePolicy: "always_zero",
+    gates,
+    metrics: {
+      pyramidTotal: m.pyramidTotal,
+      unitShare: m.unitShare,
+      apiShare: m.apiShare,
+      e2eShare: m.e2eShare,
+      otherEpicTotal: m.other.total,
+    },
+  };
+
+  if (outputJson) {
+    fs.mkdirSync(path.dirname(outputJson), { recursive: true });
+    fs.writeFileSync(outputJson, JSON.stringify(outPayload, null, 2), "utf8");
+    process.stdout.write(`Wrote ${outputJson}\n`);
+  }
+
+  for (const w of gates.warnings) {
+    emitGithubWarning(titleBase, `${w.id}: ${w.message}`);
+  }
+
+  const sum = [];
+  sum.push("### Quality gates — test pyramid (advisory, non-blocking)\n\n");
+  sum.push(formatQualityGatesMarkdownSection(gates, m));
+  sum.push("\n");
+  appendJobSummaryIfPresent(sum.join(""));
+
+  process.stdout.write(
+    `pyramid-check: ${gates.warnings.length} advisory warning(s), 0 blocking (exit 0).\n`,
+  );
+}
+
 function replaceReadmePyramidTable(readmePath, tableMd) {
   const start = "<!-- CSP_PYRAMID_TABLE_START -->";
   const end = "<!-- CSP_PYRAMID_TABLE_END -->";
@@ -345,21 +526,9 @@ function replaceReadmePyramidTable(readmePath, tableMd) {
  * @param {string} readmePath optional
  */
 function cmdPyramid(resultsDir, outputMd, outputJson, readmePath) {
-  const { byEpic, total } = aggregateResults(resultsDir);
-  const other = byEpic.other || emptyStats();
-
-  const layers = PYRAMID_LAYERS.map((def) => ({
-    id: def.id,
-    label: def.label,
-    epics: def.epics,
-    stats: sumEpicStats(def.epics, byEpic),
-  }));
-
-  const pyramidTotal = layers.reduce((a, L) => a + L.stats.total, 0);
-  const unitStats = layers.find((L) => L.id === "unit").stats;
-  const e2eLayer = layers.find((L) => L.id === "ui_e2e");
-  const unitShare = pyramidTotal ? unitStats.total / pyramidTotal : 0;
-  const e2eShare = pyramidTotal ? e2eLayer.stats.total / pyramidTotal : 0;
+  const m = computePyramidMetrics(resultsDir);
+  const { total, other, layers, pyramidTotal, unitShare, e2eShare } = m;
+  const gates = evaluatePyramidQualityGates(m);
 
   const generatedAt = new Date().toISOString();
   const payload = {
@@ -378,13 +547,18 @@ function cmdPyramid(resultsDir, outputMd, outputJson, readmePath) {
     shares: pyramidTotal
       ? {
           unit: unitShare,
-          api: layers.find((L) => L.id === "api").stats.total / pyramidTotal,
+          api: m.apiShare,
           ui_e2e: e2eShare,
         }
       : { unit: 0, api: 0, ui_e2e: 0 },
     advisory: {
       unitShareMin: PYRAMID_ADVISORY.unitShareMin,
       e2eShareMax: PYRAMID_ADVISORY.e2eShareMax,
+    },
+    qualityGates: {
+      advisoryOnly: gates.advisoryOnly,
+      warnings: gates.warnings,
+      blockingFailures: gates.blockingFailures,
     },
   };
 
@@ -452,6 +626,7 @@ function cmdPyramid(resultsDir, outputMd, outputJson, readmePath) {
   md.push("");
   md.push(...pyramidAdvisoryNotes(unitShare, e2eShare, pyramidTotal));
   md.push("");
+  md.push(formatQualityGatesMarkdownSection(gates, m));
   md.push("Canonical policy: [`docs/testing/test-pyramid.md`](./test-pyramid.md).");
 
   fs.mkdirSync(path.dirname(outputMd), { recursive: true });
@@ -506,11 +681,15 @@ if (cmd === "badges") {
   cmdPrBody(results, report, output, pagesUrl, forkPr, sourceRunId);
 } else if (cmd === "pyramid") {
   cmdPyramid(results, output, json, readme);
+} else if (cmd === "pyramid-check") {
+  const gateJson = json || "docs/testing/pyramid-quality-gates.json";
+  cmdPyramidCheck(results, gateJson);
 } else {
   console.error(
     "Usage: node .github/scripts/allure-ci.mjs badges --results <dir> --out <reportDir>\n" +
       "       node .github/scripts/allure-ci.mjs pr-body --results <dir> --report <reportDir> --output <file> [--pages-url <url>] [--fork-pr true|false] [--source-run-id <id>]\n" +
-      "       node .github/scripts/allure-ci.mjs pyramid --results <dir> --output <file.md> [--json <file.json>] [--readme README.md]",
+      "       node .github/scripts/allure-ci.mjs pyramid --results <dir> --output <file.md> [--json <file.json>] [--readme README.md]\n" +
+      "       node .github/scripts/allure-ci.mjs pyramid-check --results <dir> [--json <quality-gates.json>]",
   );
   process.exit(1);
 }

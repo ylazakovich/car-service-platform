@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-20T07:59:53.742Z",
+  "advisoryOnly": true,
+  "exitCodePolicy": "always_zero",
+  "gates": {
+    "blockingFailures": [],
+    "warnings": [],
+    "advisoryOnly": true,
+    "thresholds": {
+      "unitShareMin": 0.45,
+      "e2eShareMax": 0.28
+    }
+  },
+  "metrics": {
+    "pyramidTotal": 0,
+    "unitShare": 0,
+    "apiShare": 0,
+    "e2eShare": 0,
+    "otherEpicTotal": 0
+  }
+}

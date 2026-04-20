@@ -207,6 +207,13 @@ jobs:
             --json docs/testing/pyramid-snapshot.json \
             --readme README.md
 
+      - name: Quality gates — test pyramid (advisory warnings only)
+        if: steps.allure.outputs.present == 'true'
+        run: |
+          node .github/scripts/allure-ci.mjs pyramid-check \
+            --results artifacts/allure-results \
+            --json docs/testing/pyramid-quality-gates.json
+
       - name: Upload pyramid snapshot artifact
         if: steps.allure.outputs.present == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -215,6 +222,7 @@ jobs:
           path: |
             docs/testing/pyramid-snapshot.md
             docs/testing/pyramid-snapshot.json
+            docs/testing/pyramid-quality-gates.json
           retention-days: 30
 
       - name: Commit pyramid snapshot (upstream branches only)
@@ -228,7 +236,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/testing/pyramid-snapshot.md docs/testing/pyramid-snapshot.json README.md
+          git add docs/testing/pyramid-snapshot.md docs/testing/pyramid-snapshot.json docs/testing/pyramid-quality-gates.json README.md
           if git diff --staged --quiet; then
             echo "No pyramid snapshot or README changes."
             exit 0
