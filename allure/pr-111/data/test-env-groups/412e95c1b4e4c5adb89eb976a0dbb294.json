@@ -1,0 +1,1 @@
+{"id":"412e95c1b4e4c5adb89eb976a0dbb294","fullName":"src/App.smoke.test.tsx#bootstrap application regenerate portal link does not call API when confirmation is cancelled","name":"regenerate portal link does not call API when confirmation is cancelled","status":"passed","testResultsByEnv":{"frontend":"083a03c4b5062250657384a16cd3166d"}}
