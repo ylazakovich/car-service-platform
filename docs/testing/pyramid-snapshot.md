@@ -1,14 +1,14 @@
 # Test pyramid snapshot
 
-_Generated: `2026-04-20T07:59:53.681Z`_
+_Generated: `2026-04-20T09:03:22.290Z`_
 
-## Counts by layer (Allure `epic`)
+## Counts by layer (`epic` / Allure `layer`)
 
-| Layer | Allure epic(s) | Cases | Passed | Failed | Broken | Skipped |
+| Layer | `epic` / `layer` | Cases | Passed | Failed | Broken | Skipped |
 | --- | --- | --: | --: | --: | --: | --: |
 | Unit (base) | `unit` | **0** | 0 | 0 | 0 | 0 |
-| API (middle) | `api` | **0** | 0 | 0 | 0 | 0 |
-| UI / E2E (top) | `end-to-end`, `ui` | **0** | 0 | 0 | 0 | 0 |
+| Integration (middle) | `api` / `integration` | **0** | 0 | 0 | 0 | 0 |
+| UI / E2E (top) | `end-to-end` / `ui` | **0** | 0 | 0 | 0 | 0 |
 | **Σ pyramid layers** | | **0** | | | | |
 
 ## Shares (pyramid layers only)
