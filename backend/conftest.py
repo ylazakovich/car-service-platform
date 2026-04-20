@@ -35,5 +35,7 @@ def _allure_feature_from_backend_path(path: str) -> str:
 @pytest.fixture(autouse=True)
 def _allure_backend_labels(request: pytest.FixtureRequest):
     allure.dynamic.label("component", "backend")
+    # Allure 3 pyramid charts expect `layer`; `integration` = middle tier (API tests), see docs/testing/test-pyramid.md
+    allure.dynamic.label("layer", "integration")
     allure.dynamic.epic("api")
     allure.dynamic.feature(_allure_feature_from_backend_path(_pytest_file_path(request)))
