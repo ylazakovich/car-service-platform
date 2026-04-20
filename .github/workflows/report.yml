@@ -195,6 +195,47 @@ jobs:
             --fork-pr "$FORK_PR" \
             --source-run-id "${SOURCE_RUN_ID}"
 
+      - name: Export test pyramid snapshot (Allure epics)
+        if: steps.allure.outputs.present == 'true'
+        env:
+          PYRAMID_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          PYRAMID_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          node .github/scripts/allure-ci.mjs pyramid \
+            --results artifacts/allure-results \
+            --output docs/testing/pyramid-snapshot.md \
+            --json docs/testing/pyramid-snapshot.json \
+            --readme README.md
+
+      - name: Upload pyramid snapshot artifact
+        if: steps.allure.outputs.present == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pyramid-snapshot
+          path: |
+            docs/testing/pyramid-snapshot.md
+            docs/testing/pyramid-snapshot.json
+          retention-days: 30
+
+      - name: Commit pyramid snapshot (upstream branches only)
+        if: >-
+          steps.allure.outputs.present == 'true' &&
+          steps.fork.outputs.fork == 'false'
+        env:
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/testing/pyramid-snapshot.md docs/testing/pyramid-snapshot.json README.md
+          if git diff --staged --quiet; then
+            echo "No pyramid snapshot or README changes."
+            exit 0
+          fi
+          git commit -m "chore(ci): refresh test pyramid snapshot"
+          git push origin "HEAD:refs/heads/${BRANCH}"
+
       # Per-PR folder on gh-pages: allure/pr-<N>/ — rsync --delete only that subdir; other PR folders stay intact.
       - name: Deploy Allure HTML to GitHub Pages
         if: ${{ steps.allure.outputs.present == 'true' && steps.pr_ctx.outputs.has_pr == 'true' && steps.fork.outputs.fork == 'false' }}
