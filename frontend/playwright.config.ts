@@ -13,7 +13,7 @@ const allureReporter = [
     detail: true,
     suiteTitle: true,
     resultsDir: "allure-results",
-    globalLabels: { epic: "end-to-end" },
+    globalLabels: { epic: "end-to-end", layer: "e2e" },
   },
 ] as const;
 

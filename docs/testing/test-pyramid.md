@@ -16,6 +16,18 @@ Epic labels are set in:
 - `backend/conftest.py` — `epic("api")`, `component=backend`
 - `frontend/playwright.config.ts` — `globalLabels: { epic: "end-to-end" }`
 
+### Allure UI «Testing pyramid» vs `epic`
+
+The built-in **Testing pyramid** and **Durations by layer** widgets in [Allure Report 3](https://allurereport.org/docs/visual-analytics/) read the **`layer`** label (`unit`, `integration`, `e2e` by default), **not** `epic`. This repo sets **both**:
+
+| Tier | `epic` (behaviors / our scripts) | `layer` (Allure charts) |
+| ---- | -------------------------------- | ------------------------ |
+| Base | `unit` | `unit` |
+| Middle | `api` | `integration` (Allure’s name for the middle slice) |
+| Top | `end-to-end` | `e2e` |
+
+So the HTML report widgets and the exported `pyramid-snapshot.*` / quality gates (which use `epic`) describe the **same** three-tier pyramid with aligned counts.
+
 ## What “aligned with the pyramid” means here
 
 1. **Growth**: when adding coverage, prefer **unit → API → E2E** in that order unless the risk is explicitly UI-only (accessibility, layout, cross-page flows).
