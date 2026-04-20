@@ -49,7 +49,7 @@
 
 **MCP hygiene:** агент напоминает отключить глобально включённые, но нерелевантные для репо MCP (контекст на схемы tools). См. **`docs/dev/mcp-deduplication.md`** и поле **`MCP hygiene`** в `AGENTS.md`.
 
-**Этот репозиторий:** `node scripts/mcp/install-user.mjs` мержит в `~/.cursor/mcp.json` или `~/.claude/settings.json`. По умолчанию читается **пустой** `mcp/car-service-platform.default.json` (без дублей к ECC); полный набор stdio — `mcp/car-service-platform.standalone.json` и флаг `--profile standalone`. Подробности: `mcp/README.md`, `docs/dev/mcp-deduplication.md`.
+**Этот репозиторий:** `node scripts/mcp/install-user.mjs` мержит в `~/.cursor/mcp.json` или `~/.claude/settings.json`. По умолчанию читается **пустой** `scripts/mcp/car-service-platform.default.json` (без дублей к ECC); полный набор stdio — `scripts/mcp/car-service-platform.standalone.json` и флаг `--profile standalone`. Подробности: `scripts/mcp/README.md`, `docs/dev/mcp-deduplication.md`.
 
 Дополнительно можно копировать блоки из [`mcp-configs/mcp-servers.json`](https://github.com/affaan-m/everything-claude-code/blob/main/mcp-configs/mcp-servers.json) репозитория ECC и вручную вставлять в настройки провайдера.
 

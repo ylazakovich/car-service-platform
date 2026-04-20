@@ -1,5 +1,5 @@
 # Optional overlay: publish dev frontend + backend on all host interfaces (LAN / phone on same Wi‑Fi).
-# Do not add this file to COMPOSE_FILE by default — use: bash scripts/publish-dev-to-lan.sh
+# Do not add this file to COMPOSE_FILE by default — use: bash scripts/compose/publish-dev-to-lan.sh
 #
 # VITE_LAN_DEV=1 — relax Vite dev `server.cors` so module requests with Origin http://<LAN>:port are not blocked
 # (default CORS in Vite 8 only allows localhost-class origins; phones use the LAN IP in Origin).

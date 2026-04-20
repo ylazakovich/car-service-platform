@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Restore MEDIA_ROOT from a tarball produced by scripts/media-backup.sh (replaces /app/media in the backend volume).
+# Restore MEDIA_ROOT from a tarball produced by scripts/media/media-backup.sh (replaces /app/media in the backend volume).
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 if [[ ! -f .env ]]; then

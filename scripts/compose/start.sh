@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 if [[ ! -f .env ]]; then
@@ -33,7 +33,7 @@ GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 export COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml:docker-compose.dev.yml}"
 
 if docker compose ps db 2>/dev/null | grep -q "Up"; then
-  bash "${ROOT_DIR}/scripts/db-backup.sh" || true
+  bash "${ROOT_DIR}/scripts/db/db-backup.sh" || true
 fi
 
 export DOCKER_BUILDKIT=1
@@ -47,6 +47,6 @@ echo "  Frontend (Vite): http://localhost:${FRONTEND_DEV_PORT:-4173}"
 echo "  Backend (runserver): http://localhost:${BACKEND_PORT:-8000}"
 echo "  Admin: http://localhost:${BACKEND_PORT:-8000}/admin/"
 echo ""
-echo "LAN / phone testing (optional): bash scripts/publish-dev-to-lan.sh"
-echo "Stop: bash scripts/stop.sh"
-echo "Prod-like stack: bash scripts/start-prod.sh"
+echo "LAN / phone testing (optional): bash scripts/compose/publish-dev-to-lan.sh"
+echo "Stop: bash scripts/compose/stop.sh"
+echo "Prod-like stack: bash scripts/compose/start-prod.sh"

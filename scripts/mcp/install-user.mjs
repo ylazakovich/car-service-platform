@@ -9,20 +9,20 @@
  *   node scripts/mcp/install-user.mjs --force-profile
  *   node scripts/mcp/install-user.mjs --profile standalone
  *
- * Profiles:
- *   default (omit flag) → mcp/car-service-platform.default.json — empty mcpServers; avoids
+ * Profiles (same directory as this script):
+ *   default (omit flag) → car-service-platform.default.json — empty mcpServers; avoids
  *     duplicating servers already provided by everything-claude-code (see docs/dev/mcp-deduplication.md).
- *   standalone → mcp/car-service-platform.standalone.json — full stdio set when no ECC/plugin.
+ *   standalone → car-service-platform.standalone.json — full stdio set when no ECC/plugin.
  *
  * Targets:
  *   cursor (default) → ~/.cursor/mcp.json  { mcpServers: {...} }
  *   claude          → ~/.claude/settings.json  merges top-level mcpServers
  *
- * Merge order (per server name): existing user → profile from repo → mcp/local.overrides.json
+ * Merge order (per server name): existing user → profile from repo → scripts/mcp/local.overrides.json
  * Env vars are deep-merged for the same server. Use --force-profile to drop existing servers
  * that are not in the profile or overrides (only those names survive from profile+overrides).
  *
- * @see mcp/README.md
+ * @see scripts/mcp/README.md
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
@@ -32,9 +32,9 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, "..", "..");
-const DEFAULT_PROFILE = join(REPO_ROOT, "mcp", "car-service-platform.default.json");
-const STANDALONE_PROFILE = join(REPO_ROOT, "mcp", "car-service-platform.standalone.json");
-const LOCAL_OVERRIDES = join(REPO_ROOT, "mcp", "local.overrides.json");
+const DEFAULT_PROFILE = join(__dirname, "car-service-platform.default.json");
+const STANDALONE_PROFILE = join(__dirname, "car-service-platform.standalone.json");
+const LOCAL_OVERRIDES = join(__dirname, "local.overrides.json");
 
 function parseArgs(argv) {
   const out = { dryRun: false, target: "cursor", forceProfile: false, profile: "default" };
@@ -191,7 +191,7 @@ function main() {
     console.log("Local overrides:", LOCAL_OVERRIDES);
   } else {
     console.log(
-      "Optional: mcp/local.overrides.json (gitignored) — copy from mcp/local.overrides.json.example",
+      "Optional: scripts/mcp/local.overrides.json (gitignored) — copy from scripts/mcp/local.overrides.json.example",
     );
   }
 

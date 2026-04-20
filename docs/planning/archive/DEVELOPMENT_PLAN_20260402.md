@@ -35,9 +35,9 @@
 - Admin: Unfold admin, кастомный sidebar, clickable invoice_url, assigned_to в списке клиентов.
 - `StaffHomePage.tsx` рефакторен: выделены `usePurchases` и `useRepairs` custom hooks (3442 → 2904 строк).
 - Invite-based user registration: InviteToken model, invite/accept flow, admin UI with copyable link.
-- DB backup/restore scripts (`scripts/db-backup.sh`, `scripts/db-restore.sh`), auto-backup on rebuild.
-- Docker log rotation configured (json-file, max 25m/10m per service), `scripts/show-logs.sh` for agent log access.
-- Demo data: `demo/demo_data.sql` + `scripts/load-demo.sh` for loading sample entities.
+- DB backup/restore scripts (`scripts/db/db-backup.sh`, `scripts/db/db-restore.sh`), auto-backup on rebuild.
+- Docker log rotation configured (json-file, max 25m/10m per service), `scripts/compose/show-logs.sh` for agent log access.
+- Demo data: `scripts/demo/demo_data.sql` + `scripts/db/load-demo.sh` for loading sample entities.
 - Весь технический долг закрыт: TD-01 — TD-18.
 - `Dashboard` реализован как операционная сводка (moneyflow + service board tabs).
 
