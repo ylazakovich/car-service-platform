@@ -110,6 +110,12 @@ node .github/scripts/allure-ci.mjs pyramid-check \
   --json docs/testing/pyramid-quality-gates.json
 ```
 
+## FAQ — README / `main` still shows `0` cases
+
+1. **Test Report** runs on `workflow_run` after workflow **«PR Pipeline»** finishes. **PR Pipeline** is wired to **`pull_request`** → `main`, not to **`push`** → `main`. Merging to `main` triggers **Main Pipeline** (build/compose), which does **not** upload merged Allure — so **no new pyramid refresh** runs for that merge event alone.
+2. The **«Commit pyramid snapshot»** step pushes to **`head_branch`** (the PR branch). If you merged **before** that commit landed, or the push failed (`continue-on-error`), `main` can keep the placeholder zeros until the next successful cycle on a same-repo PR (and merge of the bot commit).
+3. **Fix now:** run locally from merged `allure-results` (e.g. downloaded from CI) — see [How to refresh snapshots locally](#how-to-refresh-snapshots-locally) — and open a small PR with updated files, or wait for the next green PR on `main` *via PR* (not doc-only: `paths-ignore` skips PR Pipeline for `docs/**`-only PRs).
+
 ## Related docs
 
 - [Playwright E2E framework](./playwright-e2e-framework.md) — determinism, CI, no retries.
