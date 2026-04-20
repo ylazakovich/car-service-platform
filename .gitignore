@@ -31,7 +31,7 @@ artifacts/
 allure-pr-comment.md
 
 # Local MCP tokens merged by scripts/mcp/install-user.mjs
-mcp/local.overrides.json
+scripts/mcp/local.overrides.json
 
 # MemPalace — local wing wiring and entity scan (keep out of git for personal setups)
 /mempalace.yaml
@@ -42,6 +42,6 @@ mcp/local.overrides.json
 *.swp
 *.swo
 
-# Django MEDIA_ROOT: PDF exports, invoices, uploads — not versioned (backup: scripts/media-backup.sh)
+# Django MEDIA_ROOT: PDF exports, invoices, uploads — not versioned (backup: scripts/media/media-backup.sh)
 backend/media/*
 !backend/media/.gitkeep

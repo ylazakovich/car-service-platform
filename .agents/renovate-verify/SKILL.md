@@ -13,8 +13,8 @@ Validate that `renovate.json` (including `customManagers` / regex rules) actuall
 From the `car-service-platform` repository root:
 
 ```bash
-chmod +x scripts/renovate-local-verify.sh   # once, if needed
-./scripts/renovate-local-verify.sh
+chmod +x scripts/dev/renovate-local-verify.sh   # once, if needed
+./scripts/dev/renovate-local-verify.sh
 ```
 
 The script:

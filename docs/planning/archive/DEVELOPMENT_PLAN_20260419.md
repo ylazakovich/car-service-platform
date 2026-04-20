@@ -185,7 +185,7 @@ Milestone включает:
 Критические пробелы (закрываются задачами в `NEXT_STEPS.md`):
 
 1. **Готовность стека:** CI опрашивает фронт и затем `GET /api/health` через тот же origin (`compose-up` + `e2e/global-setup.ts`); при регрессии см. `docs/testing/playwright-e2e-framework.md` §5.
-2. **Детерминизм PDF-тестов:** загрузка `demo/demo_data.sql` не фиксирует наличие уже выгруженного PDF для выбранного ремонта; сценарии «idempotent View PDF» зависят от начального состояния БД — нужны явные фикстуры (два ремонта или расширение демо-SQL / отдельный фрагмент для E2E).
+2. **Детерминизм PDF-тестов:** загрузка `scripts/demo/demo_data.sql` не фиксирует наличие уже выгруженного PDF для выбранного ремонта; сценарии «idempotent View PDF» зависят от начального состояния БД — нужны явные фикстуры (два ремонта или расширение демо-SQL / отдельный фрагмент для E2E).
 3. **Политика без ретраев:** `playwright.config.ts` — `retries: 0`; флаки устраняются ожиданиями состояния и данными, не повторным запуском.
 4. **Глубина assert’ов:** smoke dashboard проверяет в основном заголовки; целевые проверки — KPI/виджеты после стабильных фикстур (см. framework doc).
 5. **Новые экраны:** E2E **Registers** (`staff-registers.spec.ts`) добавлен; при изменении демо-услуг/клиентов — синхронизировать `e2e/e2e-seed.ts`. После UX-изменений в Registers — обновлять POM/ассерты при смене разметки или копирайта.
@@ -292,7 +292,7 @@ Milestone `M3` считается завершённым, если:
 - E2E / Playwright framework (target): `docs/testing/playwright-e2e-framework.md`
 - E2E patterns (ECC-derived, local): `.agents/e2e-testing/SKILL.md`
 - Агенты и MCP (рекомендации): `docs/dev/agents-and-mcp.md`
-- MCP профиль (JSON + установка в user config): `mcp/README.md`, `mcp/car-service-platform.default.json` (пустой, без дублей ECC), `mcp/car-service-platform.standalone.json`, `docs/dev/mcp-deduplication.md`, `scripts/mcp/install-user.mjs`
+- MCP профиль (JSON + установка в user config): `scripts/mcp/README.md`, `scripts/mcp/car-service-platform.default.json` (пустой, без дублей ECC), `scripts/mcp/car-service-platform.standalone.json`, `docs/dev/mcp-deduplication.md`, `scripts/mcp/install-user.mjs`
 - Подготовка агентной сессии (любой провайдер): `docs/dev/agent-session-bootstrap.md`, `scripts/agents/bootstrap-agent-session.sh`
 - History: `docs/planning/archive/`
 

@@ -1,8 +1,8 @@
 # MCP profile (provider-agnostic JSON + installer)
 
-**Not part of product spec** (`docs/spec/`): optional tooling for Cursor / Claude Code / Codex. App build and run: [`docs/spec/RUNBOOK.md`](../docs/spec/RUNBOOK.md).
+**Not part of product spec** (`docs/spec/`): optional tooling for Cursor / Claude Code / Codex. App build and run: [`docs/spec/RUNBOOK.md`](../../docs/spec/RUNBOOK.md).
 
-This folder holds a **portable** MCP server list in JSON. The format matches what **Cursor** (`~/.cursor/mcp.json`) and **Claude Code** (`~/.claude/settings.json` → `mcpServers`) expect: a top-level `mcpServers` object.
+**Location:** `scripts/mcp/` (profiles + installer live together). This folder holds a **portable** MCP server list in JSON. The format matches what **Cursor** (`~/.cursor/mcp.json`) and **Claude Code** (`~/.claude/settings.json` → `mcpServers`) expect: a top-level `mcpServers` object.
 
 It is **not** tied to a single vendor UI: you can copy the JSON manually, or run the Node installer once.
 
@@ -64,7 +64,7 @@ node scripts/mcp/install-user.mjs --force-profile
 
 ## Secrets
 
-1. Put a PAT in **`mcp/local.overrides.json`** (create from `local.overrides.json.example`), **or**
+1. Put a PAT in **`scripts/mcp/local.overrides.json`** (create from `scripts/mcp/local.overrides.json.example`), **or**
 2. Edit `~/.cursor/mcp.json` after install and set `GITHUB_PERSONAL_ACCESS_TOKEN` there, **or**
 3. Rely on your environment if the client expands env vars (depends on IDE version).
 

@@ -3,7 +3,7 @@
 # Use after changing renovate.json (especially customManagers / regex file patterns).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 IMAGE="${RENOVATE_IMAGE:-renovate/renovate:latest}"
 LOG="${RENOVATE_LOG:-$(mktemp -t renovate-local.XXXXXX.log)}"
 

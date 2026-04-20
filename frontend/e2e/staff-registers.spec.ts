@@ -10,7 +10,7 @@ import { StaffRegistersPage } from "./pages/StaffRegistersPage";
 
 /**
  * **Registers** (admin): units of measure, services catalog, customers with vehicles.
- * Данные: `demo/demo_data.sql` + миграции (UoM seed).
+ * Данные: `scripts/demo/demo_data.sql` + миграции (UoM seed).
  */
 
 test.describe("Registers workspace @desktop", () => {

@@ -10,7 +10,7 @@ import {
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
- * Multi-line `repair_service_lines` for demo TOR-1001 (`demo/demo_data.sql`).
+ * Multi-line `repair_service_lines` for demo TOR-1001 (`scripts/demo/demo_data.sql`).
  * Staff: read-only Services line in modal when not assignee; Kanban shows compact "+N" summary.
  * Admin: full `RepairServiceLinesEditor` with "+ Add service".
  */

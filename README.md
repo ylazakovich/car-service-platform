@@ -8,6 +8,7 @@ Bootstrap for an autoservice operations platform: Django + DRF backend, React + 
 |--------|----------|
 | Spec index (product, tasks, SDD, open questions) | [`docs/spec/README.md`](docs/spec/README.md) |
 | **Run** dev / prod-like / LAN & demo load | [`docs/spec/RUNBOOK.md`](docs/spec/RUNBOOK.md) |
+| **`scripts/`** index (compose, db, demo SQL, MCP, Allure, CI) | [`docs/spec/SCRIPTS.md`](docs/spec/SCRIPTS.md) |
 | Domain rules (statuses, money, PDF, dashboard) | [`docs/spec/DOMAIN_RULES.md`](docs/spec/DOMAIN_RULES.md) |
 | Technical stack & architecture | [`docs/spec/TECH_STACK.md`](docs/spec/TECH_STACK.md) |
 | Agent workflow (roles, scope, routing) | [`AGENTS.md`](AGENTS.md) |
@@ -17,5 +18,5 @@ Quick start (details in the runbook):
 
 ```bash
 cp .env.example .env
-bash scripts/start.sh
+bash scripts/compose/start.sh
 ```

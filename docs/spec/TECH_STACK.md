@@ -198,4 +198,4 @@
 - Technical baseline: this file ([`TECH_STACK.md`](./TECH_STACK.md))
 - Run / dev / prod / LAN: [`RUNBOOK.md`](./RUNBOOK.md)
 - E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`
-- IDE / AI-агенты (вне продуктовой спеки): `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `mcp/README.md`
+- IDE / AI-агенты (вне продуктовой спеки): `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `scripts/mcp/README.md`

@@ -52,7 +52,7 @@
 - [x] Восстановить отсутствующий skill `.agents/e2e-validator/SKILL.md` (дрифт с `AGENTS.md`).
 - [x] **CI:** перед `npx playwright test` опрашивать `GET /api/health` с того же origin, что `PLAYWRIGHT_BASE_URL` — `.github/actions/compose-up` (`wait-for-api-health`) + `pr.yml` E2E job.
 - [x] **Playwright global setup:** `frontend/e2e/global-setup.ts` (poll `/api/health`, опциональный пропуск `E2E_SKIP_GLOBAL_SETUP=1`).
-- [ ] **Сиды PDF:** явное начальное состояние для сценария «View PDF без лишнего POST» (два ремонта или расширение `demo/demo_data.sql` / отдельный SQL для E2E) — убрать зависимость от порядка прогонов.
+- [ ] **Сиды PDF:** явное начальное состояние для сценария «View PDF без лишнего POST» (два ремонта или расширение `scripts/demo/demo_data.sql` / отдельный SQL для E2E) — убрать зависимость от порядка прогонов.
 - [ ] Расширить assert’ы dashboard E2E: не только headings, а ключевые KPI/тексты виджетов при фикстурных данных.
 - [x] E2E **Registers** (admin): `frontend/e2e/staff-registers.spec.ts`, POM `StaffRegistersPage.ts` — вкладки Units / Services / Customers, поиск услуг, сиды в `e2e-seed.ts`.
 - [x] Локальный **`vite preview`**: прокси `/api` и `/media` как у dev-сервера (`frontend/vite.config.ts` → `preview.proxy`) — стабильные запросы с `:4173`.
@@ -66,7 +66,7 @@
 - [ ] Спроектировать сценарий исторического просмотра аналитики: как выбирать период, активную версию snapshot и как отображать архивные данные без пересчета задним числом.
 - [ ] Согласовать source of truth для supplier/monthly analytics с новым snapshot-слоем, чтобы отчеты не расходились между собой.
 - [ ] Полный контур: `… -> dashboard totals -> historical lookup` (частично: backend persist + Playwright `frontend/e2e/repair-pdf-view.spec.ts` для просмотра без лишнего POST export).
-- [ ] **Хранение PDF актов (object storage):** спроектировать и доработать контур сохранения/выдачи актов завершения — вынести файлы `RepairDocument` с локального `MEDIA_ROOT`/volume в **S3-compatible** хранилище (AWS S3, MinIO, Cloudflare R2 и т.п.): загрузка при export, чтение для `GET …/pdf/`, опционально presigned URLs; миграция существующих файлов и политика бэкапа (bucket lifecycle / совместимость с `scripts/media-backup.sh` или отдельный snapshot бакета).
+- [ ] **Хранение PDF актов (object storage):** спроектировать и доработать контур сохранения/выдачи актов завершения — вынести файлы `RepairDocument` с локального `MEDIA_ROOT`/volume в **S3-compatible** хранилище (AWS S3, MinIO, Cloudflare R2 и т.п.): загрузка при export, чтение для `GET …/pdf/`, опционально presigned URLs; миграция существующих файлов и политика бэкапа (bucket lifecycle / совместимость с `scripts/media/media-backup.sh` или отдельный snapshot бакета).
 
 ### QuickFocus / VPR Creation Flow
 - [ ] Исправить `QuickFocus` / создание нового VPR: если нужный `Vehicle` не найден, дать inline-создание нового `Vehicle` прямо из repair flow.
