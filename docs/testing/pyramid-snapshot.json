@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-20T07:59:53.681Z",
+  "source": {
+    "workflowRunId": null,
+    "headSha": null
+  },
+  "pyramidLayerTotals": {
+    "unit": 0,
+    "api": 0,
+    "ui_e2e": 0
+  },
+  "pyramidTotal": 0,
+  "otherEpicTotal": 0,
+  "allureGrandTotal": 0,
+  "shares": {
+    "unit": 0,
+    "api": 0,
+    "ui_e2e": 0
+  },
+  "advisory": {
+    "unitShareMin": 0.45,
+    "e2eShareMax": 0.28
+  },
+  "qualityGates": {
+    "advisoryOnly": true,
+    "warnings": [],
+    "blockingFailures": []
+  }
+}

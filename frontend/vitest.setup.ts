@@ -21,6 +21,8 @@ Object.defineProperty(window, "matchMedia", {
 
 beforeEach(async (ctx) => {
   await allure.label("component", "frontend");
+  /** Allure 3 charts (Testing pyramid, Durations by layer) use the `layer` label — see docs/testing/test-pyramid.md */
+  await allure.label("layer", "unit");
   await allure.epic("unit");
   const fp = ctx.task.file.filepath;
   await allure.feature(allureFeatureFromFrontendPath(fp));

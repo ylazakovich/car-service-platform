@@ -36,5 +36,6 @@ Every implementation PR or agent run should leave:
 1. **Evidence**: command(s) run (or CI link) matching project norms.
 2. **Traceability**: which `T-*` IDs were satisfied.
 3. **Residual risk**: what was not tested or what remains in `OPEN_QUESTIONS.md`.
+4. **Test pyramid (advisory)**: after Allure is merged in CI, **Test Report** runs non-blocking **quality gates** on pyramid shape (`pyramid-check` — warnings only, never fails the workflow). Policy and thresholds: [`docs/testing/test-pyramid.md`](../testing/test-pyramid.md).
 
 `plan-reviewer` uses this in addition to `.agents/templates/plan-review-report.md`.

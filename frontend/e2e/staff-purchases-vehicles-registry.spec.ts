@@ -10,7 +10,7 @@ import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 
 /**
  * Табличные реестры Purchases / Vehicles и индикатор «завершённый ремонт без выгруженного акта (PDF)».
- * Данные: `demo/demo_data.sql` (CI и локально после `bash scripts/load-demo.sh`).
+ * Данные: `scripts/demo/demo_data.sql` (CI и локально после `bash scripts/db/load-demo.sh`).
  */
 
 test.describe("Purchases registry — table-only chrome @desktop", () => {

@@ -1,6 +1,6 @@
 # Runbook — local development, production-like stack, LAN testing
 
-Canonical operational spec for **how to run** `car-service-platform`. Root [`README.md`](../../README.md) is a short pointer here.
+Canonical operational spec for **how to run** `car-service-platform`. Root [`README.md`](../../README.md) is a short pointer here. Full script index and folder layout: [`SCRIPTS.md`](./SCRIPTS.md).
 
 ## Prerequisites
 
@@ -14,8 +14,8 @@ cp .env.example .env
 ## Compose files (mental model)
 
 - `docker-compose.yml` — base stack (db, backend, frontend service definitions).
-- `docker-compose.dev.yml` — merged by **`scripts/start.sh`**: Vite dev server, hot reload, bind mounts.
-- `docker-compose.dev.lan.yml` — merged by **`scripts/publish-dev-to-lan.sh`**: bind frontend/backend on all interfaces for phones on the same Wi‑Fi.
+- `docker-compose.dev.yml` — merged by **`scripts/compose/start.sh`**: Vite dev server, hot reload, bind mounts.
+- `docker-compose.dev.lan.yml` — merged by **`scripts/compose/publish-dev-to-lan.sh`**: bind frontend/backend on all interfaces for phones on the same Wi‑Fi.
 
 `COMPOSE_FILE` defaults inside scripts; you normally do not set it by hand unless debugging.
 
@@ -26,11 +26,11 @@ cp .env.example .env
 **Start**
 
 ```bash
-bash scripts/start.sh
+bash scripts/compose/start.sh
 ```
 
 - Uses `docker-compose.yml` **and** `docker-compose.dev.yml`.
-- Optional DB backup runs if `db` is already up (see `scripts/db-backup.sh`).
+- Optional DB backup runs if `db` is already up (see `scripts/db/db-backup.sh`).
 - Frontend (Vite): `http://localhost:${FRONTEND_DEV_PORT:-4173}`
 - Backend: `http://localhost:${BACKEND_PORT:-8000}` (browser talks to `/api` via Vite proxy)
 - Django Admin: `http://localhost:${BACKEND_PORT:-8000}/admin/`
@@ -38,7 +38,7 @@ bash scripts/start.sh
 **Stop**
 
 ```bash
-bash scripts/stop.sh
+bash scripts/compose/stop.sh
 ```
 
 - Runs `docker compose down --remove-orphans` with the same dev `COMPOSE_FILE` merge as `start.sh`.
@@ -46,18 +46,18 @@ bash scripts/stop.sh
 **Load demo SQL (optional)**
 
 ```bash
-bash scripts/load-demo.sh
+bash scripts/db/load-demo.sh
 ```
 
 - Interactive confirmation (`yes` required).
-- Pipes `demo/demo_data.sql` into Postgres via `docker compose exec -T db psql`.
+- Pipes `scripts/demo/demo_data.sql` into Postgres via `docker compose exec -T db psql`.
 - Useful for dashboard charts, registers, and E2E-aligned fixtures (see script output for counts).
 
 ### Dev pitfalls (read once)
 
-1. **Do not run** `scripts/start-prod.sh` and **`scripts/start.sh` at the same time** on default ports — both want host **4173** unless you change `FRONTEND_PORT` / `FRONTEND_DEV_PORT` in `.env`.
+1. **Do not run** `scripts/compose/start-prod.sh` and **`scripts/compose/start.sh` at the same time** on default ports — both want host **4173** unless you change `FRONTEND_PORT` / `FRONTEND_DEV_PORT` in `.env`.
 2. **Login / session broken with Vite in Docker:** ensure `DJANGO_ALLOWED_HOSTS` includes `backend` (default in compose). Proxied `/api` uses `Host: backend`; if Django rejects the host, cookies and CSRF fail.
-3. **Port 4173 busy:** stop prod (`bash scripts/stop-prod.sh`) or set e.g. `FRONTEND_DEV_PORT=5173` and extend `CORS_DEV_ORIGINS` if needed (see `.env.example`).
+3. **Port 4173 busy:** stop prod (`bash scripts/compose/stop-prod.sh`) or set e.g. `FRONTEND_DEV_PORT=5173` and extend `CORS_DEV_ORIGINS` if needed (see `.env.example`).
 
 ### Default dev credentials (from demo / `.env.example`)
 
@@ -73,7 +73,7 @@ Client portal example URL shape (see demo data for real tokens): `http://localho
 **Start**
 
 ```bash
-bash scripts/start-prod.sh
+bash scripts/compose/start-prod.sh
 ```
 
 - Uses **only** `docker-compose.yml` (no `docker-compose.dev.yml`): nginx + static frontend build, gunicorn-style production path as defined in compose.
@@ -81,7 +81,7 @@ bash scripts/start-prod.sh
 **Stop**
 
 ```bash
-bash scripts/stop-prod.sh
+bash scripts/compose/stop-prod.sh
 ```
 
 - `docker compose down --remove-orphans` on the default compose file.
@@ -95,10 +95,10 @@ bash scripts/stop-prod.sh
 
 ## C) LAN / mobile — share the **dev** stack on your network
 
-Default **`start.sh`** keeps bindings suitable for localhost. To open the app from phones or tablets on the same LAN:
+Default **`scripts/compose/start.sh`** keeps bindings suitable for localhost. To open the app from phones or tablets on the same LAN:
 
 ```bash
-bash scripts/publish-dev-to-lan.sh
+bash scripts/compose/publish-dev-to-lan.sh
 ```
 
 What it does (see script for details):
@@ -112,7 +112,7 @@ What it does (see script for details):
 **Revert to localhost-only dev**
 
 ```bash
-bash scripts/start.sh
+bash scripts/compose/start.sh
 ```
 
 ---

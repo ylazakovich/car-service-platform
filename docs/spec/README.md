@@ -6,13 +6,16 @@ This folder is the **canonical spec surface** for product intent, execution back
 
 | Artifact | Purpose |
 |----------|---------|
-| [RUNBOOK.md](./RUNBOOK.md) | How to run dev (hot reload), prod-like compose, demo SQL, LAN/mobile via `publish-dev-to-lan.sh`. |
+| [RUNBOOK.md](./RUNBOOK.md) | How to run dev (hot reload), prod-like compose, demo SQL, LAN/mobile via `scripts/compose/publish-dev-to-lan.sh`. |
+| [SCRIPTS.md](./SCRIPTS.md) | Full `scripts/` layout: compose, db, media, demo SQL, MCP, Allure, CI helpers, agents, dev tools. |
 | [DOMAIN_RULES.md](./DOMAIN_RULES.md) | Source of truth for domain entities, statuses, money, PDF/snapshot, access rules. |
 | [TECH_STACK.md](./TECH_STACK.md) | Stack, architecture shape, access surfaces, risks, non-goals. |
 | [PRODUCT.md](./PRODUCT.md) | Product goal, MVP scope, milestones, acceptance themes (strategy). |
 | [TASKS.md](./TASKS.md) | Single flat backlog with stable task IDs (`T-*`) for batching (“do block T-E2E-*”). |
 | [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md) | Explicit decisions still needed from product/tech owners. |
 | [SDD_WORKFLOW.md](./SDD_WORKFLOW.md) | How SDD maps to this repo’s **Agents** workflow and validation gates. |
+
+**Testing docs (engineering, not SDD product spec):** [`docs/testing/README.md`](../testing/README.md) — test pyramid, Allure snapshots, Playwright framework notes.
 
 **Not listed here (on purpose):** IDE-only docs — MCP merge, `verify-agent-environment`, ECC alignment — live under **`docs/dev/`** (`agent-session-bootstrap.md`, `agents-and-mcp.md`, `mcp-deduplication.md`). They are not part of the product specification.
 
