@@ -17,7 +17,7 @@ Bootstrap for an autoservice operations platform: Django + DRF backend, React + 
 
 ### Test pyramid (live counts from Allure)
 
-Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md). Full breakdown + advisory text: [`docs/testing/pyramid-snapshot.md`](docs/testing/pyramid-snapshot.md). JSON for tooling: [`docs/testing/pyramid-snapshot.json`](docs/testing/pyramid-snapshot.json). Same-repo PRs: the **Test Report** workflow refreshes these files after a green **PR Pipeline** (merged Allure `*-result.json`).
+Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md). Full breakdown + advisory text: [`docs/testing/pyramid-snapshot.md`](docs/testing/pyramid-snapshot.md). JSON for tooling: [`docs/testing/pyramid-snapshot.json`](docs/testing/pyramid-snapshot.json). Same-repo PRs: the **Test Report** workflow refreshes these files after a green **PR Pipeline** (merged Allure `*-result.json`). **Advisory quality gates** on pyramid shape run there too (`pyramid-check`: GitHub warning annotations + job summary, never fails the job — see `docs/testing/test-pyramid.md` § Quality gates).
 
 <!-- CSP_PYRAMID_TABLE_START -->
 | Layer | Allure epic | Cases |

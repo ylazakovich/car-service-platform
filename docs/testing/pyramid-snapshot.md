@@ -1,6 +1,6 @@
 # Test pyramid snapshot
 
-_Generated: `2026-04-20T07:55:22.507Z`_
+_Generated: `2026-04-20T07:59:53.681Z`_
 
 ## Counts by layer (Allure `epic`)
 
@@ -18,5 +18,13 @@ _No results in the given directory — nothing to chart._
 ## Advisory (planning only)
 
 - No Allure results in this directory — pyramid share advisory skipped (run tests or point `--results` at merged CI output).
+
+## Quality gates (non-blocking, advisory)
+
+These checks **never fail the workflow**; they surface in GitHub **Annotations** (warnings) and in the **Job summary** when `pyramid-check` runs (Test Report workflow).
+
+| Check | Status |
+| --- | --- |
+| Pyramid layer totals | ⚠️ skipped (no `unit`/`api`/`end-to-end`/`ui` cases in merged results) |
 
 Canonical policy: [`docs/testing/test-pyramid.md`](./test-pyramid.md).

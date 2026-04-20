@@ -32,6 +32,23 @@ These are **orientation** numbers (similar in spirit to Mike Cohn’s pyramid); 
 
 “Pyramid-layer cases” = tests counted under `unit` + `api` + `end-to-end` + `ui` in Allure. Tests without a known epic fall into **Other** (see snapshot); they should stay rare.
 
+## Quality gates (advisory, non-blocking)
+
+The **Test Report** workflow runs `allure-ci.mjs pyramid-check` on merged Allure results. This is a **quality signal**, not a merge gate:
+
+- **Violations** surface as GitHub **Annotations** (`::warning::`) and in the **Job summary** for the Test Report job.
+- The workflow **always exits successfully** for this step (`exit 0`); it does **not** fail the run or block merge.
+- Machine-readable output: [`pyramid-quality-gates.json`](./pyramid-quality-gates.json) (`warnings[]`, empty `blockingFailures[]` today; strict mode is reserved for the future if the team opts in).
+- Human-readable table: same rules are duplicated in [`pyramid-snapshot.md`](./pyramid-snapshot.md) under **Quality gates (non-blocking, advisory)**.
+
+Checked rules today (aligned with soft targets above):
+
+| Gate id | Meaning |
+| ------- | ------- |
+| `PYRAMID_UNIT_SHARE_LOW` | Unit share of Σ pyramid layers falls **below** the soft ~45% target (advisory). |
+| `PYRAMID_E2E_SHARE_HIGH` | UI/E2E share of Σ pyramid layers **exceeds** the soft ~28% ceiling (advisory). |
+| `PYRAMID_UNKNOWN_EPIC` | At least one test has no known `epic` → not counted on the pyramid. |
+
 ## How to refresh snapshots locally
 
 From the repo root, with a merged Allure results directory (e.g. after CI download or local runs copied into one folder):
@@ -45,6 +62,14 @@ node .github/scripts/allure-ci.mjs pyramid \
 ```
 
 Omit `--readme` if you do not want to touch the root README.
+
+Quality gates only (warnings + JSON, optional CI-style annotations if `GITHUB_STEP_SUMMARY` is set):
+
+```bash
+node .github/scripts/allure-ci.mjs pyramid-check \
+  --results path/to/allure-results \
+  --json docs/testing/pyramid-quality-gates.json
+```
 
 ## Related docs
 
