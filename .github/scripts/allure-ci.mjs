@@ -21,7 +21,12 @@ const EPICS = ["unit", "api", "ui", "end-to-end"];
 /** Pyramid export: base → middle → top (Allure epics). */
 const PYRAMID_LAYERS = [
   { id: "unit", epics: ["unit"], label: "Unit (base)", epicNote: "`unit`" },
-  { id: "api", epics: ["api"], label: "API (middle)", epicNote: "`api`" },
+  {
+    id: "api",
+    epics: ["api"],
+    label: "Integration (middle)",
+    epicNote: "`epic: api`, Allure `layer: integration`",
+  },
   {
     id: "ui_e2e",
     epics: ["end-to-end", "ui"],
@@ -29,6 +34,13 @@ const PYRAMID_LAYERS = [
     epicNote: "`end-to-end` (+ `ui` if used)",
   },
 ];
+
+/** Markdown for README / snapshot “epic(s)” column: slash-separated `epic` / `layer` (or two epics for UI). */
+function pyramidMarkdownEpicColumn(L) {
+  if (L.id === "api") return "`api` / `integration`";
+  if (L.id === "ui_e2e") return "`end-to-end` / `ui`";
+  return L.epics.map((e) => `\`${e}\``).join(", ");
+}
 
 /** Soft planning targets (shares of pyramid-layer totals); advisory quality gates only. */
 const PYRAMID_ADVISORY = {
@@ -39,7 +51,7 @@ const PYRAMID_ADVISORY = {
 /** PR comment: human-readable layer names (Allure `epic` label values). */
 const EPIC_DISPLAY = {
   unit: "Unit",
-  api: "API",
+  api: "Integration",
   ui: "UI",
   "end-to-end": "E2E",
   other: "Other",
@@ -579,13 +591,13 @@ function cmdPyramid(resultsDir, outputMd, outputJson, readmePath) {
     md.push(`_Head SHA: \`${payload.source.headSha.slice(0, 7)}\`_`);
   }
   md.push("");
-  md.push("## Counts by layer (Allure `epic`)");
+  md.push("## Counts by layer (`epic` / Allure `layer`)");
   md.push("");
-  md.push("| Layer | Allure epic(s) | Cases | Passed | Failed | Broken | Skipped |");
+  md.push("| Layer | `epic` / `layer` | Cases | Passed | Failed | Broken | Skipped |");
   md.push("| --- | --- | --: | --: | --: | --: | --: |");
   for (const L of layers) {
     const s = L.stats;
-    const epicCol = L.epics.map((e) => `\`${e}\``).join(", ");
+    const epicCol = pyramidMarkdownEpicColumn(L);
     md.push(
       `| ${L.label} | ${epicCol} | **${s.total}** | ${s.passed} | ${s.failed} | ${s.broken} | ${s.skipped} |`,
     );
@@ -635,10 +647,10 @@ function cmdPyramid(resultsDir, outputMd, outputJson, readmePath) {
 
   if (readmePath) {
     const tbl = [];
-    tbl.push("| Layer | Allure epic | Cases |");
+    tbl.push("| Layer | `epic` / `layer` | Cases |");
     tbl.push("| :--- | :--- | ---: |");
     for (const L of layers) {
-      const epicCol = L.epics.map((e) => `\`${e}\``).join(", ");
+      const epicCol = pyramidMarkdownEpicColumn(L);
       tbl.push(`| ${L.label} | ${epicCol} | **${L.stats.total}** |`);
     }
     tbl.push(`| **Σ pyramid layers** | | **${pyramidTotal}** |`);
