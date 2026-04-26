@@ -1549,21 +1549,22 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     await user.click(await screen.findByRole("button", { name: "+ Add part line" }));
+    const purchaseDialog = await screen.findByRole("dialog", { name: "Warehouse purchase" });
 
-    await user.clear(screen.getByLabelText("Order Date"));
-    await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
+    await user.clear(within(purchaseDialog).getByLabelText("Order Date"));
+    await user.type(within(purchaseDialog).getByLabelText("Order Date"), "05-04-2025");
     await user.tab();
-    await user.type(screen.getByLabelText("Supplier"), "AutoParts Pro");
-    await user.type(screen.getByLabelText("Part"), "Brake Sensor");
-    await user.type(screen.getByLabelText("Purchase Price"), "85");
+    await user.type(within(purchaseDialog).getByLabelText("Supplier"), "AutoParts Pro");
+    await user.type(within(purchaseDialog).getByLabelText("Part"), "Brake Sensor");
+    await user.type(within(purchaseDialog).getByLabelText("Purchase Price"), "85");
     await user.selectOptions(
-      screen.getByLabelText("Linked Repair"),
+      within(purchaseDialog).getByLabelText("Linked Repair"),
       "TOR-1011"
     );
 
-    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+    expect(within(purchaseDialog).getByLabelText("Vehicle")).toHaveValue("1");
 
-    await user.click(screen.getByRole("button", { name: "Save line" }));
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Save line" }));
 
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith(
@@ -1647,28 +1648,29 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     await user.click(await screen.findByRole("button", { name: "+ Add part line" }));
+    const purchaseDialog = await screen.findByRole("dialog", { name: "Warehouse purchase" });
 
-    expect(screen.getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
+    expect(within(purchaseDialog).getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
     expect(
-      screen.getByText(/Leave vehicle and repair empty on a line for stock or parts not tied to a job yet/)
+      within(purchaseDialog).getByText(/Leave vehicle and repair empty on a line for stock or parts not tied to a job yet/)
     ).toBeInTheDocument();
 
-    await user.clear(screen.getByLabelText("Order Date"));
-    await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
+    await user.clear(within(purchaseDialog).getByLabelText("Order Date"));
+    await user.type(within(purchaseDialog).getByLabelText("Order Date"), "05-04-2025");
     await user.tab();
-    await user.type(screen.getByLabelText("Supplier"), "AutoParts Pro");
-    await user.type(screen.getByLabelText("Part"), "Brake Sensor");
-    await user.type(screen.getByLabelText("Purchase Price"), "85");
-    await user.selectOptions(screen.getByLabelText("Linked Repair"), "TOR-1011");
+    await user.type(within(purchaseDialog).getByLabelText("Supplier"), "AutoParts Pro");
+    await user.type(within(purchaseDialog).getByLabelText("Part"), "Brake Sensor");
+    await user.type(within(purchaseDialog).getByLabelText("Purchase Price"), "85");
+    await user.selectOptions(within(purchaseDialog).getByLabelText("Linked Repair"), "TOR-1011");
 
-    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
-    expect(screen.getByRole("button", { name: "Unlink repair" })).toBeInTheDocument();
+    expect(within(purchaseDialog).getByLabelText("Vehicle")).toHaveValue("1");
+    expect(within(purchaseDialog).getByRole("button", { name: "Unlink repair" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Unlink repair" }));
-    expect(screen.getByLabelText("Linked Repair")).toHaveValue("");
-    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Unlink repair" }));
+    expect(within(purchaseDialog).getByLabelText("Linked Repair")).toHaveValue("");
+    expect(within(purchaseDialog).getByLabelText("Vehicle")).toHaveValue("1");
 
-    await user.click(screen.getByRole("button", { name: "Save line" }));
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Save line" }));
 
     await waitFor(() => {
       const purchaseCall = mockApi.post.mock.calls.find(([u]) => u === "/purchases/bulk/");
