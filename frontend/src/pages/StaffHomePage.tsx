@@ -507,6 +507,7 @@ type FriendlyDateInputProps = {
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
+  ariaLabel?: string;
 };
 
 function FriendlyDateInput({
@@ -517,6 +518,7 @@ function FriendlyDateInput({
   required = false,
   disabled = false,
   placeholder = "dd-mm-yyyy",
+  ariaLabel,
 }: FriendlyDateInputProps) {
   const inputId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -587,10 +589,11 @@ function FriendlyDateInput({
           id={inputId}
           className="friendly-date-input"
           value={draftValue}
-      onChange={(event) => setDraftValue(event.target.value)}
-      onFocus={() => setIsOpen(true)}
-      onClick={() => setIsOpen(true)}
-      onBlur={commitDraft}
+          aria-label={ariaLabel}
+          onChange={(event) => setDraftValue(event.target.value)}
+          onFocus={() => setIsOpen(true)}
+          onClick={() => setIsOpen(true)}
+          onBlur={commitDraft}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
@@ -4331,6 +4334,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <label>
                       <span>Last Service Date</span>
                       <FriendlyDateInput
+                        ariaLabel="Last Service Date"
                         value={vehicleForm.last_service_date}
                         onChange={(nextValue) => setVehicleForm((current) => ({ ...current, last_service_date: nextValue }))}
                       />
@@ -4340,6 +4344,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <label>
                     <span>Date Added</span>
                     <FriendlyDateInput
+                      ariaLabel="Date Added"
                       value={vehicleForm.added_date}
                       onChange={(nextValue) => setVehicleForm((current) => ({ ...current, added_date: nextValue }))}
                     />
@@ -5114,6 +5119,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <label>
                         <span>Order Date</span>
                         <FriendlyDateInput
+                          ariaLabel="Order Date"
                           value={purchaseModalForm.order_date}
                           onChange={(nextValue) =>
                             setPurchaseModalForm((current) => ({ ...current, order_date: nextValue }))
@@ -5124,6 +5130,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <label>
                         <span>Delivery Date</span>
                         <FriendlyDateInput
+                          ariaLabel="Delivery Date"
                           value={purchaseModalForm.approximate_delivery_date}
                           onChange={(nextValue) =>
                             setPurchaseModalForm((current) => ({ ...current, approximate_delivery_date: nextValue }))
@@ -5433,6 +5440,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <label>
                       <span>Order Date</span>
                       <FriendlyDateInput
+                        ariaLabel="Order Date"
                         value={purchaseForm.order_date}
                         onChange={(nextValue) =>
                           setPurchaseForm((current) => ({ ...current, order_date: nextValue }))
@@ -5444,6 +5452,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     <label>
                       <span>Approximate Delivery Date</span>
                       <FriendlyDateInput
+                        ariaLabel="Approximate Delivery Date"
                         value={purchaseForm.approximate_delivery_date}
                         onChange={(nextValue) =>
                           setPurchaseForm((current) => ({ ...current, approximate_delivery_date: nextValue }))
@@ -6555,6 +6564,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       <div className="repair-modal-completed-date repair-modal-assignment-completed">
                         <span className="repair-modal-field-label">Completed Date</span>
                         <FriendlyDateInput
+                          ariaLabel="Completed Date"
                           value={repairModalCompletedAt}
                           onChange={setRepairModalCompletedAt}
                           required
