@@ -59,8 +59,9 @@ class Purchase(models.Model):
         related_name="purchases",
     )
     part_name = models.CharField(max_length=255)
-    quantity = models.PositiveIntegerField(default=1)
-    current_stock_quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, db_default=0)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1, db_default=1)
+    current_stock_quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    inventory_checked_on = models.DateField(null=True, blank=True)
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     repair_code = models.CharField(max_length=32, blank=True)

@@ -383,11 +383,15 @@ function hasPurchaseInvoice(entry: Pick<PurchaseEntry, "invoice_name" | "invoice
   return Boolean(entry.invoice_name?.trim() || entry.invoice_url?.trim());
 }
 
-function formatInventoryInputValue(value: number): string {
-  if (!Number.isFinite(value)) {
-    return "0";
+function formatInventoryInputValue(value: number | null): string {
+  if (value == null || !Number.isFinite(value)) {
+    return "";
   }
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function quantityRequiresWholeUnits(unitCode: string | undefined): boolean {
+  return !unitCode || unitCode.trim().toLowerCase() === "pcs";
 }
 
 function formatDateInputValue(value: string): string {
@@ -1111,6 +1115,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const vehicles = useMemo(() => [...serverVehicles, ...demoVehicles], [serverVehicles, demoVehicles]);
 
   const [activePurchasesTab, setActivePurchasesTab] = useState<PurchasesWorkspaceTab>("warehouse");
+  const [showOutOfStockConsumables, setShowOutOfStockConsumables] = useState(false);
   const [activeReferenceTab, setActiveReferenceTab] = useState<ReferenceWorkspaceTab>("units");
   const [supplierRegistrySearch, setSupplierRegistrySearch] = useState("");
 
@@ -1155,6 +1160,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handlePurchaseOrderDownload,
     handlePurchaseModalSave,
     handlePurchaseDelete,
+    getConsumableInventoryDraft,
+    isConsumableInventoryDraftDirty,
+    updateConsumableInventoryDraft,
     handleConsumableStockSave,
     handlePurchaseInvoiceChange,
     handlePurchaseModalInvoiceChange,
@@ -1190,6 +1198,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       return hay.includes(q);
     });
   }, [supplierRegistrySearch, suppliers]);
+
+  const getQuantityFieldProps = useCallback(
+    (unitIdValue: string) => {
+      const unitCode = unitsOfMeasure.find((u) => String(u.id) === unitIdValue)?.code;
+      return quantityRequiresWholeUnits(unitCode)
+        ? { min: "1", step: "1" }
+        : { min: "0.01", step: "0.01" };
+    },
+    [unitsOfMeasure]
+  );
 
   const [purchaseDetailModalTab, setPurchaseDetailModalTab] = useState<"order" | "invoice">("order");
   const [supplierCreateOpen, setSupplierCreateOpen] = useState(false);
@@ -4447,6 +4465,16 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     const warehouseLoadedRemaining = Math.max(0, purchaseCount - purchases.length);
     const emptyConsumables = consumablePurchases.length === 0;
     const consumableLoadedRemaining = Math.max(0, consumableCount - consumablePurchases.length);
+    const notInventoriedConsumables = consumablePurchases.filter(
+      (entry) => entry.current_stock_quantity == null && !entry.inventory_checked_on
+    );
+    const activeConsumables = consumablePurchases.filter(
+      (entry) => entry.current_stock_quantity != null && entry.current_stock_quantity > 0 && Boolean(entry.inventory_checked_on)
+    );
+    const outOfStockConsumables = consumablePurchases.filter(
+      (entry) => entry.current_stock_quantity === 0 && Boolean(entry.inventory_checked_on)
+    );
+    const visibleConsumables = [...notInventoriedConsumables, ...activeConsumables];
     const meta = sectionMeta.purchases;
 
     const purchasesWorkspaceTabs: Array<{ id: PurchasesWorkspaceTab; label: string; shortLabel: string }> = [
@@ -4664,81 +4692,308 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </button>
                 </div>
               ) : (
-                <div className="purchases-registry-table-wrap">
-                  <table className="dashboard-table purchases-registry-table">
-                    <thead>
-                      <tr>
-                        <th>Part</th>
-                        <th>Supplier</th>
-                        <th>Order</th>
-                        <th>Qty</th>
-                        <th>Unit</th>
-                        <th>Buy</th>
-                        <th>Delivered</th>
-                        <th>Invoice</th>
-                        <th>Inventory</th>
-                      </tr>
-                    </thead>
-                    <tbody className="purchases-compact-list">
-                      {consumablePurchases.map((entry) => (
-                        <tr
-                          key={entry.id}
-                          role="button"
-                          tabIndex={0}
-                          className="purchases-compact-row"
-                          onClick={() => openPurchaseDetailModal(entry)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              openPurchaseDetailModal(entry);
-                            }
-                          }}
-                        >
-                          <td>{entry.part_name}</td>
-                          <td>{entry.supplier_name}</td>
-                          <td>{formatDisplayDate(entry.order_date)}</td>
-                          <td>{entry.quantity}</td>
-                          <td>{entry.unit_of_measure_code}</td>
-                          <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
-                          <td>{entry.delivered ? "Yes" : "No"}</td>
-                          <td>
-                            {entry.invoice_url ? (
-                              <button
-                                type="button"
-                                className="purchase-inline-action"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleOpenInvoice(entry.invoice_url);
+                <div className="purchases-consumables-layout">
+                  {visibleConsumables.length > 0 ? (
+                    <div className="purchases-registry-table-wrap">
+                      <table className="dashboard-table purchases-registry-table purchases-consumables-table">
+                        <colgroup>
+                          <col className="purchases-consumables-col purchases-consumables-col--part" />
+                          <col className="purchases-consumables-col purchases-consumables-col--supplier" />
+                          <col className="purchases-consumables-col purchases-consumables-col--order" />
+                          <col className="purchases-consumables-col purchases-consumables-col--bought" />
+                          <col className="purchases-consumables-col purchases-consumables-col--unit" />
+                          <col className="purchases-consumables-col purchases-consumables-col--buy" />
+                          <col className="purchases-consumables-col purchases-consumables-col--invoice" />
+                          <col className="purchases-consumables-col purchases-consumables-col--inventory-date" />
+                          <col className="purchases-consumables-col purchases-consumables-col--on-hand" />
+                          <col className="purchases-consumables-col purchases-consumables-col--action" />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>Part</th>
+                            <th>Supplier</th>
+                            <th>Order</th>
+                            <th>Bought</th>
+                            <th>Unit</th>
+                            <th>Buy</th>
+                            <th>Invoice</th>
+                            <th>Inventory date</th>
+                            <th>On hand</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="purchases-compact-list">
+                          {visibleConsumables.map((entry) => {
+                            const draft = getConsumableInventoryDraft(entry);
+                            const isDirty = isConsumableInventoryDraftDirty(entry);
+                            return (
+                              <tr
+                                key={entry.id}
+                                role="button"
+                                tabIndex={0}
+                                className="purchases-compact-row"
+                                onClick={() => openPurchaseDetailModal(entry)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    openPurchaseDetailModal(entry);
+                                  }
                                 }}
                               >
-                                Open
-                              </button>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td>
-                            <input
-                              className="inventory-stock-input"
-                              defaultValue={formatInventoryInputValue(entry.current_stock_quantity)}
-                              aria-label={`Inventory ${entry.part_name}`}
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              onClick={(event) => event.stopPropagation()}
-                              onKeyDown={(event) => {
-                                event.stopPropagation();
-                                if (event.key === "Enter") {
-                                  event.currentTarget.blur();
-                                }
-                              }}
-                              onBlur={(event) => void handleConsumableStockSave(entry, event.currentTarget.value)}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                                <td>{entry.part_name}</td>
+                                <td>{entry.supplier_name}</td>
+                                <td>{formatDisplayDate(entry.order_date)}</td>
+                                <td>{formatInventoryInputValue(entry.quantity)}</td>
+                                <td>{entry.unit_of_measure_code}</td>
+                                <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
+                                <td>
+                                  {entry.invoice_url ? (
+                                    <button
+                                      type="button"
+                                      className="purchase-inline-action"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleOpenInvoice(entry.invoice_url);
+                                      }}
+                                    >
+                                      Open
+                                    </button>
+                                  ) : (
+                                    "—"
+                                  )}
+                                </td>
+                                <td>
+                                  <input
+                                    className="inventory-stock-input"
+                                    aria-label={`Inventory date ${entry.part_name}`}
+                                    type="date"
+                                    value={draft.inventory_checked_on}
+                                    onClick={(event) => event.stopPropagation()}
+                                    onChange={(event) =>
+                                      updateConsumableInventoryDraft(entry, {
+                                        inventory_checked_on: event.target.value,
+                                        error: "",
+                                      })
+                                    }
+                                    placeholder="Not inventoried"
+                                  />
+                                  {entry.inventory_checked_on == null && draft.current_stock_quantity.trim() === "" ? (
+                                    <small className="consumable-inventory-hint">Not inventoried</small>
+                                  ) : null}
+                                </td>
+                                <td>
+                                  <input
+                                    className="inventory-stock-input"
+                                    value={draft.current_stock_quantity}
+                                    aria-label={`On hand ${entry.part_name}`}
+                                    type="number"
+                                    min="0"
+                                    max={entry.quantity}
+                                    step="0.01"
+                                    placeholder="Not inventoried"
+                                    onClick={(event) => event.stopPropagation()}
+                                    onChange={(event) => {
+                                      const nextValue = event.target.value;
+                                      if (nextValue.trim() !== "") {
+                                        const numericValue = Number(nextValue.replace(",", "."));
+                                        if (Number.isFinite(numericValue) && numericValue > entry.quantity) {
+                                          updateConsumableInventoryDraft(entry, {
+                                            current_stock_quantity: formatInventoryInputValue(entry.quantity),
+                                            error: "",
+                                          });
+                                          return;
+                                        }
+                                      }
+                                      updateConsumableInventoryDraft(entry, {
+                                        current_stock_quantity: nextValue,
+                                        error: "",
+                                      });
+                                    }}
+                                    onKeyDown={(event) => {
+                                      event.stopPropagation();
+                                      if (event.key === "Enter") {
+                                        event.preventDefault();
+                                        void handleConsumableStockSave(entry);
+                                      }
+                                    }}
+                                  />
+                                </td>
+                                <td>
+                                  <div className="consumable-inventory-actions" onClick={(event) => event.stopPropagation()}>
+                                    <button
+                                      type="button"
+                                      className="button button-secondary consumable-save-button"
+                                      onClick={() => void handleConsumableStockSave(entry)}
+                                      disabled={!isDirty || draft.isSaving}
+                                    >
+                                      {draft.isSaving ? "Saving…" : "Save"}
+                                    </button>
+                                    {draft.error ? <small className="form-error consumable-inventory-error">{draft.error}</small> : null}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="purchases-empty-panel">
+                      <p className="workspace-note">All inventoried consumables are currently out of stock.</p>
+                    </div>
+                  )}
+
+                  {outOfStockConsumables.length > 0 ? (
+                    <section className="consumable-out-of-stock-section" aria-label="Out of stock consumables">
+                      <button
+                        type="button"
+                        className="button button-secondary consumable-out-of-stock-toggle"
+                        onClick={() => setShowOutOfStockConsumables((current) => !current)}
+                      >
+                        {showOutOfStockConsumables ? "Hide" : "Show"} Out of stock ({outOfStockConsumables.length})
+                      </button>
+                      {showOutOfStockConsumables ? (
+                        <div className="purchases-registry-table-wrap">
+                          <table className="dashboard-table purchases-registry-table purchases-consumables-table">
+                            <colgroup>
+                              <col className="purchases-consumables-col purchases-consumables-col--part" />
+                              <col className="purchases-consumables-col purchases-consumables-col--supplier" />
+                              <col className="purchases-consumables-col purchases-consumables-col--order" />
+                              <col className="purchases-consumables-col purchases-consumables-col--bought" />
+                              <col className="purchases-consumables-col purchases-consumables-col--unit" />
+                              <col className="purchases-consumables-col purchases-consumables-col--buy" />
+                              <col className="purchases-consumables-col purchases-consumables-col--invoice" />
+                              <col className="purchases-consumables-col purchases-consumables-col--inventory-date" />
+                              <col className="purchases-consumables-col purchases-consumables-col--on-hand" />
+                              <col className="purchases-consumables-col purchases-consumables-col--action" />
+                            </colgroup>
+                            <thead>
+                              <tr>
+                                <th>Part</th>
+                                <th>Supplier</th>
+                                <th>Order</th>
+                                <th>Bought</th>
+                                <th>Unit</th>
+                                <th>Buy</th>
+                                <th>Invoice</th>
+                                <th>Inventory date</th>
+                                <th>On hand</th>
+                                <th>Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="purchases-compact-list">
+                              {outOfStockConsumables.map((entry) => {
+                                const draft = getConsumableInventoryDraft(entry);
+                                const isDirty = isConsumableInventoryDraftDirty(entry);
+                                return (
+                                  <tr
+                                    key={entry.id}
+                                    role="button"
+                                    tabIndex={0}
+                                    className="purchases-compact-row purchases-compact-row--muted"
+                                    onClick={() => openPurchaseDetailModal(entry)}
+                                    onKeyDown={(event) => {
+                                      if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault();
+                                        openPurchaseDetailModal(entry);
+                                      }
+                                    }}
+                                  >
+                                    <td>{entry.part_name}</td>
+                                    <td>{entry.supplier_name}</td>
+                                    <td>{formatDisplayDate(entry.order_date)}</td>
+                                    <td>{formatInventoryInputValue(entry.quantity)}</td>
+                                    <td>{entry.unit_of_measure_code}</td>
+                                    <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
+                                    <td>
+                                      {entry.invoice_url ? (
+                                        <button
+                                          type="button"
+                                          className="purchase-inline-action"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            handleOpenInvoice(entry.invoice_url);
+                                          }}
+                                        >
+                                          Open
+                                        </button>
+                                      ) : (
+                                        "—"
+                                      )}
+                                    </td>
+                                    <td>
+                                      <input
+                                        className="inventory-stock-input"
+                                        aria-label={`Inventory date ${entry.part_name} out of stock`}
+                                        type="date"
+                                        value={draft.inventory_checked_on}
+                                        onClick={(event) => event.stopPropagation()}
+                                        onChange={(event) =>
+                                          updateConsumableInventoryDraft(entry, {
+                                            inventory_checked_on: event.target.value,
+                                            error: "",
+                                          })
+                                        }
+                                      />
+                                    </td>
+                                    <td>
+                                      <input
+                                        className="inventory-stock-input"
+                                        value={draft.current_stock_quantity}
+                                        aria-label={`On hand ${entry.part_name} out of stock`}
+                                        type="number"
+                                        min="0"
+                                        max={entry.quantity}
+                                        step="0.01"
+                                        onClick={(event) => event.stopPropagation()}
+                                        onChange={(event) => {
+                                          const nextValue = event.target.value;
+                                          if (nextValue.trim() !== "") {
+                                            const numericValue = Number(nextValue.replace(",", "."));
+                                            if (Number.isFinite(numericValue) && numericValue > entry.quantity) {
+                                              updateConsumableInventoryDraft(entry, {
+                                                current_stock_quantity: formatInventoryInputValue(entry.quantity),
+                                                error: "",
+                                              });
+                                              return;
+                                            }
+                                          }
+                                          updateConsumableInventoryDraft(entry, {
+                                            current_stock_quantity: nextValue,
+                                            error: "",
+                                          });
+                                        }}
+                                        onKeyDown={(event) => {
+                                          event.stopPropagation();
+                                          if (event.key === "Enter") {
+                                            event.preventDefault();
+                                            void handleConsumableStockSave(entry);
+                                          }
+                                        }}
+                                      />
+                                    </td>
+                                    <td>
+                                      <div className="consumable-inventory-actions" onClick={(event) => event.stopPropagation()}>
+                                        <button
+                                          type="button"
+                                          className="button button-secondary consumable-save-button"
+                                          onClick={() => void handleConsumableStockSave(entry)}
+                                          disabled={!isDirty || draft.isSaving}
+                                        >
+                                          {draft.isSaving ? "Saving…" : "Save"}
+                                        </button>
+                                        {draft.error ? <small className="form-error consumable-inventory-error">{draft.error}</small> : null}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : null}
+                    </section>
+                  ) : null}
                 </div>
               )}
               {consumableHasMore && !emptyConsumables ? (
@@ -4994,8 +5249,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             setPurchaseModalForm((current) => ({ ...current, quantity: event.target.value }))
                           }
                           type="number"
-                          min="1"
-                          step="1"
+                          min={getQuantityFieldProps(purchaseModalForm.unit_of_measure_id).min}
+                          step={getQuantityFieldProps(purchaseModalForm.unit_of_measure_id).step}
                         />
                       </label>
                       <label>
@@ -5340,8 +5595,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                   updatePurchaseLineRow(lineIndex, { quantity: event.target.value })
                                 }
                                 type="number"
-                                min="1"
-                                step="1"
+                                min={getQuantityFieldProps(row.unit_of_measure_id).min}
+                                step={getQuantityFieldProps(row.unit_of_measure_id).step}
                                 required
                               />
                             </label>
