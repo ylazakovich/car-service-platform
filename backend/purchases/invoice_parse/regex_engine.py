@@ -121,6 +121,10 @@ SUPPLIER_PATTERN_CANDIDATES: list[tuple[str, str]] = [
         r"(?is)Sprzedawca\s*\([^)]*\)\s*:\s*(?P<supplier_name>[^\r\n]+)",
     ),
     (
+        "PL Sprzedawca: … (no parentheses; common PL invoices)",
+        r"(?is)Sprzedawca\s*:\s*(?P<supplier_name>[^\r\n]+)",
+    ),
+    (
         "EN Vendor: …",
         r"(?is)Vendor\s*:\s*(?P<supplier_name>[^\r\n]+)",
     ),

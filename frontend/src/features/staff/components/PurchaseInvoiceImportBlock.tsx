@@ -1,18 +1,20 @@
 import axios from "axios";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useId, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import {
-  fetchInvoiceParseTemplates,
-  previewInvoiceParseJson,
-  previewInvoiceParseMultipart,
-  suggestInvoicePattern,
-  type InvoiceParseTemplateItem,
+  suggestInvoiceParseMultipart,
   type ParsedInvoiceLine,
   type SupplierResolution,
+  type SuggestInvoiceParseResponse,
 } from "../../../api/invoiceParse";
-import type { ParsedImportLine } from "../hooks/usePurchases";
+import type { ParsedImportLine, PurchaseInvoiceImportApplyOptions } from "../hooks/usePurchases";
 
 type PurchaseInvoiceImportBlockProps = {
-  onApplyParsed: (lines: ParsedImportLine[], options?: { supplierName?: string | null }) => void;
+  onApplyParsed: (lines: ParsedImportLine[], options?: PurchaseInvoiceImportApplyOptions) => void;
+  /**
+   * After a successful parse from a dropped/selected file, upload and link that same file as the purchase invoice.
+   * Dropping another file replaces the linked document.
+   */
+  linkInvoiceFileAfterScan?: (file: File) => Promise<boolean>;
 };
 
 function supplierNameForForm(
@@ -47,333 +49,209 @@ function readApiError(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export function PurchaseInvoiceImportBlock({ onApplyParsed }: PurchaseInvoiceImportBlockProps) {
+function lineNeedsOperatorAttention(line: ParsedInvoiceLine): boolean {
+  const raw = line.uom_raw?.trim();
+  if (!raw) return false;
+  const m = line.uom_resolution?.match;
+  return m === "none" || m === "ambiguous";
+}
+
+function supplierNeedsOperatorAttention(res: SupplierResolution | null | undefined): boolean {
+  const m = res?.match;
+  return m === "none" || m === "ambiguous";
+}
+
+type MappedSuggestApply = { lines: ParsedImportLine[]; options: PurchaseInvoiceImportApplyOptions } | null;
+
+function mapSuggestToApply(res: SuggestInvoiceParseResponse): MappedSuggestApply {
+  if (!res.matched || !("line_pattern" in res)) {
+    return null;
+  }
+  const lines = res.preview_lines ?? [];
+  const mapped: ParsedImportLine[] = lines.map((row) => ({
+    part_name: row.part_name,
+    quantity: row.quantity,
+    purchase_price: row.purchase_price,
+    unit_of_measure_id: row.unit_of_measure_id,
+    uom_raw: row.uom_raw,
+  }));
+  return {
+    lines: mapped,
+    options: {
+      supplierName: supplierNameForForm(res.supplier_resolution, res.preview_supplier_name),
+      supplierNeedsAttention: supplierNeedsOperatorAttention(res.supplier_resolution ?? null),
+      linePartNeedsAttention: lines.map((ln) => lineNeedsOperatorAttention(ln)),
+    },
+  };
+}
+
+export function PurchaseInvoiceImportBlock({ onApplyParsed, linkInvoiceFileAfterScan }: PurchaseInvoiceImportBlockProps) {
   const baseId = useId();
-  const [templates, setTemplates] = useState<InvoiceParseTemplateItem[]>([]);
-  const [templatesError, setTemplatesError] = useState("");
-  const [rawText, setRawText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [templateId, setTemplateId] = useState<string>("");
-  const [customPattern, setCustomPattern] = useState("");
-  const [customSupplierPattern, setCustomSupplierPattern] = useState("");
-  const [previewLines, setPreviewLines] = useState<ParsedInvoiceLine[] | null>(null);
-  const [previewSupplierName, setPreviewSupplierName] = useState<string | null>(null);
-  const [supplierResolution, setSupplierResolution] = useState<SupplierResolution | null>(null);
-  const [previewWarnings, setPreviewWarnings] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [lastFileLabel, setLastFileLabel] = useState("");
+  const [dropzoneActive, setDropzoneActive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [okHint, setOkHint] = useState("");
 
-  const loadTemplates = useCallback(async () => {
-    setTemplatesError("");
-    try {
-      const rows = await fetchInvoiceParseTemplates(false);
-      setTemplates(rows);
-    } catch {
-      setTemplatesError("Не удалось загрузить шаблоны из Registers.");
+  /** @returns line count on success, `false` on failure */
+  function applyFromSuggestResponse(res: SuggestInvoiceParseResponse): false | number {
+    const mapped = mapSuggestToApply(res);
+    if (!mapped) {
+      setError(
+        res.matched === false && res.detail
+          ? res.detail
+          : "Could not parse line items from this file. Try another file or layout.",
+      );
+      return false;
     }
-  }, []);
-
-  useEffect(() => {
-    void loadTemplates();
-  }, [loadTemplates]);
-
-  async function handleSuggest() {
-    setError("");
-    setBusy(true);
-    setPreviewLines(null);
-    setPreviewSupplierName(null);
-    setSupplierResolution(null);
-    setPreviewWarnings([]);
-    try {
-      const body = rawText.trim();
-      if (!body) {
-        setError("Сначала вставьте текст или сделайте «Предпросмотр» с файлом — текст подставится автоматически.");
-        return;
-      }
-      const res = await suggestInvoicePattern(body);
-      setSupplierResolution(res.supplier_resolution ?? null);
-      if (res.suggested_supplier_pattern) {
-        setCustomSupplierPattern(res.suggested_supplier_pattern);
-      }
-      if (res.preview_supplier_name) {
-        setPreviewSupplierName(res.preview_supplier_name);
-      }
-      if (!res.matched || !("line_pattern" in res)) {
-        setError(
-          res.matched === false && res.detail
-            ? res.detail
-            : "Шаблон строк не подобрался. Выберите сохранённый шаблон или задайте regex в блоке ниже.",
-        );
-        return;
-      }
-      setCustomPattern(res.line_pattern);
-      setPreviewLines(res.preview_lines ?? []);
-    } catch (err) {
-      setError(readApiError(err, "Подбор regex не удался."));
-    } finally {
-      setBusy(false);
-    }
+    onApplyParsed(mapped.lines, mapped.options);
+    setOkHint(`Filled ${mapped.lines.length} line(s).`);
+    return mapped.lines.length;
   }
 
-  async function handlePreview() {
-    setError("");
+  async function scanFileAndFill(file: File) {
     setBusy(true);
-    setPreviewLines(null);
-    setPreviewSupplierName(null);
-    setSupplierResolution(null);
-    setPreviewWarnings([]);
+    setError("");
+    setOkHint("");
+    setLastFileLabel(file.name);
     try {
-      const tid = templateId === "" ? NaN : Number(templateId);
-      const useTemplate = Number.isFinite(tid) && tid > 0;
-      const pattern = customPattern.trim();
-      if (!useTemplate && !pattern) {
-        setError("Выберите шаблон из списка или откройте «Свои regex» и введите шаблон строк.");
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await suggestInvoiceParseMultipart(fd);
+      const lineCount = applyFromSuggestResponse(res);
+      if (lineCount === false) {
         return;
       }
-      if (useTemplate && pattern) {
-        setError("Либо шаблон из списка, либо свой regex — не оба сразу.");
-        return;
-      }
-
-      if (file) {
-        const fd = new FormData();
-        if (rawText.trim()) {
-          fd.append("raw_text", rawText.trim());
-        }
-        fd.append("file", file);
-        if (useTemplate) {
-          fd.append("template_id", String(tid));
+      if (linkInvoiceFileAfterScan) {
+        const linked = await linkInvoiceFileAfterScan(file);
+        if (!linked) {
+          setError(
+            "Lines were filled, but the invoice file could not be stored. Check the error under the line items, then try again.",
+          );
         } else {
-          fd.append("line_pattern", pattern);
-          const sp = customSupplierPattern.trim();
-          if (sp) {
-            fd.append("supplier_pattern", sp);
-          }
+          setOkHint(`Filled ${lineCount} line(s). Invoice file linked.`);
         }
-        const out = await previewInvoiceParseMultipart(fd);
-        setPreviewLines(out.lines);
-        setPreviewWarnings(out.warnings);
-        setPreviewSupplierName(out.supplier_name);
-        setSupplierResolution(out.supplier_resolution ?? null);
-        return;
       }
-
-      const out = await previewInvoiceParseJson({
-        raw_text: rawText.trim() || undefined,
-        ...(useTemplate
-          ? { template_id: tid }
-          : {
-              line_pattern: pattern,
-              supplier_pattern: customSupplierPattern.trim() || undefined,
-            }),
-      });
-      setPreviewLines(out.lines);
-      setPreviewWarnings(out.warnings);
-      setPreviewSupplierName(out.supplier_name);
-      setSupplierResolution(out.supplier_resolution ?? null);
     } catch (err) {
-      setError(readApiError(err, "Предпросмотр не удался."));
+      setError(readApiError(err, "Could not read the file or parse the invoice."));
     } finally {
       setBusy(false);
     }
   }
 
-  function handleApply() {
-    if (!previewLines?.length) {
+  const dropDisabled = busy;
+
+  function handleZoneDragEnter(e: DragEvent<HTMLDivElement>) {
+    if (dropDisabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDropzoneActive(true);
+  }
+
+  function handleZoneDragLeave(e: DragEvent<HTMLDivElement>) {
+    if (dropDisabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const next = e.relatedTarget;
+    if (next instanceof Node && e.currentTarget.contains(next)) {
       return;
     }
-    onApplyParsed(previewLines, {
-      supplierName: supplierNameForForm(supplierResolution, previewSupplierName),
-    });
+    setDropzoneActive(false);
   }
 
-  const useCustomOnly = templateId === "";
+  function handleZoneDragOver(e: DragEvent<HTMLDivElement>) {
+    if (dropDisabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+  }
+
+  function handleZoneDrop(e: DragEvent<HTMLDivElement>) {
+    if (dropDisabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDropzoneActive(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) {
+      void scanFileAndFill(f);
+    }
+  }
+
+  function handleDropzoneClick() {
+    if (dropDisabled) return;
+    fileInputRef.current?.click();
+  }
+
+  function handleDropzoneKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (dropDisabled) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      fileInputRef.current?.click();
+    }
+  }
+
+  async function handleFileInputChange(file: File | null) {
+    if (!file) return;
+    await scanFileAndFill(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
 
   return (
-    <div className="purchase-invoice-import-block purchase-invoice-import-block--ru">
-      <div className="purchase-invoice-import-head">
-        <p className="eyebrow">Фактура PL</p>
-        <p className="workspace-note purchase-invoice-import-lead">
-          PDF или изображение — на сервере извлекается текст (OCR). Затем по шаблону из Registers подтягиваются строки и при необходимости поставщик.
-        </p>
-      </div>
-      {templatesError ? <p className="form-error">{templatesError}</p> : null}
+    <div className="purchase-invoice-import-block purchase-invoice-import-block--compact">
       {error ? <p className="form-error">{error}</p> : null}
-
-      <div className="purchase-invoice-import-source">
-        <label className="purchase-invoice-import-file-label">
-          <span className="purchase-invoice-import-label-text">Файл</span>
-          <input
-            id={`${baseId}-file`}
-            type="file"
-            accept=".pdf,.txt,.text,.html,.png,.jpg,.jpeg,.webp,.tif,.tiff"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
-        </label>
-        <label className="purchase-invoice-import-raw-label">
-          <span className="purchase-invoice-import-label-text">Текст (вставка или после предпросмотра)</span>
-          <textarea
-            id={`${baseId}-raw`}
-            value={rawText}
-            onChange={(e) => setRawText(e.target.value)}
-            rows={4}
-            placeholder="Текст фактуры…"
-          />
-        </label>
-      </div>
-
-      <label className="purchase-invoice-import-template-row">
-        <span className="purchase-invoice-import-label-text">Шаблон из Registers</span>
-        <select
-          id={`${baseId}-tpl`}
-          value={templateId}
-          onChange={(e) => {
-            setTemplateId(e.target.value);
-            setCustomPattern("");
-            setCustomSupplierPattern("");
-          }}
-        >
-          <option value="">— Свои regex (ниже) —</option>
-          {templates.map((t) => (
-            <option key={t.id} value={String(t.id)}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <details className="purchase-invoice-import-advanced" open={useCustomOnly}>
-        <summary>Свои regex (только если шаблон не выбран)</summary>
-        <div className="purchase-invoice-import-advanced-body">
-          <label>
-            <span>Regex поставщика</span>
-            <textarea
-              id={`${baseId}-sup`}
-              value={customSupplierPattern}
-              onChange={(e) => setCustomSupplierPattern(e.target.value)}
-              rows={2}
-              className="purchase-invoice-import-regex"
-              placeholder="Именованная группа supplier_name; часто хватает «Подобрать regex»"
-              spellCheck={false}
-              disabled={!useCustomOnly}
-            />
-          </label>
-          <label>
-            <span>Regex строк (part_name, quantity, purchase_price)</span>
-            <textarea
-              id={`${baseId}-rx`}
-              value={customPattern}
-              onChange={(e) => setCustomPattern(e.target.value)}
-              rows={3}
-              className="purchase-invoice-import-regex"
-              spellCheck={false}
-              disabled={!useCustomOnly}
-            />
-          </label>
-        </div>
-      </details>
-
-      <div className="purchase-invoice-import-actions">
-        <button type="button" className="button" disabled={busy} onClick={() => void handlePreview()}>
-          Предпросмотр
-        </button>
-        <button type="button" className="button button-secondary" disabled={busy} onClick={() => void handleSuggest()}>
-          Подобрать regex
-        </button>
-        <button
-          type="button"
-          className="button button-secondary"
-          disabled={busy || !previewLines?.length}
-          onClick={handleApply}
-        >
-          Подставить в форму
-        </button>
-      </div>
-
-      {previewWarnings.length > 0 ? (
-        <ul className="workspace-note purchase-invoice-import-warnings">
-          {previewWarnings.map((w) => (
-            <li key={w}>{w}</li>
-          ))}
-        </ul>
-      ) : null}
-
-      {(supplierResolution?.match === "none" || supplierResolution?.match === "ambiguous") &&
-      (previewSupplierName || supplierResolution?.raw_name) ? (
-        <p className="workspace-note purchase-invoice-import-supplier-hint">
-          Нажмите «Подставить в форму», затем проверьте поле <strong>Supplier</strong> ниже по этой форме. Если
-          поставщика ещё нет в базе, исправьте имя при необходимости и сохраните закупку — запись поставщика создастся
-          автоматически. NIP из поля ниже сохранится в карточку поставщика, если он новый или в справочнике у этой
-          записи ещё не был указан NIP.
+      {okHint ? (
+        <p className="workspace-note purchase-invoice-import-ok" role="status">
+          {okHint}
         </p>
       ) : null}
 
-      {previewSupplierName || supplierResolution?.raw_name ? (
-        <div className="invoice-parse-supplier-preview purchase-invoice-supplier-preview">
-          <span className="invoice-parse-supplier-label">Поставщик</span>
-          <div className="purchase-invoice-supplier-meta">
-            <strong>{supplierResolution?.resolved_name ?? previewSupplierName ?? supplierResolution?.raw_name}</strong>
-            {supplierResolution?.match && supplierResolution.match !== "none" ? (
-              <span className="workspace-note purchase-invoice-import-match-pill">
-                {supplierResolution.match === "exact"
-                  ? "справочник"
-                  : supplierResolution.match === "fuzzy"
-                    ? "похожее имя"
-                    : supplierResolution.match === "normalized"
-                      ? "справочник"
-                      : supplierResolution.match === "alias"
-                        ? "алиас"
-                        : supplierResolution.match === "ambiguous"
-                          ? "несколько кандидатов"
-                          : supplierResolution.match}
-              </span>
-            ) : null}
-            {previewSupplierName &&
-            supplierResolution?.resolved_name &&
-            previewSupplierName.trim() !== supplierResolution.resolved_name.trim() ? (
-              <span className="workspace-note">из текста: {previewSupplierName}</span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      <input
+        id={`${baseId}-file`}
+        ref={fileInputRef}
+        type="file"
+        className="hidden-file-input"
+        accept=".pdf,.txt,.text,.html,.png,.jpg,.jpeg,.webp,.tif,.tiff"
+        disabled={dropDisabled}
+        tabIndex={-1}
+        onChange={(e) => void handleFileInputChange(e.target.files?.[0] ?? null)}
+      />
 
-      {previewLines && previewLines.length > 0 ? (
-        <div className="purchase-invoice-import-preview">
-          <p className="workspace-note">
-            Строк: <strong>{previewLines.length}</strong>. Проверьте и нажмите «Подставить в форму».
-          </p>
-          <table className="data-table purchase-invoice-import-preview-table">
-            <thead>
-              <tr>
-                <th>Наименование</th>
-                <th>Кол-во</th>
-                <th>Ед.</th>
-                <th>Цена</th>
-              </tr>
-            </thead>
-            <tbody>
-              {previewLines.map((row, i) => (
-                <tr key={`${row.part_name}-${i}`}>
-                  <td>{row.part_name}</td>
-                  <td>{row.quantity}</td>
-                  <td>
-                    {row.uom_raw ? (
-                      <>
-                        <span>{row.uom_raw}</span>
-                        {row.unit_of_measure_code ? (
-                          <span className="workspace-note"> → {row.unit_of_measure_code}</span>
-                        ) : null}
-                      </>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td>{row.purchase_price}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div
+        className={`invoice-parse-dropzone${dropzoneActive ? " invoice-parse-dropzone--active" : ""}${dropDisabled ? " invoice-parse-dropzone--disabled" : ""}`}
+        role="button"
+        tabIndex={dropDisabled ? -1 : 0}
+        aria-label="Upload invoice: drop a file here or press to choose. PDF, images, or text."
+        onClick={handleDropzoneClick}
+        onKeyDown={handleDropzoneKeyDown}
+        onDragEnter={handleZoneDragEnter}
+        onDragLeave={handleZoneDragLeave}
+        onDragOver={handleZoneDragOver}
+        onDrop={handleZoneDrop}
+      >
+        <span className="invoice-parse-dropzone-icon" aria-hidden>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        <span className="invoice-parse-dropzone-title">Drop invoice file here</span>
+        <span className="invoice-parse-dropzone-hint">or click to choose a file from disk</span>
+        <span className="invoice-parse-dropzone-formats">PDF · PNG · JPG · WEBP · TIFF · TXT</span>
+        {busy ? <span className="invoice-parse-dropzone-busy">Parsing…</span> : null}
+      </div>
+
+      {lastFileLabel && !busy ? (
+        <p className="workspace-note purchase-invoice-last-file">
+          Last file: <strong>{lastFileLabel}</strong>
+        </p>
       ) : null}
     </div>
   );

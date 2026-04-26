@@ -3991,20 +3991,223 @@ button.moneyflow-series-toggle {
 
 .purchases-delivered-field {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: var(--s2);
-  font-size: 0.88rem;
-  color: var(--text-mid);
+  gap: var(--s3);
+  margin-top: var(--s4);
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-mid);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--text);
   cursor: pointer;
   user-select: none;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.purchases-delivered-field input {
-  width: 1.05rem;
-  height: 1.05rem;
-  accent-color: var(--accent);
+.purchases-delivered-field:hover {
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--surface-mid) 88%, #ffffff 6%);
+}
+
+.purchases-delivered-field:has(.purchases-delivered-field__input:focus-visible) {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface-mid), 0 0 0 4px var(--accent);
+  border-color: var(--border-accent);
+}
+
+/* Shop consumable: “on” uses catalog accent */
+.purchases-delivered-field:has(.purchases-delivered-field__input:checked) {
+  border-color: var(--border-accent);
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.purchases-delivered-field:has(.purchases-delivered-field__input:checked) .purchases-delivered-field__text {
+  color: var(--text);
+}
+
+/* Purchase create / detail: kanban-like pinned delivery status (maps to API `delivered`) */
+.purchase-delivery-kanban-card {
+  margin-top: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-mid);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.purchase-delivery-kanban-card__strip {
+  display: flex;
+  width: 100%;
+  min-height: 3.35rem;
+}
+
+.purchase-delivery-kanban-card__segment {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: var(--s3) var(--s2);
+  margin: 0;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  font: inherit;
   cursor: pointer;
+  text-align: center;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.purchase-delivery-kanban-card__segment:last-child {
+  border-right: none;
+}
+
+.purchase-delivery-kanban-card__segment:hover {
+  background: var(--surface-mid);
+  color: var(--text-mid);
+}
+
+.purchase-delivery-kanban-card__segment:focus-visible {
+  outline: none;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.purchase-delivery-kanban-card__segment--pending.purchase-delivery-kanban-card__segment--active {
+  background: color-mix(in srgb, var(--surface-mid) 88%, #ffffff 6%);
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 0 var(--accent);
+}
+
+.purchase-delivery-kanban-card__segment--done.purchase-delivery-kanban-card__segment--active {
+  background: rgba(120, 200, 140, 0.14);
+  color: #c4efd0;
+  box-shadow: inset 0 -3px 0 0 rgba(130, 210, 150, 0.9);
+}
+
+.purchase-delivery-kanban-card__segment-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.purchase-delivery-kanban-card__segment-hint {
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.25;
+  opacity: 0.88;
+  max-width: 11rem;
+}
+
+/* Under “New invoice” / purchase detail tabs — not inside long scroll (always visible) */
+.purchase-modal-delivery-strip {
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--s2) var(--s4) var(--s3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.purchase-modal-delivery-strip .purchase-delivery-kanban-card {
+  margin-top: 0;
+}
+
+@media (min-width: 821px) {
+  .purchase-modal-delivery-strip {
+    padding-left: var(--s6);
+    padding-right: var(--s6);
+  }
+}
+
+.purchases-delivered-field__control {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.purchases-delivered-field__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.purchases-delivered-field__check {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  border: 2px solid var(--border-strong);
+  background: var(--surface-mid);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.purchases-delivered-field:hover .purchases-delivered-field__check {
+  border-color: var(--text-soft);
+}
+
+.purchases-delivered-field__input:checked + .purchases-delivered-field__check {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.purchases-delivered-field__check::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 0.28rem;
+  height: 0.52rem;
+  border: solid var(--accent);
+  border-width: 0 2.5px 2.5px 0;
+  border-radius: 0 0 1px 0;
+  transform: translate(-50%, -50%) rotate(40deg);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.purchases-delivered-field__input:checked + .purchases-delivered-field__check::after {
+  opacity: 1;
+}
+
+.purchases-delivered-field__text {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-mid);
+  font-weight: 600;
+}
+
+.purchases-delivered-field:hover .purchases-delivered-field__text {
+  color: var(--text);
 }
 
 .purchase-delivery-overdue {
@@ -6012,6 +6215,7 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
 
 .purchase-invoice-line-card {
   border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: 12px;
   background: var(--surface-mid);
   padding: var(--s4);
@@ -6022,18 +6226,151 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
 
 .purchase-invoice-line-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--s3);
   flex-wrap: wrap;
 }
 
-.purchase-invoice-line-title {
-  font-size: 0.8rem;
+.purchase-invoice-lines-hint {
+  margin-bottom: var(--s2);
+}
+
+.purchase-invoice-line-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.2rem 0.35rem 0.2rem 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.purchase-invoice-line-toggle:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.purchase-invoice-line-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface-mid), 0 0 0 4px var(--accent);
+}
+
+.purchase-invoice-line-chevron-wrap {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  min-height: 2.25rem;
+  margin-top: 0.02rem;
+}
+
+.purchase-invoice-line-chevron {
+  display: block;
+  color: var(--text-soft);
+  transition: transform 0.2s ease;
+}
+
+.purchase-invoice-line-card--expanded .purchase-invoice-line-chevron {
+  transform: rotate(90deg);
+}
+
+.purchase-invoice-line-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding-top: var(--s3);
+  margin-top: var(--s1);
+  border-top: 1px solid var(--border);
+}
+
+.purchase-invoice-line-details[hidden] {
+  display: none !important;
+}
+
+.purchase-invoice-line-heading-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+  min-width: 0;
+}
+
+.purchase-invoice-line-review-pill {
+  flex-shrink: 0;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(224, 160, 80, 0.16);
+  color: #e8b060;
+  border: 1px solid rgba(224, 160, 80, 0.4);
+}
+
+.purchase-invoice-line-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.purchase-invoice-line-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.35rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.purchase-invoice-line-heading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.purchase-invoice-line-primary {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.purchase-invoice-line-primary--placeholder {
+  font-weight: 500;
   color: var(--text-soft);
+}
+
+.purchase-invoice-line-meta {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 .purchase-invoice-add-line-wrap {
@@ -6123,6 +6460,20 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
   display: flex;
   flex-wrap: wrap;
   gap: var(--s2);
+}
+
+.purchase-import-uom-callout {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
+.purchase-import-uom-callout-text {
+  margin: 0;
+  max-width: 36rem;
 }
 
 .purchase-invoice-import-warnings {
@@ -6263,6 +6614,7 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
   background: var(--surface);
   cursor: pointer;
   text-align: center;
+  user-select: none;
   transition:
     border-color 0.15s ease,
     background 0.15s ease,
@@ -6315,9 +6667,22 @@ table.purchases-registry-table tr.purchases-compact-row--attention td:first-chil
   text-transform: uppercase;
 }
 
-/* События мыши и drag — на самой зоне, без «дыр» от вложенных span (стабильный dragDepth). */
-.invoice-parse-dropzone > * {
-  pointer-events: none;
+.invoice-parse-dropzone-busy {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+label.purchase-field--needs-attention > span:first-child {
+  color: var(--warning, #c9a227);
+}
+
+.purchase-field--needs-attention input,
+.purchase-field--needs-attention select,
+.purchase-field--needs-attention .autocomplete-wrapper input {
+  border-color: color-mix(in srgb, var(--warning, #c9a227) 55%, var(--border));
+  outline: 2px solid color-mix(in srgb, var(--warning, #c9a227) 45%, transparent);
+  outline-offset: 1px;
 }
 
 .invoice-parse-raw-textarea {
