@@ -13,9 +13,12 @@ import {
 import { fetchServices, type ServiceItem } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { createSupplier, updateSupplier, type SupplierItem } from "../api/purchases";
-import { usePurchases, type PurchaseEntry } from "../features/staff/hooks/usePurchases";
+import {
+  usePurchases,
+  type PurchaseEntry,
+  type PurchaseLineFormState,
+} from "../features/staff/hooks/usePurchases";
 import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
-import { InvoiceParseTemplatesPanel } from "../features/staff/components/InvoiceParseTemplatesPanel";
 import { PurchaseInvoiceImportBlock } from "../features/staff/components/PurchaseInvoiceImportBlock";
 import { RegistersCustomersPanel } from "../features/staff/components/RegistersCustomersPanel";
 import { ServicesRegisterPanel } from "../features/staff/components/ServicesRegisterPanel";
@@ -98,7 +101,7 @@ type StaffHomePageProps = {
 
 type UserAccessTab = "owner" | "admins" | "masters";
 type PurchasesWorkspaceTab = "warehouse" | "consumables" | "suppliers";
-type ReferenceWorkspaceTab = "units" | "services" | "customers" | "invoice_lines";
+type ReferenceWorkspaceTab = "units" | "services" | "customers";
 type DashboardTab = "moneyflow" | "service_board" | "warehouse" | "consumables";
 type DashboardDateRange = {
   start_date: string;
@@ -269,6 +272,43 @@ function getDateBounds(values: string[]) {
     start_date: normalized[0] ?? "",
     end_date: normalized[normalized.length - 1] ?? "",
   };
+}
+
+function buildPurchaseInvoiceLineMeta(
+  row: PurchaseLineFormState,
+  unitsOfMeasure: { id: number | string; code: string }[]
+): string | null {
+  const bits: string[] = [];
+  const q = row.quantity.trim();
+  if (q) {
+    bits.push(`Qty ${q}`);
+  }
+  const u = unitsOfMeasure.find((x) => String(x.id) === row.unit_of_measure_id);
+  if (u?.code) {
+    bits.push(String(u.code));
+  }
+  const pp = row.purchase_price.trim();
+  if (pp) {
+    bits.push(pp);
+  }
+  return bits.length > 0 ? bits.join(" · ") : null;
+}
+
+function getPurchaseInvoiceLinePrimaryDisplay(
+  row: PurchaseLineFormState,
+  mode: "warehouse" | "consumables",
+  totalLines: number
+): { text: string; title?: string } {
+  const raw = row.part_name.trim();
+  const emptyLabel = mode === "warehouse" ? "Part not set yet" : "Item not set yet";
+  if (!raw) {
+    return { text: emptyLabel };
+  }
+  const maxLen = totalLines > 1 ? 52 : 72;
+  if (raw.length > maxLen) {
+    return { text: `${raw.slice(0, maxLen - 1)}…`, title: raw };
+  }
+  return { text: raw, title: raw };
 }
 
 function createIsoDateRange(startDate: string, endDate: string): string[] {
@@ -1039,6 +1079,46 @@ const ACT_EXPORT_ODOMETER_REQUIRED_MESSAGE =
   "Fill in Odometer when returned (km) before exporting the act.";
 const ODOMETER_NUMBER_MESSAGE = "Odometer must be a whole number (km), or leave empty.";
 
+/** Kanban-style pinned status strip: maps to `delivered` on save (false = not at workshop, true = received). */
+function PurchaseDeliveryStatusCard({
+  delivered,
+  onChange,
+}: {
+  delivered: boolean;
+  onChange: (delivered: boolean) => void;
+}) {
+  return (
+    <div className="purchase-delivery-kanban-card">
+      <div className="purchase-delivery-kanban-card__strip" role="radiogroup" aria-label="Receipt at workshop">
+        <button
+          type="button"
+          role="radio"
+          aria-checked={!delivered}
+          className={`purchase-delivery-kanban-card__segment purchase-delivery-kanban-card__segment--pending${
+            !delivered ? " purchase-delivery-kanban-card__segment--active" : ""
+          }`}
+          onClick={() => onChange(false)}
+        >
+          <span className="purchase-delivery-kanban-card__segment-label">Not received</span>
+          <span className="purchase-delivery-kanban-card__segment-hint">In transit or expected</span>
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={delivered}
+          className={`purchase-delivery-kanban-card__segment purchase-delivery-kanban-card__segment--done${
+            delivered ? " purchase-delivery-kanban-card__segment--active" : ""
+          }`}
+          onClick={() => onChange(true)}
+        >
+          <span className="purchase-delivery-kanban-card__segment-label">Received at workshop</span>
+          <span className="purchase-delivery-kanban-card__segment-hint">Saved as delivered</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function StaffHomePage({ activeSection, onSelectSection, openRepairComposerRequest }: StaffHomePageProps) {
   const { user, isStaff, isAdmin } = useAuth();
   const lastHandledRepairComposerRequest = useRef(0);
@@ -1135,8 +1215,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     selectedPurchase,
     purchaseModalForm,
     setPurchaseModalForm,
-    purchaseInvoiceName,
-    purchaseInvoiceUrl,
     purchaseModalInvoiceName,
     purchaseModalInvoiceUrl,
     isPurchaseCreateModalOpen,
@@ -1158,7 +1236,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     handlePurchaseModalSave,
     handlePurchaseDelete,
     handleConsumableStockSave,
-    handlePurchaseInvoiceChange,
+    attachPurchaseCreateInvoiceFile,
     handlePurchaseModalInvoiceChange,
     handlePurchaseModalInvoiceRemove,
     handleOpenInvoice,
@@ -1179,9 +1257,74 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     refreshUnitsOfMeasure,
     refreshSuppliers,
     applyPurchaseLineImport,
+    approveImportedUnitOfMeasure,
+    purchaseImportSupplierNeedsAttention,
+    purchaseImportLineNeedsAttention,
   } = usePurchases(vehicles, {
     enableConsumablesFetch: activeSection === "purchases" && activePurchasesTab === "consumables",
   });
+
+  const [purchaseLineExpandById, setPurchaseLineExpandById] = useState<Record<string, boolean>>({});
+  const purchaseCreateModalWasOpenRef = useRef(false);
+  const purchaseLinesExpandSigRef = useRef("");
+
+  useEffect(() => {
+    if (!isPurchaseCreateModalOpen) {
+      purchaseCreateModalWasOpenRef.current = false;
+      return;
+    }
+
+    const justOpened = !purchaseCreateModalWasOpenRef.current;
+    purchaseCreateModalWasOpenRef.current = true;
+
+    const lineSig = purchaseLineRows.map((r) => r.clientLineId).join(",");
+    const flagSig = purchaseImportLineNeedsAttention.map((f) => (f ? "1" : "0")).join("");
+    const sig = `${lineSig}|${flagSig}|${purchaseLineRows.length}`;
+    const linesOrFlagsChanged = sig !== purchaseLinesExpandSigRef.current;
+    if (linesOrFlagsChanged) {
+      purchaseLinesExpandSigRef.current = sig;
+    }
+
+    if (!justOpened && !linesOrFlagsChanged) {
+      return;
+    }
+
+    const applyAttention = (target: Record<string, boolean>) => {
+      for (let i = 0; i < purchaseLineRows.length; i++) {
+        if (purchaseImportLineNeedsAttention[i] === true) {
+          const id = purchaseLineRows[i]?.clientLineId;
+          if (id) {
+            target[id] = true;
+          }
+        }
+      }
+    };
+
+    if (justOpened) {
+      purchaseLinesExpandSigRef.current = sig;
+      setPurchaseLineExpandById(() => {
+        const next: Record<string, boolean> = {};
+        applyAttention(next);
+        return next;
+      });
+      return;
+    }
+
+    if (linesOrFlagsChanged) {
+      purchaseLinesExpandSigRef.current = sig;
+      setPurchaseLineExpandById((prev) => {
+        const existingIds = new Set(purchaseLineRows.map((r) => r.clientLineId));
+        const next: Record<string, boolean> = {};
+        for (const [id, open] of Object.entries(prev)) {
+          if (existingIds.has(id)) {
+            next[id] = open;
+          }
+        }
+        applyAttention(next);
+        return next;
+      });
+    }
+  }, [isPurchaseCreateModalOpen, purchaseLineRows, purchaseImportLineNeedsAttention]);
 
   const filteredSuppliers = useMemo(() => {
     const q = supplierRegistrySearch.trim().toLowerCase();
@@ -4852,6 +4995,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </button>
               </div>
 
+              <div className="purchase-modal-delivery-strip purchase-modal-delivery-strip--detail">
+                <PurchaseDeliveryStatusCard
+                  delivered={purchaseModalForm.delivered}
+                  onChange={(nextDelivered) =>
+                    setPurchaseModalForm((current) => ({ ...current, delivered: nextDelivered }))
+                  }
+                />
+              </div>
+
               <div className="purchase-detail-modal-scroll">
               <div className="customer-detail-stack purchase-modal-stack">
                 {purchaseDetailModalTab === "order" ? (
@@ -5049,25 +5201,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
 
                     <label className="purchases-delivered-field">
-                      <input
-                        type="checkbox"
-                        checked={purchaseModalForm.is_shop_consumable}
-                        onChange={(event) =>
-                          setPurchaseModalForm((current) => ({ ...current, is_shop_consumable: event.target.checked }))
-                        }
-                      />
-                      <span>Shop consumable (excluded from completion act)</span>
-                    </label>
-
-                    <label className="purchases-delivered-field">
-                      <input
-                        type="checkbox"
-                        checked={purchaseModalForm.delivered}
-                        onChange={(event) =>
-                          setPurchaseModalForm((current) => ({ ...current, delivered: event.target.checked }))
-                        }
-                      />
-                      <span>Delivered (received at workshop)</span>
+                      <span className="purchases-delivered-field__control">
+                        <input
+                          type="checkbox"
+                          className="purchases-delivered-field__input"
+                          checked={purchaseModalForm.is_shop_consumable}
+                          onChange={(event) =>
+                            setPurchaseModalForm((current) => ({
+                              ...current,
+                              is_shop_consumable: event.target.checked,
+                            }))
+                          }
+                        />
+                        <span className="purchases-delivered-field__check" aria-hidden="true" />
+                      </span>
+                      <span className="purchases-delivered-field__text">Shop consumable (excluded from completion act)</span>
                     </label>
                   </div>
                 </div>
@@ -5160,6 +5308,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               aria-modal="true"
               aria-labelledby="purchase-create-modal-title"
               onClick={(event) => event.stopPropagation()}
+              onDragOver={(event) => {
+                if ([...event.dataTransfer.types].includes("Files")) {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "copy";
+                }
+              }}
             >
               <div className="panel-header">
                 <div>
@@ -5171,13 +5325,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
 
               <form className="stack-form purchase-form-stack" onSubmit={handlePurchaseSubmit}>
+                <div className="purchase-modal-delivery-strip purchase-modal-delivery-strip--create">
+                  <PurchaseDeliveryStatusCard
+                    delivered={purchaseForm.delivered}
+                    onChange={(nextDelivered) =>
+                      setPurchaseForm((current) => ({ ...current, delivered: nextDelivered }))
+                    }
+                  />
+                </div>
                 <div className="purchase-form-modal-scroll">
-                  <p className="workspace-note">
-                    {purchaseCreateMode === "warehouse"
-                      ? "One supplier and one invoice file for all lines below. Each line can be a different part; link vehicle and repair per line when the part is for a specific job, or leave unlinked for stock."
-                      : "One supplier and one invoice for multiple consumable lines (fluids, gloves, chemistry, etc.). No vehicle or repair links. Lines are excluded from completion acts."}
-                  </p>
-                  <PurchaseInvoiceImportBlock onApplyParsed={applyPurchaseLineImport} />
+                  <PurchaseInvoiceImportBlock
+                    onApplyParsed={applyPurchaseLineImport}
+                    linkInvoiceFileAfterScan={attachPurchaseCreateInvoiceFile}
+                  />
                   <div className="form-grid">
                     <label>
                       <span>Order Date</span>
@@ -5200,7 +5360,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       />
                     </label>
 
-                    <label>
+                    <label className={purchaseImportSupplierNeedsAttention ? "purchase-field--needs-attention" : undefined}>
                       <span>Supplier</span>
                       <div className="autocomplete-wrapper">
                         <input
@@ -5238,29 +5398,123 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </label>
                   </div>
 
+                  {purchaseLineRows.length > 1 ? (
+                    <p className="workspace-note purchase-invoice-lines-hint">
+                      Lines start collapsed — tap a row to edit. Rows that need review after import open
+                      automatically.
+                    </p>
+                  ) : (
+                    <p className="workspace-note purchase-invoice-lines-hint">
+                      Line starts collapsed — tap the row to edit part, prices, and links.
+                    </p>
+                  )}
+
                   <div className="purchase-invoice-lines">
                     {purchaseLineRows.map((row, lineIndex) => {
                       const lineRepairOptions = row.vehicle_id
                         ? repairs.filter((repair) => String(repair.vehicle_id) === row.vehicle_id)
                         : repairs;
+                      const lineImportNeedsAttention = purchaseImportLineNeedsAttention[lineIndex] === true;
+                      const lineMeta = buildPurchaseInvoiceLineMeta(row, unitsOfMeasure);
+                      const primary = getPurchaseInvoiceLinePrimaryDisplay(
+                        row,
+                        purchaseCreateMode === "consumables" ? "consumables" : "warehouse",
+                        purchaseLineRows.length
+                      );
+                      const lineAria =
+                        purchaseLineRows.length > 1
+                          ? `Invoice row ${lineIndex + 1}: ${row.part_name.trim() || "empty part name"}`
+                          : `Invoice line: ${row.part_name.trim() || "empty part name"}`;
+                      const lineDetailsId = `purchase-line-details-${row.clientLineId}`;
+                      const lineExpandedExplicit = purchaseLineExpandById[row.clientLineId];
+                      const lineExpanded = lineExpandedExplicit === true;
                       return (
-                        <div key={lineIndex} className="purchase-invoice-line-card">
+                        <div
+                          key={row.clientLineId}
+                          className={`purchase-invoice-line-card${
+                            lineExpanded ? " purchase-invoice-line-card--expanded" : ""
+                          }`}
+                          role="group"
+                          aria-label={lineAria}
+                        >
                           <div className="purchase-invoice-line-card-header">
-                            <span className="purchase-invoice-line-title">
-                              {purchaseLineRows.length > 1 ? `Line ${lineIndex + 1}` : "Line"}
-                            </span>
+                            <button
+                              type="button"
+                              className="purchase-invoice-line-toggle"
+                              aria-expanded={lineExpanded}
+                              aria-controls={lineDetailsId}
+                              onClick={() =>
+                                setPurchaseLineExpandById((prev) => {
+                                  const current = prev[row.clientLineId] === true;
+                                  return { ...prev, [row.clientLineId]: !current };
+                                })
+                              }
+                            >
+                              <span className="purchase-invoice-line-chevron-wrap" aria-hidden="true">
+                                <svg
+                                  className="purchase-invoice-line-chevron"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M9 6l6 6-6 6"
+                                    stroke="currentColor"
+                                    strokeWidth="2.2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </span>
+                              <div className="purchase-invoice-line-heading">
+                                {purchaseLineRows.length > 1 ? (
+                                  <span className="purchase-invoice-line-badge" aria-hidden="true">
+                                    {lineIndex + 1}
+                                  </span>
+                                ) : null}
+                                <div className="purchase-invoice-line-heading-text">
+                                  <span
+                                    className={`purchase-invoice-line-primary${
+                                      row.part_name.trim() ? "" : " purchase-invoice-line-primary--placeholder"
+                                    }`}
+                                    title={primary.title}
+                                  >
+                                    {primary.text}
+                                  </span>
+                                  {lineMeta || lineImportNeedsAttention ? (
+                                    <span className="purchase-invoice-line-heading-meta-row">
+                                      {lineMeta ? (
+                                        <span className="purchase-invoice-line-meta">{lineMeta}</span>
+                                      ) : null}
+                                      {lineImportNeedsAttention ? (
+                                        <span className="purchase-invoice-line-review-pill">Needs review</span>
+                                      ) : null}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </button>
                             {purchaseLineRows.length > 1 ? (
                               <button
                                 type="button"
                                 className="purchase-inline-action purchase-inline-action-danger"
                                 onClick={() => removePurchaseLineRowAt(lineIndex)}
                               >
-                                Remove line
+                                Remove
                               </button>
                             ) : null}
                           </div>
 
-                          <label>
+                          <div
+                            id={lineDetailsId}
+                            className="purchase-invoice-line-details"
+                            hidden={!lineExpanded}
+                          >
+                          <label
+                            className={lineImportNeedsAttention ? "purchase-field--needs-attention" : undefined}
+                          >
                             <span>{purchaseCreateMode === "warehouse" ? "Part" : "Item"}</span>
                             <input
                               value={row.part_name}
@@ -5349,7 +5603,9 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                 required
                               />
                             </label>
-                            <label>
+                            <label
+                              className={lineImportNeedsAttention ? "purchase-field--needs-attention" : undefined}
+                            >
                               <span>Unit of measure</span>
                               <select
                                 value={row.unit_of_measure_id}
@@ -5366,6 +5622,28 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                 ))}
                               </select>
                             </label>
+                            {lineImportNeedsAttention ? (
+                              <div className="purchase-import-uom-callout">
+                                {row.import_uom_raw ? (
+                                  <>
+                                    <p className="workspace-note purchase-import-uom-callout-text">
+                                      No unit for <strong>{row.import_uom_raw}</strong> in the catalog.
+                                    </p>
+                                    <button
+                                      type="button"
+                                      className="button button-secondary"
+                                      onClick={() => void approveImportedUnitOfMeasure(lineIndex)}
+                                    >
+                                      Add “{row.import_uom_raw}” to catalog
+                                    </button>
+                                  </>
+                                ) : (
+                                  <p className="workspace-note purchase-import-uom-callout-text">
+                                    Confirm unit of measure.
+                                  </p>
+                                )}
+                              </div>
+                            ) : null}
                           </div>
 
                           <div className="form-grid">
@@ -5399,6 +5677,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               />
                             </label>
                           </div>
+                          </div>
                         </div>
                       );
                     })}
@@ -5415,27 +5694,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       Leave vehicle and repair empty on a line for stock or parts not tied to a job yet.
                     </p>
                   ) : null}
-
-                  <label className="purchases-delivered-field">
-                    <input
-                      type="checkbox"
-                      checked={purchaseForm.delivered}
-                      onChange={(event) =>
-                        setPurchaseForm((current) => ({ ...current, delivered: event.target.checked }))
-                      }
-                    />
-                    <span>Delivered (received at workshop)</span>
-                  </label>
-
-                  <label>
-                    <span>Invoice</span>
-                    <input
-                      accept=".pdf,image/*,.doc,.docx,.xls,.xlsx"
-                      onChange={handlePurchaseInvoiceChange}
-                      type="file"
-                    />
-                    {purchaseInvoiceName ? <small className="field-hint">Attached: {purchaseInvoiceName}</small> : null}
-                  </label>
 
                   {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
                 </div>
@@ -5921,7 +6179,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       { id: "units", label: "Units of measure", shortLabel: "Units" },
       { id: "services", label: "Services", shortLabel: "Serv." },
       { id: "customers", label: "Customers", shortLabel: "Cust." },
-      { id: "invoice_lines", label: "Invoice lines", shortLabel: "Inv." },
     ];
 
     return (
@@ -5969,7 +6226,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           {activeReferenceTab === "customers" ? (
             <RegistersCustomersPanel customers={customers} onRefresh={() => void loadRegistries()} />
           ) : null}
-          {activeReferenceTab === "invoice_lines" ? <InvoiceParseTemplatesPanel /> : null}
         </div>
       </div>
     );

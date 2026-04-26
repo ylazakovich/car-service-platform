@@ -763,6 +763,24 @@ class InvoiceParseApiTests(TestCase):
         self.assertEqual(pl0.get("uom_raw"), "szt")
         self.assertIsNotNone(pl0.get("unit_of_measure_id"))
 
+    def test_suggest_extracts_supplier_plain_sprzedawca_polish(self):
+        """Polish invoices often use 'Sprzedawca:' without parentheses (see docs/samples/sample-invoice-pl-01)."""
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "Sprzedawca: AUTO-CZĘŚCI WZÓR SP. Z O.O.\n"
+            "            ul. Magazynowa 7\n"
+            "  1  | Part A |   1   | szt | 10,00 | 10,00\n"
+            "  2  | Part B |   2   | szt | 5,00 | 10,00\n"
+        )
+        response = self.client.post("/api/purchases/invoice-parse/suggest/", {"raw_text": raw}, format="json")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("matched"))
+        preview_name = (data.get("preview_supplier_name") or "").strip()
+        self.assertIn("AUTO-CZĘŚCI", preview_name)
+        raw_res = (data.get("supplier_resolution") or {}).get("raw_name") or ""
+        self.assertIn("AUTO-CZĘŚCI", raw_res)
+
     def test_suggest_accepts_plain_text_file_multipart(self):
         self.client.force_authenticate(self.staff)
         raw = (
@@ -775,6 +793,43 @@ class InvoiceParseApiTests(TestCase):
         data = response.json()
         self.assertTrue(data.get("matched"))
         self.assertIn("line_pattern", data)
+
+    def test_suggest_multipart_pdf_text_layer_matches_plaintext_demo(self):
+        """Generated PDF uses a text layer — same suggest outcome as raw_text for the PL table demo."""
+        from purchases.invoice_parse.demo_invoice_pdf import DEMO_PL_TABLE_INVOICE_TEXT, build_sample_pl_table_invoice_pdf_bytes
+
+        self.client.force_authenticate(self.staff)
+        raw = DEMO_PL_TABLE_INVOICE_TEXT.strip()
+        r_txt = self.client.post("/api/purchases/invoice-parse/suggest/", {"raw_text": raw}, format="json")
+        self.assertEqual(r_txt.status_code, 200)
+        d_txt = r_txt.json()
+        self.assertTrue(d_txt.get("matched"))
+
+        pdf_bytes = build_sample_pl_table_invoice_pdf_bytes()
+        self.assertGreaterEqual(len(pdf_bytes), 500)
+        upload = SimpleUploadedFile("sample-invoice-pl-01-demo.pdf", pdf_bytes, content_type="application/pdf")
+        r_pdf = self.client.post("/api/purchases/invoice-parse/suggest/", {"file": upload}, format="multipart")
+        self.assertEqual(r_pdf.status_code, 200)
+        d_pdf = r_pdf.json()
+        self.assertTrue(d_pdf.get("matched"))
+        self.assertIn("AUTO-CZĘŚCI", (d_pdf.get("preview_supplier_name") or ""))
+        self.assertEqual(len(d_pdf.get("preview_lines") or []), len(d_txt.get("preview_lines") or []))
+        for i, (a, b) in enumerate(zip(d_pdf["preview_lines"], d_txt["preview_lines"], strict=True)):
+            self.assertEqual(a.get("part_name"), b.get("part_name"), msg=f"line {i} part_name")
+            self.assertEqual(a.get("quantity"), b.get("quantity"), msg=f"line {i} quantity")
+            self.assertEqual(a.get("uom_raw"), b.get("uom_raw"), msg=f"line {i} uom")
+
+    def test_extract_multipart_pdf_demo_contains_sprzedawca(self):
+        from purchases.invoice_parse.demo_invoice_pdf import build_sample_pl_table_invoice_pdf_bytes
+
+        self.client.force_authenticate(self.staff)
+        pdf_bytes = build_sample_pl_table_invoice_pdf_bytes()
+        upload = SimpleUploadedFile("demo.pdf", pdf_bytes, content_type="application/pdf")
+        response = self.client.post("/api/purchases/invoice-parse/extract/", {"file": upload}, format="multipart")
+        self.assertEqual(response.status_code, 200)
+        text = (response.json().get("raw_text") or "").lower()
+        self.assertIn("sprzedawca", text)
+        self.assertIn("auto-części", text)
 
     def test_extract_returns_text_from_plain_file(self):
         self.client.force_authenticate(self.staff)

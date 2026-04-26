@@ -60,6 +60,21 @@ class InvoiceUploadTests(TestCase):
         self.assertIn("url", data)
         self.assertIn("name", data)
 
+    def test_staff_can_upload_plain_text_invoice(self):
+        self._login(self.staff, self.staff_password)
+        txt = SimpleUploadedFile(
+            "invoice.txt",
+            b"Supplier: Demo\nLine 1\n",
+            content_type="text/plain",
+        )
+
+        response = self.client.post(UPLOAD_URL, {"file": txt}, format="multipart")
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["name"], "invoice.txt")
+        self.assertIn("/media/invoices/", data["url"])
+
     def test_unauthenticated_request_is_rejected(self):
         response = self.client.post(UPLOAD_URL, {"file": make_pdf()}, format="multipart")
 
