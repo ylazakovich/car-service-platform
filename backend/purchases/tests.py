@@ -119,6 +119,7 @@ class PurchaseApiTests(TestCase):
             model="Focus",
         )
         self.uom_pcs = UnitOfMeasure.objects.get(code="pcs")
+        self.uom_liters, _ = UnitOfMeasure.objects.get_or_create(code="L", defaults={"name": "Liters"})
 
     def _purchase_payload(self, **overrides):
         payload = {
@@ -177,6 +178,32 @@ class PurchaseApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Supplier.objects.count(), supplier_count_before)
         self.assertEqual(response.json()["supplier"]["name"], self.supplier.name)
+
+    def test_create_purchase_allows_fractional_quantity_for_liters(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/purchases/",
+            self._purchase_payload(quantity="0.50", unit_of_measure_id=self.uom_liters.id),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["quantity"], 0.5)
+        purchase = Purchase.objects.get(id=response.json()["id"])
+        self.assertEqual(str(purchase.quantity), "0.50")
+
+    def test_create_purchase_rejects_fractional_quantity_for_pcs(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/purchases/",
+            self._purchase_payload(quantity="0.50", unit_of_measure_id=self.uom_pcs.id),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["quantity"][0], "This unit only allows whole quantities.")
 
     def test_bulk_create_purchases_shared_invoice(self):
         self.client.force_authenticate(self.user)
@@ -242,6 +269,81 @@ class PurchaseApiTests(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_bulk_create_allows_fractional_quantity_for_non_pcs_units(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/purchases/bulk/",
+            {
+                "order_date": "2026-04-01",
+                "supplier_name": "Bulk Supplier",
+                "lines": [
+                    {
+                        "part_name": "Coolant",
+                        "quantity": "0.50",
+                        "purchase_price": "10.00",
+                        "sale_price": "15.00",
+                        "unit_of_measure_id": self.uom_liters.id,
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()[0]["quantity"], 0.5)
+
+    def test_bulk_create_rejects_fractional_quantity_for_pcs(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/purchases/bulk/",
+            {
+                "order_date": "2026-04-01",
+                "supplier_name": "Bulk Supplier",
+                "lines": [
+                    {
+                        "part_name": "Brake Disc",
+                        "quantity": "0.50",
+                        "purchase_price": "10.00",
+                        "sale_price": "15.00",
+                        "unit_of_measure_id": self.uom_pcs.id,
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["lines"][0]["quantity"][0], "This unit only allows whole quantities.")
+
+    def test_bulk_create_shop_consumables_starts_not_inventoried(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(
+            "/api/purchases/bulk/",
+            {
+                "order_date": "2026-04-02",
+                "supplier_name": "Chem Co",
+                "is_shop_consumable": True,
+                "lines": [
+                    {
+                        "part_name": "Gloves",
+                        "quantity": 5,
+                        "purchase_price": "1.00",
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertIsNone(response.json()[0]["current_stock_quantity"])
+        self.assertIsNone(response.json()[0]["inventory_checked_on"])
+        purchase = Purchase.objects.get(id=response.json()[0]["id"])
+        self.assertIsNone(purchase.current_stock_quantity)
+        self.assertIsNone(purchase.inventory_checked_on)
 
     def test_purchase_order_pdf_returns_pdf(self):
         self.client.force_authenticate(self.user)
@@ -406,14 +508,117 @@ class PurchaseApiTests(TestCase):
 
         response = self.client.patch(
             f"/api/purchases/{purchase.id}",
-            {"current_stock_quantity": "4.50"},
+            {"current_stock_quantity": "4.50", "inventory_checked_on": "2026-03-25"},
             format="json",
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["current_stock_quantity"], "4.50")
+        self.assertEqual(response.json()["inventory_checked_on"], "2026-03-25")
         purchase.refresh_from_db()
         self.assertEqual(str(purchase.current_stock_quantity), "4.50")
+        self.assertEqual(str(purchase.inventory_checked_on), "2026-03-25")
+
+    def test_update_consumable_can_clear_inventory_snapshot(self):
+        self.client.force_authenticate(self.user)
+        purchase = Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Gloves",
+            quantity=10,
+            purchase_price="2.00",
+            supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
+            current_stock_quantity="4.50",
+            inventory_checked_on="2026-03-25",
+        )
+
+        response = self.client.patch(
+            f"/api/purchases/{purchase.id}",
+            {"current_stock_quantity": None, "inventory_checked_on": None},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["current_stock_quantity"])
+        self.assertIsNone(response.json()["inventory_checked_on"])
+        purchase.refresh_from_db()
+        self.assertIsNone(purchase.current_stock_quantity)
+        self.assertIsNone(purchase.inventory_checked_on)
+
+    def test_update_consumable_current_stock_quantity_requires_inventory_date_pair(self):
+        self.client.force_authenticate(self.user)
+        purchase = Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Gloves",
+            quantity=10,
+            purchase_price="2.00",
+            supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
+        )
+
+        response = self.client.patch(
+            f"/api/purchases/{purchase.id}",
+            {"current_stock_quantity": "4.50"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["current_stock_quantity"][0],
+            "Inventory snapshot requires both date and quantity.",
+        )
+
+    def test_update_consumable_inventory_date_requires_quantity_pair(self):
+        self.client.force_authenticate(self.user)
+        purchase = Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Gloves",
+            quantity=10,
+            purchase_price="2.00",
+            supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
+        )
+
+        response = self.client.patch(
+            f"/api/purchases/{purchase.id}",
+            {"inventory_checked_on": "2026-03-25"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["inventory_checked_on"][0],
+            "Inventory snapshot requires both date and quantity.",
+        )
+
+    def test_update_consumable_current_stock_quantity_rejects_value_above_quantity(self):
+        self.client.force_authenticate(self.user)
+        purchase = Purchase.objects.create(
+            order_date="2026-03-20",
+            part_name="Gloves",
+            quantity=10,
+            purchase_price="2.00",
+            supplier=self.supplier,
+            unit_of_measure=self.uom_pcs,
+            is_shop_consumable=True,
+        )
+
+        response = self.client.patch(
+            f"/api/purchases/{purchase.id}",
+            {"current_stock_quantity": "10.01", "inventory_checked_on": "2026-03-25"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["current_stock_quantity"][0],
+            "Inventory cannot exceed the purchased quantity.",
+        )
+        purchase.refresh_from_db()
+        self.assertIsNone(purchase.current_stock_quantity)
 
     def test_delete_purchase(self):
         self.client.force_authenticate(self.user)
