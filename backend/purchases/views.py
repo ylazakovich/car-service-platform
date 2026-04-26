@@ -180,6 +180,9 @@ class PurchaseBulkCreateView(APIView):
             sale_price = line.get("sale_price", 0)
             if is_shop:
                 sale_price = 0
+            inventory_snapshot_fields = (
+                {"current_stock_quantity": None, "inventory_checked_on": None} if is_shop else {}
+            )
             purchase = Purchase.objects.create(
                 order_date=data["order_date"],
                 approximate_delivery_date=data.get("approximate_delivery_date"),
@@ -195,6 +198,7 @@ class PurchaseBulkCreateView(APIView):
                 invoice_url=data.get("invoice_url") or "",
                 delivered=data.get("delivered", False),
                 is_shop_consumable=is_shop,
+                **inventory_snapshot_fields,
             )
             created_pks.append(purchase.pk)
 

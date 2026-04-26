@@ -29,7 +29,8 @@ export type PurchaseEntry = {
   supplier_nip: string;
   part_name: string;
   quantity: number;
-  current_stock_quantity: number;
+  current_stock_quantity: number | null;
+  inventory_checked_on: string | null;
   purchase_price: number;
   sale_price: number;
   repair_code: string;
@@ -51,6 +52,7 @@ export type PurchaseFormState = {
   part_name: string;
   quantity: string;
   current_stock_quantity: string;
+  inventory_checked_on: string;
   purchase_price: string;
   sale_price: string;
   repair_code: string;
@@ -71,15 +73,31 @@ export type PurchaseLineFormState = {
   unit_of_measure_id: string;
 };
 
+export type ConsumableInventoryDraft = {
+  current_stock_quantity: string;
+  inventory_checked_on: string;
+  isSaving: boolean;
+  error: string;
+};
+
+function getLocalTodayDate(): string {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function emptyPurchaseForm(defaultUomId: string): PurchaseFormState {
   return {
-    order_date: "",
+    order_date: getLocalTodayDate(),
     approximate_delivery_date: "",
     supplier_name: "",
     supplier_nip: "",
     part_name: "",
     quantity: "1",
-    current_stock_quantity: "0",
+    current_stock_quantity: "",
+    inventory_checked_on: "",
     purchase_price: "",
     sale_price: "",
     repair_code: "",
@@ -111,7 +129,8 @@ export function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry
     supplier_nip: item.supplier.nip,
     part_name: item.part_name,
     quantity: item.quantity,
-    current_stock_quantity: parseFloat(item.current_stock_quantity ?? "0"),
+    current_stock_quantity: item.current_stock_quantity == null ? null : parseFloat(item.current_stock_quantity),
+    inventory_checked_on: item.inventory_checked_on ?? null,
     purchase_price: parseFloat(item.purchase_price),
     sale_price: parseFloat(item.sale_price),
     repair_code: item.repair_code,
@@ -126,6 +145,22 @@ export function mapApiPurchaseToPurchaseEntry(item: PurchaseItem): PurchaseEntry
   };
 }
 
+function formatInventoryDraftValue(value: number | null): string {
+  if (value == null || !Number.isFinite(value)) {
+    return "";
+  }
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function createConsumableInventoryDraft(entry: PurchaseEntry): ConsumableInventoryDraft {
+  return {
+    current_stock_quantity: formatInventoryDraftValue(entry.current_stock_quantity),
+    inventory_checked_on: entry.inventory_checked_on ?? getLocalTodayDate(),
+    isSaving: false,
+    error: "",
+  };
+}
+
 function defaultUomIdFromList(units: UnitOfMeasureItem[]): string {
   const pcs = units.find((u) => u.code === "pcs");
   const first = units[0];
@@ -133,11 +168,29 @@ function defaultUomIdFromList(units: UnitOfMeasureItem[]): string {
   return id != null ? String(id) : "";
 }
 
+function quantityRequiresWholeUnits(unitCode: string | undefined): boolean {
+  return !unitCode || unitCode.trim().toLowerCase() === "pcs";
+}
+
 function getUploadErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     const detail = error.response?.data?.detail;
     if (typeof detail === "string" && detail.trim()) {
       return detail;
+    }
+  }
+
+  return fallback;
+}
+
+function getApiFieldErrorMessage(error: unknown, field: string, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const fieldError = error.response?.data?.[field];
+    if (typeof fieldError === "string" && fieldError.trim()) {
+      return fieldError;
+    }
+    if (Array.isArray(fieldError) && typeof fieldError[0] === "string" && fieldError[0].trim()) {
+      return fieldError[0];
     }
   }
 
@@ -180,6 +233,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
   const [consumableCount, setConsumableCount] = useState(0);
   const [consumableHasMore, setConsumableHasMore] = useState(false);
   const [consumableLoadingMore, setConsumableLoadingMore] = useState(false);
+  const [consumableInventoryDrafts, setConsumableInventoryDrafts] = useState<Record<number, ConsumableInventoryDraft>>({});
   const [purchaseForm, setPurchaseForm] = useState<PurchaseFormState>(() => emptyPurchaseForm(""));
   const [purchaseError, setPurchaseError] = useState("");
   const [purchaseModalError, setPurchaseModalError] = useState("");
@@ -211,6 +265,28 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
 
   const refreshSuppliers = useCallback(() => {
     return fetchSuppliers().then(setSuppliers).catch(() => {});
+  }, []);
+
+  const unitCodeById = useCallback(
+    (unitIdValue: string) => unitsOfMeasure.find((u) => String(u.id) === unitIdValue)?.code,
+    [unitsOfMeasure]
+  );
+
+  const replacePurchaseEntry = useCallback((updatedEntry: PurchaseEntry) => {
+    setPurchases((prev) => prev.map((item) => (item.id === updatedEntry.id ? updatedEntry : item)));
+    setConsumablePurchases((prev) => prev.map((item) => (item.id === updatedEntry.id ? updatedEntry : item)));
+  }, []);
+
+  const syncConsumableDrafts = useCallback((entries: PurchaseEntry[], replaceExisting: boolean) => {
+    setConsumableInventoryDrafts((current) => {
+      const next = replaceExisting ? {} : { ...current };
+      for (const entry of entries) {
+        if (replaceExisting || next[entry.id] == null) {
+          next[entry.id] = createConsumableInventoryDraft(entry);
+        }
+      }
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -283,7 +359,9 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         if (ignore) {
           return;
         }
-        setConsumablePurchases(result.results.map(mapApiPurchaseToPurchaseEntry));
+        const entries = result.results.map(mapApiPurchaseToPurchaseEntry);
+        setConsumablePurchases(entries);
+        syncConsumableDrafts(entries, true);
         setConsumableCount(result.count);
         setConsumableHasMore(result.next !== null);
       })
@@ -292,7 +370,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     return () => {
       ignore = true;
     };
-  }, [deferredConsumableSearch, enableConsumablesFetch]);
+  }, [deferredConsumableSearch, enableConsumablesFetch, syncConsumableDrafts]);
 
   async function loadMorePurchases() {
     setPurchaseLoadingMore(true);
@@ -325,7 +403,9 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         pageSize: 50,
         shopConsumable: true,
       });
-      setConsumablePurchases((current) => [...current, ...result.results.map(mapApiPurchaseToPurchaseEntry)]);
+      const entries = result.results.map(mapApiPurchaseToPurchaseEntry);
+      setConsumablePurchases((current) => [...current, ...entries]);
+      syncConsumableDrafts(entries, false);
       setConsumablePage((current) => current + 1);
       setConsumableCount(result.count);
       setConsumableHasMore(result.next !== null);
@@ -395,7 +475,8 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       supplier_nip: entry.supplier_nip,
       part_name: entry.part_name,
       quantity: String(entry.quantity),
-      current_stock_quantity: String(entry.current_stock_quantity),
+      current_stock_quantity: formatInventoryDraftValue(entry.current_stock_quantity),
+      inventory_checked_on: entry.inventory_checked_on ?? "",
       purchase_price: String(entry.purchase_price),
       sale_price: String(entry.sale_price),
       repair_code: entry.repair_code === "Unassigned" ? "" : entry.repair_code,
@@ -460,6 +541,11 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         setIsSavingPurchase(false);
         return;
       }
+      if (quantityRequiresWholeUnits(unitCodeById(row.unit_of_measure_id)) && !Number.isInteger(quantity)) {
+        setPurchaseError(`${label}This unit only allows whole quantities.`);
+        setIsSavingPurchase(false);
+        return;
+      }
 
       if (
         !Number.isFinite(purchasePrice) ||
@@ -517,6 +603,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         setPurchaseCount((count) => count + n);
       } else {
         setConsumablePurchases((current) => [...entries, ...current]);
+        syncConsumableDrafts(entries, false);
         setConsumableCount((count) => count + n);
       }
       closePurchaseCreateModal();
@@ -552,6 +639,10 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       const purchasePrice = Number(row.purchase_price);
       if (!Number.isFinite(quantity) || quantity <= 0) {
         setPurchaseError(`${label}Quantity must be greater than zero.`);
+        return;
+      }
+      if (quantityRequiresWholeUnits(unitCodeById(row.unit_of_measure_id)) && !Number.isInteger(quantity)) {
+        setPurchaseError(`${label}This unit only allows whole quantities.`);
         return;
       }
       if (!Number.isFinite(purchasePrice) || purchasePrice < 0) {
@@ -680,10 +771,13 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     }
 
     const quantity = Number(purchaseModalForm.quantity);
-    const currentStockQuantity = Number(purchaseModalForm.current_stock_quantity);
     const purchasePrice = Number(purchaseModalForm.purchase_price);
     const salePrice = purchaseModalForm.sale_price ? Number(purchaseModalForm.sale_price) : 0;
     const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === purchaseModalForm.vehicle_id);
+    const inventoryDate = purchaseModalForm.inventory_checked_on.trim();
+    const inventoryQuantityRaw = purchaseModalForm.current_stock_quantity.trim().replace(",", ".");
+    const hasInventoryDate = inventoryDate !== "";
+    const hasInventoryQuantity = inventoryQuantityRaw !== "";
 
     if (!purchaseModalForm.order_date || !purchaseModalForm.part_name.trim() || !purchaseModalForm.supplier_name.trim()) {
       setPurchaseModalError("Order date, supplier and part name are required.");
@@ -694,10 +788,29 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       setPurchaseModalError("Quantity must be greater than zero.");
       return;
     }
-
-    if (!Number.isFinite(currentStockQuantity) || currentStockQuantity < 0) {
-      setPurchaseModalError("Inventory value must be a number greater than or equal to zero.");
+    if (quantityRequiresWholeUnits(unitCodeById(purchaseModalForm.unit_of_measure_id)) && !Number.isInteger(quantity)) {
+      setPurchaseModalError("This unit only allows whole quantities.");
       return;
+    }
+
+    if (hasInventoryDate !== hasInventoryQuantity) {
+      setPurchaseModalError("Inventory snapshot requires both date and quantity.");
+      return;
+    }
+
+    let currentStockQuantity: number | null = null;
+    let inventoryCheckedOn: string | null = null;
+    if (hasInventoryDate && hasInventoryQuantity) {
+      currentStockQuantity = Number(inventoryQuantityRaw);
+      if (!Number.isFinite(currentStockQuantity) || currentStockQuantity < 0) {
+        setPurchaseModalError("Inventory value must be a number greater than or equal to zero.");
+        return;
+      }
+      if (currentStockQuantity > quantity) {
+        setPurchaseModalError("Inventory value cannot exceed the purchased quantity.");
+        return;
+      }
+      inventoryCheckedOn = inventoryDate;
     }
 
     if (!Number.isFinite(purchasePrice) || purchasePrice < 0 || !Number.isFinite(salePrice) || salePrice < 0) {
@@ -717,7 +830,6 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       supplier_name: purchaseModalForm.supplier_name.trim(),
       part_name: purchaseModalForm.part_name.trim(),
       quantity,
-      current_stock_quantity: currentStockQuantity,
       purchase_price: purchasePrice,
       sale_price: salePrice,
       vehicle_id: selectedVehicle?.id ?? null,
@@ -728,6 +840,16 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       invoice_url: purchaseModalInvoiceUrl,
       delivered: purchaseModalForm.delivered,
     };
+    const shouldSendInventorySnapshot =
+      selectedPurchase.is_shop_consumable ||
+      selectedPurchase.current_stock_quantity != null ||
+      selectedPurchase.inventory_checked_on != null ||
+      hasInventoryDate ||
+      hasInventoryQuantity;
+    if (shouldSendInventorySnapshot) {
+      payload.current_stock_quantity = currentStockQuantity;
+      payload.inventory_checked_on = inventoryCheckedOn;
+    }
 
     try {
       const updated = await updatePurchase(selectedPurchase.id, payload);
@@ -740,6 +862,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         const rest = prev.filter((e) => e.id !== entry.id);
         return !entry.is_shop_consumable ? rest : [entry, ...rest];
       });
+      setConsumableInventoryDrafts((prev) => ({ ...prev, [entry.id]: createConsumableInventoryDraft(entry) }));
       closePurchaseDetailModal();
     } catch {
       setPurchaseModalError("Failed to save changes. Please try again.");
@@ -760,6 +883,11 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       await deletePurchase(selectedPurchase.id);
       setPurchases((prev) => prev.filter((entry) => entry.id !== selectedPurchase.id));
       setConsumablePurchases((prev) => prev.filter((entry) => entry.id !== selectedPurchase.id));
+      setConsumableInventoryDrafts((prev) => {
+        const next = { ...prev };
+        delete next[selectedPurchase.id];
+        return next;
+      });
       if (selectedPurchase.is_shop_consumable) {
         setConsumableCount((count) => Math.max(0, count - 1));
       } else {
@@ -771,21 +899,86 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     }
   }
 
-  async function handleConsumableStockSave(entry: PurchaseEntry, value: string) {
-    const normalized = value.trim().replace(",", ".");
-    const nextQuantity = normalized === "" ? 0 : Number(normalized);
-    if (!Number.isFinite(nextQuantity) || nextQuantity < 0) {
-      setPurchaseModalError("Inventory value must be a number greater than or equal to zero.");
+  function getConsumableInventoryDraft(entry: PurchaseEntry): ConsumableInventoryDraft {
+    return consumableInventoryDrafts[entry.id] ?? createConsumableInventoryDraft(entry);
+  }
+
+  function isConsumableInventoryDraftDirty(entry: PurchaseEntry) {
+    const draft = getConsumableInventoryDraft(entry);
+    return (
+      draft.current_stock_quantity !== formatInventoryDraftValue(entry.current_stock_quantity) ||
+      draft.inventory_checked_on !== (entry.inventory_checked_on ?? getLocalTodayDate())
+    );
+  }
+
+  function updateConsumableInventoryDraft(entry: PurchaseEntry, patch: Partial<ConsumableInventoryDraft>) {
+    setConsumableInventoryDrafts((prev) => ({
+      ...prev,
+      [entry.id]: {
+        ...getConsumableInventoryDraft(entry),
+        ...patch,
+      },
+    }));
+  }
+
+  async function handleConsumableStockSave(entry: PurchaseEntry) {
+    const draft = getConsumableInventoryDraft(entry);
+    const inventoryDate = draft.inventory_checked_on.trim();
+    const normalizedQuantity = draft.current_stock_quantity.trim().replace(",", ".");
+    const hasInventoryDate = inventoryDate !== "";
+    const hasInventoryQuantity = normalizedQuantity !== "";
+
+    if (hasInventoryDate !== hasInventoryQuantity) {
+      updateConsumableInventoryDraft(entry, {
+        error: "Inventory snapshot requires both date and quantity.",
+      });
       return;
     }
 
+    let nextQuantity: number | null = null;
+    let inventoryCheckedOn: string | null = null;
+    if (hasInventoryDate && hasInventoryQuantity) {
+      nextQuantity = Number(normalizedQuantity);
+      if (!Number.isFinite(nextQuantity) || nextQuantity < 0) {
+        updateConsumableInventoryDraft(entry, {
+          error: "Inventory value must be a number greater than or equal to zero.",
+        });
+        return;
+      }
+      if (nextQuantity > entry.quantity) {
+        updateConsumableInventoryDraft(entry, {
+          error: "Inventory value cannot exceed the purchased quantity.",
+        });
+        return;
+      }
+      inventoryCheckedOn = inventoryDate;
+    }
+
+    updateConsumableInventoryDraft(entry, { isSaving: true, error: "" });
     try {
-      const updated = await updatePurchase(entry.id, { current_stock_quantity: nextQuantity });
+      const updated = await updatePurchase(entry.id, {
+        current_stock_quantity: nextQuantity,
+        inventory_checked_on: inventoryCheckedOn,
+      });
       const updatedEntry = mapApiPurchaseToPurchaseEntry(updated);
-      setPurchases((prev) => prev.map((item) => (item.id === updatedEntry.id ? updatedEntry : item)));
-      setConsumablePurchases((prev) => prev.map((item) => (item.id === updatedEntry.id ? updatedEntry : item)));
-    } catch {
-      setPurchaseModalError("Failed to save inventory value. Please try again.");
+      replacePurchaseEntry(updatedEntry);
+      setConsumableInventoryDrafts((prev) => ({
+        ...prev,
+        [updatedEntry.id]: createConsumableInventoryDraft(updatedEntry),
+      }));
+    } catch (error) {
+      updateConsumableInventoryDraft(entry, {
+        isSaving: false,
+        error: getApiFieldErrorMessage(
+          error,
+          "current_stock_quantity",
+          getApiFieldErrorMessage(
+            error,
+            "inventory_checked_on",
+            "Failed to save inventory value. Please try again."
+          )
+        ),
+      });
     }
   }
 
@@ -835,6 +1028,9 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     handlePurchaseOrderDownload,
     handlePurchaseModalSave,
     handlePurchaseDelete,
+    getConsumableInventoryDraft,
+    isConsumableInventoryDraftDirty,
+    updateConsumableInventoryDraft,
     handleConsumableStockSave,
     handlePurchaseInvoiceChange,
     handlePurchaseModalInvoiceChange,
