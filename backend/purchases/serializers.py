@@ -45,12 +45,29 @@ def default_pcs_unit() -> UnitOfMeasure:
     return u
 
 
+def quantity_requires_whole_units(unit: UnitOfMeasure | None) -> bool:
+    return unit is None or unit.code.strip().lower() == "pcs"
+
+
+def validate_quantity_precision(quantity: Decimal, unit: UnitOfMeasure | None, field_name: str = "quantity") -> None:
+    if quantity_requires_whole_units(unit) and quantity != quantity.to_integral_value():
+        raise serializers.ValidationError(
+            {
+                field_name: "This unit only allows whole quantities.",
+            }
+        )
+
+
 class PurchaseSerializer(serializers.ModelSerializer):
     supplier = SupplierSerializer(read_only=True)
     supplier_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    current_stock_quantity = serializers.DecimalField(
-        max_digits=10, decimal_places=2, min_value=Decimal("0"), required=False
+    quantity = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=Decimal("0.01"), coerce_to_string=False
     )
+    current_stock_quantity = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=Decimal("0"), required=False, allow_null=True
+    )
+    inventory_checked_on = serializers.DateField(required=False, allow_null=True)
     unit_of_measure = UnitOfMeasureSerializer(read_only=True)
     unit_of_measure_id = serializers.PrimaryKeyRelatedField(
         queryset=UnitOfMeasure.objects.filter(is_active=True),
@@ -88,6 +105,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "part_name",
             "quantity",
             "current_stock_quantity",
+            "inventory_checked_on",
             "purchase_price",
             "sale_price",
             "repair_code",
@@ -110,9 +128,47 @@ class PurchaseSerializer(serializers.ModelSerializer):
         if validated_data.get("unit_of_measure") is None:
             validated_data["unit_of_measure"] = default_pcs_unit()
 
+    def validate(self, attrs):
+        quantity = attrs.get("quantity", getattr(self.instance, "quantity", None))
+        unit_of_measure = attrs.get("unit_of_measure", getattr(self.instance, "unit_of_measure", None))
+        current_stock_quantity = attrs.get(
+            "current_stock_quantity", getattr(self.instance, "current_stock_quantity", None)
+        )
+        inventory_checked_on = attrs.get(
+            "inventory_checked_on", getattr(self.instance, "inventory_checked_on", None)
+        )
+
+        has_inventory_snapshot = current_stock_quantity is not None or inventory_checked_on is not None
+        missing_snapshot_value = current_stock_quantity is None or inventory_checked_on is None
+
+        if has_inventory_snapshot and missing_snapshot_value:
+            raise serializers.ValidationError(
+                {
+                    "current_stock_quantity": "Inventory snapshot requires both date and quantity.",
+                    "inventory_checked_on": "Inventory snapshot requires both date and quantity.",
+                }
+            )
+
+        if quantity is not None:
+            validate_quantity_precision(Decimal(quantity), unit_of_measure, "quantity")
+
+        if quantity is not None and current_stock_quantity is not None:
+            max_stock_quantity = Decimal(quantity)
+            if current_stock_quantity > max_stock_quantity:
+                raise serializers.ValidationError(
+                    {
+                        "current_stock_quantity": "Inventory cannot exceed the purchased quantity.",
+                    }
+                )
+
+        return attrs
+
     def create(self, validated_data):
         self._resolve_supplier(validated_data)
         self._ensure_unit_of_measure(validated_data)
+        if validated_data.get("is_shop_consumable"):
+            validated_data.setdefault("current_stock_quantity", None)
+            validated_data.setdefault("inventory_checked_on", None)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -124,7 +180,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
 
 class PurchaseBulkLineSerializer(serializers.Serializer):
     part_name = serializers.CharField(max_length=255)
-    quantity = serializers.IntegerField(min_value=1)
+    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"), coerce_to_string=False)
     purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
     sale_price = serializers.DecimalField(
         max_digits=10, decimal_places=2, min_value=0, required=False, default=0
@@ -148,6 +204,11 @@ class PurchaseBulkLineSerializer(serializers.Serializer):
         if not text:
             raise serializers.ValidationError("Part name is required.")
         return text
+
+    def validate(self, attrs):
+        unit = attrs.get("unit_of_measure") or default_pcs_unit()
+        validate_quantity_precision(attrs["quantity"], unit, "quantity")
+        return attrs
 
 
 class PurchaseBulkCreateSerializer(serializers.Serializer):
@@ -189,7 +250,9 @@ class PurchaseBulkCreateSerializer(serializers.Serializer):
 
 class PurchaseOrderLineSerializer(serializers.Serializer):
     part_name = serializers.CharField(max_length=255)
-    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
+    quantity = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=Decimal("0.01"), coerce_to_string=False
+    )
     purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0"))
     unit_of_measure_id = serializers.PrimaryKeyRelatedField(
         queryset=UnitOfMeasure.objects.filter(is_active=True),
@@ -203,6 +266,11 @@ class PurchaseOrderLineSerializer(serializers.Serializer):
         if not text:
             raise serializers.ValidationError("Part name is required.")
         return text
+
+    def validate(self, attrs):
+        unit = attrs.get("unit_of_measure") or default_pcs_unit()
+        validate_quantity_precision(attrs["quantity"], unit, "quantity")
+        return attrs
 
 
 class PurchaseOrderPdfSerializer(serializers.Serializer):
