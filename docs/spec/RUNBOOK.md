@@ -53,6 +53,20 @@ bash scripts/db/load-demo.sh
 - Pipes `scripts/demo/demo_data.sql` into Postgres via `docker compose exec -T db psql`.
 - Useful for dashboard charts, registers, and E2E-aligned fixtures (see script output for counts).
 
+**Regenerate demo invoice PDF (optional, for `docs/samples/sample-invoice-pl-01-demo.pdf`)**
+
+```bash
+docker compose exec -T backend python -c "
+import runpy
+from pathlib import Path
+ns = runpy.run_path('/app/purchases/invoice_parse/demo_invoice_pdf.py')
+Path('/tmp/sample-invoice-pl-01-demo.pdf').write_bytes(ns['build_sample_pl_table_invoice_pdf_bytes']())
+"
+docker compose cp backend:/tmp/sample-invoice-pl-01-demo.pdf docs/samples/sample-invoice-pl-01-demo.pdf
+```
+
+- With a local venv that has `reportlab`, you can instead run `python3 scripts/demo/generate_demo_invoice_pdf.py` from the repo root.
+
 ### Dev pitfalls (read once)
 
 1. **Do not run** `scripts/compose/start-prod.sh` and **`scripts/compose/start.sh` at the same time** on default ports — both want host **4173** unless you change `FRONTEND_PORT` / `FRONTEND_DEV_PORT` in `.env`.

@@ -8,6 +8,7 @@ import {
   exportPurchaseOrderPdf,
   fetchPurchases,
   fetchSuppliers,
+  createUnitOfMeasure,
   fetchUnitsOfMeasure,
   updatePurchase,
   uploadInvoiceFile,
@@ -64,6 +65,8 @@ export type PurchaseFormState = {
 
 /** One stock/consumable line under the same invoice (create modal). */
 export type PurchaseLineFormState = {
+  /** Stable UI key (accordion, list); not sent to API. */
+  clientLineId: string;
   part_name: string;
   quantity: string;
   purchase_price: string;
@@ -71,6 +74,25 @@ export type PurchaseLineFormState = {
   repair_code: string;
   vehicle_id: string;
   unit_of_measure_id: string;
+  /** Invoice token that did not map to catalog — used for “add unit” quick action. */
+  import_uom_raw?: string;
+};
+
+/** Parsed row from invoice regex preview before mapping into purchase line form state. */
+export type PurchaseInvoiceImportApplyOptions = {
+  supplierName?: string | null;
+  /** Supplier OCR text did not match the catalog — operator should verify the Supplier field. */
+  supplierNeedsAttention?: boolean;
+  /** Per imported line: unit from invoice did not map to catalog UoM — verify Part/Item and unit. */
+  linePartNeedsAttention?: boolean[];
+};
+
+export type ParsedImportLine = {
+  part_name: string;
+  quantity: number;
+  purchase_price: string;
+  unit_of_measure_id?: number | null;
+  uom_raw?: string;
 };
 
 export type ConsumableInventoryDraft = {
@@ -108,8 +130,13 @@ function emptyPurchaseForm(defaultUomId: string): PurchaseFormState {
   };
 }
 
+function newPurchaseLineClientId(): string {
+  return `pl-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function emptyPurchaseLineForm(defaultUomId: string, salePriceZero: boolean): PurchaseLineFormState {
   return {
+    clientLineId: newPurchaseLineClientId(),
     part_name: "",
     quantity: "1",
     purchase_price: "",
@@ -166,6 +193,18 @@ function defaultUomIdFromList(units: UnitOfMeasureItem[]): string {
   const first = units[0];
   const id = pcs?.id ?? first?.id;
   return id != null ? String(id) : "";
+}
+
+/** Build a unique-ish slug for `UnitOfMeasure.code` (max 32) from invoice OCR text. */
+function slugifyUnitCodeForImport(raw: string): string {
+  const s = raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return (s || "unit").slice(0, 32);
 }
 
 function quantityRequiresWholeUnits(unitCode: string | undefined): boolean {
@@ -254,6 +293,8 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
   const [purchaseLineRows, setPurchaseLineRows] = useState<PurchaseLineFormState[]>(() => [
     emptyPurchaseLineForm("", false),
   ]);
+  const [purchaseImportSupplierNeedsAttention, setPurchaseImportSupplierNeedsAttention] = useState(false);
+  const [purchaseImportLineNeedsAttention, setPurchaseImportLineNeedsAttention] = useState<boolean[]>([]);
 
   const deferredPurchaseSearch = useDeferredValue(purchaseSearch);
   const deferredConsumableSearch = useDeferredValue(consumableSearch);
@@ -422,6 +463,8 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     setPurchaseError("");
     setPurchaseInvoiceName("");
     setPurchaseInvoiceUrl("");
+    setPurchaseImportSupplierNeedsAttention(false);
+    setPurchaseImportLineNeedsAttention([]);
   }
 
   function openPurchaseCreateModal(mode: PurchaseCreateMode) {
@@ -436,6 +479,8 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     setPurchaseError("");
     setPurchaseInvoiceName("");
     setPurchaseInvoiceUrl("");
+    setPurchaseImportSupplierNeedsAttention(false);
+    setPurchaseImportLineNeedsAttention([]);
     setPurchaseCreateMode(mode);
     setIsPurchaseCreateModalOpen(true);
   }
@@ -444,6 +489,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     const defUom = defaultUomIdFromList(unitsOfMeasure);
     const saleZero = purchaseCreateMode === "consumables";
     setPurchaseLineRows((rows) => [...rows, emptyPurchaseLineForm(defUom, saleZero)]);
+    setPurchaseImportLineNeedsAttention((flags) => [...flags, false]);
   }
 
   function removePurchaseLineRowAt(index: number) {
@@ -453,10 +499,30 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       }
       return rows.filter((_, i) => i !== index);
     });
+    setPurchaseImportLineNeedsAttention((flags) => {
+      if (flags.length <= 1) {
+        return flags;
+      }
+      return flags.filter((_, i) => i !== index);
+    });
   }
 
   function updatePurchaseLineRow(index: number, patch: Partial<PurchaseLineFormState>) {
-    setPurchaseLineRows((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    setPurchaseLineRows((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        const next: PurchaseLineFormState = { ...row, ...patch };
+        if (patch.unit_of_measure_id !== undefined) {
+          delete next.import_uom_raw;
+        }
+        return next;
+      }),
+    );
+    if (patch.part_name !== undefined || patch.unit_of_measure_id !== undefined) {
+      setPurchaseImportLineNeedsAttention((flags) => flags.map((flag, i) => (i === index ? false : flag)));
+    }
   }
 
   function closePurchaseCreateModal() {
@@ -521,7 +587,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
 
     for (let i = 0; i < purchaseLineRows.length; i++) {
       const row = purchaseLineRows[i];
-      const label = purchaseLineRows.length > 1 ? `Line ${i + 1}: ` : "";
+      const label = purchaseLineRows.length > 1 ? `Row ${i + 1}: ` : "";
 
       if (!row.part_name.trim()) {
         setPurchaseError(`${label}${isConsumableLine ? "Item" : "Part"} name is required.`);
@@ -587,6 +653,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
       order_date: purchaseForm.order_date,
       approximate_delivery_date: purchaseForm.approximate_delivery_date || null,
       supplier_name: purchaseForm.supplier_name.trim(),
+      ...(purchaseForm.supplier_nip.trim() ? { supplier_nip: purchaseForm.supplier_nip.trim() } : {}),
       invoice_name: purchaseInvoiceName,
       invoice_url: purchaseInvoiceUrl,
       delivered: purchaseForm.delivered,
@@ -629,7 +696,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     const lines: PurchaseOrderPdfPayload["lines"] = [];
     for (let i = 0; i < purchaseLineRows.length; i++) {
       const row = purchaseLineRows[i];
-      const label = purchaseLineRows.length > 1 ? `Line ${i + 1}: ` : "";
+      const label = purchaseLineRows.length > 1 ? `Row ${i + 1}: ` : "";
       if (!row.part_name.trim()) {
         setPurchaseError(`${label}${isConsumableLine ? "Item" : "Part"} name is required before downloading PO.`);
         return;
@@ -681,21 +748,31 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     }
   }
 
-  async function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setPurchaseInvoiceName("");
-      setPurchaseInvoiceUrl("");
-      return;
-    }
-
+  async function attachPurchaseCreateInvoiceFile(file: File): Promise<boolean> {
     try {
       const result = await uploadInvoiceFile(file);
       setPurchaseInvoiceName(result.name);
       setPurchaseInvoiceUrl(result.url);
+      setPurchaseError("");
+      return true;
     } catch (error) {
       setPurchaseError(getUploadErrorMessage(error, "Failed to upload invoice file."));
+      return false;
     }
+  }
+
+  function clearPurchaseCreateInvoiceAttachment() {
+    setPurchaseInvoiceName("");
+    setPurchaseInvoiceUrl("");
+  }
+
+  async function handlePurchaseInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      clearPurchaseCreateInvoiceAttachment();
+      return;
+    }
+    await attachPurchaseCreateInvoiceFile(file);
   }
 
   async function handlePurchaseModalInvoiceChange(event: ChangeEvent<HTMLInputElement>) {
@@ -748,11 +825,13 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
   function handleCreateSupplierInput(value: string) {
     setPurchaseForm((current) => ({ ...current, supplier_name: value }));
     setShowCreateSuggestions(true);
+    setPurchaseImportSupplierNeedsAttention(false);
   }
 
   function handleCreateSupplierSelect(supplier: SupplierItem) {
     setPurchaseForm((current) => ({ ...current, supplier_name: supplier.name, supplier_nip: supplier.nip }));
     setShowCreateSuggestions(false);
+    setPurchaseImportSupplierNeedsAttention(false);
   }
 
   function handleModalSupplierInput(value: string) {
@@ -899,6 +978,64 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     }
   }
 
+  function applyPurchaseLineImport(parsed: ParsedImportLine[], options?: PurchaseInvoiceImportApplyOptions) {
+    if (!parsed.length) {
+      return;
+    }
+    const supplier = options?.supplierName?.trim();
+    if (supplier) {
+      setPurchaseForm((current) => ({ ...current, supplier_name: supplier }));
+    }
+    setPurchaseImportSupplierNeedsAttention(Boolean(options?.supplierNeedsAttention));
+    const lineFlags = parsed.map((_, i) => options?.linePartNeedsAttention?.[i] === true);
+    setPurchaseImportLineNeedsAttention(lineFlags);
+    const defaultUom = defaultUomIdFromList(unitsOfMeasure);
+    const saleZero = purchaseCreateMode === "consumables";
+    setPurchaseLineRows(
+      parsed.map((row, i) => {
+        const needsUomAttention = options?.linePartNeedsAttention?.[i] === true;
+        const catalogMatch =
+          row.unit_of_measure_id != null && unitsOfMeasure.some((u) => u.id === row.unit_of_measure_id);
+        return {
+          clientLineId: newPurchaseLineClientId(),
+          part_name: row.part_name,
+          quantity: String(row.quantity),
+          purchase_price: row.purchase_price,
+          sale_price: saleZero ? "0" : "",
+          repair_code: "",
+          vehicle_id: "",
+          unit_of_measure_id: catalogMatch ? String(row.unit_of_measure_id) : defaultUom,
+          import_uom_raw: needsUomAttention && row.uom_raw?.trim() ? row.uom_raw.trim() : undefined,
+        };
+      }),
+    );
+  }
+
+  async function approveImportedUnitOfMeasure(lineIndex: number) {
+    const row = purchaseLineRows[lineIndex];
+    const raw = row?.import_uom_raw?.trim();
+    if (!raw) {
+      return;
+    }
+    const code = slugifyUnitCodeForImport(raw);
+    const name = raw.length <= 64 ? raw : `${raw.slice(0, 61)}…`;
+    setPurchaseError("");
+    try {
+      const created = await createUnitOfMeasure({ code, name, is_active: true });
+      await refreshUnitsOfMeasure();
+      setPurchaseLineRows((rows) =>
+        rows.map((r, i) =>
+          i === lineIndex ? { ...r, unit_of_measure_id: String(created.id), import_uom_raw: undefined } : r,
+        ),
+      );
+      setPurchaseImportLineNeedsAttention((flags) => flags.map((f, i) => (i === lineIndex ? false : f)));
+    } catch (error) {
+      setPurchaseError(
+        getUploadErrorMessage(error, `Could not add unit "${code}". It may already exist — pick it from the list.`),
+      );
+    }
+  }
+
   function getConsumableInventoryDraft(entry: PurchaseEntry): ConsumableInventoryDraft {
     return consumableInventoryDrafts[entry.id] ?? createConsumableInventoryDraft(entry);
   }
@@ -1033,6 +1170,8 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     updateConsumableInventoryDraft,
     handleConsumableStockSave,
     handlePurchaseInvoiceChange,
+    attachPurchaseCreateInvoiceFile,
+    clearPurchaseCreateInvoiceAttachment,
     handlePurchaseModalInvoiceChange,
     handlePurchaseModalInvoiceRemove,
     handleOpenInvoice,
@@ -1048,5 +1187,9 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     handleModalSupplierSelect,
     refreshUnitsOfMeasure,
     refreshSuppliers,
+    applyPurchaseLineImport,
+    approveImportedUnitOfMeasure,
+    purchaseImportSupplierNeedsAttention,
+    purchaseImportLineNeedsAttention,
   };
 }
