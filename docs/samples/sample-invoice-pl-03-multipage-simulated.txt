@@ -1,0 +1,49 @@
+================================================================================
+     FAKTURA VAT — WZÓR C (symulacja wielu stron: nagłówek + kontynuacja)
+================================================================================
+                         --- STRONA 1 z 2 ---
+
+Sprzedawca: CENTRUM OLEJÓW I FILTRÓW „ZŁOTA” SP. Z O.O.
+            ul. Złota 9, 00-120 Warszawa
+            NIP sprzedawcy: PL5250000004 (wyłącznie fikcyjny)
+
+Nabywca: STACJA OBSŁUGI POJAZDÓW „BRZOZOWA”
+         ul. Brzozowa 1, 05-100 Legionowo
+         NIP: PL1250000005 (fikcyjny)
+
+Nr faktury: ZLO/2026/1502
+Data wystawienia: 2026-04-15
+Waluta: PLN
+
+Pozycje na stronie 1:
+Lp | Towar / usługa (skrót)              | Ilość | j.m. | Netto   | VAT 23% | Brutto
+---+--------------------------------------+-------+------+---------+---------+--------
+ 1 | Olej 5W-30 syntetyczny 1L (demo)     |  12   | szt  |  540,00 |  124,20 | 664,20
+ 2 | Filtr oleju Uni (demo)               |  12   | szt  |  108,00 |   24,84 | 132,84
+ 3 | Filtr kabinowy (demo)                |   6   | szt  |   78,00 |   17,94 |  95,94
+
+Częściowa suma strony 1 — netto: 726,00 PLN | VAT: 166,98 PLN | brutto: 892,98 PLN
+Na stronie 2: dalsze pozycje oraz suma końcowa dokumentu.
+(Ciąg dalszy na następnej stronie — symulacja skanu wielostronicowego.)
+
+
+================================================================================
+                         --- STRONA 2 z 2 ---
+                    (kontynuacja faktury ZLO/2026/1502)
+================================================================================
+
+Pozycje na stronie 2:
+Lp | Towar / usługa (skrót)              | Ilość | j.m. | Netto   | VAT 23% | Brutto
+---+--------------------------------------+-------+------+---------+---------+--------
+ 4 | Płyn do spryskiwaczy letni 5L (demo) |   4   | szt  |   36,00 |    8,28 |  44,28
+ 5 | Akumulator 60Ah (demo)               |   1   | szt  |  320,00 |   73,60 | 393,60
+
+Suma z strony 1 (netto): 726,00 PLN
+Suma z strony 2 (netto): 356,00 PLN
+--------------------------------------------------------------------------------
+RAZEM NETTO Z CAŁEJ FAKTURY: 1 082,00 PLN
+RAZEM VAT 23%:             248,86 PLN
+DO ZAPŁATY (BRUTTO):       1 330,86 PLN
+================================================================================
+Dokument zmyślony — test ścieżki wielostronicowej / sklejania tabel między stronami.
+================================================================================

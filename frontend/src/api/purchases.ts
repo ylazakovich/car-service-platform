@@ -75,6 +75,8 @@ export interface PurchaseBulkWritePayload {
   order_date: string;
   approximate_delivery_date?: string | null;
   supplier_name: string;
+  /** When supplier is new or has no NIP yet, persisted on Supplier on bulk create (server). */
+  supplier_nip?: string;
   invoice_name?: string;
   invoice_url?: string;
   delivered?: boolean;
@@ -180,6 +182,31 @@ export async function createSupplier(data: SupplierWritePayload): Promise<Suppli
 export async function updateSupplier(id: number, data: Partial<SupplierWritePayload>): Promise<SupplierItem> {
   const response = await api.patch<SupplierItem>(`/purchases/suppliers/${id}`, data);
   return response.data;
+}
+
+export interface SupplierAliasItem {
+  id: number;
+  supplier: number;
+  alias_text: string;
+  normalized_key: string;
+  created_at: string;
+}
+
+export async function fetchSupplierAliases(supplierId: number): Promise<SupplierAliasItem[]> {
+  const response = await api.get<SupplierAliasItem[]>(`/purchases/suppliers/${supplierId}/aliases/`);
+  return response.data;
+}
+
+export async function createSupplierAlias(
+  supplierId: number,
+  payload: { alias_text: string },
+): Promise<SupplierAliasItem> {
+  const response = await api.post<SupplierAliasItem>(`/purchases/suppliers/${supplierId}/aliases/`, payload);
+  return response.data;
+}
+
+export async function deleteSupplierAlias(supplierId: number, aliasId: number): Promise<void> {
+  await api.delete(`/purchases/suppliers/${supplierId}/aliases/${aliasId}`);
 }
 
 export async function fetchUnitsOfMeasure(params?: { includeInactive?: boolean }): Promise<UnitOfMeasureItem[]> {

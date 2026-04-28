@@ -55,6 +55,16 @@ test.describe("Registers workspace @desktop", () => {
     await expect(row.getByRole("group", { name: new RegExp(E2E_DEMO_SERVICE_NAME_IN_CATALOG, "i") })).toBeVisible();
   });
 
+  test("admin Registers tabs do not include Invoice lines", async ({ page }) => {
+    await e2eBehaviors("admin", "registers · tabs set");
+    const reg = new StaffRegistersPage(page);
+    await reg.gotoRegistersSection();
+    await expect(page.getByRole("tab", { name: "Units of measure" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Services" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Customers" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Invoice lines" })).toHaveCount(0);
+  });
+
   test("admin switches to Customers and sees demo customer with vehicles", async ({ page }) => {
     await e2eBehaviors("admin", "registers · customers with vehicles");
     const reg = new StaffRegistersPage(page);

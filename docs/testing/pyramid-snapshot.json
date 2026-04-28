@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-04-26T13:43:22.535Z",
+  "generatedAt": "2026-04-28T10:25:02.892Z",
   "source": {
-    "workflowRunId": "24958034697",
-    "headSha": "69e458dea640c7bd6206a3b5d5c962108f82421c"
+    "workflowRunId": "25047395179",
+    "headSha": "95005a557cdacb243004c476c58c22de81e9ca84"
   },
   "pyramidLayerTotals": {
     "unit": 64,
-    "api": 139,
-    "ui_e2e": 26
+    "api": 157,
+    "ui_e2e": 27
   },
-  "pyramidTotal": 229,
+  "pyramidTotal": 248,
   "otherEpicTotal": 0,
-  "allureGrandTotal": 229,
+  "allureGrandTotal": 248,
   "shares": {
-    "unit": 0.2794759825327511,
-    "api": 0.6069868995633187,
-    "ui_e2e": 0.11353711790393013
+    "unit": 0.25806451612903225,
+    "api": 0.6330645161290323,
+    "ui_e2e": 0.10887096774193548
   },
   "advisory": {
     "unitShareMin": 0.45,
@@ -27,7 +27,7 @@
     "warnings": [
       {
         "id": "PYRAMID_UNIT_SHARE_LOW",
-        "message": "Unit share 27.9% is below soft target 45% (see docs/testing/test-pyramid.md)."
+        "message": "Unit share 25.8% is below soft target 45% (see docs/testing/test-pyramid.md)."
       }
     ],
     "blockingFailures": []

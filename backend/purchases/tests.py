@@ -1,11 +1,17 @@
+import base64
+import shutil
+import unittest
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 from customers.models import Customer
 from vehicles.models import Vehicle
 
-from .models import Purchase, Supplier, UnitOfMeasure
+from .invoice_line_parse import extract_text_from_file
+from .models import InvoiceLineParseTemplate, Purchase, Supplier, SupplierAlias, UnitOfMeasure
 
 
 class SupplierApiTests(TestCase):
@@ -96,6 +102,34 @@ class SupplierApiTests(TestCase):
         data = response.json()
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["name"], "AutoParts Ltd")
+
+    def test_create_supplier_alias(self):
+        self.client.force_authenticate(self.user)
+        supplier = Supplier.objects.create(name="Canonical Vendor", nip="")
+        response = self.client.post(
+            f"/api/purchases/suppliers/{supplier.id}/aliases/",
+            {"alias_text": "  OCR Vendor Name  "},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["alias_text"], "OCR Vendor Name")
+        self.assertEqual(data["normalized_key"], "ocr vendor name")
+        alias = SupplierAlias.objects.get(pk=data["id"])
+        self.assertEqual(alias.supplier_id, supplier.id)
+
+    def test_duplicate_supplier_alias_returns_400(self):
+        self.client.force_authenticate(self.user)
+        supplier = Supplier.objects.create(name="Vendor A", nip="")
+        Supplier.objects.create(name="Vendor B", nip="")
+        SupplierAlias.objects.create(supplier=supplier, alias_text="shared token")
+        other = Supplier.objects.get(name="Vendor B")
+        response = self.client.post(
+            f"/api/purchases/suppliers/{other.id}/aliases/",
+            {"alias_text": "SHARED   token"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
 
 
 class PurchaseApiTests(TestCase):
@@ -248,6 +282,41 @@ class PurchaseApiTests(TestCase):
         self.assertTrue(data[0]["delivered"])
         self.assertEqual(Supplier.objects.filter(name="Bulk Supplier").count(), 1)
         self.assertEqual(Supplier.objects.count(), supplier_count_before + 1)
+
+    def test_bulk_create_sets_nip_on_new_supplier(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(
+            "/api/purchases/bulk/",
+            {
+                "order_date": "2026-04-03",
+                "supplier_name": "Fresh Vendor With Nip",
+                "supplier_nip": "5251112233",
+                "is_shop_consumable": True,
+                "lines": [{"part_name": "Oil", "quantity": 1, "purchase_price": "20.00"}],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        vendor = Supplier.objects.get(name="Fresh Vendor With Nip")
+        self.assertEqual(vendor.nip, "5251112233")
+
+    def test_bulk_create_does_not_overwrite_existing_supplier_nip(self):
+        self.client.force_authenticate(self.user)
+        Supplier.objects.create(name="Locked Nip Vendor", nip="1111111111")
+        response = self.client.post(
+            "/api/purchases/bulk/",
+            {
+                "order_date": "2026-04-04",
+                "supplier_name": "Locked Nip Vendor",
+                "supplier_nip": "9999999999",
+                "is_shop_consumable": True,
+                "lines": [{"part_name": "Oil", "quantity": 1, "purchase_price": "10.00"}],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        vendor = Supplier.objects.get(name="Locked Nip Vendor")
+        self.assertEqual(vendor.nip, "1111111111")
 
     def test_bulk_create_shop_consumables_rejects_vehicle(self):
         self.client.force_authenticate(self.user)
@@ -796,3 +865,232 @@ class PurchaseApiTests(TestCase):
         )
         self.assertEqual(resp.status_code, 201)
         self.assertIn("sort_order", resp.json())
+
+
+class InvoiceParseApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.staff = get_user_model().objects.create_user(
+            email="staff-invoice-parse@test.local",
+            password="staff12345",
+            role="staff",
+        )
+        self.admin = get_user_model().objects.create_user(
+            email="admin-invoice-parse@test.local",
+            password="admin12345",
+            role="admin",
+            is_staff=True,
+        )
+
+    def test_preview_parses_demo_pipe_line_with_template(self):
+        template = InvoiceLineParseTemplate.objects.filter(name="Pipe table (demo PL)").first()
+        self.assertIsNotNone(template)
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "  1  | Filtr oleju Bosch OF-512 (demo)                   |   2   | szt |    42,50   |      85,00    |  23%"
+        )
+        response = self.client.post(
+            "/api/purchases/invoice-parse/preview/",
+            {"raw_text": raw, "template_id": template.pk},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["matched_count"], 1)
+        self.assertEqual(body["lines"][0]["part_name"], "Filtr oleju Bosch OF-512 (demo)")
+        self.assertEqual(body["lines"][0]["quantity"], 2)
+        self.assertEqual(body["lines"][0]["purchase_price"], "85.00")
+        self.assertEqual(body["lines"][0].get("uom_raw"), "szt")
+        self.assertIn("supplier_resolution", body)
+        self.assertEqual(body["supplier_resolution"].get("match"), "none")
+        uom_res = body["lines"][0].get("uom_resolution") or {}
+        self.assertEqual(uom_res.get("match"), "synonym")
+        self.assertIsNotNone(body["lines"][0].get("unit_of_measure_id"))
+
+    def test_preview_resolves_supplier_exact_and_warns_on_unknown_uom(self):
+        template = InvoiceLineParseTemplate.objects.filter(name="Pipe table (demo PL)").first()
+        self.assertIsNotNone(template)
+        Supplier.objects.create(name="ACME Parts Demo", nip="")
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "Sprzedawca (Seller): ACME Parts Demo\n"
+            "  1  | Filtr |   2   | xxxunk |    10,00   |      20,00    |  23%"
+        )
+        sup_pat = r"(?is)Sprzedawca\s*\([^)]*\)\s*:\s*(?P<supplier_name>[^\r\n]+)"
+        response = self.client.post(
+            "/api/purchases/invoice-parse/preview/",
+            {"raw_text": raw, "template_id": template.pk, "supplier_pattern": sup_pat},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["supplier_resolution"]["match"], "exact")
+        self.assertEqual(body["supplier_resolution"]["resolved_name"], "ACME Parts Demo")
+        self.assertEqual(body["supplier_resolution"]["supplier_id"], Supplier.objects.get(name="ACME Parts Demo").id)
+        self.assertEqual(body["lines"][0]["uom_resolution"]["match"], "none")
+        self.assertTrue(any("not mapped" in w for w in body["warnings"]))
+
+    def test_preview_resolves_supplier_via_alias(self):
+        template = InvoiceLineParseTemplate.objects.filter(name="Pipe table (demo PL)").first()
+        self.assertIsNotNone(template)
+        canonical = Supplier.objects.create(name="Canonical Sp z o.o.", nip="")
+        SupplierAlias.objects.create(supplier=canonical, alias_text="hurt acme sp. z o.o.")
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "Sprzedawca (Seller): hurt acme sp. z o.o.\n"
+            "  1  | Filtr |   2   | szt |    10,00   |      20,00    |  23%"
+        )
+        sup_pat = r"(?is)Sprzedawca\s*\([^)]*\)\s*:\s*(?P<supplier_name>[^\r\n]+)"
+        response = self.client.post(
+            "/api/purchases/invoice-parse/preview/",
+            {"raw_text": raw, "template_id": template.pk, "supplier_pattern": sup_pat},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["supplier_resolution"]["match"], "alias")
+        self.assertEqual(body["supplier_resolution"]["resolved_name"], "Canonical Sp z o.o.")
+        self.assertEqual(body["supplier_resolution"]["supplier_id"], canonical.id)
+
+    def test_suggest_returns_pattern_for_multi_line_demo(self):
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "  1  | Part A |   1   | szt | 10,00 | 10,00\n"
+            "  2  | Part B |   2   | szt | 5,00 | 10,00\n"
+        )
+        response = self.client.post("/api/purchases/invoice-parse/suggest/", {"raw_text": raw}, format="json")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("matched"))
+        self.assertIn("line_pattern", data)
+        self.assertIn("supplier_resolution", data)
+        pl0 = data["preview_lines"][0]
+        self.assertEqual(pl0.get("uom_raw"), "szt")
+        self.assertIsNotNone(pl0.get("unit_of_measure_id"))
+
+    def test_suggest_extracts_supplier_plain_sprzedawca_polish(self):
+        """Polish invoices often use 'Sprzedawca:' without parentheses (see docs/samples/sample-invoice-pl-01)."""
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "Sprzedawca: AUTO-CZĘŚCI WZÓR SP. Z O.O.\n"
+            "            ul. Magazynowa 7\n"
+            "  1  | Part A |   1   | szt | 10,00 | 10,00\n"
+            "  2  | Part B |   2   | szt | 5,00 | 10,00\n"
+        )
+        response = self.client.post("/api/purchases/invoice-parse/suggest/", {"raw_text": raw}, format="json")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("matched"))
+        preview_name = (data.get("preview_supplier_name") or "").strip()
+        self.assertIn("AUTO-CZĘŚCI", preview_name)
+        raw_res = (data.get("supplier_resolution") or {}).get("raw_name") or ""
+        self.assertIn("AUTO-CZĘŚCI", raw_res)
+
+    def test_suggest_accepts_plain_text_file_multipart(self):
+        self.client.force_authenticate(self.staff)
+        raw = (
+            "  1  | Part A |   1   | szt | 10,00 | 10,00\n"
+            "  2  | Part B |   2   | szt | 5,00 | 10,00\n"
+        )
+        upload = SimpleUploadedFile("demo.txt", raw.encode("utf-8"), content_type="text/plain")
+        response = self.client.post("/api/purchases/invoice-parse/suggest/", {"file": upload}, format="multipart")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("matched"))
+        self.assertIn("line_pattern", data)
+
+    def test_suggest_multipart_pdf_text_layer_matches_plaintext_demo(self):
+        """Generated PDF uses a text layer — same suggest outcome as raw_text for the PL table demo."""
+        from purchases.invoice_parse.demo_invoice_pdf import DEMO_PL_TABLE_INVOICE_TEXT, build_sample_pl_table_invoice_pdf_bytes
+
+        self.client.force_authenticate(self.staff)
+        raw = DEMO_PL_TABLE_INVOICE_TEXT.strip()
+        r_txt = self.client.post("/api/purchases/invoice-parse/suggest/", {"raw_text": raw}, format="json")
+        self.assertEqual(r_txt.status_code, 200)
+        d_txt = r_txt.json()
+        self.assertTrue(d_txt.get("matched"))
+
+        pdf_bytes = build_sample_pl_table_invoice_pdf_bytes()
+        self.assertGreaterEqual(len(pdf_bytes), 500)
+        upload = SimpleUploadedFile("sample-invoice-pl-01-demo.pdf", pdf_bytes, content_type="application/pdf")
+        r_pdf = self.client.post("/api/purchases/invoice-parse/suggest/", {"file": upload}, format="multipart")
+        self.assertEqual(r_pdf.status_code, 200)
+        d_pdf = r_pdf.json()
+        self.assertTrue(d_pdf.get("matched"))
+        self.assertIn("AUTO-CZĘŚCI", (d_pdf.get("preview_supplier_name") or ""))
+        self.assertEqual(len(d_pdf.get("preview_lines") or []), len(d_txt.get("preview_lines") or []))
+        for i, (a, b) in enumerate(zip(d_pdf["preview_lines"], d_txt["preview_lines"], strict=True)):
+            self.assertEqual(a.get("part_name"), b.get("part_name"), msg=f"line {i} part_name")
+            self.assertEqual(a.get("quantity"), b.get("quantity"), msg=f"line {i} quantity")
+            self.assertEqual(a.get("uom_raw"), b.get("uom_raw"), msg=f"line {i} uom")
+
+    def test_extract_multipart_pdf_demo_contains_sprzedawca(self):
+        from purchases.invoice_parse.demo_invoice_pdf import build_sample_pl_table_invoice_pdf_bytes
+
+        self.client.force_authenticate(self.staff)
+        pdf_bytes = build_sample_pl_table_invoice_pdf_bytes()
+        upload = SimpleUploadedFile("demo.pdf", pdf_bytes, content_type="application/pdf")
+        response = self.client.post("/api/purchases/invoice-parse/extract/", {"file": upload}, format="multipart")
+        self.assertEqual(response.status_code, 200)
+        text = (response.json().get("raw_text") or "").lower()
+        self.assertIn("sprzedawca", text)
+        self.assertIn("auto-części", text)
+
+    def test_extract_returns_text_from_plain_file(self):
+        self.client.force_authenticate(self.staff)
+        raw = "Sprzedawca: ACME\nLine one\n"
+        upload = SimpleUploadedFile("x.txt", raw.encode("utf-8"), content_type="text/plain")
+        response = self.client.post("/api/purchases/invoice-parse/extract/", {"file": upload}, format="multipart")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json().get("raw_text"), raw.strip())
+
+    def test_staff_cannot_create_template(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.post(
+            "/api/purchases/invoice-parse-templates/",
+            {
+                "name": "X",
+                "description": "",
+                "line_pattern": r"(?P<part_name>.+)\s(?P<quantity>\d+)\s(?P<purchase_price>[\d.]+)",
+                "is_active": True,
+                "sort_order": 99,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_create_template_requires_named_groups(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            "/api/purchases/invoice-parse-templates/",
+            {
+                "name": "Bad",
+                "description": "",
+                "line_pattern": r"(?P<x>.*)",
+                "is_active": True,
+                "sort_order": 5,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("line_pattern", response.json())
+
+    def test_staff_lists_active_templates(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.get("/api/purchases/invoice-parse-templates/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertGreaterEqual(len(data), 1)
+
+
+@unittest.skipUnless(shutil.which("tesseract"), "tesseract not installed")
+class InvoiceOcrExtractTests(TestCase):
+    """Requires Tesseract + language packs on PATH (Docker image and CI install them)."""
+
+    def test_extract_text_from_minimal_png_does_not_crash(self):
+        png = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        )
+        upload = SimpleUploadedFile("tiny.png", png, content_type="image/png")
+        text = extract_text_from_file(upload)
+        self.assertIsInstance(text, str)
