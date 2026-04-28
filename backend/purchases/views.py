@@ -1,4 +1,5 @@
 import re
+import logging
 
 from django.db import transaction
 from django.db.models import Q
@@ -39,6 +40,16 @@ from .serializers import (
     UnitOfMeasureSerializer,
     default_pcs_unit,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_invoice_parse_error_response(exc: Exception, *, detail: str, status_code: int) -> Response:
+    if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+        logger.exception("Invoice parse internal error: %s", exc)
+    else:
+        logger.warning("Invoice parse validation error: %s", exc)
+    return Response({"detail": detail}, status=status_code)
 
 
 def _po_filename(supplier_name: str, order_date) -> str:
@@ -307,9 +318,17 @@ class InvoiceParseExtractView(APIView):
         try:
             text = extract_text_from_file(upload)
         except ValueError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return _safe_invoice_parse_error_response(
+                exc,
+                detail="Could not extract text from the provided file.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
         except RuntimeError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return _safe_invoice_parse_error_response(
+                exc,
+                detail="Invoice extraction failed due to an internal processing error.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return Response({"raw_text": text or ""})
 
 
@@ -327,9 +346,17 @@ class InvoiceParseSuggestView(APIView):
             try:
                 extracted = extract_text_from_file(upload)
             except ValueError as exc:
-                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+                return _safe_invoice_parse_error_response(
+                    exc,
+                    detail="Could not extract text from the provided file.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
             except RuntimeError as exc:
-                return Response({"detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return _safe_invoice_parse_error_response(
+                    exc,
+                    detail="Invoice extraction failed due to an internal processing error.",
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
             raw = f"{raw}\n{extracted}".strip() if raw else extracted
         if not raw:
             return Response(
@@ -382,9 +409,17 @@ class InvoiceParsePreviewView(APIView):
             try:
                 extracted = extract_text_from_file(upload)
             except ValueError as exc:
-                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+                return _safe_invoice_parse_error_response(
+                    exc,
+                    detail="Could not extract text from the provided file.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
             except RuntimeError as exc:
-                return Response({"detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return _safe_invoice_parse_error_response(
+                    exc,
+                    detail="Invoice extraction failed due to an internal processing error.",
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
             raw = f"{raw}\n{extracted}".strip() if raw else extracted
 
         if not raw:
@@ -409,7 +444,11 @@ class InvoiceParsePreviewView(APIView):
         try:
             lines, warnings = parse_invoice_lines(raw, pattern)
         except ValueError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return _safe_invoice_parse_error_response(
+                exc,
+                detail="Could not parse invoice lines using the provided text/pattern.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         supplier_name, supplier_warnings = extract_supplier(raw, supplier_pattern_effective or None)
         warnings = list(warnings) + list(supplier_warnings)

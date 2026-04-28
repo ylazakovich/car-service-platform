@@ -341,7 +341,7 @@ class InvoiceLineParseTemplateSerializer(serializers.ModelSerializer):
         try:
             rx = compile_pattern_or_raise(text)
         except ValueError as exc:
-            raise serializers.ValidationError(str(exc)) from exc
+            raise serializers.ValidationError("Invalid supplier regex pattern.") from exc
         if SUPPLIER_REGEX_GROUP not in rx.groupindex:
             raise serializers.ValidationError(
                 f"Supplier regex must define named group (?P<{SUPPLIER_REGEX_GROUP}>…)."
@@ -355,7 +355,7 @@ class InvoiceLineParseTemplateSerializer(serializers.ModelSerializer):
         try:
             rx = compile_line_pattern(text)
         except ValueError as exc:
-            raise serializers.ValidationError(str(exc)) from exc
+            raise serializers.ValidationError("Invalid line regex pattern.") from exc
         names = frozenset(rx.groupindex.keys())
         missing = REQUIRED_REGEX_GROUPS - names
         if missing:
