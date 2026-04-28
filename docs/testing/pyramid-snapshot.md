@@ -1,8 +1,8 @@
 # Test pyramid snapshot
 
-_Generated: `2026-04-28T10:25:02.892Z`_
-_Source workflow run id: `25047395179`_
-_Head SHA: `95005a5`_
+_Generated: `2026-04-28T18:57:47.082Z`_
+_Source workflow run id: `25071805893`_
+_Head SHA: `e63502d`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
@@ -10,26 +10,26 @@ _Head SHA: `95005a5`_
 | --- | --- | --: | --: | --: | --: | --: |
 | Unit (base) | `unit` | **64** | 64 | 0 | 0 | 0 |
 | Integration (middle) | `api` / `integration` | **157** | 157 | 0 | 0 | 0 |
-| UI / E2E (top) | `end-to-end` / `ui` | **27** | 27 | 0 | 0 | 0 |
-| **Σ pyramid layers** | | **248** | | | | |
+| UI / E2E (top) | `end-to-end` / `ui` | **0** | 0 | 0 | 0 | 0 |
+| **Σ pyramid layers** | | **221** | | | | |
 
 ## Shares (pyramid layers only)
 
 | Layer | Share of Σ layers |
 | --- | ---: |
-| Unit (base) | 25.8% |
-| Integration (middle) | 63.3% |
-| UI / E2E (top) | 10.9% |
+| Unit (base) | 29.0% |
+| Integration (middle) | 71.0% |
+| UI / E2E (top) | 0.0% |
 
 ```text
-Unit (base)    ██████ (64)
-Integration (middle) ███████████████ (157)
-UI / E2E (top) ███ (27)
+Unit (base)    ███████ (64)
+Integration (middle) █████████████████ (157)
+UI / E2E (top) █ (0)
 ```
 
 ## Advisory (planning only)
 
-- **Unit share** 25.8% is below the soft planning target (~45%+). Consider adding or restoring fast unit tests before expanding API/E2E.
+- **Unit share** 29.0% is below the soft planning target (~45%+). Consider adding or restoring fast unit tests before expanding API/E2E.
 
 ## Quality gates (non-blocking, advisory)
 
@@ -37,8 +37,8 @@ These checks **never fail the workflow**; they surface in GitHub **Annotations**
 
 | Gate id | Status | Detail |
 | --- | --- | --- |
-| PYRAMID_UNIT_SHARE_LOW | ⚠️ warning | unit ≥ 45% of Σ layers (actual 25.8%) |
-| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 10.9%) |
+| PYRAMID_UNIT_SHARE_LOW | ⚠️ warning | unit ≥ 45% of Σ layers (actual 29.0%) |
+| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 0.0%) |
 | PYRAMID_UNKNOWN_EPIC | ✓ ok | other epic count: 0 |
 
 _Blocking failures: none (reserved for a future strict mode)._
