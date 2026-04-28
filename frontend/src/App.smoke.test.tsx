@@ -1649,8 +1649,9 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     await user.click(await screen.findByRole("button", { name: "+ Add part line" }));
     const purchaseDialog = await screen.findByRole("dialog", { name: "Warehouse purchase" });
+    await user.click(within(purchaseDialog).getByRole("button", { name: /Part not set yet/i }));
 
-    expect(within(purchaseDialog).getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
+    expect(within(purchaseDialog).getByLabelText("Linked Repair")).toBeInTheDocument();
     expect(
       within(purchaseDialog).getByText(/Leave vehicle and repair empty on a line for stock or parts not tied to a job yet/)
     ).toBeInTheDocument();
