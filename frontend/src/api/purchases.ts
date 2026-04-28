@@ -25,7 +25,8 @@ export interface PurchaseItem {
   supplier: SupplierItem;
   part_name: string;
   quantity: number;
-  current_stock_quantity: string;
+  current_stock_quantity: string | null;
+  inventory_checked_on: string | null;
   purchase_price: string;
   sale_price: string;
   repair_code: string;
@@ -46,7 +47,8 @@ export interface PurchaseWritePayload {
   supplier_name: string;
   part_name: string;
   quantity: number;
-  current_stock_quantity?: number;
+  current_stock_quantity?: number | null;
+  inventory_checked_on?: string | null;
   purchase_price: number;
   sale_price: number;
   repair_code?: string;

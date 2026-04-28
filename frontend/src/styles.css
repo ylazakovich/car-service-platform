@@ -3174,10 +3174,57 @@ button.moneyflow-series-toggle {
   font-size: 0.86rem;
 }
 
+input[type="date"].inventory-stock-input {
+  width: 10.5rem;
+}
+
 .inventory-stock-input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.purchases-consumables-layout {
+  display: grid;
+  gap: var(--s3);
+}
+
+.consumable-inventory-hint {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+}
+
+.consumable-inventory-actions {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 8rem;
+}
+
+.consumable-save-button {
+  width: 100%;
+}
+
+.consumable-inventory-error {
+  display: block;
+  max-width: 14rem;
+  margin: 0;
+}
+
+.consumable-out-of-stock-section {
+  display: grid;
+  gap: var(--s2);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border);
+}
+
+.consumable-out-of-stock-toggle {
+  justify-self: start;
+}
+
+.purchases-compact-row--muted {
+  opacity: 0.82;
 }
 
 /* ── Purchases workspace (controls bar, summary, compact list, modal drawer) ── */
@@ -4269,6 +4316,85 @@ button.moneyflow-series-toggle {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+table.purchases-consumables-table {
+  table-layout: fixed;
+  min-width: 0;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--part {
+  width: 26%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--supplier {
+  width: 13%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--order {
+  width: 9%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--bought {
+  width: 6%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--unit {
+  width: 5%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--buy {
+  width: 8%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--invoice {
+  width: 6%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--inventory-date {
+  width: 11%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--on-hand {
+  width: 8%;
+}
+
+table.purchases-consumables-table .purchases-consumables-col--action {
+  width: 8%;
+}
+
+table.purchases-consumables-table th,
+table.purchases-consumables-table td {
+  padding-inline: 0.55rem;
+}
+
+table.purchases-consumables-table tr.purchases-compact-row td {
+  padding: 0.85rem 0.55rem;
+  overflow-wrap: anywhere;
+}
+
+table.purchases-consumables-table .inventory-stock-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.82rem;
+}
+
+table.purchases-consumables-table input[type="date"].inventory-stock-input {
+  width: 100%;
+}
+
+table.purchases-consumables-table .consumable-inventory-actions {
+  min-width: 0;
+  width: 100%;
+}
+
+table.purchases-consumables-table .consumable-save-button {
+  padding-inline: 0.7rem;
+}
+
+table.purchases-consumables-table .purchase-inline-action {
+  padding: 0.35rem 0.55rem;
 }
 
 table.purchases-registry-table tbody.purchases-compact-list {
