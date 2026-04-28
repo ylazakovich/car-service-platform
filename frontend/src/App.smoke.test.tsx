@@ -1549,20 +1549,22 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     await user.click(await screen.findByRole("button", { name: "+ Add part line" }));
+    const purchaseDialog = await screen.findByRole("dialog", { name: "Warehouse purchase" });
 
-    await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
+    await user.clear(within(purchaseDialog).getByLabelText("Order Date"));
+    await user.type(within(purchaseDialog).getByLabelText("Order Date"), "05-04-2025");
     await user.tab();
-    await user.type(screen.getByLabelText("Supplier"), "AutoParts Pro");
-    await user.type(screen.getByLabelText("Part"), "Brake Sensor");
-    await user.type(screen.getByLabelText("Purchase Price"), "85");
+    await user.type(within(purchaseDialog).getByLabelText("Supplier"), "AutoParts Pro");
+    await user.type(within(purchaseDialog).getByLabelText("Part"), "Brake Sensor");
+    await user.type(within(purchaseDialog).getByLabelText("Purchase Price"), "85");
     await user.selectOptions(
-      screen.getByLabelText("Linked Repair"),
+      within(purchaseDialog).getByLabelText("Linked Repair"),
       "TOR-1011"
     );
 
-    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+    expect(within(purchaseDialog).getByLabelText("Vehicle")).toHaveValue("1");
 
-    await user.click(screen.getByRole("button", { name: "Save line" }));
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Save line" }));
 
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith(
@@ -1646,27 +1648,29 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Purchases" }));
     await user.click(await screen.findByRole("button", { name: "+ Add part line" }));
+    const purchaseDialog = await screen.findByRole("dialog", { name: "Warehouse purchase" });
 
-    expect(screen.getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
+    expect(within(purchaseDialog).getByRole("option", { name: "No repair linked" })).toBeInTheDocument();
     expect(
-      screen.getByText(/Leave vehicle and repair empty on a line for stock or parts not tied to a job yet/)
+      within(purchaseDialog).getByText(/Leave vehicle and repair empty on a line for stock or parts not tied to a job yet/)
     ).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("Order Date"), "05-04-2025");
+    await user.clear(within(purchaseDialog).getByLabelText("Order Date"));
+    await user.type(within(purchaseDialog).getByLabelText("Order Date"), "05-04-2025");
     await user.tab();
-    await user.type(screen.getByLabelText("Supplier"), "AutoParts Pro");
-    await user.type(screen.getByLabelText("Part"), "Brake Sensor");
-    await user.type(screen.getByLabelText("Purchase Price"), "85");
-    await user.selectOptions(screen.getByLabelText("Linked Repair"), "TOR-1011");
+    await user.type(within(purchaseDialog).getByLabelText("Supplier"), "AutoParts Pro");
+    await user.type(within(purchaseDialog).getByLabelText("Part"), "Brake Sensor");
+    await user.type(within(purchaseDialog).getByLabelText("Purchase Price"), "85");
+    await user.selectOptions(within(purchaseDialog).getByLabelText("Linked Repair"), "TOR-1011");
 
-    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
-    expect(screen.getByRole("button", { name: "Unlink repair" })).toBeInTheDocument();
+    expect(within(purchaseDialog).getByLabelText("Vehicle")).toHaveValue("1");
+    expect(within(purchaseDialog).getByRole("button", { name: "Unlink repair" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Unlink repair" }));
-    expect(screen.getByLabelText("Linked Repair")).toHaveValue("");
-    expect(screen.getByLabelText("Vehicle")).toHaveValue("1");
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Unlink repair" }));
+    expect(within(purchaseDialog).getByLabelText("Linked Repair")).toHaveValue("");
+    expect(within(purchaseDialog).getByLabelText("Vehicle")).toHaveValue("1");
 
-    await user.click(screen.getByRole("button", { name: "Save line" }));
+    await user.click(within(purchaseDialog).getByRole("button", { name: "Save line" }));
 
     await waitFor(() => {
       const purchaseCall = mockApi.post.mock.calls.find(([u]) => u === "/purchases/bulk/");
@@ -1736,6 +1740,179 @@ describe("bootstrap application", () => {
         })
       );
     });
+  });
+
+  it("tracks consumable inventory snapshots and moves zero stock rows into out-of-stock", async () => {
+    const user = userEvent.setup();
+    const consumableSupplier = { id: 7, name: "Chem Co", nip: "", phone: "", email: "", notes: "" };
+    const consumables = [
+      {
+        id: 31,
+        order_date: "2025-04-10",
+        approximate_delivery_date: null,
+        supplier: consumableSupplier,
+        vehicle_license_plate: "",
+        part_name: "Gloves",
+        quantity: 6,
+        current_stock_quantity: null,
+        inventory_checked_on: null,
+        purchase_price: "3.50",
+        sale_price: "0.00",
+        repair_code: "",
+        vehicle: null,
+        unit_of_measure: SMOKE_UOM_PCS,
+        is_shop_consumable: true,
+        invoice_name: "",
+        invoice_url: "",
+        delivered: true,
+        created_at: "2025-04-10T10:00:00Z",
+        updated_at: "2025-04-10T10:00:00Z",
+      },
+      {
+        id: 32,
+        order_date: "2025-04-09",
+        approximate_delivery_date: null,
+        supplier: consumableSupplier,
+        vehicle_license_plate: "",
+        part_name: "Degreaser",
+        quantity: 3,
+        current_stock_quantity: "0.00",
+        inventory_checked_on: "2025-04-11",
+        purchase_price: "9.00",
+        sale_price: "0.00",
+        repair_code: "",
+        vehicle: null,
+        unit_of_measure: SMOKE_UOM_PCS,
+        is_shop_consumable: true,
+        invoice_name: "",
+        invoice_url: "",
+        delivered: true,
+        created_at: "2025-04-09T10:00:00Z",
+        updated_at: "2025-04-11T10:00:00Z",
+      },
+      {
+        id: 33,
+        order_date: "2025-04-08",
+        approximate_delivery_date: null,
+        supplier: consumableSupplier,
+        vehicle_license_plate: "",
+        part_name: "Cleaner",
+        quantity: 5,
+        current_stock_quantity: "2.00",
+        inventory_checked_on: "2025-04-10",
+        purchase_price: "12.00",
+        sale_price: "0.00",
+        repair_code: "",
+        vehicle: null,
+        unit_of_measure: SMOKE_UOM_PCS,
+        is_shop_consumable: true,
+        invoice_name: "",
+        invoice_url: "",
+        delivered: true,
+        created_at: "2025-04-08T10:00:00Z",
+        updated_at: "2025-04-10T10:00:00Z",
+      },
+    ];
+
+    mockApi.get.mockImplementation((url: string, config?: { params?: Record<string, string> }) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
+      if (url.startsWith("/customers/") || url.startsWith("/vehicles/") || url === "/repairs/" || url === "/services/" || url === "/auth/staff/") {
+        return Promise.resolve({ data: [] });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      if (isPurchasesIndexGet(url)) {
+        if (config?.params?.shop_consumable === "true") {
+          return Promise.resolve({
+            data: {
+              results: consumables,
+              count: consumables.length,
+              next: null,
+              previous: null,
+            },
+          });
+        }
+        return Promise.resolve({ data: { results: [], count: 0, next: null, previous: null } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    mockApi.patch.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url.startsWith("/purchases/")) {
+        const id = Number(url.split("/").pop());
+        const current = consumables.find((item) => item.id === id);
+        if (!current) {
+          return Promise.resolve({ data: {} });
+        }
+        current.current_stock_quantity =
+          data?.current_stock_quantity == null ? null : Number(data.current_stock_quantity).toFixed(2);
+        current.inventory_checked_on =
+          typeof data?.inventory_checked_on === "string" && data.inventory_checked_on
+            ? data.inventory_checked_on
+            : null;
+        current.updated_at = "2025-04-12T10:05:00Z";
+        return Promise.resolve({ data: { ...current } });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Purchases" }));
+    await user.click(screen.getByRole("tab", { name: "Consumables" }));
+
+    expect(await screen.findByRole("columnheader", { name: "Bought" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Inventory date" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "On hand" })).toBeInTheDocument();
+    expect(screen.getByText("Not inventoried")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show Out of stock (1)" })).toBeInTheDocument();
+    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+    expect(screen.getByLabelText("Inventory date Gloves")).toHaveValue(today);
+    await user.type(screen.getByLabelText("On hand Gloves"), "4");
+    await user.click(screen.getAllByRole("button", { name: "Save" })[0]);
+
+    await waitFor(() => {
+      expect(mockApi.patch).toHaveBeenCalledWith(
+        "/purchases/31",
+        expect.objectContaining({
+          current_stock_quantity: 4,
+          inventory_checked_on: today,
+        })
+      );
+    });
+    expect(screen.getByDisplayValue(today)).toBeInTheDocument();
+    expect(screen.getByDisplayValue("4")).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText("On hand Cleaner"));
+    await user.type(screen.getByLabelText("On hand Cleaner"), "0");
+    await user.click(screen.getAllByRole("button", { name: "Save" })[1]);
+
+    await waitFor(() => {
+      expect(mockApi.patch).toHaveBeenCalledWith(
+        "/purchases/33",
+        expect.objectContaining({
+          current_stock_quantity: 0,
+          inventory_checked_on: "2025-04-10",
+        })
+      );
+    });
+    expect(screen.queryByText("Cleaner")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show Out of stock (2)" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show Out of stock (2)" }));
+    expect(await screen.findByText("Cleaner")).toBeInTheDocument();
   });
 
   it("renders a public client portal route", async () => {
