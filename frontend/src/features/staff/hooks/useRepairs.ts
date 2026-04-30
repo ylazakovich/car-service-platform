@@ -26,6 +26,7 @@ import {
   type RepairStatusFilter,
 } from "../shared/repairs";
 import type { Vehicle } from "../shared/vehicles";
+import { randomUuid } from "../../../lib/randomUuid";
 
 export type RepairFormState = {
   vehicle_id: string;
@@ -254,7 +255,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     const copied = source.service_lines
       .filter((l) => l.name.trim())
       .map((l) => ({
-        key: crypto.randomUUID(),
+        key: randomUuid(),
         persisted_id: null,
         name: l.name,
         catalog_service_id: l.catalog_service_id,

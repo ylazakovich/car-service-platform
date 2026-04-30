@@ -122,6 +122,17 @@ What it does (see script for details):
 - Extends `DJANGO_ALLOWED_HOSTS` with the LAN IP.
 - Sets `FRONTEND_DEV_URL` for Django (emails, admin “View site”).
 - Sets `COMPOSE_FILE` to include `docker-compose.dev.lan.yml` and **recreates** `frontend` and `backend`.
+- Exports `DEV_LAN_IP` so compose can pass **`VITE_DEV_SERVER_ORIGIN`** into the Vite dev container (`server.origin` + `server.allowedHosts` for `http://<LAN-IP>:<port>` — avoids blocked host / wrong asset URLs on phones).
+
+### LAN is plain HTTP — “secure context” and APIs
+
+Opening the dev app as **`http://<LAN-IPv4>:<FRONTEND_DEV_PORT>`** (typical phone URL) is **not** a [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts). Browsers only treat **HTTPS** and **`http://localhost`** (and a few exceptions) as secure.
+
+Implications for this repo:
+
+- **`crypto.randomUUID()`** is **undefined** in that mode on Safari / iOS (and similar WebKit builds). Code that assumed it (e.g. React keys for repair service line drafts) would throw at startup → blank or error screen until replaced with **`frontend/src/lib/randomUuid.ts`**, which falls back to **`crypto.getRandomValues`**-based UUID v4 when needed.
+- Prefer **`randomUuid()`** from that helper for any **new** client-only IDs on staff UI paths that must work over **LAN HTTP**, not bare `crypto.randomUUID()`.
+- Other “secure context only” APIs may also be missing or restricted; if something works on `localhost` but fails on the phone over HTTP, check MDN secure-context rules first.
 
 **Revert to localhost-only dev**
 
