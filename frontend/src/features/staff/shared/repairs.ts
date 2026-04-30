@@ -1,3 +1,5 @@
+import { randomUuid } from "../../../lib/randomUuid";
+
 export type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed";
 
 export type RepairStatusFilter = "all" | RepairStatus;
@@ -28,7 +30,7 @@ export type RepairServiceLineDraft = {
 
 export function newRepairServiceLineDraft(): RepairServiceLineDraft {
   return {
-    key: crypto.randomUUID(),
+    key: randomUuid(),
     persisted_id: null,
     name: "",
     catalog_service_id: null,
