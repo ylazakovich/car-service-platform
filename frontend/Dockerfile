@@ -17,6 +17,7 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 ENV BACKEND_URL=http://localhost:8000
+ENV PORT=80
 
 EXPOSE 80
 
