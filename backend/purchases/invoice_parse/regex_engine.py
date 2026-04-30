@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import decimal
+import logging
 import re
 from typing import Any
 
 from .constants import REQUIRED_REGEX_GROUPS, SUPPLIER_REGEX_GROUP
 from .decimal_norm import normalize_decimal
+
+logger = logging.getLogger(__name__)
 
 
 def compile_pattern_or_raise(pattern: str) -> re.Pattern[str]:
@@ -66,7 +69,8 @@ def parse_invoice_lines(raw_text: str, pattern: str) -> tuple[list[dict[str, Any
                 warnings.append(f"Skipped negative price on line: {line[:120]}")
                 continue
         except (ValueError, TypeError, decimal.InvalidOperation) as exc:
-            warnings.append(f"Could not parse values ({exc}): {line[:120]}")
+            logger.debug("Invoice line parse skipped: %s | line: %s", exc, line[:120])
+            warnings.append(f"Skipped line (could not parse values): {line[:120]}")
             continue
 
         row: dict[str, Any] = {
@@ -99,7 +103,8 @@ def extract_supplier(raw_text: str, supplier_pattern: str | None) -> tuple[str |
     try:
         rx = compile_pattern_or_raise(pat)
     except ValueError as exc:
-        warnings.append(f"Supplier regex: {exc}")
+        logger.debug("Supplier regex invalid: %s", exc)
+        warnings.append("Supplier regex pattern is invalid.")
         return None, warnings
     if SUPPLIER_REGEX_GROUP not in rx.groupindex:
         warnings.append(f"Supplier regex must define named group (?P<{SUPPLIER_REGEX_GROUP}>…).")
