@@ -1,7 +1,6 @@
 import axios from "axios";
 import { useDeferredValue, useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import api from "../../../api/client";
-import { formatPolishPhoneDisplay } from "../../../lib/formatPolishPhone";
 
 export type RegistersCustomerRow = {
   id: number;
@@ -17,63 +16,172 @@ type RegistersCustomersPanelProps = {
   onRefresh: () => void | Promise<void>;
 };
 
+function CustomerRow({ customer, onRefresh }: { customer: RegistersCustomerRow; onRefresh: () => void | Promise<void> }) {
+  const [fullName, setFullName] = useState(customer.full_name);
+  const [phone, setPhone] = useState(customer.phone ?? "");
+  const [email, setEmail] = useState(customer.email ?? "");
+  const [notes, setNotes] = useState(customer.notes ?? "");
+  const [busy, setBusy] = useState(false);
+  const [rowError, setRowError] = useState("");
+
+  useEffect(() => {
+    setFullName(customer.full_name);
+    setPhone(customer.phone ?? "");
+    setEmail(customer.email ?? "");
+    setNotes(customer.notes ?? "");
+  }, [customer.id, customer.full_name, customer.phone, customer.email, customer.notes]);
+
+  const dirty =
+    fullName.trim() !== customer.full_name ||
+    phone.trim() !== (customer.phone ?? "") ||
+    email.trim() !== (customer.email ?? "") ||
+    notes.trim() !== (customer.notes ?? "");
+
+  async function handleSave() {
+    const nextName = fullName.trim();
+    if (!nextName) {
+      setRowError("Name is required.");
+      return;
+    }
+    setBusy(true);
+    setRowError("");
+    try {
+      await api.patch(`/customers/${customer.id}`, {
+        full_name: nextName,
+        phone: phone.trim(),
+        email: email.trim(),
+        notes: notes.trim(),
+      });
+      await onRefresh();
+    } catch (err) {
+      setRowError(axios.isAxiosError(err) ? String(err.response?.data?.detail ?? err.message) : "Save failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Delete customer "${customer.full_name}"?`)) return;
+    setBusy(true);
+    setRowError("");
+    try {
+      await api.delete(`/customers/${customer.id}`);
+      await onRefresh();
+    } catch (err) {
+      setRowError(axios.isAxiosError(err) ? String(err.response?.data?.detail ?? err.message) : "Delete failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <tr>
+      <td>
+        <input
+          type="text"
+          className="uom-admin-cell-input uom-admin-cell-input--compact"
+          value={fullName}
+          onChange={(ev) => setFullName(ev.target.value)}
+          disabled={busy}
+          aria-label={`Customer name (${customer.id})`}
+          autoComplete="name"
+        />
+      </td>
+      <td>
+        <input
+          type="tel"
+          className="uom-admin-cell-input uom-admin-cell-input--compact"
+          value={phone}
+          onChange={(ev) => setPhone(ev.target.value)}
+          disabled={busy}
+          aria-label={`Phone for ${customer.full_name}`}
+          autoComplete="tel"
+        />
+      </td>
+      <td>
+        <input
+          type="email"
+          className="uom-admin-cell-input uom-admin-cell-input--compact"
+          value={email}
+          onChange={(ev) => setEmail(ev.target.value)}
+          disabled={busy}
+          aria-label={`Email for ${customer.full_name}`}
+          autoComplete="email"
+        />
+      </td>
+      <td>
+        <input
+          type="text"
+          className="uom-admin-cell-input uom-admin-cell-input--compact"
+          value={notes}
+          onChange={(ev) => setNotes(ev.target.value)}
+          disabled={busy}
+          aria-label={`Notes for ${customer.full_name}`}
+        />
+      </td>
+      <td>{customer.vehicle_count}</td>
+      <td>
+        <div className="uom-admin-row-actions registers-customers-actions">
+          <button type="button" className="button button-secondary" disabled={busy || !dirty} onClick={() => void handleSave()}>
+            Save
+          </button>
+          <button type="button" className="button button-danger uom-delete-row-btn" disabled={busy} onClick={() => void handleDelete()}>
+            Delete
+          </button>
+        </div>
+        {rowError ? <p className="workspace-note uom-admin-row-error">{rowError}</p> : null}
+      </td>
+    </tr>
+  );
+}
+
 export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCustomersPanelProps) {
   const dialogTitleId = useId();
   const [search, setSearch] = useState("");
   const q = useDeferredValue(search.trim().toLowerCase());
 
-  const withVehicles = useMemo(
-    () => customers.filter((c) => (c.vehicle_count ?? 0) > 0),
-    [customers],
-  );
-
   const filtered = useMemo(() => {
-    if (!q) return withVehicles;
-    return withVehicles.filter(
+    if (!q) return customers;
+    return customers.filter(
       (c) =>
         c.full_name.toLowerCase().includes(q) ||
         c.phone.toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q),
     );
-  }, [withVehicles, q]);
+  }, [customers, q]);
 
-  const [editing, setEditing] = useState<RegistersCustomerRow | null>(null);
+  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "", email: "", notes: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!editing) return undefined;
+    if (!creating) return undefined;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && !saving) {
-        setEditing(null);
+        setCreating(false);
         setError("");
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [editing, saving]);
+  }, [creating, saving]);
 
-  function openEdit(c: RegistersCustomerRow) {
-    setEditing(c);
-    setForm({
-      full_name: c.full_name,
-      phone: c.phone ?? "",
-      email: c.email ?? "",
-      notes: c.notes ?? "",
-    });
+  function openCreate() {
+    setCreating(true);
+    setForm({ full_name: "", phone: "", email: "", notes: "" });
     setError("");
   }
 
   function closeModal() {
     if (saving) return;
-    setEditing(null);
+    setCreating(false);
     setError("");
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!editing) return;
+    if (!creating) return;
     const full_name = form.full_name.trim();
     if (!full_name) {
       setError("Name is required.");
@@ -82,14 +190,15 @@ export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCusto
     setSaving(true);
     setError("");
     try {
-      await api.patch(`/customers/${editing.id}`, {
+      const payload = {
         full_name,
         phone: form.phone.trim(),
         email: form.email.trim(),
         notes: form.notes.trim(),
-      });
+      };
+      await api.post("/customers/", payload);
       await onRefresh();
-      setEditing(null);
+      setCreating(false);
     } catch (err) {
       setError(axios.isAxiosError(err) ? String(err.response?.data?.detail ?? err.message) : "Save failed.");
     } finally {
@@ -100,12 +209,16 @@ export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCusto
   return (
     <>
       <section className="uom-admin-page registers-customers-page" aria-labelledby="registers-customers-title">
-        <h3 id="registers-customers-title" className="uom-admin-subtitle">
-          Customers with vehicles
-        </h3>
+        <div className="registers-embedded-section-head">
+          <h3 id="registers-customers-title" className="uom-admin-subtitle">
+            Customers
+          </h3>
+          <button type="button" className="button" onClick={openCreate}>
+            + Add customer
+          </button>
+        </div>
         <p className="workspace-note uom-admin-lead">
-          Owners who have at least one vehicle in the workshop registry. Edit contact details; vehicle links stay on the{" "}
-          <strong>Vehicles</strong> screen.
+          Owners in the workshop registry. Edit contact details; vehicle links stay on the <strong>Vehicles</strong> screen.
         </p>
 
         <div className="registers-search-toolbar">
@@ -122,13 +235,14 @@ export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCusto
           </label>
         </div>
 
-        <div className="uom-admin-table-wrap">
-          <table className="uom-admin-table uom-admin-table--compact">
+        <div className="uom-admin-table-wrap registers-table-wrap">
+          <table className="uom-admin-table uom-admin-table--compact registers-editor-table registers-customers-table">
             <thead>
               <tr>
                 <th scope="col">Name</th>
                 <th scope="col">Phone</th>
                 <th scope="col">Email</th>
+                <th scope="col">Notes</th>
                 <th scope="col">Vehicles</th>
                 <th scope="col">Actions</th>
               </tr>
@@ -136,35 +250,21 @@ export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCusto
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={6}>
                     <p className="workspace-note">
-                      {withVehicles.length === 0
-                        ? "No customers with vehicles yet."
-                        : "No matches for this search."}
+                      {customers.length === 0 ? "No customers yet." : "No matches for this search."}
                     </p>
                   </td>
                 </tr>
               ) : (
-                filtered.map((c) => (
-                  <tr key={c.id}>
-                    <td>{c.full_name}</td>
-                    <td className="phone-display">{c.phone ? formatPolishPhoneDisplay(c.phone) : "—"}</td>
-                    <td>{c.email || "—"}</td>
-                    <td>{c.vehicle_count}</td>
-                    <td>
-                      <button type="button" className="button button-secondary" onClick={() => openEdit(c)}>
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                filtered.map((c) => <CustomerRow key={c.id} customer={c} onRefresh={onRefresh} />)
               )}
             </tbody>
           </table>
         </div>
       </section>
 
-      {editing ? (
+      {creating ? (
         <div className="modal-overlay uom-add-overlay" role="presentation" onClick={closeModal}>
           <section
             className="modal-card modal-card-large uom-add-unit-modal"
@@ -176,7 +276,7 @@ export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCusto
             <div className="panel-header">
               <div>
                 <p className="eyebrow">Customer</p>
-                <h3 id={dialogTitleId}>Edit {editing.full_name}</h3>
+                <h3 id={dialogTitleId}>Add customer</h3>
               </div>
             </div>
             <form className="stack-form" onSubmit={(e) => void handleSubmit(e)}>
@@ -220,7 +320,7 @@ export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCusto
               {error ? <p className="form-error">{error}</p> : null}
               <div className="form-actions uom-add-unit-actions">
                 <button type="submit" className="button" disabled={saving}>
-                  {saving ? "Saving…" : "Save"}
+                  {saving ? "Saving…" : "Create customer"}
                 </button>
                 <button type="button" className="button button-secondary" disabled={saving} onClick={closeModal}>
                   Cancel
