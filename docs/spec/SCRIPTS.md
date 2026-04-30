@@ -24,7 +24,7 @@ Canonical index of **`scripts/`** and related operational assets. Day-to-day com
 | `stop.sh` | `docker compose down` for the dev merge. |
 | `start-prod.sh` | Prod-like stack (default compose only, no dev overlay). |
 | `stop-prod.sh` | Tear down prod-like compose. |
-| `publish-dev-to-lan.sh` | Adds LAN bindings + CORS/allowed hosts; merges `docker-compose.dev.lan.yml`. |
+| `publish-dev-to-lan.sh` | Adds LAN bindings + CORS/allowed hosts; merges `docker-compose.dev.lan.yml`; exports `DEV_LAN_IP` for LAN Vite env. See [RUNBOOK § LAN](./RUNBOOK.md#c-lan-mobile--share-the-dev-stack-on-your-network) (HTTP ≠ secure context; browser API caveats). |
 | `show-logs.sh` | Tail-style access to container logs (see script for service names). |
 
 ## `scripts/db/`

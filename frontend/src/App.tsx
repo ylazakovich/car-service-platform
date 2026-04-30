@@ -183,8 +183,13 @@ function subscribeShellMobileNarrow(onChange: () => void) {
   if (typeof window === "undefined") return () => {};
   if (typeof window.matchMedia !== "function") return () => {};
   const mq = window.matchMedia(shellMobileMq);
-  mq.addEventListener("change", onChange);
-  return () => mq.removeEventListener("change", onChange);
+  // Safari < 14 (and some WebViews): MediaQueryList only has addListener/removeListener.
+  if (typeof mq.addEventListener === "function") {
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }
+  mq.addListener(onChange);
+  return () => mq.removeListener(onChange);
 }
 
 /** Viewport ≤820px: mobile shell (sticky header + picker), desktop sidebar hidden. */
