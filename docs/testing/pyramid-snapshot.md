@@ -1,8 +1,8 @@
 # Test pyramid snapshot
 
-_Generated: `2026-04-28T10:25:02.892Z`_
-_Source workflow run id: `25047395179`_
-_Head SHA: `95005a5`_
+_Generated: `2026-04-30T12:54:51.969Z`_
+_Source workflow run id: `25166345903`_
+_Head SHA: `b23fe7f`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
@@ -10,7 +10,7 @@ _Head SHA: `95005a5`_
 | --- | --- | --: | --: | --: | --: | --: |
 | Unit (base) | `unit` | **64** | 64 | 0 | 0 | 0 |
 | Integration (middle) | `api` / `integration` | **157** | 157 | 0 | 0 | 0 |
-| UI / E2E (top) | `end-to-end` / `ui` | **27** | 27 | 0 | 0 | 0 |
+| UI / E2E (top) | `end-to-end` / `ui` | **27** | 17 | 1 | 0 | 9 |
 | **Σ pyramid layers** | | **248** | | | | |
 
 ## Shares (pyramid layers only)
