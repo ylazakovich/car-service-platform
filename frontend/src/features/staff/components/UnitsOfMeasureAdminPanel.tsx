@@ -126,10 +126,26 @@ function UnitRow({
         />
       </td>
       <td>
-        <label className="uom-admin-active-label">
-          <input type="checkbox" checked={isActive} onChange={(ev) => setIsActive(ev.target.checked)} disabled={busy} />
-          <span>Active</span>
-        </label>
+        <div className="services-active-toggle" role="group" aria-label={`Status for ${unit.code}`}>
+          <button
+            type="button"
+            className={`services-active-toggle__btn${!isActive ? " services-active-toggle__btn--selected-inactive" : ""}`}
+            aria-pressed={!isActive}
+            disabled={busy}
+            onClick={() => setIsActive(false)}
+          >
+            Inactive
+          </button>
+          <button
+            type="button"
+            className={`services-active-toggle__btn${isActive ? " services-active-toggle__btn--selected-active" : ""}`}
+            aria-pressed={isActive}
+            disabled={busy}
+            onClick={() => setIsActive(true)}
+          >
+            Active
+          </button>
+        </div>
       </td>
       <td>
         <div className="uom-admin-row-actions">
@@ -443,8 +459,8 @@ export function UnitsOfMeasureAdminPanel({
       {loading ? <p className="workspace-note">Loading…</p> : null}
 
       {!loading && !loadError ? (
-        <div className="uom-admin-table-wrap">
-          <table className="uom-admin-table uom-admin-table--compact uom-admin-table--kanban">
+        <div className="uom-admin-table-wrap registers-table-wrap">
+          <table className="uom-admin-table uom-admin-table--compact uom-admin-table--kanban registers-editor-table registers-units-table">
             <thead>
               <tr>
                 <th scope="col" className="uom-admin-order-th" aria-label="Drag handle">
