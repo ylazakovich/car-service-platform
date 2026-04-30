@@ -1,26 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="$SCRIPT_DIR/../../.env.railway.local"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-if [ -f "$ENV_FILE" ]; then
-    set -a
-    # shellcheck source=/dev/null
-    source "$ENV_FILE"
-    set +a
+if ! command -v railway &>/dev/null; then
+  echo "Error: Railway CLI not installed. Run: npm install -g @railway/cli" >&2
+  exit 1
 fi
 
-: "${RAILWAY_DEPLOY_HOOK_BACKEND:?Missing RAILWAY_DEPLOY_HOOK_BACKEND — add it to .env.railway.local}"
-: "${RAILWAY_DEPLOY_HOOK_FRONTEND:?Missing RAILWAY_DEPLOY_HOOK_FRONTEND — add it to .env.railway.local}"
+DEPLOY_BACKEND=true
+DEPLOY_FRONTEND=true
+
+for arg in "$@"; do
+  case "$arg" in
+    --backend-only) DEPLOY_FRONTEND=false ;;
+    --frontend-only) DEPLOY_BACKEND=false ;;
+  esac
+done
 
 echo "Pushing to main..."
 git push origin main
 
-echo "Deploying backend..."
-curl -sf -X POST "$RAILWAY_DEPLOY_HOOK_BACKEND"
+if $DEPLOY_BACKEND; then
+  echo "Deploying backend..."
+  cd "$ROOT_DIR/backend"
+  railway up --detach
+  echo "Backend deploy triggered."
+fi
 
-echo "Deploying frontend..."
-curl -sf -X POST "$RAILWAY_DEPLOY_HOOK_FRONTEND"
+if $DEPLOY_FRONTEND; then
+  echo "Deploying frontend..."
+  cd "$ROOT_DIR/frontend"
+  railway up --detach
+  echo "Frontend deploy triggered."
+fi
 
-echo "Deploy triggered. Check https://railway.app/dashboard for status."
+echo ""
+echo "Check status: https://railway.app/dashboard"
+echo ""
+echo "Note: if frontend returns 504 after a backend-only redeploy,"
+echo "run: bash scripts/deploy/deploy.sh --frontend-only"
