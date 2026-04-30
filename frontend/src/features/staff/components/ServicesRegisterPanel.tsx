@@ -307,9 +307,9 @@ export function ServicesRegisterPanel({ onServicesChanged }: ServicesRegisterPan
             <p className="services-register-table-hint" id="services-register-table-hint">
               Edit in the table, then <strong>Save</strong> on each row.
             </p>
-            <div className="uom-admin-table-wrap services-register-table-wrap">
+            <div className="uom-admin-table-wrap registers-table-wrap services-register-table-wrap">
               <table
-                className="uom-admin-table uom-admin-table--compact services-register-editor-table"
+                className="uom-admin-table uom-admin-table--compact registers-editor-table services-register-editor-table"
                 aria-describedby="services-register-table-hint"
               >
                 <thead>
