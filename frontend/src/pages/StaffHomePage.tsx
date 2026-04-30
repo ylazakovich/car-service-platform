@@ -4671,7 +4671,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {consumablePurchases.length !== consumableCount ? ` · ${consumablePurchases.length} loaded` : ""}
               </span>
             ) : null}
-            {activePurchasesTab === "suppliers" ? (
+            {activePurchasesTab === "suppliers" && suppliers.length > 0 ? (
               <span className="registry-count">
                 {suppliers.length} {suppliers.length === 1 ? "supplier" : "suppliers"}
               </span>
@@ -4741,18 +4741,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <p className="workspace-note">
                     {purchaseSearch.trim() ? "No warehouse lines match your search." : "No warehouse lines yet."}
                   </p>
-                  {!purchaseSearch.trim() ? (
-                    <>
-                      <p className="workspace-note purchases-empty-copy">{meta.copy}</p>
-                      <button type="button" className="button" onClick={() => openPurchaseCreateModal("warehouse")}>
-                        + Add part line
-                      </button>
-                    </>
-                  ) : null}
                 </div>
               ) : (
                 <div className="purchases-registry-table-wrap">
                   <table className="dashboard-table purchases-registry-table">
+                    <colgroup>
+                      <col className="purchases-registry-col--warehouse-part" />
+                      <col className="purchases-registry-col--warehouse-supplier" />
+                      <col className="purchases-registry-col--warehouse-date" />
+                      <col className="purchases-registry-col--warehouse-date" />
+                      <col className="purchases-registry-col--warehouse-qty" />
+                      <col className="purchases-registry-col--warehouse-repair" />
+                      <col className="purchases-registry-col--warehouse-money" />
+                    </colgroup>
                     <thead>
                       <tr>
                         <th>Part</th>
@@ -4838,26 +4839,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   <p className="workspace-note">
                     {consumableSearch.trim() ? "No consumables match your search." : "No shop consumables yet."}
                   </p>
-                  <button type="button" className="button" onClick={() => openPurchaseCreateModal("consumables")}>
-                    + Add consumable
-                  </button>
                 </div>
               ) : (
                 <div className="purchases-consumables-layout">
                   {visibleConsumables.length > 0 ? (
                     <div className="purchases-registry-table-wrap">
-                      <table className="dashboard-table purchases-registry-table purchases-consumables-table">
+                      <table className="dashboard-table purchases-registry-table purchases-registry-table--wide">
                         <colgroup>
-                          <col className="purchases-consumables-col purchases-consumables-col--part" />
-                          <col className="purchases-consumables-col purchases-consumables-col--supplier" />
-                          <col className="purchases-consumables-col purchases-consumables-col--order" />
-                          <col className="purchases-consumables-col purchases-consumables-col--bought" />
-                          <col className="purchases-consumables-col purchases-consumables-col--unit" />
-                          <col className="purchases-consumables-col purchases-consumables-col--buy" />
-                          <col className="purchases-consumables-col purchases-consumables-col--invoice" />
-                          <col className="purchases-consumables-col purchases-consumables-col--inventory-date" />
-                          <col className="purchases-consumables-col purchases-consumables-col--on-hand" />
-                          <col className="purchases-consumables-col purchases-consumables-col--action" />
+                          <col className="purchases-registry-col--part" />
+                          <col className="purchases-registry-col--supplier" />
+                          <col className="purchases-registry-col--date" />
+                          <col className="purchases-registry-col--qty" />
+                          <col className="purchases-registry-col--unit" />
+                          <col className="purchases-registry-col--money" />
+                          <col className="purchases-registry-col--invoice" />
+                          <col className="purchases-registry-col--inventory-date" />
+                          <col className="purchases-registry-col--inventory-qty" />
+                          <col className="purchases-registry-col--action" />
                         </colgroup>
                         <thead>
                           <tr>
@@ -5005,18 +5003,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       </button>
                       {showOutOfStockConsumables ? (
                         <div className="purchases-registry-table-wrap">
-                          <table className="dashboard-table purchases-registry-table purchases-consumables-table">
+                          <table className="dashboard-table purchases-registry-table purchases-registry-table--wide">
                             <colgroup>
-                              <col className="purchases-consumables-col purchases-consumables-col--part" />
-                              <col className="purchases-consumables-col purchases-consumables-col--supplier" />
-                              <col className="purchases-consumables-col purchases-consumables-col--order" />
-                              <col className="purchases-consumables-col purchases-consumables-col--bought" />
-                              <col className="purchases-consumables-col purchases-consumables-col--unit" />
-                              <col className="purchases-consumables-col purchases-consumables-col--buy" />
-                              <col className="purchases-consumables-col purchases-consumables-col--invoice" />
-                              <col className="purchases-consumables-col purchases-consumables-col--inventory-date" />
-                              <col className="purchases-consumables-col purchases-consumables-col--on-hand" />
-                              <col className="purchases-consumables-col purchases-consumables-col--action" />
+                              <col className="purchases-registry-col--part" />
+                              <col className="purchases-registry-col--supplier" />
+                              <col className="purchases-registry-col--date" />
+                              <col className="purchases-registry-col--qty" />
+                              <col className="purchases-registry-col--unit" />
+                              <col className="purchases-registry-col--money" />
+                              <col className="purchases-registry-col--invoice" />
+                              <col className="purchases-registry-col--inventory-date" />
+                              <col className="purchases-registry-col--inventory-qty" />
+                              <col className="purchases-registry-col--action" />
                             </colgroup>
                             <thead>
                               <tr>
@@ -5173,6 +5171,14 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               ) : (
                 <div className="purchases-registry-table-wrap">
                   <table className="dashboard-table purchases-registry-table">
+                    <colgroup>
+                      <col className="purchases-registry-col--supplier-name" />
+                      <col className="purchases-registry-col--supplier-nip" />
+                      <col className="purchases-registry-col--supplier-phone" />
+                      <col className="purchases-registry-col--supplier-email" />
+                      <col className="purchases-registry-col--supplier-address" />
+                      <col className="purchases-registry-col--supplier-notes" />
+                    </colgroup>
                     <thead>
                       <tr>
                         <th>Name</th>
@@ -5183,7 +5189,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <th>Notes</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="purchases-compact-list">
                       {filteredSuppliers.map((s) => (
                         <tr
                           key={s.id}

@@ -9,7 +9,7 @@ import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
 import { StaffRegistersPage } from "./pages/StaffRegistersPage";
 
 /**
- * **Registers** (admin): units of measure, services catalog, customers with vehicles.
+ * **Registers** (admin): units of measure, services catalog, customers register.
  * Данные: `scripts/demo/demo_data.sql` + миграции (UoM seed).
  */
 
@@ -74,7 +74,8 @@ test.describe("Registers workspace @desktop", () => {
 
     const row = reg.customerRowByName(E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME);
     await expect(row).toBeVisible({ timeout: 20_000 });
-    await expect(row.getByRole("button", { name: "Edit" })).toBeVisible();
+    await expect(row.getByRole("button", { name: "Save" })).toBeVisible();
+    await expect(row.getByRole("button", { name: "Delete" })).toBeVisible();
   });
 });
 

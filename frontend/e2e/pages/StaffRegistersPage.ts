@@ -4,7 +4,7 @@ import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
 export type RegistersWorkspaceTab = "Units of measure" | "Services" | "Customers";
 
 /**
- * Admin-only **Registers** (reference data): units of measure, services catalog, customers with vehicles.
+ * Admin-only **Registers** (reference data): units of measure, services catalog, customers (with vehicle counts).
  */
 export class StaffRegistersPage {
   readonly page: Page;
@@ -59,7 +59,7 @@ export class StaffRegistersPage {
   }
 
   async expectCustomersWorkspaceVisible(): Promise<void> {
-    await expect(this.page.getByRole("heading", { name: "Customers with vehicles", level: 3 })).toBeVisible({
+    await expect(this.page.getByRole("heading", { name: "Customers", level: 3 })).toBeVisible({
       timeout: 15_000,
     });
     await expect(
@@ -67,7 +67,10 @@ export class StaffRegistersPage {
     ).toBeVisible({ timeout: 15_000 });
   }
 
+  /** Customer names are inline `<input value="…">`; match via `value` like the services register. */
   customerRowByName(name: string): Locator {
-    return this.page.locator(".registers-customers-page tbody tr").filter({ hasText: name });
+    const rows = this.page.locator(".registers-customers-page tbody tr");
+    const escaped = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return rows.filter({ has: this.page.locator(`input[value="${escaped}"]`) });
   }
 }
