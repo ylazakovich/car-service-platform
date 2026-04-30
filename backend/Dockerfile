@@ -16,7 +16,7 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /usr/sbin/nologin ap
 WORKDIR /app
 
 COPY requirements.txt requirements-test.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
+RUN --mount=type=cache,id=pip-cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
 COPY --chown=appuser:appuser . .
