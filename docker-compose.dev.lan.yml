@@ -13,3 +13,5 @@ services:
       - "${FRONTEND_DEV_PORT:-4173}:5173"
     environment:
       VITE_LAN_DEV: "1"
+      # Vite 6+: correct module/HMR base + Host allow-list for http://<LAN-IP>:port (publish script exports DEV_LAN_IP).
+      VITE_DEV_SERVER_ORIGIN: "http://${DEV_LAN_IP}:${FRONTEND_DEV_PORT:-4173}"

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ServiceItem } from "../../../api/services";
+import { randomUuid } from "../../../lib/randomUuid";
 import type { RepairServiceLineDraft } from "../shared/repairs";
 import { newRepairServiceLineDraft } from "../shared/repairs";
 
@@ -43,7 +44,7 @@ export function repairDraftsFromEntryLines(
     return [newRepairServiceLineDraft()];
   }
   return lines.map((l) => ({
-    key: l.id ?? crypto.randomUUID(),
+    key: l.id ?? randomUuid(),
     persisted_id: l.id,
     name: l.name,
     catalog_service_id: l.catalog_service_id,
