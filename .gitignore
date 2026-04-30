@@ -1,5 +1,6 @@
 .env
 .env.local
+.env.railway.local
 .DS_Store
 
 # Root-level JS tooling (frontend uses frontend/.gitignore for its node_modules)
