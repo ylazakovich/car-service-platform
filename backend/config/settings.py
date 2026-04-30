@@ -13,6 +13,10 @@ SECRET_KEY = os.environ.get(
     "django-insecure-dev-only-change-me",
 )
 DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
+if not DEBUG and SECRET_KEY.startswith("django-insecure"):
+    raise RuntimeError(
+        "DJANGO_SECRET_KEY env var must be set to a secure value in production"
+    )
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
 
 INSTALLED_APPS = [
@@ -165,7 +169,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media")))
 
 STORAGES = {
     "default": {
