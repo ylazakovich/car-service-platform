@@ -1,1 +1,1 @@
-{"id":"63a409a5997bb7629382e598f6c493ce","fullName":"staff-registers.spec.ts:68:3","name":"admin switches to Customers and sees demo customer with vehicles","status":"failed","testResultsByEnv":{"e2e":"3bf8f5e557885367e3b1046b7b6b7e86"}}
+{"id":"63a409a5997bb7629382e598f6c493ce","fullName":"staff-registers.spec.ts:68:3","name":"admin switches to Customers and sees demo customer with vehicles","status":"passed","testResultsByEnv":{"e2e":"ee060628d381cd3c9732ae34e036c791"}}
