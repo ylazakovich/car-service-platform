@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
 import { exportRepairPdf, fetchStaffUsers, openRepairPdfForPreview, type StaffUser } from "../api/repairs";
@@ -425,6 +425,38 @@ function isPurchaseDeliveryOverdue(approximateDeliveryDate: string): boolean {
 
 function hasPurchaseInvoice(entry: Pick<PurchaseEntry, "invoice_name" | "invoice_url">): boolean {
   return Boolean(entry.invoice_name?.trim() || entry.invoice_url?.trim());
+}
+
+/** Desktop/mobile consumables: Open when URL exists; else filename when invoice_name only; else em dash. */
+function renderPurchaseInvoiceCellContent(
+  entry: Pick<PurchaseEntry, "invoice_name" | "invoice_url">,
+  onOpenUrl: (url: string) => void,
+  options?: { openButtonClassName?: string }
+): ReactNode {
+  const url = entry.invoice_url?.trim();
+  if (url) {
+    return (
+      <button
+        type="button"
+        className={options?.openButtonClassName ?? "purchase-inline-action"}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenUrl(url);
+        }}
+      >
+        Open
+      </button>
+    );
+  }
+  const invoiceName = entry.invoice_name?.trim();
+  if (invoiceName) {
+    return (
+      <span className="purchases-registry-invoice-filename" title={invoiceName}>
+        {invoiceName}
+      </span>
+    );
+  }
+  return "—";
 }
 
 function formatInventoryInputValue(value: number | null): string {
@@ -4744,20 +4776,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
                 <div className="purchases-mobile-consumable-invoice-row">
                   <span className="purchases-mobile-field-label">Invoice</span>
-                  {entry.invoice_url ? (
-                    <button
-                      type="button"
-                      className="button button-secondary button-sm purchase-inline-action"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleOpenInvoice(entry.invoice_url);
-                      }}
-                    >
-                      Open
-                    </button>
-                  ) : (
-                    <span>—</span>
-                  )}
+                  <span className="purchases-mobile-consumable-invoice-value">
+                    {renderPurchaseInvoiceCellContent(entry, handleOpenInvoice, {
+                      openButtonClassName: "button button-secondary button-sm purchase-inline-action",
+                    })}
+                  </span>
                 </div>
               </div>
 
@@ -4789,7 +4812,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   aria-label={`On hand ${entry.part_name}`}
                   type="number"
                   min="0"
-                  max={entry.quantity}
                   step="0.01"
                   placeholder="Not inventoried"
                   onChange={(event) => {
@@ -5133,22 +5155,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                 <td>{formatInventoryInputValue(entry.quantity)}</td>
                                 <td>{entry.unit_of_measure_code}</td>
                                 <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
-                                <td>
-                                  {entry.invoice_url ? (
-                                    <button
-                                      type="button"
-                                      className="purchase-inline-action"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        handleOpenInvoice(entry.invoice_url);
-                                      }}
-                                    >
-                                      Open
-                                    </button>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
+                                <td>{renderPurchaseInvoiceCellContent(entry, handleOpenInvoice)}</td>
                                 <td>
                                   <input
                                     className="inventory-stock-input"
@@ -5175,7 +5182,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                     aria-label={`On hand ${entry.part_name}`}
                                     type="number"
                                     min="0"
-                                    max={entry.quantity}
                                     step="0.01"
                                     placeholder="Not inventoried"
                                     onClick={(event) => event.stopPropagation()}
@@ -5298,22 +5304,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                     <td>{formatInventoryInputValue(entry.quantity)}</td>
                                     <td>{entry.unit_of_measure_code}</td>
                                     <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
-                                    <td>
-                                      {entry.invoice_url ? (
-                                        <button
-                                          type="button"
-                                          className="purchase-inline-action"
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleOpenInvoice(entry.invoice_url);
-                                          }}
-                                        >
-                                          Open
-                                        </button>
-                                      ) : (
-                                        "—"
-                                      )}
-                                    </td>
+                                    <td>{renderPurchaseInvoiceCellContent(entry, handleOpenInvoice)}</td>
                                     <td>
                                       <input
                                         className="inventory-stock-input"
@@ -5336,7 +5327,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                         aria-label={`On hand ${entry.part_name} out of stock`}
                                         type="number"
                                         min="0"
-                                        max={entry.quantity}
                                         step="0.01"
                                         onClick={(event) => event.stopPropagation()}
                                         onChange={(event) => {
