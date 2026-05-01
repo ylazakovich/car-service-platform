@@ -5,8 +5,8 @@ import {
   E2E_DEMO_REPAIR_DIALOG_NAME,
   E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY,
   E2E_DEMO_REPAIR_SERVICE_NAME,
-  E2E_DEMO_REPAIR_TRACKING_CODE,
 } from "./e2e-seed";
+import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
@@ -21,6 +21,23 @@ test.describe("Repair service lines — Kanban summary @desktop", () => {
 
   test("completed demo card shows multi-service summary (+N)", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · kanban · TOR-1001 multi-service summary");
+    const repairs = new StaffRepairsPage(page);
+    await repairs.gotoRepairsSection();
+    await repairs.expectRepairsKanbanVisible();
+
+    const card = await repairs.seededRepairKanbanCard();
+    await expect(card).toContainText(E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY);
+  });
+});
+
+test.describe("Repair service lines — Kanban summary @mobile-only", () => {
+  test.beforeEach(async ({ page }) => {
+    await openStaffApp(page);
+    await new StaffMobileNavigationPage(page).expectMobileWorkspaceMenuToggle();
+  });
+
+  test("completed demo card shows multi-service summary (+N) on narrow viewport", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · kanban · TOR-1001 multi-service summary (mobile)");
     const repairs = new StaffRepairsPage(page);
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();
@@ -50,6 +67,33 @@ test.describe("Repair service lines — modal editor @desktop", () => {
 
     await expect(dialog.locator(".repair-service-lines-editor")).toBeVisible({ timeout: 15_000 });
     // Inputs use `list=` (datalist); Chromium exposes them as role `combobox`, not `textbox` — use aria-label via getByLabel.
+    await expect(dialog.getByLabel(`Line 1: ${E2E_DEMO_REPAIR_SERVICE_NAME}`)).toHaveValue(
+      E2E_DEMO_REPAIR_SERVICE_NAME,
+      { timeout: 15_000 },
+    );
+    await expect(dialog.getByLabel("Line 2: Tire service")).toHaveValue("Tire service", { timeout: 15_000 });
+    await expect(dialog.getByRole("button", { name: "+ Add service" })).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+test.describe("Repair service lines — modal editor @mobile-only", () => {
+  test.use({ storageState: AUTH_STATE_ADMIN });
+
+  test.beforeEach(async ({ page }) => {
+    await openAdminApp(page);
+    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+  });
+
+  test("admin sees Services editor with seeded lines and Add service on narrow viewport", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · modal · admin multi-line services editor (mobile)");
+    const repairs = new StaffRepairsPage(page);
+    await repairs.gotoRepairsSection();
+    await repairs.openSeededRepairCard();
+
+    const dialog = page.getByRole("dialog", { name: E2E_DEMO_REPAIR_DIALOG_NAME });
+    await expect(dialog).toBeVisible({ timeout: 20_000 });
+
+    await expect(dialog.locator(".repair-service-lines-editor")).toBeVisible({ timeout: 15_000 });
     await expect(dialog.getByLabel(`Line 1: ${E2E_DEMO_REPAIR_SERVICE_NAME}`)).toHaveValue(
       E2E_DEMO_REPAIR_SERVICE_NAME,
       { timeout: 15_000 },

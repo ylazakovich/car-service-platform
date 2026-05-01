@@ -119,6 +119,19 @@ test.describe("Purchases registry — mobile table @mobile-only", () => {
     await expect(row).toBeVisible({ timeout: 20_000 });
   });
 
+  test("clicking a purchase row opens detail dialog on narrow viewport", async ({ page }) => {
+    await e2eBehaviors("admin", "purchases · mobile · row opens modal");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoPurchasesSection();
+    await reg.purchaseRowByPartSnippet(E2E_DEMO_PURCHASE_PART_SUBSTRING).click();
+
+    const dialog = page.getByRole("dialog", { name: new RegExp(E2E_DEMO_PURCHASE_PART_SUBSTRING, "i") });
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.getByRole("heading", { level: 3, name: new RegExp(E2E_DEMO_PURCHASE_PART_SUBSTRING, "i") })).toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
   test("admin sees Purchases section tabs (Warehouse / Consumables / Suppliers) on narrow viewport", async ({
     page,
   }) => {
