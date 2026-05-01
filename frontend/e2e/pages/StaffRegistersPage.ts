@@ -55,21 +55,27 @@ export class StaffRegistersPage {
   async expectServicesWorkspaceVisible(): Promise<void> {
     await expect(this.page.getByRole("heading", { name: "Services", level: 3 })).toBeVisible({ timeout: 15_000 });
     await expect(this.page.getByRole("button", { name: "+ Add service" })).toBeVisible();
-    await expect(this.page.locator(".services-register-editor-table")).toBeVisible({ timeout: 20_000 });
+    /** ≤820px: каталог — список `aria-label="Services catalog"`; широкий экран — таблица. */
+    const catalogTable = this.page.locator(".services-register-editor-table");
+    const catalogMobileList = this.page.getByRole("list", { name: "Services catalog" });
+    await expect(catalogTable.or(catalogMobileList)).toBeVisible({ timeout: 20_000 });
   }
 
   servicesSearchInput(): Locator {
     return this.page.getByRole("searchbox", { name: "Search services" });
   }
 
-  /** Service names are `<input value="…">`; match via `value` attribute (avoids `page.getByDisplayValue`, unavailable in CI). */
+  /** Desktop: имя в `<input value>` строки таблицы. Mobile: свёрнутая строка — текст в `.uom-mobile-unit-name`. */
   serviceRowByNameSnippet(snippet: string | RegExp): Locator {
-    const rows = this.page.locator(".services-register-editor-table tbody tr");
+    const desktopRows = this.page.locator(".services-register-editor-table tbody tr");
+    const mobileRows = this.page.locator(".uom-mobile-unit-list .uom-mobile-unit-item");
     if (typeof snippet === "string") {
       const escaped = snippet.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      return rows.filter({ has: this.page.locator(`input[value="${escaped}"]`) });
+      return desktopRows
+        .filter({ has: this.page.locator(`input[value="${escaped}"]`) })
+        .or(mobileRows.filter({ hasText: snippet }));
     }
-    return rows.filter({ hasText: snippet });
+    return desktopRows.filter({ hasText: snippet }).or(mobileRows.filter({ hasText: snippet }));
   }
 
   async expectCustomersWorkspaceVisible(): Promise<void> {
