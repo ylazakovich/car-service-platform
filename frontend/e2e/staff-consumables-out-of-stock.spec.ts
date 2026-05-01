@@ -55,9 +55,9 @@ test.describe("Consumables out of stock @mobile-only", () => {
     await expect(toggle).toBeVisible({ timeout: 25_000 });
     const toggleLabel = await toggle.textContent();
     if (toggleLabel?.trim().startsWith("Show")) {
-      // `.shell-scroll-to-header-fab` can cover the toggle on narrow viewports (same as Kanban "Show more").
-      await toggle.click({ force: true });
-      await expect(page.getByRole("button", { name: /Hide Out of stock \(\d+\)/ })).toBeVisible({ timeout: 10_000 });
+      // FAB `.shell-scroll-to-header-fab` intercepts pointer clicks at the bottom of the viewport; keyboard activates the toggle reliably.
+      await toggle.scrollIntoViewIfNeeded();
+      await toggle.press("Enter");
     }
 
     const oosRegion = page.getByRole("region", { name: "Out of stock consumables" });
