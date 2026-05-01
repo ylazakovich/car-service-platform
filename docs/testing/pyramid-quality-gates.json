@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-01T09:07:33.917Z",
+  "generatedAt": "2026-05-01T09:13:59.359Z",
   "advisoryOnly": true,
   "exitCodePolicy": "always_zero",
   "gates": {
@@ -8,7 +8,7 @@
     "warnings": [
       {
         "id": "PYRAMID_UNIT_SHARE_LOW",
-        "message": "Unit share 27.0% is below soft target 45% (see docs/testing/test-pyramid.md)."
+        "message": "Unit share 26.0% is below soft target 45% (see docs/testing/test-pyramid.md)."
       }
     ],
     "advisoryOnly": true,
@@ -18,10 +18,10 @@
     }
   },
   "metrics": {
-    "pyramidTotal": 256,
-    "unitShare": 0.26953125,
-    "apiShare": 0.61328125,
-    "e2eShare": 0.1171875,
+    "pyramidTotal": 265,
+    "unitShare": 0.26037735849056604,
+    "apiShare": 0.5924528301886792,
+    "e2eShare": 0.1471698113207547,
     "otherEpicTotal": 0
   }
 }
