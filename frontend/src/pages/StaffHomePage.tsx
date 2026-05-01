@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import type { StaffSection } from "../App";
 import api from "../api/client";
 import { exportRepairPdf, fetchStaffUsers, openRepairPdfForPreview, type StaffUser } from "../api/repairs";
@@ -425,6 +425,38 @@ function isPurchaseDeliveryOverdue(approximateDeliveryDate: string): boolean {
 
 function hasPurchaseInvoice(entry: Pick<PurchaseEntry, "invoice_name" | "invoice_url">): boolean {
   return Boolean(entry.invoice_name?.trim() || entry.invoice_url?.trim());
+}
+
+/** Desktop/mobile consumables: Open when URL exists; else filename when invoice_name only; else em dash. */
+function renderPurchaseInvoiceCellContent(
+  entry: Pick<PurchaseEntry, "invoice_name" | "invoice_url">,
+  onOpenUrl: (url: string) => void,
+  options?: { openButtonClassName?: string }
+): ReactNode {
+  const url = entry.invoice_url?.trim();
+  if (url) {
+    return (
+      <button
+        type="button"
+        className={options?.openButtonClassName ?? "purchase-inline-action"}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenUrl(url);
+        }}
+      >
+        Open
+      </button>
+    );
+  }
+  const invoiceName = entry.invoice_name?.trim();
+  if (invoiceName) {
+    return (
+      <span className="purchases-registry-invoice-filename" title={invoiceName}>
+        {invoiceName}
+      </span>
+    );
+  }
+  return "—";
 }
 
 function formatInventoryInputValue(value: number | null): string {
@@ -1203,7 +1235,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   const [activePurchasesTab, setActivePurchasesTab] = useState<PurchasesWorkspaceTab>("warehouse");
   const [showOutOfStockConsumables, setShowOutOfStockConsumables] = useState(false);
-  const compactPurchasesLayout = useMediaQuery(REGISTERS_MOBILE_BREAKPOINT);
+  const compactStaffNarrowLayout = useMediaQuery(REGISTERS_MOBILE_BREAKPOINT);
   const [expandedConsumableId, setExpandedConsumableId] = useState<number | null>(null);
   const [activeReferenceTab, setActiveReferenceTab] = useState<ReferenceWorkspaceTab>("units");
   const [supplierRegistrySearch, setSupplierRegistrySearch] = useState("");
@@ -4744,20 +4776,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
                 <div className="purchases-mobile-consumable-invoice-row">
                   <span className="purchases-mobile-field-label">Invoice</span>
-                  {entry.invoice_url ? (
-                    <button
-                      type="button"
-                      className="button button-secondary button-sm purchase-inline-action"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleOpenInvoice(entry.invoice_url);
-                      }}
-                    >
-                      Open
-                    </button>
-                  ) : (
-                    <span>—</span>
-                  )}
+                  <span className="purchases-mobile-consumable-invoice-value">
+                    {renderPurchaseInvoiceCellContent(entry, handleOpenInvoice, {
+                      openButtonClassName: "button button-secondary button-sm purchase-inline-action",
+                    })}
+                  </span>
                 </div>
               </div>
 
@@ -4789,7 +4812,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   aria-label={`On hand ${entry.part_name}`}
                   type="number"
                   min="0"
-                  max={entry.quantity}
                   step="0.01"
                   placeholder="Not inventoried"
                   onChange={(event) => {
@@ -4927,7 +4949,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     {purchaseSearch.trim() ? "No warehouse lines match your search." : "No warehouse lines yet."}
                   </p>
                 </div>
-              ) : compactPurchasesLayout ? (
+              ) : compactStaffNarrowLayout ? (
                 <ul className="purchases-mobile-stock-list" aria-label="Warehouse lines">
                   {purchases.map((entry) => {
                     const saleTotal = entry.quantity * entry.sale_price;
@@ -5076,7 +5098,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               ) : (
                 <div className="purchases-consumables-layout">
                   {visibleConsumables.length > 0 ? (
-                    compactPurchasesLayout ? (
+                    compactStaffNarrowLayout ? (
                       <ul className="purchases-mobile-consumable-list">
                         {visibleConsumables.map((entry) => renderConsumableMobileItem(entry, false))}
                       </ul>
@@ -5104,7 +5126,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <th>Unit</th>
                               <th>Buy</th>
                               <th>Invoice</th>
-                              <th>Inventory date</th>
+                              <th>Inv. date</th>
                               <th>On hand</th>
                               <th>Action</th>
                             </tr>
@@ -5133,22 +5155,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                 <td>{formatInventoryInputValue(entry.quantity)}</td>
                                 <td>{entry.unit_of_measure_code}</td>
                                 <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
-                                <td>
-                                  {entry.invoice_url ? (
-                                    <button
-                                      type="button"
-                                      className="purchase-inline-action"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        handleOpenInvoice(entry.invoice_url);
-                                      }}
-                                    >
-                                      Open
-                                    </button>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
+                                <td>{renderPurchaseInvoiceCellContent(entry, handleOpenInvoice)}</td>
                                 <td>
                                   <input
                                     className="inventory-stock-input"
@@ -5175,7 +5182,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                     aria-label={`On hand ${entry.part_name}`}
                                     type="number"
                                     min="0"
-                                    max={entry.quantity}
                                     step="0.01"
                                     placeholder="Not inventoried"
                                     onClick={(event) => event.stopPropagation()}
@@ -5241,7 +5247,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         {showOutOfStockConsumables ? "Hide" : "Show"} Out of stock ({outOfStockConsumables.length})
                       </button>
                       {showOutOfStockConsumables ? (
-                        compactPurchasesLayout ? (
+                        compactStaffNarrowLayout ? (
                           <ul className="purchases-mobile-consumable-list purchases-mobile-consumable-list--oos">
                             {outOfStockConsumables.map((entry) => renderConsumableMobileItem(entry, true))}
                           </ul>
@@ -5269,7 +5275,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                   <th>Unit</th>
                                   <th>Buy</th>
                                   <th>Invoice</th>
-                                  <th>Inventory date</th>
+                                  <th>Inv. date</th>
                                   <th>On hand</th>
                                   <th>Action</th>
                                 </tr>
@@ -5298,22 +5304,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                     <td>{formatInventoryInputValue(entry.quantity)}</td>
                                     <td>{entry.unit_of_measure_code}</td>
                                     <td>{formatCurrency(entry.purchase_price * entry.quantity)}</td>
-                                    <td>
-                                      {entry.invoice_url ? (
-                                        <button
-                                          type="button"
-                                          className="purchase-inline-action"
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleOpenInvoice(entry.invoice_url);
-                                          }}
-                                        >
-                                          Open
-                                        </button>
-                                      ) : (
-                                        "—"
-                                      )}
-                                    </td>
+                                    <td>{renderPurchaseInvoiceCellContent(entry, handleOpenInvoice)}</td>
                                     <td>
                                       <input
                                         className="inventory-stock-input"
@@ -5336,7 +5327,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                         aria-label={`On hand ${entry.part_name} out of stock`}
                                         type="number"
                                         min="0"
-                                        max={entry.quantity}
                                         step="0.01"
                                         onClick={(event) => event.stopPropagation()}
                                         onChange={(event) => {
@@ -5413,7 +5403,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     {supplierRegistrySearch.trim() ? "No suppliers match your search." : "No suppliers yet."}
                   </p>
                 </div>
-              ) : compactPurchasesLayout ? (
+              ) : compactStaffNarrowLayout ? (
                 <ul className="purchases-mobile-supplier-list" aria-label="Suppliers">
                   {filteredSuppliers.map((s) => {
                     const phoneLabel = s.phone ? formatPolishPhoneDisplay(s.phone) : "";
@@ -6734,9 +6724,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           <div>
             <p className="eyebrow">{meta.eyebrow}</p>
             <h2>{meta.title}</h2>
-            <RegistersHelpDisclosure summary="About Registers">
-              <p className="workspace-copy registers-help-disclosure-copy">{meta.copy}</p>
-            </RegistersHelpDisclosure>
+            {compactStaffNarrowLayout ? (
+              <RegistersHelpDisclosure summary="About Registers">
+                <p className="workspace-copy registers-help-disclosure-copy">{meta.copy}</p>
+              </RegistersHelpDisclosure>
+            ) : null}
           </div>
         </div>
 

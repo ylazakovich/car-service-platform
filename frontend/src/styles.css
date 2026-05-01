@@ -3769,12 +3769,38 @@ input[type="date"].inventory-stock-input {
 .registers-units-table th:nth-child(4),
 .registers-units-table td:nth-child(4) {
   width: 18%;
-  text-align: center;
 }
 
 .registers-units-table th:nth-child(5),
 .registers-units-table td:nth-child(5) {
   width: 26%;
+}
+
+/* Units register: left-aligned text; drag column stays centered */
+.registers-units-table th,
+.registers-units-table td {
+  text-align: left;
+}
+
+.registers-units-table th.uom-admin-order-th,
+.registers-units-table td.uom-admin-order-cell {
+  text-align: center;
+}
+
+.registers-units-table td:last-child .uom-admin-row-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.registers-units-table td:last-child .uom-admin-row-actions .button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .registers-customers-table th:nth-child(1),
@@ -3800,22 +3826,28 @@ input[type="date"].inventory-stock-input {
 .registers-customers-table th:nth-child(5),
 .registers-customers-table td:nth-child(5) {
   width: 8%;
-  text-align: center;
 }
 
 .registers-customers-table th:nth-child(6),
 .registers-customers-table td:nth-child(6) {
   width: 18%;
-  text-align: center;
 }
 
+/* Customers register: Save + Delete in one row */
 .registers-customers-actions {
-  justify-content: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  width: 100%;
 }
 
 .registers-customers-actions .button {
-  min-width: 5.75rem;
+  flex: 1 1 0;
+  min-width: 0;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .services-register-editor-table th:nth-child(1),
@@ -3845,6 +3877,30 @@ input[type="date"].inventory-stock-input {
 .services-register-editor-table td:nth-child(5) {
   width: 19%;
   min-width: 9rem;
+}
+
+/* Services register: left-aligned headers/cells; actions fill column */
+.services-register-editor-table th,
+.services-register-editor-table td,
+.registers-customers-table th,
+.registers-customers-table td {
+  text-align: left;
+}
+
+.services-register-editor-table td:last-child .uom-admin-row-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.services-register-editor-table td:last-child .uom-admin-row-actions .button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .registers-editor-table th:first-child,
@@ -3979,17 +4035,12 @@ input[type="date"].inventory-stock-input {
   vertical-align: top;
 }
 
-/* Registers: row middle-align (textarea rows are tall); Status column centers the toggle */
+/* Registers: row middle-align (textarea rows are tall) */
 .uom-admin-table.registers-editor-table th,
 .uom-admin-table.registers-editor-table td,
 .uom-admin-table.services-register-editor-table th,
 .uom-admin-table.services-register-editor-table td {
   vertical-align: middle;
-}
-
-.uom-admin-table.services-register-editor-table th:nth-child(4),
-.uom-admin-table.services-register-editor-table td:nth-child(4) {
-  text-align: center;
 }
 
 .uom-admin-table th {
@@ -5019,6 +5070,11 @@ input[type="date"].inventory-stock-input {
   gap: 6px;
 }
 
+.purchases-mobile-consumable-invoice-value {
+  min-width: 0;
+  word-break: break-word;
+}
+
 .purchases-mobile-consumable-detail .consumable-inventory-actions {
   display: flex;
   flex-direction: column;
@@ -5098,20 +5154,27 @@ table.purchases-registry-table .purchases-registry-col--supplier-notes {
   width: 6%;
 }
 
+/* Consumables desktop table: col widths must sum to 100% (fixed layout); otherwise headers/cells crush and overlap. */
+table.dashboard-table.purchases-registry-table.purchases-registry-table--wide {
+  /* Default .dashboard-table uses overflow:hidden — clips thead labels + td contents against inventory inputs */
+  overflow: visible;
+}
+
 table.purchases-registry-table--wide {
-  min-width: 0;
+  width: 100%;
+  min-width: 72rem;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--part {
-  width: 24%;
+  width: 19%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--supplier {
-  width: 14%;
+  width: 12%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--date {
-  width: 9%;
+  width: 11%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--qty,
@@ -5119,21 +5182,71 @@ table.purchases-registry-table--wide .purchases-registry-col--unit {
   width: 6%;
 }
 
-table.purchases-registry-table--wide .purchases-registry-col--money,
-table.purchases-registry-table--wide .purchases-registry-col--action {
+table.purchases-registry-table--wide .purchases-registry-col--money {
   width: 7%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--invoice {
-  width: 5%;
+  width: 6%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--inventory-date {
-  width: 12%;
+  width: 13%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--inventory-qty {
   width: 10%;
+}
+
+table.purchases-registry-table--wide .purchases-registry-col--action {
+  width: 10%;
+}
+
+table.purchases-registry-table.purchases-registry-table--wide thead th {
+  white-space: normal;
+  line-height: 1.25;
+  vertical-align: bottom;
+  overflow: visible;
+  letter-spacing: 0.07em;
+  /* Match tbody td horizontal padding (.purchases-compact-row td uses var(--s3)); mismatched padding skews labels vs data. */
+  padding: 0.5rem var(--s3);
+  box-sizing: border-box;
+}
+
+/* Order column: min-width on cells (not only <col>) so thead/tbody share the same layout hint in fixed tables. */
+table.purchases-registry-table.purchases-registry-table--wide thead th:nth-child(3),
+table.purchases-registry-table.purchases-registry-table--wide tbody.purchases-compact-list tr.purchases-compact-row td:nth-child(3) {
+  min-width: 7.5rem;
+}
+
+/* Mirror ellipsis columns so column widths match thead/body (same trick as td:first-child / td:nth-child(7)). */
+table.purchases-registry-table.purchases-registry-table--wide thead th:first-child,
+table.purchases-registry-table.purchases-registry-table--wide thead th:nth-child(7) {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Invoice filename-only: enable ellipsis in narrow column (table-fixed + nowrap row cells). */
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(7) {
+  max-width: 0;
+}
+
+.purchases-registry-invoice-filename {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Undo nowrap/ellipsis on cells that host inventory controls — parent overflow:hidden was clipping placeholders ("Not inver…"). */
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(8),
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(9),
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(10) {
+  overflow: visible;
+  white-space: normal;
 }
 
 table.purchases-registry-table--wide .inventory-stock-input {
@@ -9561,14 +9674,18 @@ label.purchase-field--needs-attention > span:first-child {
   }
 
   .reference-workspace .uom-admin-row-actions {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
     gap: 0.35rem;
-    min-width: 6rem;
+    min-width: 0;
+    width: 100%;
   }
 
   .reference-workspace .uom-admin-row-actions .button {
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
     min-height: 44px;
     justify-content: center;
     padding-left: var(--s2);

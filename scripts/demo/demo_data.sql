@@ -999,6 +999,13 @@ VALUES
         1, 19.00, 0.00, 'TOR-3001', 'FV/2026/03/0807', '', true, true, NOW(), NOW()
     );
 
+-- Stable E2E: inventoried zero-stock shop consumable (Staff Purchases → Consumables → Out of stock).
+UPDATE purchases
+SET current_stock_quantity = 0,
+    inventory_checked_on = '2026-03-15'
+WHERE is_shop_consumable = true
+  AND part_name = 'Brake cleaner spray — 500 ml aerosol';
+
 -- Assign staff master to all repairs where master is NULL
 UPDATE repairs
 SET master_id = (SELECT id FROM users WHERE email = 'staff@autoservice.local')
