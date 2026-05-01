@@ -72,6 +72,7 @@ test.describe("Registers workspace @desktop", () => {
     await reg.openTab("Customers");
     await reg.expectCustomersWorkspaceVisible();
 
+    await reg.expandCustomerMobileRowIfNeeded(E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME);
     const row = reg.customerRowByName(E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME);
     await expect(row).toBeVisible({ timeout: 20_000 });
     await expect(row.getByRole("button", { name: "Save" })).toBeVisible();
@@ -101,5 +102,37 @@ test.describe("Registers workspace @mobile-only", () => {
     ]);
     await reg.expectServicesWorkspaceVisible();
     await expect(reg.serviceRowByNameSnippet(E2E_DEMO_SERVICE_NAME_IN_CATALOG)).toBeVisible({ timeout: 25_000 });
+  });
+
+  test("admin opens Registers on Units tab and sees seeded UoM code", async ({ page }) => {
+    await e2eBehaviors("admin", "registers · mobile · units of measure tab");
+    const reg = new StaffRegistersPage(page);
+    await reg.gotoRegistersSection();
+    await reg.expectUnitsTabActive();
+    await expect(reg.uomCodeCell("pcs")).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("admin Registers tabs do not include Invoice lines on narrow viewport", async ({ page }) => {
+    await e2eBehaviors("admin", "registers · mobile · tabs set");
+    const reg = new StaffRegistersPage(page);
+    await reg.gotoRegistersSection();
+    await expect(page.getByRole("tab", { name: "Units of measure" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Services" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Customers" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Invoice lines" })).toHaveCount(0);
+  });
+
+  test("admin switches to Customers and sees demo customer with vehicles", async ({ page }) => {
+    await e2eBehaviors("admin", "registers · mobile · customers with vehicles");
+    const reg = new StaffRegistersPage(page);
+    await reg.gotoRegistersSection();
+    await reg.openTab("Customers");
+    await reg.expectCustomersWorkspaceVisible();
+
+    await reg.expandCustomerMobileRowIfNeeded(E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME);
+    const row = reg.customerRowByName(E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME);
+    await expect(row).toBeVisible({ timeout: 20_000 });
+    await expect(row.getByRole("button", { name: "Save" })).toBeVisible();
+    await expect(row.getByRole("button", { name: "Delete" })).toBeVisible();
   });
 });

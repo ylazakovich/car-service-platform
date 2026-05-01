@@ -42,11 +42,15 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  width: 100%;
+  /* After pinch-zoom out, visual viewport width can exceed layout width — prevent side gutters. */
+  min-width: max(100%, var(--layout-sync-min-width, 0px));
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  width: 100%;
   min-height: 100vh;
   font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   font-size: 15px;
@@ -54,6 +58,11 @@ body {
   font-weight: 400;
   color: var(--text);
   background: var(--bg);
+}
+
+#root {
+  width: 100%;
+  min-height: 100%;
 }
 
 button, input, select, textarea { font: inherit; }
@@ -790,6 +799,8 @@ textarea { resize: vertical; }
   display: grid;
   grid-template-columns: 256px 1fr;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
 }
 
 .shell-mobile-bar,
@@ -3247,6 +3258,229 @@ input[type="date"].inventory-stock-input {
   font-size: 1.05rem;
 }
 
+/* Units (Registers): compact mobile list — name-first row, color = active, tap to edit */
+.uom-mobile-unit-list {
+  list-style: none;
+  margin: var(--s3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uom-mobile-unit-empty {
+  list-style: none;
+  padding: var(--s3);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+}
+
+.uom-mobile-unit-item {
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-mid);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.uom-mobile-unit-item.kanban-card-drop-target {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.uom-mobile-unit-item--dragging {
+  opacity: 0.65;
+}
+
+.uom-mobile-unit-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  position: relative;
+}
+
+.uom-mobile-unit-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.uom-mobile-unit-summary-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+}
+
+.uom-mobile-unit-summary--on .uom-mobile-unit-summary-accent {
+  background: linear-gradient(180deg, #b8c92e 0%, var(--accent) 100%);
+  box-shadow: 0 0 10px rgba(205, 216, 58, 0.35);
+}
+
+.uom-mobile-unit-summary--off .uom-mobile-unit-summary-accent {
+  background: rgba(120, 128, 140, 0.7);
+}
+
+.uom-mobile-unit-summary--off .uom-mobile-unit-name {
+  color: var(--text-mid);
+}
+
+.uom-mobile-unit-summary-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-left: 6px;
+}
+
+.uom-mobile-unit-name {
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.uom-mobile-unit-code {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+}
+
+.uom-mobile-unit-status-pill {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.uom-mobile-unit-status-pill[data-active="true"] {
+  color: var(--accent);
+  border-color: rgba(205, 216, 58, 0.45);
+  background: rgba(205, 216, 58, 0.12);
+}
+
+.uom-mobile-unit-status-pill[data-active="false"] {
+  color: var(--text-soft);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.uom-mobile-unit-chevron {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--text-soft);
+  transition: transform 0.2s ease;
+}
+
+.uom-mobile-unit-chevron--open {
+  transform: rotate(180deg);
+}
+
+.uom-mobile-unit-detail {
+  padding: 0 var(--s3) var(--s3);
+  border-top: 1px solid var(--border);
+  background: rgba(8, 10, 14, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.uom-mobile-unit-reorder-note {
+  margin: var(--s3) 0 0;
+}
+
+.uom-mobile-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: 10px;
+  border: 1px dashed rgba(205, 216, 58, 0.35);
+  background: rgba(205, 216, 58, 0.06);
+  font-size: 0.82rem;
+  color: var(--text-mid);
+  cursor: grab;
+  user-select: none;
+}
+
+.uom-mobile-drag-handle:active {
+  cursor: grabbing;
+}
+
+.uom-mobile-drag-handle--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.uom-mobile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uom-mobile-field > span:first-child,
+.uom-mobile-field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-soft);
+}
+
+.uom-mobile-code-readonly {
+  display: inline-block;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.uom-mobile-customer-vehicles-readonly {
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.uom-mobile-unit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.uom-mobile-unit-actions .button {
+  flex: 1;
+  min-width: 6rem;
+  justify-content: center;
+}
+
 .reference-section-topbar .workspace-copy {
   margin: 0.35rem 0 0;
   max-width: 42rem;
@@ -3254,6 +3488,84 @@ input[type="date"].inventory-stock-input {
 
 .reference-workspace .dashboard-folder-panel {
   min-height: 12rem;
+}
+
+/* Registers: collapsible guidance (details/summary) */
+.registers-help-disclosure {
+  margin: var(--s3) 0 var(--s4);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-mid);
+  overflow: hidden;
+}
+
+.reference-workspace .kanban-topbar .registers-help-disclosure {
+  margin-top: var(--s3);
+  margin-bottom: 0;
+}
+
+.registers-help-disclosure-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--accent);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.registers-help-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.registers-help-disclosure-summary::after {
+  content: "";
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+  opacity: 0.85;
+}
+
+.registers-help-disclosure[open] .registers-help-disclosure-summary::after {
+  transform: rotate(225deg);
+}
+
+.registers-help-disclosure-summary:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.registers-help-disclosure-body {
+  padding: 0 var(--s4) var(--s4);
+  border-top: 1px solid var(--border);
+}
+
+.registers-help-disclosure-copy {
+  margin: 0;
+  padding-top: var(--s3);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-mid);
+}
+
+.registers-help-disclosure-inner.uom-admin-lead {
+  margin: 0;
+  padding-top: var(--s3);
+  max-width: none;
+}
+
+/* Shown only under @media (max-width: 820px) — see Registers mobile block */
+.registers-mobile-table-hint {
+  display: none;
 }
 
 .registers-embedded-section-head {
@@ -4391,8 +4703,343 @@ input[type="date"].inventory-stock-input {
   border-left: 3px solid rgba(224, 120, 80, 0.9);
 }
 
+/* Purchases mobile compact lists — same breakpoint as Registers (JS: REGISTERS_MOBILE_BREAKPOINT) */
+.purchases-mobile-stock-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.purchases-mobile-stock-item {
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-mid);
+  overflow: hidden;
+}
+
+.purchases-mobile-stock-item--attention {
+  border-color: rgba(224, 120, 80, 0.42);
+}
+
+.purchases-mobile-stock-row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px 10px 14px;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.purchases-mobile-stock-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.purchases-mobile-stock-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: linear-gradient(180deg, #b8c92e 0%, var(--accent) 100%);
+}
+
+.purchases-mobile-stock-item--attention .purchases-mobile-stock-accent {
+  background: rgba(224, 120, 80, 0.95);
+  box-shadow: 0 0 10px rgba(224, 120, 80, 0.35);
+}
+
+.purchases-mobile-stock-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.purchases-mobile-stock-name {
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchases-mobile-stock-meta {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  width: 100%;
+  min-width: 0;
+  font-size: 0.78rem;
+}
+
+.purchases-mobile-stock-delivery {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchases-mobile-stock-sale {
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Suppliers — same card pattern as Stock/Consume; avoids wide table + horizontal pan on phones */
+.purchases-mobile-supplier-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.purchases-mobile-supplier-item {
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-mid);
+  overflow: hidden;
+}
+
+.purchases-mobile-supplier-row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px 10px 14px;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.purchases-mobile-supplier-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.purchases-mobile-supplier-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: linear-gradient(180deg, #b8c92e 0%, var(--accent) 100%);
+}
+
+.purchases-mobile-supplier-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.purchases-mobile-supplier-name {
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.purchases-mobile-supplier-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.76rem;
+  color: var(--text-soft);
+  min-width: 0;
+}
+
+.purchases-mobile-supplier-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchases-mobile-supplier-line--muted {
+  color: var(--text-mid);
+}
+
+.purchases-mobile-consumable-list {
+  list-style: none;
+  margin: var(--s3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.purchases-mobile-consumable-list--oos {
+  margin-top: var(--s3);
+}
+
+.purchases-mobile-consumable-item {
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-mid);
+  overflow: hidden;
+}
+
+.purchases-mobile-consumable-item--muted {
+  opacity: 0.88;
+}
+
+.purchases-mobile-consumable-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  width: 100%;
+  padding: 10px 12px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.purchases-mobile-consumable-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.purchases-mobile-consumable-summary-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.purchases-mobile-consumable-name {
+  display: block;
+  font-weight: 650;
+  font-size: 0.98rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchases-mobile-consumable-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchases-mobile-consumable-sep {
+  margin: 0 4px;
+}
+
+.purchases-mobile-consumable-chevron {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--text-soft);
+  transition: transform 0.2s ease;
+}
+
+.purchases-mobile-consumable-chevron--open {
+  transform: rotate(180deg);
+}
+
+.purchases-mobile-consumable-detail {
+  padding: 0 var(--s3) var(--s3);
+  border-top: 1px solid var(--border);
+  background: rgba(8, 10, 14, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.purchases-mobile-consumable-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+}
+
+.purchases-mobile-consumable-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.88rem;
+}
+
+.purchases-mobile-field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-soft);
+}
+
+.purchases-mobile-consumable-invoice-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.purchases-mobile-consumable-detail .consumable-inventory-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s2);
+}
+
+.purchases-mobile-consumable-detail .consumable-inventory-actions .button {
+  width: 100%;
+  justify-content: center;
+}
+
+.purchases-mobile-consumable-detail .inventory-stock-input {
+  width: 100%;
+  font-size: 16px;
+}
+
 .purchases-registry-table-wrap {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -8121,6 +8768,25 @@ label.purchase-field--needs-attention > span:first-child {
     align-content: start;
   }
 
+  /*
+   * Purchases only: reclaim horizontal space (similar to pinch-zoom out) without scaling text globally.
+   * :has() supported Safari 15.4+ / current Chromium.
+   */
+  .shell:has(.purchases-workspace) .shell-main {
+    padding-left: max(var(--s2), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s2), env(safe-area-inset-right, 0px));
+  }
+
+  .shell:has(.purchases-workspace) .shell-mobile-sticky-stack {
+    margin-left: max(var(--s3), env(safe-area-inset-left, 0px));
+    margin-right: max(var(--s3), env(safe-area-inset-right, 0px));
+  }
+
+  /* Let the main column shrink with the grid when zoom / viewport changes (avoids header vs content width mismatch). */
+  .shell-main .workspace {
+    min-width: 0;
+  }
+
   /* Staff desktop sidebar must not appear in the mobile shell (defense in depth vs JS breakpoint). */
   #staff-shell-sidebar {
     display: none !important;
@@ -8216,6 +8882,7 @@ label.purchase-field--needs-attention > span:first-child {
   .shell-mobile-sticky-stack {
     display: block;
     position: sticky;
+    min-width: 0;
     /* Воздух от верха + на iPhone не под вырез: один раз через max, не дублируем с padding. */
     --shell-mobile-stack-inset-top: max(var(--s3), env(safe-area-inset-top, 0px));
     top: var(--shell-mobile-stack-inset-top);
@@ -8418,8 +9085,11 @@ label.purchase-field--needs-attention > span:first-child {
 
   .shell-mobile-quick-section-label {
     text-align: center;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     max-width: 100%;
+    word-break: normal;
   }
 
   .shell-mobile-picker-cta {
@@ -8623,10 +9293,14 @@ label.purchase-field--needs-attention > span:first-child {
     min-width: 0;
     max-width: none;
     width: 100%;
-    padding: 0.55rem 0.3rem 0.48rem;
+    min-height: 44px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.35rem;
     border-radius: 12px;
     text-align: center;
-    justify-items: center;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.04),
       0 4px 12px rgba(0, 0, 0, 0.12);
@@ -8637,14 +9311,17 @@ label.purchase-field--needs-attention > span:first-child {
   }
 
   .dashboard-folder-label {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     font-weight: 700;
     line-height: 1.2;
-    white-space: normal;
+    white-space: nowrap;
     display: block;
     text-align: center;
-    word-break: break-word;
-    hyphens: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    word-break: normal;
+    hyphens: manual;
   }
 
   .dashboard-folder-label-long {
@@ -8662,6 +9339,15 @@ label.purchase-field--needs-attention > span:first-child {
     border-top-left-radius: 14px;
   }
 
+  .purchases-workspace .dashboard-folder-panel.purchases-folder-panel,
+  .reference-workspace .dashboard-folder-panel.purchases-folder-panel {
+    margin-top: var(--s3);
+    border-color: rgba(205, 216, 58, 0.28);
+    background:
+      radial-gradient(circle at top left, rgba(205, 216, 58, 0.1), transparent 36%),
+      rgba(14, 16, 22, 0.98);
+  }
+
   /* Registers (Settings): same tab pattern as Purchases + comfortable tables on phones */
   .reference-workspace .dashboard-folder-tabs.purchases-folder-tabs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -8673,25 +9359,18 @@ label.purchase-field--needs-attention > span:first-child {
     touch-action: manipulation;
   }
 
-  .reference-workspace .kanban-topbar.purchases-section-topbar {
-    padding: var(--s3) var(--s4);
-    gap: var(--s2);
-  }
-
-  .reference-workspace .kanban-topbar.purchases-section-topbar h2 {
-    font-size: 1.12rem;
-    line-height: 1.2;
-  }
-
-  .reference-workspace .kanban-topbar .workspace-copy {
-    font-size: 0.84rem;
-    line-height: 1.45;
-    max-width: none;
+  /* Shell уже показывает «Registers» — убираем дублирующий блок и About Registers */
+  .registers-shell-header {
+    display: none;
   }
 
   .reference-workspace .dashboard-folder-panel.purchases-folder-panel {
     padding: var(--s3);
     min-height: 0;
+  }
+
+  .reference-workspace .workspace-stack {
+    gap: var(--s4);
   }
 
   .reference-workspace .uom-admin-page,
@@ -8700,11 +9379,26 @@ label.purchase-field--needs-attention > span:first-child {
     margin-top: 0;
     padding: var(--s3);
     border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(8, 10, 14, 0.35);
+    min-width: 0;
   }
 
-  .reference-workspace .uom-admin-lead {
-    font-size: 0.8rem;
-    line-height: 1.5;
+  .reference-workspace .uom-admin-subtitle {
+    font-size: 1.02rem;
+    line-height: 1.25;
+  }
+
+  .reference-workspace .registers-help-disclosure-body .uom-admin-lead,
+  .reference-workspace .registers-help-disclosure-inner {
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-mid);
+  }
+
+  .reference-workspace .services-register-table-hint {
+    font-size: 0.82rem;
+    margin-bottom: var(--s3);
   }
 
   .reference-workspace .registers-embedded-section-head {
@@ -8745,21 +9439,124 @@ label.purchase-field--needs-attention > span:first-child {
     font-size: 16px;
   }
 
+  /*
+   * Только горизонтальный скролл для широких таблиц — без max-height, чтобы скроллилась страница,
+   * а не «коробка внутри коробки» (удобнее на телефоне).
+   */
+  .reference-workspace .registers-table-wrap,
+  .reference-workspace .services-register-table-wrap,
   .reference-workspace .uom-admin-table-wrap {
-    margin: var(--s2) calc(-1 * var(--s1)) 0;
+    width: 100%;
+    max-width: 100%;
+    margin: var(--s3) 0 0;
+    box-sizing: border-box;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+    border-radius: 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-mid);
+  }
+
+  /* На узкой ширине не сжимаем колонки до нечитаемости — прокрутка по X */
+  .reference-workspace .registers-editor-table,
+  .reference-workspace .services-register-editor-table {
+    table-layout: auto;
+    min-width: 36rem;
+  }
+
+  .reference-workspace .registers-customers-table.registers-editor-table {
+    min-width: 40rem;
+  }
+
+  /*
+   * Units — табличный вид: горизонтальный скролл контейнера, минимальные ширины колонок без обрыва текста.
+   */
+  .reference-workspace .registers-units-table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(205, 216, 58, 0.35) transparent;
+    padding-bottom: var(--s2);
+  }
+
+  .reference-workspace .registers-units-table-wrap::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  .reference-workspace .registers-units-table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(205, 216, 58, 0.38);
+    border-radius: 999px;
+  }
+
+  .reference-workspace .registers-units-table {
+    width: max-content;
+    min-width: 42rem;
+    table-layout: auto;
+  }
+
+  .reference-workspace .registers-units-table thead th {
+    white-space: nowrap;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(1),
+  .reference-workspace .registers-units-table td:nth-child(1) {
+    min-width: 2.75rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(2),
+  .reference-workspace .registers-units-table td:nth-child(2) {
+    min-width: 4.5rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(3),
+  .reference-workspace .registers-units-table td:nth-child(3) {
+    min-width: 11rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(4),
+  .reference-workspace .registers-units-table td:nth-child(4) {
+    min-width: 13rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(5),
+  .reference-workspace .registers-units-table td:nth-child(5) {
+    min-width: 10.5rem;
+  }
+
+  .reference-workspace .registers-units-table .services-active-toggle {
+    flex-shrink: 0;
+  }
+
+  .registers-mobile-table-hint {
+    display: block;
+    margin-top: var(--s3);
+    padding: var(--s3) var(--s3);
+    text-align: center;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-soft);
     border-radius: 10px;
+    border: 1px dashed rgba(205, 216, 58, 0.28);
+    background: rgba(205, 216, 58, 0.06);
+  }
+
+  .reference-workspace .uom-admin-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    box-shadow: 0 1px 0 var(--border);
   }
 
   .reference-workspace .uom-admin-table th,
   .reference-workspace .uom-admin-table td {
-    padding: 0.45rem 0.35rem;
-    font-size: 0.78rem;
+    padding: 0.55rem 0.45rem;
+    font-size: 0.82rem;
   }
 
   .reference-workspace .uom-admin-table code {
-    font-size: 0.72rem;
+    font-size: 0.76rem;
     word-break: break-all;
   }
 
@@ -8767,7 +9564,7 @@ label.purchase-field--needs-attention > span:first-child {
     flex-direction: column;
     align-items: stretch;
     gap: 0.35rem;
-    min-width: 5.5rem;
+    min-width: 6rem;
   }
 
   .reference-workspace .uom-admin-row-actions .button {
@@ -8787,14 +9584,15 @@ label.purchase-field--needs-attention > span:first-child {
   }
 
   .reference-workspace .services-register-editor-table textarea.uom-admin-cell-input--compact {
-    min-height: 44px;
+    min-height: 5rem;
     font-size: 16px;
     max-width: none;
     width: 100%;
+    line-height: 1.35;
   }
 
   .reference-workspace .uom-admin-active-label {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
   }
 
   .reference-workspace .uom-admin-active-label input[type="checkbox"] {
@@ -8802,11 +9600,22 @@ label.purchase-field--needs-attention > span:first-child {
     height: 1.1rem;
   }
 
+  .reference-workspace .services-active-toggle {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: stretch;
+  }
+
   .reference-workspace .services-active-toggle__btn {
+    flex: 1;
     min-height: 44px;
-    padding-left: 0.85rem;
-    padding-right: 0.85rem;
-    font-size: 16px;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+    font-size: 0.82rem;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.15;
   }
 
   .reference-workspace .uom-add-overlay.modal-overlay,
@@ -8848,6 +9657,51 @@ label.purchase-field--needs-attention > span:first-child {
   /* Staff: дублирует shell + mobile rail (поиск уже в rail). */
   .vehicles-workspace .vehicles-section-topbar--staff-mobile-skip {
     display: none !important;
+  }
+
+  /* Repairs: same as vehicles — staff uses sticky rail; admins see this bar on phones */
+  .repairs-workspace .repairs-section-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+  }
+
+  .repairs-workspace .repairs-section-topbar--staff-mobile-skip {
+    display: none !important;
+  }
+
+  .repairs-workspace .repairs-section-topbar h2 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+  }
+
+  .repairs-workspace .repairs-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .repairs-workspace .workspace-top-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: var(--s2);
+  }
+
+  .repairs-workspace .kanban-date-filter {
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .repairs-workspace .kanban-search input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .repairs-workspace .workspace-top-actions .button {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
   }
 
   .vehicles-workspace .vehicles-section-topbar h2 {
@@ -8964,11 +9818,130 @@ label.purchase-field--needs-attention > span:first-child {
     color: var(--accent);
   }
 
+  /*
+   * Purchases (phones): block sideways movement — tables are desktop-only here;
+   * Stock / Consume / Supp. use card lists at this breakpoint (see StaffHomePage + REGISTERS_MOBILE_BREAKPOINT).
+   */
+  .purchases-workspace {
+    overflow-x: hidden;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .purchases-workspace .dashboard-folder-panel.purchases-folder-panel {
+    min-width: 0;
+    max-width: 100%;
+    padding: var(--s3);
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .purchases-consumables-layout {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .purchases-workspace .purchases-registry-table-wrap {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  .purchases-workspace .load-more-bar {
+    justify-content: stretch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .load-more-bar .button {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .consumable-out-of-stock-toggle {
+    width: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+    box-sizing: border-box;
+  }
+
+  /* Default tab layout = vertical: wrap long lines instead of one-line ellipsis (no sideways pan). */
+  .purchases-workspace .purchases-mobile-stock-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+    font-size: 0.93rem;
+  }
+
+  .purchases-workspace .purchases-mobile-stock-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .purchases-workspace .purchases-mobile-stock-delivery {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .purchases-workspace .purchases-mobile-stock-sale {
+    align-self: flex-end;
+    padding-top: 1px;
+  }
+
+  .purchases-workspace .purchases-mobile-consumable-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+    font-size: 0.93rem;
+  }
+
+  .purchases-workspace .purchases-mobile-consumable-meta {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+  }
+
+  .purchases-workspace .purchases-mobile-supplier-name {
+    display: block;
+    overflow: visible;
+    -webkit-box-orient: unset;
+    -webkit-line-clamp: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
+  .purchases-workspace .purchases-mobile-supplier-line {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
   /* Purchases workspace — mirror vehicles controls; keep search (no duplicate rail) */
   .purchases-workspace .purchases-section-topbar {
+    flex-direction: column;
     align-items: stretch;
     gap: var(--s3);
-    padding: var(--s3) var(--s4);
+    padding: var(--s3);
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .purchases-section-topbar > div:first-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
   }
 
   .purchases-workspace .purchases-section-topbar .eyebrow {
@@ -8978,6 +9951,13 @@ label.purchase-field--needs-attention > span:first-child {
   .purchases-workspace .purchases-section-topbar h2 {
     font-size: 1.08rem;
     line-height: 1.2;
+    margin: 0;
+  }
+
+  .purchases-workspace .purchases-section-topbar .registry-count {
+    display: block;
+    min-height: 1.35em;
+    line-height: 1.35;
   }
 
   .purchases-workspace .purchases-top-actions {
@@ -9073,6 +10053,13 @@ label.purchase-field--needs-attention > span:first-child {
 
   .purchases-workspace .purchases-folder-tabs.dashboard-folder-tabs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    align-items: stretch;
+  }
+
+  .purchases-workspace .dashboard-folder-tab {
+    align-self: stretch;
   }
 
   .purchases-workspace .purchases-compact-row-main {

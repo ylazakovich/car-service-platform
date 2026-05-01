@@ -67,9 +67,16 @@ export function ScrollToWorkspaceHeaderFab({
     sync();
     window.addEventListener("scroll", sync, { passive: true });
     document.addEventListener("scroll", sync, { passive: true, capture: true });
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    vv?.addEventListener("resize", sync);
+    vv?.addEventListener("scroll", sync);
+    window.addEventListener("resize", sync);
     return () => {
       window.removeEventListener("scroll", sync);
       document.removeEventListener("scroll", sync, true);
+      vv?.removeEventListener("resize", sync);
+      vv?.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
     };
   }, [active, sync]);
 

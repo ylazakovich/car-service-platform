@@ -5,20 +5,17 @@ import { openStaffApp } from "./fixtures/auth";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
- * @mobile-only — только проект mobile-chrome (см. playwright.config.ts grepInvert).
- * Проверяет мобильный список ремонтов и открытие демо-карточки (TOR-1001 из scripts/demo/demo_data.sql).
+ * Без `@desktop` / `@mobile-only` в имени describe — выполняется в desktop-chrome и mobile-chrome.
+ * Демо-ремонт TOR-1001 из `scripts/demo/demo_data.sql`.
  */
-test.describe("Staff repairs mobile @mobile-only", () => {
+test.describe("Staff repairs — seeded TOR-1001 kanban and detail", () => {
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
   });
 
-  test("mobile list, quick nav, and seeded completed repair modal", async ({ page }) => {
-    await e2eBehaviors("staff", "repairs · mobile list · open demo TOR-1001");
+  test("kanban shows demo card summary; opening card shows repair dialog with PDF affordance", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · TOR-1001 · kanban + detail (cross-viewport)");
     const repairs = new StaffRepairsPage(page);
-
-    await expect(repairs.staffMobileWorkspaceMenuToggle()).toBeVisible({ timeout: 15_000 });
-
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();
 

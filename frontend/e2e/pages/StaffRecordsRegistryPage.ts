@@ -42,7 +42,10 @@ export class StaffRecordsRegistryPage {
     await expect(this.page.getByRole("button", { name: "Compact" })).toHaveCount(0);
     await expect(this.page.getByLabel("Sort list")).toHaveCount(0);
     await expect(this.page.getByLabel("Group list")).toHaveCount(0);
-    await expect(this.page.locator(".purchases-workspace .purchases-compact-list")).toBeVisible({
+    /** ≤820px: склад показывается списком `.purchases-mobile-stock-list`; широкий экран — таблица `.purchases-compact-list`. */
+    const desktopRows = this.page.locator(".purchases-workspace .purchases-compact-list");
+    const mobileStock = this.page.locator(".purchases-workspace .purchases-mobile-stock-list");
+    await expect(desktopRows.or(mobileStock)).toBeVisible({
       timeout: 20_000,
     });
   }
@@ -55,9 +58,13 @@ export class StaffRecordsRegistryPage {
   }
 
   purchaseRowByPartSnippet(partSnippet: string | RegExp): Locator {
-    return this.page
+    const desktopRow = this.page
       .locator(".purchases-workspace .purchases-registry-table .purchases-compact-row")
       .filter({ hasText: partSnippet });
+    const mobileRow = this.page
+      .locator(".purchases-workspace .purchases-mobile-stock-row")
+      .filter({ hasText: partSnippet });
+    return desktopRow.or(mobileRow);
   }
 
   /**

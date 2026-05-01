@@ -18,6 +18,54 @@ import {
   updateUnitOfMeasure,
   type UnitOfMeasureItem,
 } from "../../../api/purchases";
+import { REGISTERS_MOBILE_BREAKPOINT, useMediaQuery } from "../hooks/useMediaQuery";
+import { RegistersHelpDisclosure } from "./RegistersHelpDisclosure";
+
+function useUnitRowEditing(
+  unit: UnitOfMeasureItem,
+  onReload: () => Promise<void>,
+  onSaved: () => void | Promise<void>,
+) {
+  const [name, setName] = useState(unit.name);
+  const [isActive, setIsActive] = useState(unit.is_active);
+  const [busy, setBusy] = useState(false);
+  const [rowError, setRowError] = useState("");
+
+  useEffect(() => {
+    setName(unit.name);
+    setIsActive(unit.is_active);
+  }, [unit.id, unit.name, unit.is_active]);
+
+  const dirty = name.trim() !== unit.name || isActive !== unit.is_active;
+
+  async function handleSave() {
+    setBusy(true);
+    setRowError("");
+    try {
+      await updateUnitOfMeasure(unit.id, {
+        name: name.trim(),
+        is_active: isActive,
+      });
+      await onReload();
+      void onSaved();
+    } catch (e) {
+      setRowError(axios.isAxiosError(e) ? String(e.response?.data?.detail ?? e.message) : "Save failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return {
+    name,
+    setName,
+    isActive,
+    setIsActive,
+    busy,
+    rowError,
+    dirty,
+    handleSave,
+  };
+}
 
 type UnitsOfMeasureAdminPanelProps = {
   sectionEyebrow: string;
@@ -52,42 +100,19 @@ function UnitRow({
   onDeleteRequest: (unit: UnitOfMeasureItem) => void;
   reorderBusy: boolean;
   draggingId: number | null;
-  onDragStartRow: (e: DragEvent<HTMLTableRowElement>, unitId: number) => void;
+  onDragStartRow: (e: DragEvent<HTMLElement>, unitId: number) => void;
   onDragEndRow: () => void;
   onDragOverRow: (e: DragEvent, rowId: number) => void;
-  onDragLeaveRow: (e: DragEvent<HTMLTableRowElement>, rowId: number) => void;
+  onDragLeaveRow: (e: DragEvent<HTMLElement>, rowId: number) => void;
   onDropOnRow: (e: DragEvent, targetId: number) => void;
   isDropTarget: boolean;
   reorderLocked: boolean;
 }) {
-  const [name, setName] = useState(unit.name);
-  const [isActive, setIsActive] = useState(unit.is_active);
-  const [busy, setBusy] = useState(false);
-  const [rowError, setRowError] = useState("");
-
-  useEffect(() => {
-    setName(unit.name);
-    setIsActive(unit.is_active);
-  }, [unit.id, unit.name, unit.is_active]);
-
-  const dirty = name.trim() !== unit.name || isActive !== unit.is_active;
-
-  async function handleSave() {
-    setBusy(true);
-    setRowError("");
-    try {
-      await updateUnitOfMeasure(unit.id, {
-        name: name.trim(),
-        is_active: isActive,
-      });
-      await onReload();
-      void onSaved();
-    } catch (e) {
-      setRowError(axios.isAxiosError(e) ? String(e.response?.data?.detail ?? e.message) : "Save failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { name, setName, isActive, setIsActive, busy, rowError, dirty, handleSave } = useUnitRowEditing(
+    unit,
+    onReload,
+    onSaved,
+  );
 
   const rowDisabled = busy || reorderBusy;
 
@@ -167,6 +192,156 @@ function UnitRow({
   );
 }
 
+function UnitRowMobile({
+  unit,
+  expanded,
+  onToggleExpanded,
+  onReload,
+  onSaved,
+  onDeleteRequest,
+  reorderBusy,
+  draggingId,
+  onDragStartRow,
+  onDragEndRow,
+  onDragOverRow,
+  onDragLeaveRow,
+  onDropOnRow,
+  isDropTarget,
+  reorderLocked,
+}: {
+  unit: UnitOfMeasureItem;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  onReload: () => Promise<void>;
+  onSaved: () => void | Promise<void>;
+  onDeleteRequest: (unit: UnitOfMeasureItem) => void;
+  reorderBusy: boolean;
+  draggingId: number | null;
+  onDragStartRow: (e: DragEvent<HTMLElement>, unitId: number) => void;
+  onDragEndRow: () => void;
+  onDragOverRow: (e: DragEvent, rowId: number) => void;
+  onDragLeaveRow: (e: DragEvent<HTMLElement>, rowId: number) => void;
+  onDropOnRow: (e: DragEvent, targetId: number) => void;
+  isDropTarget: boolean;
+  reorderLocked: boolean;
+}) {
+  const summaryId = useId();
+  const detailRegionId = useId();
+  const { name, setName, isActive, setIsActive, busy, rowError, dirty, handleSave } = useUnitRowEditing(unit, onReload, onSaved);
+  const rowDisabled = busy || reorderBusy;
+  const displayName = name.trim() || unit.name;
+
+  return (
+    <li
+      className={`uom-mobile-unit-item${expanded ? " uom-mobile-unit-item--expanded" : ""}${draggingId === unit.id ? " uom-mobile-unit-item--dragging kanban-card-dragging" : ""}${isDropTarget ? " kanban-card-drop-target" : ""}${reorderLocked ? " uom-mobile-unit-item--reorder-locked" : ""}`}
+      onDragOver={(e) => onDragOverRow(e, unit.id)}
+      onDragLeave={(e) => onDragLeaveRow(e, unit.id)}
+      onDrop={(e) => onDropOnRow(e, unit.id)}
+    >
+      <button
+        id={summaryId}
+        type="button"
+        className={`uom-mobile-unit-summary uom-mobile-unit-summary--${isActive ? "on" : "off"}`}
+        aria-expanded={expanded}
+        aria-controls={detailRegionId}
+        onClick={onToggleExpanded}
+      >
+        <span className="uom-mobile-unit-summary-accent" aria-hidden />
+        <span className="uom-mobile-unit-summary-text">
+          <span className="uom-mobile-unit-name">{displayName}</span>
+          <code className="uom-mobile-unit-code">{unit.code}</code>
+        </span>
+        <span className="uom-mobile-unit-status-pill" data-active={isActive ? "true" : "false"}>
+          {isActive ? "On" : "Off"}
+        </span>
+        <span className={`uom-mobile-unit-chevron${expanded ? " uom-mobile-unit-chevron--open" : ""}`} aria-hidden>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
+      </button>
+
+      {expanded ? (
+        <div
+          id={detailRegionId}
+          role="region"
+          aria-labelledby={summaryId}
+          className="uom-mobile-unit-detail"
+        >
+          {reorderLocked ? (
+            <p className="workspace-note uom-mobile-unit-reorder-note">Clear search to drag rows and reorder.</p>
+          ) : null}
+          <div
+            className={`uom-mobile-drag-handle${rowDisabled || reorderLocked ? " uom-mobile-drag-handle--disabled" : ""}`}
+            draggable={!rowDisabled && !reorderLocked}
+            onDragStart={(e) => onDragStartRow(e, unit.id)}
+            onDragEnd={onDragEndRow}
+          >
+            <span aria-hidden>⠿</span>
+            <span>{reorderLocked ? "Reorder locked" : "Drag to reorder"}</span>
+          </div>
+
+          <label className="uom-mobile-field">
+            <span>Code</span>
+            <code className="uom-mobile-code-readonly">{unit.code}</code>
+          </label>
+
+          <label className="uom-mobile-field">
+            <span>Name</span>
+            <input
+              type="text"
+              className="uom-admin-cell-input"
+              value={name}
+              onChange={(ev) => setName(ev.target.value)}
+              disabled={busy}
+              aria-label={`Display name for ${unit.code}`}
+            />
+          </label>
+
+          <div className="uom-mobile-field">
+            <span className="uom-mobile-field-label">Status</span>
+            <div className="services-active-toggle" role="group" aria-label={`Status for ${unit.code}`}>
+              <button
+                type="button"
+                className={`services-active-toggle__btn${!isActive ? " services-active-toggle__btn--selected-inactive" : ""}`}
+                aria-pressed={!isActive}
+                disabled={busy}
+                onClick={() => setIsActive(false)}
+              >
+                Inactive
+              </button>
+              <button
+                type="button"
+                className={`services-active-toggle__btn${isActive ? " services-active-toggle__btn--selected-active" : ""}`}
+                aria-pressed={isActive}
+                disabled={busy}
+                onClick={() => setIsActive(true)}
+              >
+                Active
+              </button>
+            </div>
+          </div>
+
+          <div className="uom-mobile-unit-actions">
+            <button type="button" className="button button-secondary" disabled={busy || !dirty} onClick={() => void handleSave()}>
+              Save
+            </button>
+            <button
+              type="button"
+              className="button button-danger uom-delete-row-btn"
+              disabled={busy}
+              onClick={() => onDeleteRequest(unit)}
+            >
+              Delete
+            </button>
+          </div>
+          {rowError ? <p className="workspace-note uom-admin-row-error">{rowError}</p> : null}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
 export function UnitsOfMeasureAdminPanel({
   sectionEyebrow,
   sectionTitle,
@@ -194,12 +369,21 @@ export function UnitsOfMeasureAdminPanel({
   const [uomSearch, setUomSearch] = useState("");
   const uomQuery = useDeferredValue(uomSearch.trim().toLowerCase());
   const reorderLocked = uomQuery.length > 0;
+  const compactUnitsLayout = useMediaQuery(REGISTERS_MOBILE_BREAKPOINT);
+  const [expandedMobileUnitId, setExpandedMobileUnitId] = useState<number | null>(null);
   const filteredUnits = useMemo(() => {
     if (!uomQuery) return units;
     return units.filter(
       (u) => u.code.toLowerCase().includes(uomQuery) || u.name.toLowerCase().includes(uomQuery),
     );
   }, [units, uomQuery]);
+
+  useEffect(() => {
+    if (expandedMobileUnitId === null) return;
+    if (!filteredUnits.some((u) => u.id === expandedMobileUnitId)) {
+      setExpandedMobileUnitId(null);
+    }
+  }, [filteredUnits, expandedMobileUnitId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -263,7 +447,7 @@ export function UnitsOfMeasureAdminPanel({
     }
   }
 
-  function handleDragStartRow(e: DragEvent<HTMLTableRowElement>, unitId: number) {
+  function handleDragStartRow(e: DragEvent<HTMLElement>, unitId: number) {
     if (reorderLocked) {
       e.preventDefault();
       return;
@@ -298,7 +482,7 @@ export function UnitsOfMeasureAdminPanel({
     }
   }
 
-  function handleDragLeaveRow(e: DragEvent<HTMLTableRowElement>, rowId: number) {
+  function handleDragLeaveRow(e: DragEvent<HTMLElement>, rowId: number) {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDragOverRowId((current) => (current === rowId ? null : current));
     }
@@ -382,6 +566,10 @@ export function UnitsOfMeasureAdminPanel({
     }
   }
 
+  function toggleMobileUnitRow(unitId: number) {
+    setExpandedMobileUnitId((cur) => (cur === unitId ? null : unitId));
+  }
+
   return (
     <>
       {embedded ? null : (
@@ -430,12 +618,14 @@ export function UnitsOfMeasureAdminPanel({
             Units of measure
           </h3>
         )}
-        <p className="workspace-note uom-admin-lead">
-          <strong>Order</strong> = order in purchase dropdowns (top = first). <strong>Code</strong> cannot be changed later.{" "}
-          <strong>Active</strong> = shown on new lines; off = hidden for new lines only. Drag a row like <strong>Repairs</strong>{" "}
-          kanban cards (not from inputs or buttons). While dragging, the row you move is faded; the{" "}
-          <strong className="uom-accent-inline">highlighted row</strong> is where it will land (insert before that row).
-        </p>
+        <RegistersHelpDisclosure summary="How units work">
+          <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
+            <strong>Order</strong> = order in purchase dropdowns (top = first). <strong>Code</strong> cannot be changed later.{" "}
+            <strong>Active</strong> = shown on new lines; off = hidden for new lines only. Drag a row like <strong>Repairs</strong>{" "}
+            kanban cards (not from inputs or buttons). While dragging, the row you move is faded; the{" "}
+            <strong className="uom-accent-inline">highlighted row</strong> is where it will land (insert before that row).
+          </p>
+        </RegistersHelpDisclosure>
 
         <div className="registers-search-toolbar">
           <label className="registers-search-field">
@@ -459,33 +649,22 @@ export function UnitsOfMeasureAdminPanel({
       {loading ? <p className="workspace-note">Loading…</p> : null}
 
       {!loading && !loadError ? (
-        <div className="uom-admin-table-wrap registers-table-wrap">
-          <table className="uom-admin-table uom-admin-table--compact uom-admin-table--kanban registers-editor-table registers-units-table">
-            <thead>
-              <tr>
-                <th scope="col" className="uom-admin-order-th" aria-label="Drag handle">
-                  <span aria-hidden>⠿</span>
-                </th>
-                <th scope="col">Code</th>
-                <th scope="col">Name</th>
-                <th scope="col">Status</th>
-                <th scope="col">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <>
+          {compactUnitsLayout ? (
+            <ul className="uom-mobile-unit-list" aria-label="Units of measure">
               {filteredUnits.length === 0 ? (
-                <tr>
-                  <td colSpan={5}>
-                    <p className="workspace-note">
-                      {units.length === 0 ? "No units yet." : "No units match this search."}
-                    </p>
-                  </td>
-                </tr>
+                <li className="uom-mobile-unit-empty">
+                  <p className="workspace-note">
+                    {units.length === 0 ? "No units yet." : "No units match this search."}
+                  </p>
+                </li>
               ) : (
                 filteredUnits.map((u) => (
-                  <UnitRow
+                  <UnitRowMobile
                     key={u.id}
                     unit={u}
+                    expanded={expandedMobileUnitId === u.id}
+                    onToggleExpanded={() => toggleMobileUnitRow(u.id)}
                     onReload={load}
                     onSaved={onSaved}
                     reorderBusy={reorderBusy}
@@ -506,9 +685,60 @@ export function UnitsOfMeasureAdminPanel({
                   />
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+          ) : (
+            <div className="uom-admin-table-wrap registers-table-wrap registers-units-table-wrap">
+              <table className="uom-admin-table uom-admin-table--compact uom-admin-table--kanban registers-editor-table registers-units-table">
+                <thead>
+                  <tr>
+                    <th scope="col" className="uom-admin-order-th" aria-label="Drag handle">
+                      <span aria-hidden>⠿</span>
+                    </th>
+                    <th scope="col">Code</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUnits.length === 0 ? (
+                    <tr>
+                      <td colSpan={5}>
+                        <p className="workspace-note">
+                          {units.length === 0 ? "No units yet." : "No units match this search."}
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUnits.map((u) => (
+                      <UnitRow
+                        key={u.id}
+                        unit={u}
+                        onReload={load}
+                        onSaved={onSaved}
+                        reorderBusy={reorderBusy}
+                        draggingId={draggingId}
+                        onDragStartRow={handleDragStartRow}
+                        onDragEndRow={handleDragEndRow}
+                        onDragOverRow={handleDragOverRow}
+                        onDragLeaveRow={handleDragLeaveRow}
+                        onDropOnRow={handleDropOnRow}
+                        isDropTarget={
+                          !reorderLocked && dragOverRowId === u.id && draggingId !== null && draggingId !== u.id
+                        }
+                        reorderLocked={reorderLocked}
+                        onDeleteRequest={(row) => {
+                          setDeleteTarget(row);
+                          setDeleteModalError("");
+                        }}
+                      />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       ) : null}
       </section>
 
