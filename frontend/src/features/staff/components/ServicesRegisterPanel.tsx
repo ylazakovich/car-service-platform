@@ -452,13 +452,15 @@ export function ServicesRegisterPanel({ onServicesChanged }: ServicesRegisterPan
             + Add service
           </button>
         </div>
-        <RegistersHelpDisclosure summary="Catalog guide">
-          <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
-            Edit values <strong>directly in the table</strong> (name, description, price, active). Press <strong>Save</strong> on the
-            row to persist changes. Catalog prices feed repair lines and estimates; <strong>Active</strong> hides a service from
-            pickers but keeps history.
-          </p>
-        </RegistersHelpDisclosure>
+        {compactRegistersLayout ? (
+          <RegistersHelpDisclosure summary="Catalog guide">
+            <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
+              Edit values <strong>directly in the table</strong> (name, description, price, active). Press <strong>Save</strong> on the
+              row to persist changes. Catalog prices feed repair lines and estimates; <strong>Active</strong> hides a service from
+              pickers but keeps history.
+            </p>
+          </RegistersHelpDisclosure>
+        ) : null}
 
         <div className="registers-search-toolbar">
           <label className="registers-search-field">
