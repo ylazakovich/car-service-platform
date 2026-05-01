@@ -66,7 +66,8 @@ export class StaffRepairsPage {
       }
       const showMore = this.page.getByRole("button", { name: SHOW_MORE_COMPLETED });
       if (await showMore.isVisible()) {
-        await showMore.click();
+        /* Fixed shell FAB (.shell-scroll-to-header-fab) can overlap bottom actions on narrow viewports. */
+        await showMore.click({ force: true });
       } else {
         break;
       }
