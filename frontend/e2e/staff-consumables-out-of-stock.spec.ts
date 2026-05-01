@@ -55,7 +55,8 @@ test.describe("Consumables out of stock @mobile-only", () => {
     await expect(toggle).toBeVisible({ timeout: 25_000 });
     const toggleLabel = await toggle.textContent();
     if (toggleLabel?.trim().startsWith("Show")) {
-      await toggle.click();
+      // `.shell-scroll-to-header-fab` can cover the toggle on narrow viewports (same as Kanban "Show more").
+      await toggle.click({ force: true });
     }
 
     const oosRegion = page.getByRole("region", { name: "Out of stock consumables" });
