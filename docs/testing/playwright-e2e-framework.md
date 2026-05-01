@@ -28,7 +28,7 @@
 
 ## 3) Сценарная матрица (покрытие vs сейчас)
 
-Сейчас: логин staff/admin, доска ремонтов, PDF view/export smoke, админ — вкладки dashboard (включая Consumables), **Registers** (`staff-registers.spec.ts`: Units / Services / Customers).
+Сейчас: логин staff/admin, доска ремонтов, PDF view/export smoke, админ — вкладки dashboard (включая Consumables), **Registers** (`staff-registers.spec.ts`: Units / Services / Customers), **создание карточки ремонта** (`staff-repair-intake-create.spec.ts`: intake **+ New Repair** / **New Repair** → карточка в колонке New, сценарии `@desktop` и `@mobile-only`).
 
 Целевое покрытие (связка с `docs/spec/PRODUCT.md` и M3):
 
