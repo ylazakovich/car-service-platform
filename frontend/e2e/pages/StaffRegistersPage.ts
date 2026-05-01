@@ -49,7 +49,9 @@ export class StaffRegistersPage {
   }
 
   uomCodeCell(code: string): Locator {
-    return this.page.locator(".reference-workspace .uom-admin-table code").filter({ hasText: new RegExp(`^${code}$`) });
+    const desktop = this.page.locator(".reference-workspace .uom-admin-table code").filter({ hasText: new RegExp(`^${code}$`) });
+    const mobile = this.page.locator(".reference-workspace .uom-mobile-unit-code").filter({ hasText: new RegExp(`^${code}$`) });
+    return desktop.or(mobile);
   }
 
   async expectServicesWorkspaceVisible(): Promise<void> {
@@ -82,15 +84,43 @@ export class StaffRegistersPage {
     await expect(this.page.getByRole("heading", { name: "Customers", level: 3 })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(
-      this.page.getByRole("table").filter({ has: this.page.getByRole("columnheader", { name: "Vehicles" }) }),
-    ).toBeVisible({ timeout: 15_000 });
+    const narrowMobile =
+      (await this.page.evaluate(
+        () => typeof window !== "undefined" && window.matchMedia("(max-width: 820px)").matches,
+      )) === true;
+    if (narrowMobile) {
+      await expect(this.page.getByRole("list", { name: "Customers registry" })).toBeVisible({ timeout: 15_000 });
+    } else {
+      await expect(
+        this.page.getByRole("table").filter({ has: this.page.getByRole("columnheader", { name: "Vehicles" }) }),
+      ).toBeVisible({ timeout: 15_000 });
+    }
   }
 
-  /** Customer names are inline `<input value="…">`; match via `value` like the services register. */
+  /**
+   * Desktop: `<input value="…">` в строке таблицы.
+   * Mobile (≤820px): компактный список `.uom-mobile-unit-item` — перед проверкой Save/Delete раскройте строку (`expandCustomerMobileRow`).
+   */
   customerRowByName(name: string): Locator {
     const rows = this.page.locator(".registers-customers-page tbody tr");
     const escaped = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    return rows.filter({ has: this.page.locator(`input[value="${escaped}"]`) });
+    const desktop = rows.filter({ has: this.page.locator(`input[value="${escaped}"]`) });
+    const mobile = this.page
+      .getByRole("list", { name: "Customers registry" })
+      .locator("li.uom-mobile-unit-item")
+      .filter({ has: this.page.locator(".uom-mobile-unit-name", { hasText: name }) });
+    return desktop.or(mobile);
+  }
+
+  /** На узкой ширине Save/Delete в развёрнутом блоке строки клиента. */
+  async expandCustomerMobileRowIfNeeded(name: string): Promise<void> {
+    const narrowMobile =
+      (await this.page.evaluate(
+        () => typeof window !== "undefined" && window.matchMedia("(max-width: 820px)").matches,
+      )) === true;
+    if (!narrowMobile) return;
+
+    const row = this.customerRowByName(name);
+    await row.locator("button.uom-mobile-unit-summary").click();
   }
 }
