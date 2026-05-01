@@ -1,5 +1,10 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { E2E_DEMO_REPAIR_DIALOG_NAME, E2E_DEMO_REPAIR_TRACKING_CODE } from "../e2e-seed";
+import {
+  E2E_DEMO_REPAIR_DIALOG_NAME,
+  E2E_DEMO_REPAIR_TRACKING_CODE,
+  E2E_DEMO_REPAIR_VEHICLE_PLATE,
+  E2E_DEMO_SERVICE_NAME_IN_CATALOG,
+} from "../e2e-seed";
 import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
 
 const SHOW_MORE_COMPLETED = /^Show \d+ more$/;
@@ -97,5 +102,45 @@ export class StaffRepairsPage {
   async closeCertificateDialog(): Promise<void> {
     await this.certificateDialog().getByRole("button", { name: "Close" }).click();
     await expect(this.certificateDialog()).toBeHidden();
+  }
+
+  /**
+   * Desktop staff: topbar **+ New Repair**. Mobile staff (≤820px): rail primary **New Repair** (no `+`).
+   */
+  async openNewRepairIntakeModal(): Promise<void> {
+    const desktop = this.page.getByRole("button", { name: "+ New Repair" });
+    const mobile = this.page.getByRole("button", { name: /^New Repair$/ });
+    await expect(desktop.or(mobile)).toBeVisible({ timeout: 20_000 });
+    if (await desktop.isVisible()) {
+      await desktop.click();
+    } else {
+      await mobile.click();
+    }
+    await expect(this.page.getByRole("dialog").filter({ hasText: "Repair Intake" })).toBeVisible({
+      timeout: 15_000,
+    });
+  }
+
+  /** Fill intake using demo vehicle + catalog service (`scripts/demo/demo_data.sql`). */
+  async fillCreateRepairForm(issueNotesMarker: string): Promise<void> {
+    await this.page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);
+    await this.page.getByRole("button", { name: new RegExp(`${E2E_DEMO_REPAIR_VEHICLE_PLATE}\\s*•`) }).click();
+
+    const line1 = this.page.getByRole("textbox", { name: /Line 1/ });
+    await line1.fill(E2E_DEMO_SERVICE_NAME_IN_CATALOG);
+    await line1.blur();
+    await expect(line1).not.toBeFocused();
+
+    await this.page.getByLabel("Issue Notes").fill(issueNotesMarker);
+  }
+
+  async submitCreateRepair(): Promise<void> {
+    await this.page.getByRole("button", { name: "Create Repair" }).click();
+  }
+
+  /** New repairs prepend; issue notes render in `.kanban-card-issue`. */
+  async expectKanbanCardShowsIssueNotes(marker: string): Promise<void> {
+    const cardIssue = this.page.locator(".kanban-card-issue").filter({ hasText: marker });
+    await expect(cardIssue.first()).toBeVisible({ timeout: 30_000 });
   }
 }
