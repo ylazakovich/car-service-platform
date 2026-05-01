@@ -118,4 +118,17 @@ test.describe("Purchases registry — mobile table @mobile-only", () => {
     const row = reg.purchaseRowByPartSnippet(E2E_DEMO_PURCHASE_PART_SUBSTRING);
     await expect(row).toBeVisible({ timeout: 20_000 });
   });
+
+  test("admin sees Purchases section tabs (Warehouse / Consumables / Suppliers) on narrow viewport", async ({
+    page,
+  }) => {
+    await e2eBehaviors("admin", "purchases · mobile · tablist");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoPurchasesSection();
+
+    await expect(page.getByRole("tablist", { name: "Purchases sections" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("tab", { name: "Warehouse" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Consumables" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Suppliers" })).toBeVisible();
+  });
 });
