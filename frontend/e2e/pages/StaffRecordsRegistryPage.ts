@@ -19,6 +19,16 @@ export class StaffRecordsRegistryPage {
     });
   }
 
+  /** Purchases → Consumables tab (desktop table or mobile consumable list). */
+  async gotoPurchasesConsumablesTab(): Promise<void> {
+    await this.gotoPurchasesSection();
+    await this.page.getByRole("tab", { name: "Consumables" }).click();
+    await expect(this.page.getByRole("tab", { name: "Consumables" })).toHaveAttribute("aria-selected", "true");
+    const desktopTable = this.page.getByRole("columnheader", { name: "Bought" });
+    const mobileList = this.page.locator(".purchases-consumables-layout ul.purchases-mobile-consumable-list");
+    await expect(desktopTable.or(mobileList)).toBeVisible({ timeout: 25_000 });
+  }
+
   async gotoVehiclesSection(): Promise<void> {
     const nav = new StaffMobileNavigationPage(this.page);
     // Ждём успешный список ТС: при ошибке API `loadSectionVehicles` в UI остаётся empty panel без `.vehicle-web-surface` списка.
