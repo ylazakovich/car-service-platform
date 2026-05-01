@@ -5019,6 +5019,11 @@ input[type="date"].inventory-stock-input {
   gap: 6px;
 }
 
+.purchases-mobile-consumable-invoice-value {
+  min-width: 0;
+  word-break: break-word;
+}
+
 .purchases-mobile-consumable-detail .consumable-inventory-actions {
   display: flex;
   flex-direction: column;
@@ -5110,7 +5115,7 @@ table.purchases-registry-table--wide {
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--part {
-  width: 22%;
+  width: 19%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--supplier {
@@ -5118,7 +5123,7 @@ table.purchases-registry-table--wide .purchases-registry-col--supplier {
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--date {
-  width: 8%;
+  width: 11%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--qty,
@@ -5152,8 +5157,37 @@ table.purchases-registry-table.purchases-registry-table--wide thead th {
   vertical-align: bottom;
   overflow: visible;
   letter-spacing: 0.07em;
-  padding-left: 0.35rem;
-  padding-right: 0.35rem;
+  /* Match tbody td horizontal padding (.purchases-compact-row td uses var(--s3)); mismatched padding skews labels vs data. */
+  padding: 0.5rem var(--s3);
+  box-sizing: border-box;
+}
+
+/* Order column: min-width on cells (not only <col>) so thead/tbody share the same layout hint in fixed tables. */
+table.purchases-registry-table.purchases-registry-table--wide thead th:nth-child(3),
+table.purchases-registry-table.purchases-registry-table--wide tbody.purchases-compact-list tr.purchases-compact-row td:nth-child(3) {
+  min-width: 7.5rem;
+}
+
+/* Mirror ellipsis columns so column widths match thead/body (same trick as td:first-child / td:nth-child(7)). */
+table.purchases-registry-table.purchases-registry-table--wide thead th:first-child,
+table.purchases-registry-table.purchases-registry-table--wide thead th:nth-child(7) {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Invoice filename-only: enable ellipsis in narrow column (table-fixed + nowrap row cells). */
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(7) {
+  max-width: 0;
+}
+
+.purchases-registry-invoice-filename {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Undo nowrap/ellipsis on cells that host inventory controls — parent overflow:hidden was clipping placeholders ("Not inver…"). */
