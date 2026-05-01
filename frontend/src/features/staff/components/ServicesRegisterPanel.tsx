@@ -1,6 +1,16 @@
 import axios from "axios";
-import { useCallback, useDeferredValue, useEffect, useId, useMemo, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import { createService, deleteService, fetchServices, updateService, type ServiceItem } from "../../../api/services";
+import { REGISTERS_MOBILE_BREAKPOINT, useMediaQuery } from "../hooks/useMediaQuery";
+import { RegistersHelpDisclosure } from "./RegistersHelpDisclosure";
 
 type ServicesRegisterPanelProps = {
   onServicesChanged?: () => void;
@@ -41,15 +51,11 @@ function CatalogActiveToggle({
   );
 }
 
-function ServiceRow({
-  service,
-  onReload,
-  onCatalogChanged,
-}: {
-  service: ServiceItem;
-  onReload: () => Promise<void>;
-  onCatalogChanged?: () => void;
-}) {
+function useServiceRowEditing(
+  service: ServiceItem,
+  onReload: () => Promise<void>,
+  onCatalogChanged?: () => void,
+) {
   const [name, setName] = useState(service.name);
   const [description, setDescription] = useState(service.description ?? "");
   const [price, setPrice] = useState(service.price ?? "");
@@ -105,6 +111,35 @@ function ServiceRow({
       setBusy(false);
     }
   }
+
+  return {
+    name,
+    setName,
+    description,
+    setDescription,
+    price,
+    setPrice,
+    isActive,
+    setIsActive,
+    busy,
+    rowError,
+    dirty,
+    handleSave,
+    handleDelete,
+  };
+}
+
+function ServiceRow({
+  service,
+  onReload,
+  onCatalogChanged,
+}: {
+  service: ServiceItem;
+  onReload: () => Promise<void>;
+  onCatalogChanged?: () => void;
+}) {
+  const { name, setName, description, setDescription, price, setPrice, isActive, setIsActive, busy, rowError, dirty, handleSave, handleDelete } =
+    useServiceRowEditing(service, onReload, onCatalogChanged);
 
   return (
     <tr>
@@ -163,6 +198,130 @@ function ServiceRow({
   );
 }
 
+function ServiceRowMobile({
+  service,
+  expanded,
+  onToggleExpanded,
+  onReload,
+  onCatalogChanged,
+}: {
+  service: ServiceItem;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  onReload: () => Promise<void>;
+  onCatalogChanged?: () => void;
+}) {
+  const summaryId = useId();
+  const detailRegionId = useId();
+  const {
+    name,
+    setName,
+    description,
+    setDescription,
+    price,
+    setPrice,
+    isActive,
+    setIsActive,
+    busy,
+    rowError,
+    dirty,
+    handleSave,
+    handleDelete,
+  } = useServiceRowEditing(service, onReload, onCatalogChanged);
+
+  const displayName = name.trim() || service.name;
+  const priceLine = price.trim() !== "" ? price.trim() : "No price";
+
+  return (
+    <li className={`uom-mobile-unit-item${expanded ? " uom-mobile-unit-item--expanded" : ""}`}>
+      <button
+        id={summaryId}
+        type="button"
+        className={`uom-mobile-unit-summary uom-mobile-unit-summary--${isActive ? "on" : "off"}`}
+        aria-expanded={expanded}
+        aria-controls={detailRegionId}
+        onClick={onToggleExpanded}
+      >
+        <span className="uom-mobile-unit-summary-accent" aria-hidden />
+        <span className="uom-mobile-unit-summary-text">
+          <span className="uom-mobile-unit-name">{displayName}</span>
+          <span className="uom-mobile-unit-code">{priceLine}</span>
+        </span>
+        <span className="uom-mobile-unit-status-pill" data-active={isActive ? "true" : "false"}>
+          {isActive ? "On" : "Off"}
+        </span>
+        <span className={`uom-mobile-unit-chevron${expanded ? " uom-mobile-unit-chevron--open" : ""}`} aria-hidden>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
+      </button>
+
+      {expanded ? (
+        <div id={detailRegionId} role="region" aria-labelledby={summaryId} className="uom-mobile-unit-detail">
+          <label className="uom-mobile-field">
+            <span>Name</span>
+            <input
+              type="text"
+              className="uom-admin-cell-input"
+              value={name}
+              onChange={(ev) => setName(ev.target.value)}
+              disabled={busy}
+              aria-label={`Service name (${service.id})`}
+            />
+          </label>
+
+          <label className="uom-mobile-field">
+            <span>Description</span>
+            <textarea
+              className="uom-admin-cell-input uom-admin-cell-input--compact"
+              rows={3}
+              value={description}
+              onChange={(ev) => setDescription(ev.target.value)}
+              disabled={busy}
+              aria-label={`Description for ${service.name}`}
+            />
+          </label>
+
+          <label className="uom-mobile-field">
+            <span>Price</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              className="uom-admin-cell-input"
+              value={price}
+              onChange={(ev) => setPrice(ev.target.value)}
+              disabled={busy}
+              placeholder="0.00"
+              aria-label={`Price for ${service.name}`}
+            />
+          </label>
+
+          <div className="uom-mobile-field">
+            <span className="uom-mobile-field-label">Catalog status</span>
+            <CatalogActiveToggle
+              value={isActive}
+              onChange={setIsActive}
+              disabled={busy}
+              ariaLabel={`Catalog status for ${service.name}`}
+            />
+          </div>
+
+          <div className="uom-mobile-unit-actions">
+            <button type="button" className="button button-secondary" disabled={busy || !dirty} onClick={() => void handleSave()}>
+              Save
+            </button>
+            <button type="button" className="button button-danger uom-delete-row-btn" disabled={busy} onClick={() => void handleDelete()}>
+              Delete
+            </button>
+          </div>
+          {rowError ? <p className="workspace-note uom-admin-row-error">{rowError}</p> : null}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
 export function ServicesRegisterPanel({ onServicesChanged }: ServicesRegisterPanelProps) {
   const addDialogTitleId = useId();
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -186,6 +345,20 @@ export function ServicesRegisterPanel({ onServicesChanged }: ServicesRegisterPan
         (s.price || "").toLowerCase().includes(svcQuery),
     );
   }, [services, svcQuery]);
+
+  const compactRegistersLayout = useMediaQuery(REGISTERS_MOBILE_BREAKPOINT);
+  const [expandedMobileServiceId, setExpandedMobileServiceId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (expandedMobileServiceId === null) return;
+    if (!filteredServices.some((s) => s.id === expandedMobileServiceId)) {
+      setExpandedMobileServiceId(null);
+    }
+  }, [filteredServices, expandedMobileServiceId]);
+
+  function toggleMobileServiceRow(serviceId: number) {
+    setExpandedMobileServiceId((cur) => (cur === serviceId ? null : serviceId));
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -279,11 +452,13 @@ export function ServicesRegisterPanel({ onServicesChanged }: ServicesRegisterPan
             + Add service
           </button>
         </div>
-        <p className="workspace-note uom-admin-lead">
-          Edit values <strong>directly in the table</strong> (name, description, price, active). Press <strong>Save</strong> on the
-          row to persist changes. Catalog prices feed repair lines and estimates; <strong>Active</strong> hides a service from
-          pickers but keeps history.
-        </p>
+        <RegistersHelpDisclosure summary="Catalog guide">
+          <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
+            Edit values <strong>directly in the table</strong> (name, description, price, active). Press <strong>Save</strong> on the
+            row to persist changes. Catalog prices feed repair lines and estimates; <strong>Active</strong> hides a service from
+            pickers but keeps history.
+          </p>
+        </RegistersHelpDisclosure>
 
         <div className="registers-search-toolbar">
           <label className="registers-search-field">
@@ -304,42 +479,69 @@ export function ServicesRegisterPanel({ onServicesChanged }: ServicesRegisterPan
 
         {!loading && !loadError ? (
           <>
-            <p className="services-register-table-hint" id="services-register-table-hint">
-              Edit in the table, then <strong>Save</strong> on each row.
-            </p>
-            <div className="uom-admin-table-wrap registers-table-wrap services-register-table-wrap">
-              <table
-                className="uom-admin-table uom-admin-table--compact registers-editor-table services-register-editor-table"
-                aria-describedby="services-register-table-hint"
-              >
-                <thead>
-                  <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Description</th>
-                    <th scope="col">Price</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredServices.length === 0 ? (
+            {!compactRegistersLayout ? (
+              <p className="services-register-table-hint" id="services-register-table-hint">
+                Edit in the table, then <strong>Save</strong> on each row.
+              </p>
+            ) : null}
+            {compactRegistersLayout ? (
+              <ul className="uom-mobile-unit-list" aria-label="Services catalog">
+                {filteredServices.length === 0 ? (
+                  <li className="uom-mobile-unit-empty">
+                    <p className="workspace-note">
+                      {services.length === 0
+                        ? "No services yet. Add one to build the catalog."
+                        : "No services match this search."}
+                    </p>
+                  </li>
+                ) : (
+                  filteredServices.map((s) => (
+                    <ServiceRowMobile
+                      key={s.id}
+                      service={s}
+                      expanded={expandedMobileServiceId === s.id}
+                      onToggleExpanded={() => toggleMobileServiceRow(s.id)}
+                      onReload={load}
+                      onCatalogChanged={onServicesChanged}
+                    />
+                  ))
+                )}
+              </ul>
+            ) : (
+              <div className="uom-admin-table-wrap registers-table-wrap services-register-table-wrap">
+                <table
+                  className="uom-admin-table uom-admin-table--compact registers-editor-table services-register-editor-table"
+                  aria-describedby={compactRegistersLayout ? undefined : "services-register-table-hint"}
+                >
+                  <thead>
                     <tr>
-                      <td colSpan={5}>
-                        <p className="workspace-note">
-                          {services.length === 0
-                            ? "No services yet. Add one to build the catalog."
-                            : "No services match this search."}
-                        </p>
-                      </td>
+                      <th scope="col">Name</th>
+                      <th scope="col">Description</th>
+                      <th scope="col">Price</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Actions</th>
                     </tr>
-                  ) : (
-                    filteredServices.map((s) => (
-                      <ServiceRow key={s.id} service={s} onReload={load} onCatalogChanged={onServicesChanged} />
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredServices.length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>
+                          <p className="workspace-note">
+                            {services.length === 0
+                              ? "No services yet. Add one to build the catalog."
+                              : "No services match this search."}
+                          </p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredServices.map((s) => (
+                        <ServiceRow key={s.id} service={s} onReload={load} onCatalogChanged={onServicesChanged} />
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         ) : null}
       </section>

@@ -1,5 +1,8 @@
 /* Global styles before App so a parse/runtime error in the app tree does not leave a blank white page. */
 import "./styles.css";
+import { installViewportLayoutSync } from "./viewportLayoutSync";
+
+installViewportLayoutSync();
 import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
