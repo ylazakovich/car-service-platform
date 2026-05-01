@@ -1,1 +1,1 @@
-{"id":"28a46b290d213beed2666f3a40bbefb0","fullName":"staff-registers.spec.ts:58:3","name":"admin Registers tabs do not include Invoice lines","status":"failed","testResultsByEnv":{"e2e":"db4dffd935bb81000d281d33759943f2"}}
+{"id":"28a46b290d213beed2666f3a40bbefb0","fullName":"staff-registers.spec.ts:58:3","name":"admin Registers tabs do not include Invoice lines","status":"passed","testResultsByEnv":{"e2e":"791d6b1d6e11dac8c1b5252fc90c3372"}}

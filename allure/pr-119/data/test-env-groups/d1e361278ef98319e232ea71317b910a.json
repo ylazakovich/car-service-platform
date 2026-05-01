@@ -1,1 +1,1 @@
-{"id":"d1e361278ef98319e232ea71317b910a","fullName":"staff-registers.spec.ts:33:3","name":"admin switches to Services, search filters catalog row","status":"failed","testResultsByEnv":{"e2e":"5ce185ee4cc6e8d23d35a15c2bf55f90"}}
+{"id":"d1e361278ef98319e232ea71317b910a","fullName":"staff-registers.spec.ts:33:3","name":"admin switches to Services, search filters catalog row","status":"passed","testResultsByEnv":{"e2e":"6110e05f670f623b9c32dad28ba0ad09"}}
