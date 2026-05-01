@@ -124,6 +124,13 @@ What it does (see script for details):
 - Sets `COMPOSE_FILE` to include `docker-compose.dev.lan.yml` and **recreates** `frontend` and `backend`.
 - Exports `DEV_LAN_IP` so compose can pass **`VITE_DEV_SERVER_ORIGIN`** into the Vite dev container (`server.origin` + `server.allowedHosts` for `http://<LAN-IP>:<port>` — avoids blocked host / wrong asset URLs on phones).
 
+### Local `npm run dev` (host Vite) + phone — not Docker
+
+`publish-dev-to-lan.sh` only adjusts env for **Compose**. If you run **`cd frontend && npm run dev`** and open **`http://<your-LAN-IPv4>:5173`** from a phone:
+
+1. **Vite env:** `VITE_DEV_AUTO_LOGIN` and other `VITE_*` vars live in the **repo root** `.env`; Vite is configured with `envDir` pointing there so dev auto-login matches Docker.
+2. **Django:** append **`http://<LAN-IPv4>:5173`** to **`CORS_ALLOWED_ORIGINS`** and the same IPv4 (host only, no scheme) to **`DJANGO_ALLOWED_HOSTS`**, then **restart the backend** — otherwise login and `/api` calls fail (CORS / CSRF). Update both when your Wi‑Fi IP changes.
+
 ### LAN is plain HTTP — “secure context” and APIs
 
 Opening the dev app as **`http://<LAN-IPv4>:<FRONTEND_DEV_PORT>`** (typical phone URL) is **not** a [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts). Browsers only treat **HTTPS** and **`http://localhost`** (and a few exceptions) as secure.

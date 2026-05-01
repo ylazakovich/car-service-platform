@@ -32,8 +32,14 @@ const reporters = isCi
   ? [["github"], ["list"], allureReporter, htmlReporter, junitReporter]
   : [["list"], allureReporter, htmlReporter, junitReporter];
 
-/** В CI — 3 воркера (ориентир: до 5 одновременных пользователей, активных ~3). */
-const e2eWorkersCi = 3;
+/**
+ * В CI — по умолчанию 5 воркеров (быстрее, чем 3; 8+ на слабом runner обычно даёт меньший выигрыш и больше гонок на общей демо-БД).
+ * Переопределение: `PLAYWRIGHT_CI_WORKERS` (например `8` на крупном self-hosted).
+ */
+const e2eWorkersCi = Math.max(
+  1,
+  Number.parseInt(process.env.PLAYWRIGHT_CI_WORKERS ?? "5", 10) || 5,
+);
 
 /**
  * E2E against local Docker stack: `docker compose up` (frontend :4173, API via /api proxy).
@@ -44,7 +50,7 @@ const e2eWorkersCi = 3;
  * - mobile-chrome — Pixel 5 (viewport < 820px CSS breakpoint); пропускает `@desktop`.
  * - setup — `e2e/auth.setup.ts` пишет `e2e/.auth/*.json` (staff по умолчанию для обоих браузеров).
  *
- * В CI — workers=3 (несколько файлов/spec параллельно), fullyParallel=false — тесты в одном файле по порядку (меньше гонок на общих демо-строках).
+ * В CI — workers см. `e2eWorkersCi` (по умолчанию 5), fullyParallel=false — тесты в одном файле по порядку (меньше гонок на общих демо-строках).
  * mobile-chrome ждёт desktop-chrome, чтобы не накладываться на мутации TOR-1001 (PDF и т.п.) из desktop-сьюта.
  */
 export default defineConfig({

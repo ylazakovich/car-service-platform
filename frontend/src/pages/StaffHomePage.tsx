@@ -18,9 +18,11 @@ import {
   type PurchaseEntry,
   type PurchaseLineFormState,
 } from "../features/staff/hooks/usePurchases";
+import { REGISTERS_MOBILE_BREAKPOINT, useMediaQuery } from "../features/staff/hooks/useMediaQuery";
 import { RepairServiceLinesEditor } from "../features/staff/components/RepairServiceLinesEditor";
 import { PurchaseInvoiceImportBlock } from "../features/staff/components/PurchaseInvoiceImportBlock";
 import { RegistersCustomersPanel } from "../features/staff/components/RegistersCustomersPanel";
+import { RegistersHelpDisclosure } from "../features/staff/components/RegistersHelpDisclosure";
 import { ServicesRegisterPanel } from "../features/staff/components/ServicesRegisterPanel";
 import { UnitsOfMeasureAdminPanel } from "../features/staff/components/UnitsOfMeasureAdminPanel";
 import {
@@ -1201,6 +1203,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   const [activePurchasesTab, setActivePurchasesTab] = useState<PurchasesWorkspaceTab>("warehouse");
   const [showOutOfStockConsumables, setShowOutOfStockConsumables] = useState(false);
+  const compactPurchasesLayout = useMediaQuery(REGISTERS_MOBILE_BREAKPOINT);
+  const [expandedConsumableId, setExpandedConsumableId] = useState<number | null>(null);
   const [activeReferenceTab, setActiveReferenceTab] = useState<ReferenceWorkspaceTab>("units");
   const [supplierRegistrySearch, setSupplierRegistrySearch] = useState("");
 
@@ -1274,6 +1278,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   } = usePurchases(vehicles, {
     enableConsumablesFetch: activeSection === "purchases" && activePurchasesTab === "consumables",
   });
+
+  useEffect(() => {
+    setExpandedConsumableId(null);
+  }, [activePurchasesTab]);
+
+  useEffect(() => {
+    if (expandedConsumableId === null) return;
+    if (!consumablePurchases.some((c) => c.id === expandedConsumableId)) {
+      setExpandedConsumableId(null);
+    }
+  }, [consumablePurchases, expandedConsumableId]);
 
   const [purchaseLineExpandById, setPurchaseLineExpandById] = useState<Record<string, boolean>>({});
   const purchaseCreateModalWasOpenRef = useRef(false);
@@ -4547,8 +4562,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           onPrimaryAction: handleOpenRepairCreate,
         })}
 
-        {/* Topbar */}
-        <div className="kanban-topbar section-desktop-topbar">
+        {/* Topbar — hidden on mobile for staff (mobile rail); visible for admins like Vehicles */}
+        <div
+          className={`kanban-topbar repairs-section-topbar${
+            isStaff ? " repairs-section-topbar--staff-mobile-skip" : ""
+          }`}
+        >
           <div>
             <p className="eyebrow">Repairs</p>
             <h2>Kanban Board</h2>
@@ -4653,6 +4672,172 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
       }
     }
 
+    function toggleConsumableExpand(id: number) {
+      setExpandedConsumableId((cur) => (cur === id ? null : id));
+    }
+
+    function renderConsumableMobileItem(entry: PurchaseEntry, muted: boolean) {
+      const draft = getConsumableInventoryDraft(entry);
+      const isDirty = isConsumableInventoryDraftDirty(entry);
+      const expanded = expandedConsumableId === entry.id;
+      const buyTotal = formatCurrency(entry.purchase_price * entry.quantity);
+
+      return (
+        <li
+          key={`${muted ? "oos" : "vis"}-${entry.id}`}
+          className={`purchases-mobile-consumable-item${expanded ? " purchases-mobile-consumable-item--expanded" : ""}${muted ? " purchases-mobile-consumable-item--muted" : ""}`}
+        >
+          <button
+            type="button"
+            className="purchases-mobile-consumable-summary"
+            aria-expanded={expanded}
+            onClick={() => toggleConsumableExpand(entry.id)}
+          >
+            <span className="purchases-mobile-consumable-summary-text">
+              <span className="purchases-mobile-consumable-name">{entry.part_name}</span>
+              <span className="purchases-mobile-consumable-meta">
+                {entry.supplier_name}
+                <span className="purchases-mobile-consumable-sep" aria-hidden>
+                  ·
+                </span>
+                {buyTotal}
+              </span>
+            </span>
+            <span
+              className={`purchases-mobile-consumable-chevron${expanded ? " purchases-mobile-consumable-chevron--open" : ""}`}
+              aria-hidden
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </span>
+          </button>
+
+          {expanded ? (
+            <div className="purchases-mobile-consumable-detail">
+              <div className="purchases-mobile-consumable-detail-grid">
+                <div className="purchases-mobile-consumable-readonly">
+                  <span className="purchases-mobile-field-label">Order</span>
+                  <span>{formatDisplayDate(entry.order_date)}</span>
+                </div>
+                <div className="purchases-mobile-consumable-readonly">
+                  <span className="purchases-mobile-field-label">Bought</span>
+                  <span>{formatInventoryInputValue(entry.quantity)}</span>
+                </div>
+                <div className="purchases-mobile-consumable-readonly">
+                  <span className="purchases-mobile-field-label">Unit</span>
+                  <span>{entry.unit_of_measure_code}</span>
+                </div>
+                <div className="purchases-mobile-consumable-readonly">
+                  <span className="purchases-mobile-field-label">Buy</span>
+                  <span>{buyTotal}</span>
+                </div>
+                <div className="purchases-mobile-consumable-invoice-row">
+                  <span className="purchases-mobile-field-label">Invoice</span>
+                  {entry.invoice_url ? (
+                    <button
+                      type="button"
+                      className="button button-secondary button-sm purchase-inline-action"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenInvoice(entry.invoice_url);
+                      }}
+                    >
+                      Open
+                    </button>
+                  ) : (
+                    <span>—</span>
+                  )}
+                </div>
+              </div>
+
+              <label className="uom-mobile-field">
+                <span>Inventory date</span>
+                <input
+                  className="inventory-stock-input"
+                  aria-label={`Inventory date ${entry.part_name}`}
+                  type="date"
+                  value={draft.inventory_checked_on}
+                  onChange={(event) =>
+                    updateConsumableInventoryDraft(entry, {
+                      inventory_checked_on: event.target.value,
+                      error: "",
+                    })
+                  }
+                  placeholder="Not inventoried"
+                />
+                {entry.inventory_checked_on == null && draft.current_stock_quantity.trim() === "" ? (
+                  <small className="consumable-inventory-hint">Not inventoried</small>
+                ) : null}
+              </label>
+
+              <label className="uom-mobile-field">
+                <span>On hand</span>
+                <input
+                  className="inventory-stock-input"
+                  value={draft.current_stock_quantity}
+                  aria-label={`On hand ${entry.part_name}`}
+                  type="number"
+                  min="0"
+                  max={entry.quantity}
+                  step="0.01"
+                  placeholder="Not inventoried"
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    if (nextValue.trim() !== "") {
+                      const numericValue = Number(nextValue.replace(",", "."));
+                      if (Number.isFinite(numericValue) && numericValue > entry.quantity) {
+                        updateConsumableInventoryDraft(entry, {
+                          current_stock_quantity: formatInventoryInputValue(entry.quantity),
+                          error: "",
+                        });
+                        return;
+                      }
+                    }
+                    updateConsumableInventoryDraft(entry, {
+                      current_stock_quantity: nextValue,
+                      error: "",
+                    });
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void handleConsumableStockSave(entry);
+                    }
+                  }}
+                />
+              </label>
+
+              <div className="consumable-inventory-actions">
+                <button
+                  type="button"
+                  className="button button-secondary consumable-save-button"
+                  onClick={() => void handleConsumableStockSave(entry)}
+                  disabled={!isDirty || draft.isSaving}
+                >
+                  {draft.isSaving ? "Saving…" : "Save"}
+                </button>
+                <button type="button" className="button" onClick={() => openPurchaseDetailModal(entry)}>
+                  Full details
+                </button>
+                {draft.error ? <small className="form-error consumable-inventory-error">{draft.error}</small> : null}
+              </div>
+            </div>
+          ) : null}
+        </li>
+      );
+    }
+
     return (
       <div className="workspace-stack purchases-workspace">
         <div className="kanban-topbar purchases-section-topbar">
@@ -4742,6 +4927,54 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     {purchaseSearch.trim() ? "No warehouse lines match your search." : "No warehouse lines yet."}
                   </p>
                 </div>
+              ) : compactPurchasesLayout ? (
+                <ul className="purchases-mobile-stock-list" aria-label="Warehouse lines">
+                  {purchases.map((entry) => {
+                    const saleTotal = entry.quantity * entry.sale_price;
+                    const overdue =
+                      !entry.delivered && isPurchaseDeliveryOverdue(entry.approximate_delivery_date);
+                    const missingInv = !hasPurchaseInvoice(entry);
+                    const attention = overdue || missingInv;
+                    const hints: string[] = [];
+                    if (overdue) {
+                      hints.push("Delivery overdue");
+                    }
+                    if (missingInv) {
+                      hints.push("No invoice");
+                    }
+                    if (!entry.vehicle_id && !entry.vehicle_label?.trim()) {
+                      hints.push("No vehicle");
+                    }
+                    if (!entry.repair_code.trim()) {
+                      hints.push("No repair");
+                    }
+                    const deliveryLabel = entry.approximate_delivery_date
+                      ? formatDisplayDate(entry.approximate_delivery_date)
+                      : "";
+                    return (
+                      <li
+                        key={entry.id}
+                        className={`purchases-mobile-stock-item${attention ? " purchases-mobile-stock-item--attention" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          className="purchases-mobile-stock-row"
+                          onClick={() => openPurchaseDetailModal(entry)}
+                          title={hints.length ? hints.join(" · ") : undefined}
+                        >
+                          <span className="purchases-mobile-stock-accent" aria-hidden />
+                          <span className="purchases-mobile-stock-text">
+                            <span className="purchases-mobile-stock-name">{entry.part_name}</span>
+                            <span className="purchases-mobile-stock-meta">
+                              <span className="purchases-mobile-stock-delivery">{deliveryLabel}</span>
+                              <span className="purchases-mobile-stock-sale">{formatCurrency(saleTotal)}</span>
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               ) : (
                 <div className="purchases-registry-table-wrap">
                   <table className="dashboard-table purchases-registry-table">
@@ -4843,52 +5076,57 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               ) : (
                 <div className="purchases-consumables-layout">
                   {visibleConsumables.length > 0 ? (
-                    <div className="purchases-registry-table-wrap">
-                      <table className="dashboard-table purchases-registry-table purchases-registry-table--wide">
-                        <colgroup>
-                          <col className="purchases-registry-col--part" />
-                          <col className="purchases-registry-col--supplier" />
-                          <col className="purchases-registry-col--date" />
-                          <col className="purchases-registry-col--qty" />
-                          <col className="purchases-registry-col--unit" />
-                          <col className="purchases-registry-col--money" />
-                          <col className="purchases-registry-col--invoice" />
-                          <col className="purchases-registry-col--inventory-date" />
-                          <col className="purchases-registry-col--inventory-qty" />
-                          <col className="purchases-registry-col--action" />
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th>Part</th>
-                            <th>Supplier</th>
-                            <th>Order</th>
-                            <th>Bought</th>
-                            <th>Unit</th>
-                            <th>Buy</th>
-                            <th>Invoice</th>
-                            <th>Inventory date</th>
-                            <th>On hand</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody className="purchases-compact-list">
-                          {visibleConsumables.map((entry) => {
-                            const draft = getConsumableInventoryDraft(entry);
-                            const isDirty = isConsumableInventoryDraftDirty(entry);
-                            return (
-                              <tr
-                                key={entry.id}
-                                role="button"
-                                tabIndex={0}
-                                className="purchases-compact-row"
-                                onClick={() => openPurchaseDetailModal(entry)}
-                                onKeyDown={(event) => {
-                                  if (event.key === "Enter" || event.key === " ") {
-                                    event.preventDefault();
-                                    openPurchaseDetailModal(entry);
-                                  }
-                                }}
-                              >
+                    compactPurchasesLayout ? (
+                      <ul className="purchases-mobile-consumable-list">
+                        {visibleConsumables.map((entry) => renderConsumableMobileItem(entry, false))}
+                      </ul>
+                    ) : (
+                      <div className="purchases-registry-table-wrap">
+                        <table className="dashboard-table purchases-registry-table purchases-registry-table--wide">
+                          <colgroup>
+                            <col className="purchases-registry-col--part" />
+                            <col className="purchases-registry-col--supplier" />
+                            <col className="purchases-registry-col--date" />
+                            <col className="purchases-registry-col--qty" />
+                            <col className="purchases-registry-col--unit" />
+                            <col className="purchases-registry-col--money" />
+                            <col className="purchases-registry-col--invoice" />
+                            <col className="purchases-registry-col--inventory-date" />
+                            <col className="purchases-registry-col--inventory-qty" />
+                            <col className="purchases-registry-col--action" />
+                          </colgroup>
+                          <thead>
+                            <tr>
+                              <th>Part</th>
+                              <th>Supplier</th>
+                              <th>Order</th>
+                              <th>Bought</th>
+                              <th>Unit</th>
+                              <th>Buy</th>
+                              <th>Invoice</th>
+                              <th>Inventory date</th>
+                              <th>On hand</th>
+                              <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="purchases-compact-list">
+                            {visibleConsumables.map((entry) => {
+                              const draft = getConsumableInventoryDraft(entry);
+                              const isDirty = isConsumableInventoryDraftDirty(entry);
+                              return (
+                                <tr
+                                  key={entry.id}
+                                  role="button"
+                                  tabIndex={0}
+                                  className="purchases-compact-row"
+                                  onClick={() => openPurchaseDetailModal(entry)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                      event.preventDefault();
+                                      openPurchaseDetailModal(entry);
+                                    }
+                                  }}
+                                >
                                 <td>{entry.part_name}</td>
                                 <td>{entry.supplier_name}</td>
                                 <td>{formatDisplayDate(entry.order_date)}</td>
@@ -4986,6 +5224,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         </tbody>
                       </table>
                     </div>
+                    )
                   ) : (
                     <div className="purchases-empty-panel">
                       <p className="workspace-note">All inventoried consumables are currently out of stock.</p>
@@ -5002,52 +5241,57 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         {showOutOfStockConsumables ? "Hide" : "Show"} Out of stock ({outOfStockConsumables.length})
                       </button>
                       {showOutOfStockConsumables ? (
-                        <div className="purchases-registry-table-wrap">
-                          <table className="dashboard-table purchases-registry-table purchases-registry-table--wide">
-                            <colgroup>
-                              <col className="purchases-registry-col--part" />
-                              <col className="purchases-registry-col--supplier" />
-                              <col className="purchases-registry-col--date" />
-                              <col className="purchases-registry-col--qty" />
-                              <col className="purchases-registry-col--unit" />
-                              <col className="purchases-registry-col--money" />
-                              <col className="purchases-registry-col--invoice" />
-                              <col className="purchases-registry-col--inventory-date" />
-                              <col className="purchases-registry-col--inventory-qty" />
-                              <col className="purchases-registry-col--action" />
-                            </colgroup>
-                            <thead>
-                              <tr>
-                                <th>Part</th>
-                                <th>Supplier</th>
-                                <th>Order</th>
-                                <th>Bought</th>
-                                <th>Unit</th>
-                                <th>Buy</th>
-                                <th>Invoice</th>
-                                <th>Inventory date</th>
-                                <th>On hand</th>
-                                <th>Action</th>
-                              </tr>
-                            </thead>
-                            <tbody className="purchases-compact-list">
-                              {outOfStockConsumables.map((entry) => {
-                                const draft = getConsumableInventoryDraft(entry);
-                                const isDirty = isConsumableInventoryDraftDirty(entry);
-                                return (
-                                  <tr
-                                    key={entry.id}
-                                    role="button"
-                                    tabIndex={0}
-                                    className="purchases-compact-row purchases-compact-row--muted"
-                                    onClick={() => openPurchaseDetailModal(entry)}
-                                    onKeyDown={(event) => {
-                                      if (event.key === "Enter" || event.key === " ") {
-                                        event.preventDefault();
-                                        openPurchaseDetailModal(entry);
-                                      }
-                                    }}
-                                  >
+                        compactPurchasesLayout ? (
+                          <ul className="purchases-mobile-consumable-list purchases-mobile-consumable-list--oos">
+                            {outOfStockConsumables.map((entry) => renderConsumableMobileItem(entry, true))}
+                          </ul>
+                        ) : (
+                          <div className="purchases-registry-table-wrap">
+                            <table className="dashboard-table purchases-registry-table purchases-registry-table--wide">
+                              <colgroup>
+                                <col className="purchases-registry-col--part" />
+                                <col className="purchases-registry-col--supplier" />
+                                <col className="purchases-registry-col--date" />
+                                <col className="purchases-registry-col--qty" />
+                                <col className="purchases-registry-col--unit" />
+                                <col className="purchases-registry-col--money" />
+                                <col className="purchases-registry-col--invoice" />
+                                <col className="purchases-registry-col--inventory-date" />
+                                <col className="purchases-registry-col--inventory-qty" />
+                                <col className="purchases-registry-col--action" />
+                              </colgroup>
+                              <thead>
+                                <tr>
+                                  <th>Part</th>
+                                  <th>Supplier</th>
+                                  <th>Order</th>
+                                  <th>Bought</th>
+                                  <th>Unit</th>
+                                  <th>Buy</th>
+                                  <th>Invoice</th>
+                                  <th>Inventory date</th>
+                                  <th>On hand</th>
+                                  <th>Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="purchases-compact-list">
+                                {outOfStockConsumables.map((entry) => {
+                                  const draft = getConsumableInventoryDraft(entry);
+                                  const isDirty = isConsumableInventoryDraftDirty(entry);
+                                  return (
+                                    <tr
+                                      key={entry.id}
+                                      role="button"
+                                      tabIndex={0}
+                                      className="purchases-compact-row purchases-compact-row--muted"
+                                      onClick={() => openPurchaseDetailModal(entry)}
+                                      onKeyDown={(event) => {
+                                        if (event.key === "Enter" || event.key === " ") {
+                                          event.preventDefault();
+                                          openPurchaseDetailModal(entry);
+                                        }
+                                      }}
+                                    >
                                     <td>{entry.part_name}</td>
                                     <td>{entry.supplier_name}</td>
                                     <td>{formatDisplayDate(entry.order_date)}</td>
@@ -5140,6 +5384,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                             </tbody>
                           </table>
                         </div>
+                        )
                       ) : null}
                     </section>
                   ) : null}
@@ -5168,6 +5413,38 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     {supplierRegistrySearch.trim() ? "No suppliers match your search." : "No suppliers yet."}
                   </p>
                 </div>
+              ) : compactPurchasesLayout ? (
+                <ul className="purchases-mobile-supplier-list" aria-label="Suppliers">
+                  {filteredSuppliers.map((s) => {
+                    const phoneLabel = s.phone ? formatPolishPhoneDisplay(s.phone) : "";
+                    const emailLabel = s.email?.trim() ? s.email.trim() : "";
+                    return (
+                      <li key={s.id} className="purchases-mobile-supplier-item">
+                        <button
+                          type="button"
+                          className="purchases-mobile-supplier-row"
+                          onClick={() => openSupplierEditModal(s)}
+                        >
+                          <span className="purchases-mobile-supplier-accent" aria-hidden />
+                          <span className="purchases-mobile-supplier-body">
+                            <span className="purchases-mobile-supplier-name">{s.name}</span>
+                            <span className="purchases-mobile-supplier-meta">
+                              <span className="purchases-mobile-supplier-line">
+                                {s.nip?.trim() ? `NIP ${s.nip.trim()}` : "No NIP"}
+                                {phoneLabel ? ` · ${phoneLabel}` : ""}
+                              </span>
+                              {emailLabel ? (
+                                <span className="purchases-mobile-supplier-line purchases-mobile-supplier-line--muted">
+                                  {emailLabel}
+                                </span>
+                              ) : null}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               ) : (
                 <div className="purchases-registry-table-wrap">
                   <table className="dashboard-table purchases-registry-table">
@@ -6453,11 +6730,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
     return (
       <div className="workspace-stack reference-workspace">
-        <div className="kanban-topbar purchases-section-topbar">
+        <div className="kanban-topbar purchases-section-topbar registers-shell-header">
           <div>
             <p className="eyebrow">{meta.eyebrow}</p>
             <h2>{meta.title}</h2>
-            <p className="workspace-copy">{meta.copy}</p>
+            <RegistersHelpDisclosure summary="About Registers">
+              <p className="workspace-copy registers-help-disclosure-copy">{meta.copy}</p>
+            </RegistersHelpDisclosure>
           </div>
         </div>
 

@@ -292,10 +292,25 @@ function StaffShell() {
       );
     };
     apply();
-    if (typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(apply);
-    ro.observe(stack);
-    return () => ro.disconnect();
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(apply) : null;
+    if (ro) {
+      ro.observe(stack);
+    }
+    // Pinch-zoom / Ctrl±: layout size may not trigger ResizeObserver; visual viewport does.
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    const onViewportChange = () => {
+      apply();
+    };
+    window.addEventListener("resize", onViewportChange);
+    vv?.addEventListener("resize", onViewportChange);
+    vv?.addEventListener("scroll", onViewportChange);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", onViewportChange);
+      vv?.removeEventListener("resize", onViewportChange);
+      vv?.removeEventListener("scroll", onViewportChange);
+    };
   }, [activeSection, isMobilePickerOpen, shellMobileNarrow]);
 
   useEffect(() => {

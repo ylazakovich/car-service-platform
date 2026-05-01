@@ -1,6 +1,11 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import type { ProxyOptions } from "vite";
 import { defineConfig } from "vitest/config";
+
+/** Repo root — load `VITE_*` from the same `.env` as Docker Compose / Django (not only `frontend/.env`). */
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const devProxyTarget = process.env.VITE_DEV_PROXY_TARGET ?? "http://localhost:8000";
 /** Set by docker-compose.dev.lan.yml when publishing to LAN — Vite default CORS only allows localhost origins. */
@@ -57,6 +62,7 @@ function lanServerExtras(): { origin: string; allowedHosts: string[] } | Record<
 const _lanExtras = lanServerExtras();
 
 export default defineConfig({
+  envDir: path.resolve(__dirname, ".."),
   plugins: [react()],
   server: {
     host: true,
