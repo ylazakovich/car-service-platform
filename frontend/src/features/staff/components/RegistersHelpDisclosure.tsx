@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 
 type RegistersHelpDisclosureProps = {
   children: ReactNode;
-  /** Closed-state label (tap to expand full guidance). */
+  /** Closed-state label (`<details>` summary). */
   summary?: string;
   className?: string;
 };
 
 /**
- * Collapsible guidance for Registers subsections — keeps screens short; full copy on demand.
+ * Collapsible Registers guidance — intended for narrow viewports only; parents should not render on desktop.
  */
 export function RegistersHelpDisclosure({
   children,

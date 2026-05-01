@@ -1235,7 +1235,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
   const [activePurchasesTab, setActivePurchasesTab] = useState<PurchasesWorkspaceTab>("warehouse");
   const [showOutOfStockConsumables, setShowOutOfStockConsumables] = useState(false);
-  const compactPurchasesLayout = useMediaQuery(REGISTERS_MOBILE_BREAKPOINT);
+  const compactStaffNarrowLayout = useMediaQuery(REGISTERS_MOBILE_BREAKPOINT);
   const [expandedConsumableId, setExpandedConsumableId] = useState<number | null>(null);
   const [activeReferenceTab, setActiveReferenceTab] = useState<ReferenceWorkspaceTab>("units");
   const [supplierRegistrySearch, setSupplierRegistrySearch] = useState("");
@@ -4949,7 +4949,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     {purchaseSearch.trim() ? "No warehouse lines match your search." : "No warehouse lines yet."}
                   </p>
                 </div>
-              ) : compactPurchasesLayout ? (
+              ) : compactStaffNarrowLayout ? (
                 <ul className="purchases-mobile-stock-list" aria-label="Warehouse lines">
                   {purchases.map((entry) => {
                     const saleTotal = entry.quantity * entry.sale_price;
@@ -5098,7 +5098,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               ) : (
                 <div className="purchases-consumables-layout">
                   {visibleConsumables.length > 0 ? (
-                    compactPurchasesLayout ? (
+                    compactStaffNarrowLayout ? (
                       <ul className="purchases-mobile-consumable-list">
                         {visibleConsumables.map((entry) => renderConsumableMobileItem(entry, false))}
                       </ul>
@@ -5247,7 +5247,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         {showOutOfStockConsumables ? "Hide" : "Show"} Out of stock ({outOfStockConsumables.length})
                       </button>
                       {showOutOfStockConsumables ? (
-                        compactPurchasesLayout ? (
+                        compactStaffNarrowLayout ? (
                           <ul className="purchases-mobile-consumable-list purchases-mobile-consumable-list--oos">
                             {outOfStockConsumables.map((entry) => renderConsumableMobileItem(entry, true))}
                           </ul>
@@ -5403,7 +5403,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     {supplierRegistrySearch.trim() ? "No suppliers match your search." : "No suppliers yet."}
                   </p>
                 </div>
-              ) : compactPurchasesLayout ? (
+              ) : compactStaffNarrowLayout ? (
                 <ul className="purchases-mobile-supplier-list" aria-label="Suppliers">
                   {filteredSuppliers.map((s) => {
                     const phoneLabel = s.phone ? formatPolishPhoneDisplay(s.phone) : "";
@@ -6724,9 +6724,11 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
           <div>
             <p className="eyebrow">{meta.eyebrow}</p>
             <h2>{meta.title}</h2>
-            <RegistersHelpDisclosure summary="About Registers">
-              <p className="workspace-copy registers-help-disclosure-copy">{meta.copy}</p>
-            </RegistersHelpDisclosure>
+            {compactStaffNarrowLayout ? (
+              <RegistersHelpDisclosure summary="About Registers">
+                <p className="workspace-copy registers-help-disclosure-copy">{meta.copy}</p>
+              </RegistersHelpDisclosure>
+            ) : null}
           </div>
         </div>
 

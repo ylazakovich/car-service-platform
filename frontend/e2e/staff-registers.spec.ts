@@ -65,6 +65,14 @@ test.describe("Registers workspace @desktop", () => {
     await expect(page.getByRole("tab", { name: "Invoice lines" })).toHaveCount(0);
   });
 
+  /** Wide viewport: help copy is not wrapped in collapsible `<details>` (mobile-only pattern). */
+  test("admin Registers desktop has no collapsible help panels", async ({ page }) => {
+    await e2eBehaviors("admin", "registers · desktop · no disclosure hints");
+    const reg = new StaffRegistersPage(page);
+    await reg.gotoRegistersSection();
+    await expect(page.locator(".reference-workspace details.registers-help-disclosure")).toHaveCount(0);
+  });
+
   test("admin switches to Customers and sees demo customer with vehicles", async ({ page }) => {
     await e2eBehaviors("admin", "registers · customers with vehicles");
     const reg = new StaffRegistersPage(page);
@@ -120,6 +128,18 @@ test.describe("Registers workspace @mobile-only", () => {
     await expect(page.getByRole("tab", { name: "Services" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Customers" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Invoice lines" })).toHaveCount(0);
+  });
+
+  /** Narrow viewport: Units tab shows collapsible hint (`RegistersHelpDisclosure`). */
+  test("admin Registers mobile Units tab shows collapsible How units work", async ({ page }) => {
+    await e2eBehaviors("admin", "registers · mobile · units disclosure hint");
+    const reg = new StaffRegistersPage(page);
+    await reg.gotoRegistersSection();
+    await reg.expectUnitsTabActive();
+    await expect(page.locator(".reference-workspace details.registers-help-disclosure")).toHaveCount(1);
+    await expect(
+      page.locator("details.registers-help-disclosure summary").filter({ hasText: "How units work" }),
+    ).toBeVisible();
   });
 
   test("admin switches to Customers and sees demo customer with vehicles", async ({ page }) => {

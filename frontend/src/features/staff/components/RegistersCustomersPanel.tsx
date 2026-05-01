@@ -378,11 +378,13 @@ export function RegistersCustomersPanel({ customers, onRefresh }: RegistersCusto
             + Add customer
           </button>
         </div>
-        <RegistersHelpDisclosure summary="Customers in registry">
-          <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
-            Owners in the workshop registry. Edit contact details; vehicle links stay on the <strong>Vehicles</strong> screen.
-          </p>
-        </RegistersHelpDisclosure>
+        {compactRegistersLayout ? (
+          <RegistersHelpDisclosure summary="Customers in registry">
+            <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
+              Owners in the workshop registry. Edit contact details; vehicle links stay on the <strong>Vehicles</strong> screen.
+            </p>
+          </RegistersHelpDisclosure>
+        ) : null}
 
         <div className="registers-search-toolbar">
           <label className="registers-search-field">

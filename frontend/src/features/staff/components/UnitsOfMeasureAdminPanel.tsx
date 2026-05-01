@@ -618,14 +618,16 @@ export function UnitsOfMeasureAdminPanel({
             Units of measure
           </h3>
         )}
-        <RegistersHelpDisclosure summary="How units work">
-          <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
-            <strong>Order</strong> = order in purchase dropdowns (top = first). <strong>Code</strong> cannot be changed later.{" "}
-            <strong>Active</strong> = shown on new lines; off = hidden for new lines only. Drag a row like <strong>Repairs</strong>{" "}
-            kanban cards (not from inputs or buttons). While dragging, the row you move is faded; the{" "}
-            <strong className="uom-accent-inline">highlighted row</strong> is where it will land (insert before that row).
-          </p>
-        </RegistersHelpDisclosure>
+        {compactUnitsLayout ? (
+          <RegistersHelpDisclosure summary="How units work">
+            <p className="workspace-note uom-admin-lead registers-help-disclosure-inner">
+              <strong>Order</strong> = order in purchase dropdowns (top = first). <strong>Code</strong> cannot be changed later.{" "}
+              <strong>Active</strong> = shown on new lines; off = hidden for new lines only. Drag a row like <strong>Repairs</strong>{" "}
+              kanban cards (not from inputs or buttons). While dragging, the row you move is faded; the{" "}
+              <strong className="uom-accent-inline">highlighted row</strong> is where it will land (insert before that row).
+            </p>
+          </RegistersHelpDisclosure>
+        ) : null}
 
         <div className="registers-search-toolbar">
           <label className="registers-search-field">
