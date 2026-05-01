@@ -136,9 +136,12 @@ test.describe("Registers workspace @mobile-only", () => {
     const reg = new StaffRegistersPage(page);
     await reg.gotoRegistersSection();
     await reg.expectUnitsTabActive();
-    await expect(page.locator(".reference-workspace details.registers-help-disclosure")).toHaveCount(1);
+    /* Shell may still mount a hidden `details` in `.registers-shell-header` (display:none) — scope to Units panel. */
+    await expect(page.locator(".reference-workspace .uom-admin-page details.registers-help-disclosure")).toHaveCount(1);
     await expect(
-      page.locator("details.registers-help-disclosure summary").filter({ hasText: "How units work" }),
+      page
+        .locator(".reference-workspace .uom-admin-page details.registers-help-disclosure summary")
+        .filter({ hasText: "How units work" }),
     ).toBeVisible();
   });
 
