@@ -5098,20 +5098,27 @@ table.purchases-registry-table .purchases-registry-col--supplier-notes {
   width: 6%;
 }
 
+/* Consumables desktop table: col widths must sum to 100% (fixed layout); otherwise headers/cells crush and overlap. */
+table.dashboard-table.purchases-registry-table.purchases-registry-table--wide {
+  /* Default .dashboard-table uses overflow:hidden — clips thead labels + td contents against inventory inputs */
+  overflow: visible;
+}
+
 table.purchases-registry-table--wide {
-  min-width: 0;
+  width: 100%;
+  min-width: 72rem;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--part {
-  width: 24%;
+  width: 22%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--supplier {
-  width: 14%;
+  width: 12%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--date {
-  width: 9%;
+  width: 8%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--qty,
@@ -5119,21 +5126,42 @@ table.purchases-registry-table--wide .purchases-registry-col--unit {
   width: 6%;
 }
 
-table.purchases-registry-table--wide .purchases-registry-col--money,
-table.purchases-registry-table--wide .purchases-registry-col--action {
+table.purchases-registry-table--wide .purchases-registry-col--money {
   width: 7%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--invoice {
-  width: 5%;
+  width: 6%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--inventory-date {
-  width: 12%;
+  width: 13%;
 }
 
 table.purchases-registry-table--wide .purchases-registry-col--inventory-qty {
   width: 10%;
+}
+
+table.purchases-registry-table--wide .purchases-registry-col--action {
+  width: 10%;
+}
+
+table.purchases-registry-table.purchases-registry-table--wide thead th {
+  white-space: normal;
+  line-height: 1.25;
+  vertical-align: bottom;
+  overflow: visible;
+  letter-spacing: 0.07em;
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+}
+
+/* Undo nowrap/ellipsis on cells that host inventory controls — parent overflow:hidden was clipping placeholders ("Not inver…"). */
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(8),
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(9),
+table.purchases-registry-table.purchases-registry-table--wide tr.purchases-compact-row td:nth-child(10) {
+  overflow: visible;
+  white-space: normal;
 }
 
 table.purchases-registry-table--wide .inventory-stock-input {

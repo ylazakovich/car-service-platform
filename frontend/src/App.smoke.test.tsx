@@ -1875,7 +1875,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("tab", { name: "Consumables" }));
 
     expect(await screen.findByRole("columnheader", { name: "Bought" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Inventory date" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Inv. date" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "On hand" })).toBeInTheDocument();
     expect(screen.getByText("Not inventoried")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show Out of stock (1)" })).toBeInTheDocument();
