@@ -5104,7 +5104,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               <th>Unit</th>
                               <th>Buy</th>
                               <th>Invoice</th>
-                              <th>Inventory date</th>
+                              <th>Inv. date</th>
                               <th>On hand</th>
                               <th>Action</th>
                             </tr>
@@ -5269,7 +5269,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                                   <th>Unit</th>
                                   <th>Buy</th>
                                   <th>Invoice</th>
-                                  <th>Inventory date</th>
+                                  <th>Inv. date</th>
                                   <th>On hand</th>
                                   <th>Action</th>
                                 </tr>
