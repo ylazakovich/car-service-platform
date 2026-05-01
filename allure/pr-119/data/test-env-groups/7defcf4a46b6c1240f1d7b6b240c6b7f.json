@@ -1,1 +1,1 @@
-{"id":"7defcf4a46b6c1240f1d7b6b240c6b7f","fullName":"staff-registers.spec.ts:25:3","name":"admin opens Registers on Units tab and sees seeded UoM code","status":"passed","testResultsByEnv":{"e2e":"2d4727b17a61fdfb5de956a7f3bb74b3"}}
+{"id":"7defcf4a46b6c1240f1d7b6b240c6b7f","fullName":"staff-registers.spec.ts:25:3","name":"admin opens Registers on Units tab and sees seeded UoM code","status":"failed","testResultsByEnv":{"e2e":"650710d33985ae22a3e321a34641d6ff"}}
