@@ -106,12 +106,29 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
       document.dispatchEvent(new Event("scroll"));
     });
     // Wheel nudges ensure scroll listeners run after layout (programmatic scrollTop alone can be flaky in CI).
-    for (let i = 0; i < 12; i += 1) {
+    for (let i = 0; i < 24; i += 1) {
       await page.mouse.wheel(0, 600);
     }
 
-    const fab = page.getByRole("button", { name: "Jump to top of page and focus workspace menu" });
-    await expect(fab).toBeVisible({ timeout: 20_000 });
+    await page.waitForFunction(
+      () => {
+        const r = document.scrollingElement ?? document.documentElement;
+        return r.scrollTop + r.clientHeight >= r.scrollHeight - 72;
+      },
+      { timeout: 25_000 },
+    );
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("scroll"));
+      document.dispatchEvent(new Event("scroll"));
+    });
+
+    const fab = page.getByRole("button", { name: /Jump to top of page and focus workspace menu/ });
+    await expect
+      .poll(async () => fab.isVisible(), {
+        timeout: 25_000,
+        intervals: [50, 100, 200],
+      })
+      .toBe(true);
     await fab.click();
 
     await expect
