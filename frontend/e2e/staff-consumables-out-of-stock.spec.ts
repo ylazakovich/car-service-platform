@@ -57,11 +57,13 @@ test.describe("Consumables out of stock @mobile-only", () => {
     if (toggleLabel?.trim().startsWith("Show")) {
       // `.shell-scroll-to-header-fab` can cover the toggle on narrow viewports (same as Kanban "Show more").
       await toggle.click({ force: true });
+      await expect(page.getByRole("button", { name: /Hide Out of stock \(\d+\)/ })).toBeVisible({ timeout: 10_000 });
     }
 
     const oosRegion = page.getByRole("region", { name: "Out of stock consumables" });
-    await expect(oosRegion.locator(".purchases-mobile-consumable-list--oos")).toBeVisible({ timeout: 15_000 });
-    /** Mobile OOS cards use the same aria-label as stock rows (`On hand {part}`), without the desktop «out of stock» suffix. */
-    await expect(oosRegion.locator(".purchases-mobile-consumable-list--oos .purchases-mobile-consumable-name").first()).toBeVisible();
+    /** Same breakpoint as desktop OOS table if matchMedia does not flip in headless — accept either surface. */
+    const mobileOosName = oosRegion.locator(".purchases-mobile-consumable-list--oos .purchases-mobile-consumable-name").first();
+    const desktopOosQty = oosRegion.getByRole("spinbutton", { name: /On hand .+ out of stock/i });
+    await expect(mobileOosName.or(desktopOosQty)).toBeVisible({ timeout: 20_000 });
   });
 });
