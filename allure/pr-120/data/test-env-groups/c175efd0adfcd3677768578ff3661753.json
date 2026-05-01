@@ -1,0 +1,1 @@
+{"id":"c175efd0adfcd3677768578ff3661753","fullName":"src/viewportLayoutSync.test.ts#installViewportLayoutSync teardown removes listeners and clears the CSS variable","name":"teardown removes listeners and clears the CSS variable","status":"passed","testResultsByEnv":{"frontend":"ad2ff67b9048629e34a08053ac4470cc"}}
