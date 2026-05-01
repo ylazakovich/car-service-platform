@@ -17,7 +17,10 @@ export class StaffRegistersPage {
     const nav = new StaffMobileNavigationPage(this.page);
     await nav.gotoStaffSection("Registers");
     await expect(this.page.locator(".reference-workspace")).toBeVisible({ timeout: 25_000 });
-    await expect(this.page.getByRole("heading", { name: "Registers", level: 2 })).toBeVisible({ timeout: 15_000 });
+    /** На ≤820px `.registers-shell-header` скрыт — заголовок дублируется в `.shell-mobile-section-title`. */
+    const pageHeading = this.page.getByRole("heading", { name: "Registers", level: 2 });
+    const shellTitle = this.page.locator(".shell-mobile-section-title").filter({ hasText: /^Registers$/ });
+    await expect(pageHeading.or(shellTitle)).toBeVisible({ timeout: 15_000 });
     await expect(this.page.getByRole("tablist", { name: "Registers sections" })).toBeVisible({ timeout: 10_000 });
   }
 
