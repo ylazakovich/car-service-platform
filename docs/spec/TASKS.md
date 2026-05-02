@@ -111,6 +111,14 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
+## NOW — VIN lookup
+
+- [ ] `T-VIN-001` Choose VIN decode provider: VPIC API (US, free) or carVertical / Autorigin (EU); document choice in `DOMAIN_RULES.md`
+- [ ] `T-VIN-002` Vehicle create/edit form: "Decode VIN" button — auto-fill `make`, `model`, `year`, `color` from provider response
+- [ ] `T-VIN-003` Graceful degradation: provider timeout / unknown VIN → show warning, allow manual entry; no blocking of save
+
+---
+
 ## NOW — CMR / field app
 
 - [ ] `T-CMR-001` API contract: CMR service create/update always sends price; map to `Service.price` (or line-item model)
