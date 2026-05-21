@@ -36,6 +36,7 @@ class Repair(models.Model):
     tracking_code = models.CharField(max_length=20, unique=True, blank=True)
     portal_token = models.CharField(max_length=40, unique=True, blank=True)
     estimated_date = models.DateField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -48,6 +49,8 @@ class Repair(models.Model):
         return f"{self.tracking_code} — {self.service_name}"
 
     def save(self, *args, **kwargs):
+        if self.status == self.Status.IN_PROGRESS and self.started_at is None:
+            self.started_at = timezone.now()
         if self.status != self.Status.COMPLETED:
             self.completed_at = None
         elif self.completed_at is None:

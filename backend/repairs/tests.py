@@ -168,6 +168,38 @@ class RepairApiTests(TestCase):
         self.assertEqual(len(response.json()), 2)
         self.assertEqual(response.json()[0]["vehicle_id"], self.vehicle.id)
 
+    def test_list_repairs_includes_vehicle_fields_and_started_at(self):
+        self.vehicle.mileage = 75000
+        self.vehicle.year = 2019
+        self.vehicle.save()
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Spark Plug Replacement",
+            status="new",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.get("/api/repairs/", format="json")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()[0]
+        self.assertEqual(data["vehicle_plate"], "WA 99999")
+        self.assertEqual(data["vehicle_model"], "Yaris")
+        self.assertEqual(data["vehicle_year"], 2019)
+        self.assertEqual(data["mileage"], 75000)
+        self.assertIsNone(data["started_at"])
+
+        self.client.patch(
+            f"/api/repairs/{repair.id}",
+            {"status": "in_progress"},
+            format="json",
+        )
+        repair.refresh_from_db()
+        self.assertIsNotNone(repair.started_at)
+
+        response = self.client.get("/api/repairs/", format="json")
+        self.assertIsNotNone(response.json()[0]["started_at"])
+
     def test_search_repairs(self):
         self.client.force_authenticate(self.staff_user)
         Repair.objects.create(

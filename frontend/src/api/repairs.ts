@@ -20,6 +20,11 @@ export interface RepairItem {
   id: number;
   vehicle_id: number;
   vehicle_label: string;
+  vehicle_plate: string | null;
+  vehicle_model: string | null;
+  vehicle_year: number | null;
+  mileage: number | null;
+  started_at: string | null;
   owner_name: string;
   master_id: number | null;
   master_name: string;
