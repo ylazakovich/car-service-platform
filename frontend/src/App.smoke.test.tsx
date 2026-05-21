@@ -2521,11 +2521,13 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
 
-    const modelRow = document.querySelector(".kanban-card-model");
+    const board = await screen.findByLabelText("Repairs kanban board");
+    const card = within(board).getByText("TOR-2003").closest("article") as HTMLElement;
+    const modelRow = card.querySelector(".kanban-card-model");
     expect(modelRow).not.toBeNull();
-    expect(modelRow!.textContent).toContain("Corolla");
-    expect(modelRow!.textContent).toContain("2020");
-    expect(modelRow!.textContent).toContain("85,000 km");
+    expect(modelRow?.textContent).toContain("Corolla");
+    expect(modelRow?.textContent).toContain("2020");
+    expect(modelRow?.textContent).toContain("85,000 km");
   });
 
   it("kanban card shows time element when started_at is set", async () => {
@@ -2590,7 +2592,9 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
 
-    expect(document.querySelector(".kanban-card-time")).not.toBeNull();
+    const board2 = await screen.findByLabelText("Repairs kanban board");
+    const card2 = within(board2).getByText("TOR-2004").closest("article") as HTMLElement;
+    expect(card2.querySelector(".kanban-card-time")).not.toBeNull();
   });
 
   it("kanban card omits time element when started_at is null", async () => {
@@ -2655,7 +2659,9 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
 
-    expect(document.querySelector(".kanban-card-time")).toBeNull();
+    const board3 = await screen.findByLabelText("Repairs kanban board");
+    const card3 = within(board3).getByText("TOR-2005").closest("article") as HTMLElement;
+    expect(card3.querySelector(".kanban-card-time")).toBeNull();
   });
 
   it("shows regenerate portal link button to admin", async () => {

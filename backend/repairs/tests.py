@@ -664,16 +664,19 @@ class RepairApiTests(TestCase):
         repair_id = response.json()["id"]
         self.client.force_authenticate(self.staff_user)
 
-        self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        r1 = self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        self.assertEqual(r1.status_code, 200)
         repair = Repair.objects.get(pk=repair_id)
         self.assertIsNotNone(repair.started_at)
         original_started_at = repair.started_at
 
-        self.client.patch(f"/api/repairs/{repair_id}", {"status": "waiting_parts"}, format="json")
+        r2 = self.client.patch(f"/api/repairs/{repair_id}", {"status": "waiting_parts"}, format="json")
+        self.assertEqual(r2.status_code, 200)
         repair.refresh_from_db()
         self.assertEqual(repair.started_at, original_started_at)
 
-        self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        r3 = self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        self.assertEqual(r3.status_code, 200)
         repair.refresh_from_db()
         self.assertEqual(repair.started_at, original_started_at)
 
@@ -681,7 +684,8 @@ class RepairApiTests(TestCase):
         response = self._create_repair()
         repair_id = response.json()["id"]
         self.client.force_authenticate(self.staff_user)
-        self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        r = self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        self.assertEqual(r.status_code, 200)
         repair = Repair.objects.get(pk=repair_id)
         self.assertIsNotNone(repair.started_at)
         self.client.force_authenticate(None)
