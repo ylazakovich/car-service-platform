@@ -10,7 +10,7 @@ Three Railway services in one project:
 | Service | Root dir | Port | Domain |
 |---------|----------|------|--------|
 | backend | `backend/` | 8000 | `backend-production-9f32.up.railway.app` |
-| frontend | `frontend/` | dynamic `$PORT` | `your-app.up.railway.app` |
+| frontend | `frontend/` | dynamic `$PORT` | `<your-app>.up.railway.app` |
 | db | Railway PostgreSQL | 5432 | internal only |
 
 Frontend nginx proxies `/api/` and `/media/` to backend over Railway's **private IPv6 network** (`backend.railway.internal`).
@@ -86,7 +86,7 @@ FRONTEND_URL=https://<frontend-domain>.up.railway.app
 
 ### 6. Set custom domain (optional)
 
-Frontend → Settings → Networking → edit the generated subdomain to your preferred name (e.g. `your-app`).
+Frontend → Settings → Networking → edit the generated subdomain to your preferred name.
 After renaming update `CORS_ALLOWED_ORIGINS` and `FRONTEND_URL` on the **backend** service.
 
 ### 7. Attach Volume (media files)
