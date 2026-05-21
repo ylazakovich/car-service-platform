@@ -253,7 +253,7 @@ export function RepairEditModal({
     <>
       <RepairModalShell
         mode="edit"
-        title={`Repair · ${repair.tracking_code}`}
+        title={repair.vehicle_label}
         meta={meta}
         mobile={mobile}
         locked={locked}

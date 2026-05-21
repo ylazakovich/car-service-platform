@@ -114,10 +114,8 @@ function isPurchasesUnitsGet(url: string) {
 }
 
 /** Default `/repairs/` mock uses this plate + model in `vehicle_label` (modal `aria-labelledby`). */
-function smokeRepairDialogName(trackingCode: string) {
-  return new RegExp(`Repair · ${trackingCode}`);
-}
-const SMOKE_DEFAULT_REPAIR_DIALOG_NAME = smokeRepairDialogName("TOR-1011");
+const SMOKE_DEFAULT_VEHICLE_LABEL = "WB 1234K • Toyota Corolla";
+const SMOKE_DEFAULT_REPAIR_DIALOG_NAME = new RegExp(SMOKE_DEFAULT_VEHICLE_LABEL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 
 
 async function openRepairExportPdfFromKebab(user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) {
@@ -1467,7 +1465,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await openRepairKanbanCardByTrackingCode(user, "TOR-1015");
 
-    const repairDialog = await screen.findByRole("dialog", { name: smokeRepairDialogName("TOR-1015") });
+    const repairDialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     await user.click(within(repairDialog).getByRole("button", { name: "Completed" }));
     const completedDateInput = await within(repairDialog).findByLabelText("Completed Date");
 
@@ -2973,7 +2971,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
 
     await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
-    let dialog = await screen.findByRole("dialog", { name: smokeRepairDialogName("TOR-1011") });
+    let dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     await user.click(within(dialog).getByRole("button", { name: "More actions" }));
     expect(await screen.findByRole("menuitem", { name: /Export PDF act/ })).toBeInTheDocument();
     await user.keyboard("{Escape}");
@@ -3125,7 +3123,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await openRepairKanbanCardByTrackingCode(user, "TOR-1021");
 
-    const dialog = await screen.findByRole("dialog", { name: smokeRepairDialogName("TOR-1021") });
+    const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     await user.click(within(dialog).getByRole("button", { name: "Completed" }));
     await openRepairExportPdfFromKebab(user, dialog);
 
@@ -3262,7 +3260,7 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await openRepairKanbanCardByTrackingCode(user, "TOR-1031");
 
-    const dialog = await screen.findByRole("dialog", { name: smokeRepairDialogName("TOR-1031") });
+    const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     await user.click(within(dialog).getByRole("button", { name: "Completed" }));
     await user.click(within(dialog).getByRole("button", { name: "More actions" }));
     await user.click(await screen.findByRole("menuitem", { name: /Export PDF act/ }));
@@ -3381,7 +3379,7 @@ describe("bootstrap application", () => {
 
     expect(await screen.findByText("Fill in Odometer when returned (km) before moving this repair to Completed.")).toBeInTheDocument();
     expect(mockApi.patch).not.toHaveBeenCalled();
-    const dialog = await screen.findByRole("dialog", { name: smokeRepairDialogName("TOR-1022") });
+    const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     const mileageInput = within(dialog).getByLabelText("Odometer reading in kilometers when vehicle was returned");
     expect(mileageInput).toBeInTheDocument();
   });
