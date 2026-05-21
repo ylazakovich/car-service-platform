@@ -1,1 +1,1 @@
-{"id":"b756f4ef9158257004df4e6f62d7197a","fullName":"repair-service-lines.spec.ts:22:3","name":"completed demo card shows multi-service summary (+N)","status":"failed","testResultsByEnv":{"e2e":"e483a51fcbbda407c8955b2851862243"}}
+{"id":"b756f4ef9158257004df4e6f62d7197a","fullName":"repair-service-lines.spec.ts:22:3","name":"completed demo card shows multi-service summary (+N)","status":"broken","testResultsByEnv":{"e2e":"6fe80f05053526ae78f6034baceddd78"}}
