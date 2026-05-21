@@ -114,7 +114,7 @@ class RepairPdfView(APIView):
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,
         )
-        if repair.status != Repair.Status.COMPLETED:
+        if repair.status not in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP):
             return Response(
                 {"detail": "PDF is only available for completed repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -150,7 +150,7 @@ class RepairPdfExportView(APIView):
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,
         )
-        if repair.status != Repair.Status.COMPLETED:
+        if repair.status not in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP):
             return Response(
                 {"detail": "PDF export is only available for completed repairs."},
                 status=status.HTTP_400_BAD_REQUEST,

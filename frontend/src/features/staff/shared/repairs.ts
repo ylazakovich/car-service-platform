@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { randomUuid } from "../../../lib/randomUuid";
 
-export type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed";
+export type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed" | "picked_up";
 
 export type RepairStatusFilter = "all" | RepairStatus;
 
@@ -83,6 +83,7 @@ export const REPAIR_STATUS_LABELS: Record<RepairStatus, string> = {
   in_progress: "In Progress",
   waiting_parts: "Waiting for Parts",
   completed: "Completed",
+  picked_up: "Picked Up",
 };
 
 export function repairStatusLabel(status: RepairStatus): string {
@@ -124,7 +125,7 @@ export function formatRepairServicesSummary(repair: RepairEntry): string {
 
 export function formatRepairCardDateRow(repair: RepairEntry) {
   const createdLabel = `Created ${formatRepairDisplayDate(repair.created_at)}`;
-  if (repair.status !== "completed" || !repair.completed_at) {
+  if ((repair.status !== "completed" && repair.status !== "picked_up") || !repair.completed_at) {
     return [createdLabel];
   }
 

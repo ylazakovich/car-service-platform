@@ -69,8 +69,9 @@ export function StaffRepairsMobileList({
           <strong>{repairs.length}</strong>
         </button>
 
-        {REPAIR_KANBAN_COLUMNS.map(({ status }) => {
+        {([...REPAIR_KANBAN_COLUMNS, { status: "picked_up" as RepairStatus, label: "Picked Up" }]).map(({ status }) => {
           const count = repairs.filter((repair) => repair.status === status).length;
+          if (count === 0 && status === "picked_up") return null;
           return (
             <button
               key={status}

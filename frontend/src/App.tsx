@@ -15,11 +15,10 @@ import { ScrollToWorkspaceHeaderFab } from "./components/ScrollToWorkspaceHeader
 import { BrandMark } from "./components/BrandMark";
 import { useAuth } from "./context/AuthContext";
 import { updateUserName } from "./api/users";
-import { fetchRepairs } from "./api/repairs";
 import { AcceptInvitePage } from "./pages/AcceptInvitePage";
 import { ClientPortalPage } from "./pages/ClientPortalPage";
 import { LoginPage } from "./pages/LoginPage";
-import { StaffHomePage } from "./pages/StaffHomePage";
+import { StaffHomePage, type RepairCounts } from "./pages/StaffHomePage";
 
 export type StaffSection =
   | "dashboard"
@@ -221,24 +220,7 @@ function useShellMobileNarrow() {
 
 /* ── Today Summary ──────────────────────────────────────── */
 
-function useTodayRepairCounts() {
-  const [repairs, setRepairs] = useState<{ status: string }[]>([]);
-
-  useEffect(() => {
-    fetchRepairs().then((data) => setRepairs(data)).catch(() => {});
-  }, []);
-
-  const counts = React.useMemo(() => ({
-    open:    repairs.filter((r) => r.status === "new" || r.status === "in_progress").length,
-    waiting: repairs.filter((r) => r.status === "waiting_parts").length,
-    ready:   repairs.filter((r) => r.status === "completed").length,
-  }), [repairs]);
-
-  return { counts };
-}
-
-function TodaySummary({ onAddRepair }: { onAddRepair: () => void }) {
-  const { counts } = useTodayRepairCounts();
+function TodaySummary({ onAddRepair, counts }: { onAddRepair: () => void; counts: RepairCounts }) {
   const today = new Intl.DateTimeFormat("en-GB", {
     weekday: "short", day: "numeric", month: "short",
   }).format(new Date());
@@ -269,6 +251,7 @@ function StaffShell() {
   const shellMobileNarrow = useShellMobileNarrow();
   const { user, logout, isStaff, isAdmin, setUser } = useAuth();
   const [activeSection, setActiveSection] = useState<StaffSection>(getInitialStaffSection);
+  const [repairCounts, setRepairCounts] = useState<RepairCounts>({ open: 0, waiting: 0, ready: 0 });
   const [isMobilePickerOpen, setIsMobilePickerOpen] = useState(false);
   const [openRepairComposerRequest, setOpenRepairComposerRequest] = useState(0);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -559,7 +542,7 @@ function StaffShell() {
               ))}
             </nav>
 
-            {activeSection === "repairs" && <TodaySummary onAddRepair={handleOpenRepairComposer} />}
+            {activeSection === "repairs" && <TodaySummary onAddRepair={handleOpenRepairComposer} counts={repairCounts} />}
           </div>
 
           <div className="shell-user">
@@ -620,6 +603,7 @@ function StaffShell() {
           activeSection={activeSection}
           onSelectSection={setActiveSection}
           openRepairComposerRequest={openRepairComposerRequest}
+          onRepairCountsChange={setRepairCounts}
         />
       </main>
 

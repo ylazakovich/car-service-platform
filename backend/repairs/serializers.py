@@ -191,7 +191,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "mileage_at_service",
             getattr(self.instance, "mileage_at_service", None),
         )
-        if effective_status == Repair.Status.COMPLETED and effective_mileage is None:
+        if effective_status in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP) and effective_mileage is None:
             raise serializers.ValidationError(
                 {
                     "mileage_at_service": (

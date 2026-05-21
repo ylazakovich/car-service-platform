@@ -81,7 +81,7 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
     service_name: item.service_name,
     service_lines: sl,
     issue_notes: item.issue_notes,
-    repair_notes: item.repair_notes.map((n) => ({
+    repair_notes: (item.repair_notes ?? []).map((n) => ({
       id: String(n.id),
       author_name: n.author_name,
       author_email: n.author_email,
@@ -183,6 +183,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [isRepairFormOpen, setIsRepairFormOpen] = useState(false);
   const [selectedRepairId, setSelectedRepairId] = useState<number | null>(null);
   const [repairModalStatus, setRepairModalStatus] = useState<RepairStatus>("new");
+  const [repairModalOpenedAsCompleted, setRepairModalOpenedAsCompleted] = useState(false);
   const [repairModalMasterId, setRepairModalMasterId] = useState("");
   const [repairModalCompletedAt, setRepairModalCompletedAt] = useState("");
   const [repairModalMileageAtService, setRepairModalMileageAtService] = useState("");
@@ -200,6 +201,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [dragOverColumn, setDragOverColumn] = useState<RepairStatus | null>(null);
   const [dragOverCardId, setDragOverCardId] = useState<number | null>(null);
   const [copyToast, setCopyToast] = useState("");
+  const [repairStatusChanging, setRepairStatusChanging] = useState(false);
 
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
 
@@ -215,6 +217,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   function closeRepairModal() {
     setSelectedRepairId(null);
     setRepairModalStatus("new");
+    setRepairModalOpenedAsCompleted(false);
     setRepairModalMasterId("");
     setRepairModalCompletedAt("");
     setRepairModalMileageAtService("");
@@ -228,8 +231,15 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairAfterPhotos([]);
   }
 
-  function openRepairCreateModal() {
+  function openRepairCreateModal(prefill?: { vehicleId: string; vehicleQuery: string }) {
     resetRepairForm();
+    if (prefill) {
+      setRepairForm((current) => ({
+        ...current,
+        vehicle_id: prefill.vehicleId,
+        vehicle_query: prefill.vehicleQuery,
+      }));
+    }
     setIsRepairFormOpen(true);
   }
 
@@ -241,6 +251,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   function openRepairModal(repair: RepairEntry) {
     setSelectedRepairId(repair.id);
     setRepairModalStatus(repair.status);
+    setRepairModalOpenedAsCompleted(repair.status === "completed" || repair.status === "picked_up");
     setRepairModalMasterId(repair.master_id ?? "");
     setRepairModalCompletedAt(repair.completed_at);
     setRepairModalMileageAtService(
@@ -352,7 +363,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       service_name: trimmedLines[0].name,
       service_lines,
       issue_notes: repairForm.issue_notes.trim() || "No issue notes provided yet.",
-      status: repairForm.status,
+      status: "new",
     };
 
     try {
@@ -414,6 +425,87 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     );
   }
 
+
+  async function handleRepairStatusChange(next: RepairStatus) {
+    if (!selectedRepair) {
+      return;
+    }
+    const previous = repairModalStatus;
+    setRepairModalStatus(next);
+    if (next === "completed") {
+      setRepairModalCompletedAt((current) => current || selectedRepair.completed_at || getLocalTodayDate());
+    }
+    setRepairStatusChanging(true);
+    try {
+      const completedAt =
+        next === "completed"
+          ? repairModalCompletedAt || selectedRepair.completed_at || getLocalTodayDate()
+          : null;
+      const updated = await updateRepair(selectedRepair.id, {
+        status: next,
+        completed_at: completedAt,
+      });
+      setRepairs((current) =>
+        current.map((repair) =>
+          repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair
+        )
+      );
+    } catch {
+      setRepairModalStatus(previous);
+      setRepairError("Failed to update repair status. Please try again.");
+    } finally {
+      setRepairStatusChanging(false);
+    }
+  }
+
+  async function handleRepairReopen() {
+    if (!selectedRepair) {
+      return;
+    }
+    const updated = await updateRepair(selectedRepair.id, { status: "in_progress", completed_at: null });
+    setRepairs((current) =>
+      current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
+    );
+    setRepairModalStatus("in_progress");
+  }
+
+  async function handleRepairPickUp() {
+    if (!selectedRepair) {
+      return;
+    }
+    const updated = await updateRepair(selectedRepair.id, { status: "picked_up" });
+    setRepairs((current) =>
+      current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
+    );
+    setRepairModalStatus("picked_up");
+    setRepairModalOpenedAsCompleted(true);
+  }
+
+  async function handleRepairUndoPickUp() {
+    if (!selectedRepair) {
+      return;
+    }
+    const updated = await updateRepair(selectedRepair.id, { status: "completed" });
+    setRepairs((current) =>
+      current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
+    );
+    setRepairModalStatus("completed");
+    setRepairModalOpenedAsCompleted(true);
+  }
+
+  async function deleteRepairFromModal(repair: RepairEntry) {
+    await deleteRepairApi(repair.id);
+    setRepairs((current) => current.filter((entry) => entry.id !== repair.id));
+    if (selectedRepairId === repair.id) {
+      closeRepairModal();
+    }
+  }
+
+  async function submitRepairCreate() {
+    const syntheticEvent = { preventDefault: () => {} } as FormEvent<HTMLFormElement>;
+    await handleRepairSubmit(syntheticEvent);
+  }
+
   async function handleRepairModalSave() {
     if (!selectedRepairId || !selectedRepair) {
       return;
@@ -435,16 +527,6 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
         return;
       }
       mileageForPayload = parsed.value;
-    }
-
-    if (selectedRepair.status !== repairModalStatus) {
-      const shouldChange = window.confirm(
-        `Change repair ${selectedRepair.tracking_code} status from ${REPAIR_STATUS_LABELS[selectedRepair.status]} to ${REPAIR_STATUS_LABELS[repairModalStatus]}?`
-      );
-
-      if (!shouldChange) {
-        return;
-      }
     }
 
     const payload: Partial<RepairWritePayload> = {
@@ -708,6 +790,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     selectedRepairId,
     repairModalStatus,
     setRepairModalStatus,
+    repairModalOpenedAsCompleted,
     repairModalMasterId,
     setRepairModalMasterId,
     repairModalCompletedAt,
@@ -754,5 +837,12 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     handleRegeneratePortalLink,
     markRepairPdfAvailable,
     promptRepairForCompletedOdometer,
+    repairStatusChanging,
+    handleRepairStatusChange,
+    handleRepairReopen,
+    handleRepairPickUp,
+    handleRepairUndoPickUp,
+    deleteRepairFromModal,
+    submitRepairCreate,
   };
 }
