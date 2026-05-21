@@ -188,6 +188,7 @@ export function StaffVehicleDetailPanel({
                     type="button"
                     className={`vehicle-history-table-row vehicle-history-table-row--${repair.status}`}
                     onClick={() => onOpenRepair(repair)}
+                    aria-label={`${repair.tracking_code} — open repair`}
                     title={`${repair.tracking_code} — open repair`}
                   >
                     <span className="vehicle-history-td vehicle-history-td--issue">

@@ -4654,8 +4654,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onCardDragOver={handleCardDragOver}
             onCardDrop={handleCardDrop}
             onOpenRepair={openRepairModal}
-            onCopyTrackingCode={handleCopyTrackingCode}
-            repairPartSummaries={repairPartSummaries}
           />
         </div>
       </div>
@@ -7078,7 +7076,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
 
               <div className="repair-update-modal-scroll">
-                <div className="customer-detail-stack repair-modal-sections">
+                <div className="customer-detail-stack repair-modal-sections form--default">
                 <div className="detail-card repair-status-field repair-modal-panel repair-modal-assignment-card">
                   <div className="repair-modal-assignment-master">
                     <span className="repair-modal-field-label">Master</span>

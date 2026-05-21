@@ -1,0 +1,123 @@
+/* ═══════════════════════════════════════════════
+   STATUS CHIPS & BUTTONS
+   ═══════════════════════════════════════════════ */
+
+.repair-status-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  padding: 0.38rem 0.75rem;
+  white-space: nowrap;
+}
+
+.repair-status-new {
+  background: rgba(91, 156, 246, 0.1);
+  border-color: rgba(91, 156, 246, 0.26);
+  color: var(--info);
+}
+
+.repair-status-in_progress {
+  background: rgba(240, 168, 74, 0.1);
+  border-color: rgba(240, 168, 74, 0.26);
+  color: var(--warning);
+}
+
+.repair-status-waiting_parts {
+  background: rgba(224, 82, 82, 0.1);
+  border-color: rgba(224, 82, 82, 0.24);
+  color: var(--danger);
+}
+
+.repair-status-completed {
+  background: rgba(78, 201, 148, 0.1);
+  border-color: rgba(78, 201, 148, 0.26);
+  color: var(--success);
+}
+
+/* ── Status switcher buttons ─────────────────────── */
+
+.status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--surface-high);
+  color: var(--text-mid);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: normal;
+  text-align: center;
+  box-sizing: border-box;
+}
+.status-btn:hover { background: var(--surface); color: var(--text); }
+
+/* Full-width final status — must follow .status-btn so padding/border win */
+.status-btn.status-btn-completed-final {
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--s3) var(--s4);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 10px;
+  border-width: 2px;
+  border-style: solid;
+}
+
+/* Inactive "Completed" should read as a goal, not already-done (green chrome only when active) */
+.status-btn.status-btn-completed-final:not(.status-btn-active) {
+  border-width: 1px;
+  border-color: transparent;
+  background: var(--surface-high);
+  color: var(--text-mid);
+}
+
+.status-btn.status-btn-completed-final:not(.status-btn-active):hover {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.status-btn.status-btn-completed-final.status-btn-active {
+  border-width: 2px;
+}
+
+.status-btn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+  flex-shrink: 0;
+}
+
+/* active state: border matches chip color */
+.status-btn-active.repair-status-new          { background: rgba(91,156,246,0.12); border-color: rgba(91,156,246,0.4); color: #5b9cf6; }
+.status-btn-active.repair-status-in_progress  { background: rgba(240,168,74,0.12); border-color: rgba(240,168,74,0.4); color: var(--warning); }
+.status-btn-active.repair-status-waiting_parts{ background: rgba(224, 82,82,0.12); border-color: rgba(224, 82,82,0.4); color: var(--danger);  }
+.status-btn-active.repair-status-completed    { background: rgba(78,201,148,0.12); border-color: rgba(78,201,148,0.4); color: var(--success); }
+
+/* idle dot tint per status */
+.status-btn.repair-status-new          { color: #5b9cf6; }
+.status-btn.repair-status-in_progress  { color: var(--warning); }
+.status-btn.repair-status-waiting_parts{ color: var(--danger);  }
+.status-btn.repair-status-completed    { color: var(--success); }
+/* reset text color for unselected so label is readable */
+.status-btn:not(.status-btn-active) { color: var(--text-mid); }
+.status-btn:not(.status-btn-active) .status-btn-dot { background: currentcolor; }
+/* dot keeps semantic color even when button text is muted */
+.status-btn.repair-status-new .status-btn-dot          { background: #5b9cf6; }
+.status-btn.repair-status-in_progress .status-btn-dot  { background: var(--warning); }
+.status-btn.repair-status-waiting_parts .status-btn-dot{ background: var(--danger);  }
+.status-btn.repair-status-completed .status-btn-dot    { background: var(--success); }

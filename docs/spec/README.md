@@ -14,6 +14,7 @@ This folder is the **canonical spec surface** for product intent, execution back
 | [TASKS.md](./TASKS.md) | Single flat backlog with stable task IDs (`T-*`) for batching (“do block T-E2E-*”). |
 | [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md) | Explicit decisions still needed from product/tech owners. |
 | [SDD_WORKFLOW.md](./SDD_WORKFLOW.md) | How SDD maps to this repo’s **Agents** workflow and validation gates. |
+| [UI_RESPONSIVE.md](./UI_RESPONSIVE.md) | Canonical breakpoints, JS+CSS hybrid rendering strategy, mobile component naming, CSS cascade rules, testing requirements, URL conventions. |
 
 **Testing docs (engineering, not SDD product spec):** [`docs/testing/README.md`](../testing/README.md) — test pyramid, Allure snapshots, Playwright framework notes.
 

@@ -129,8 +129,12 @@ export class StaffRepairsPage {
 
     const line1 = this.page.getByRole("textbox", { name: /Line 1/ });
     await line1.fill(E2E_DEMO_SERVICE_NAME_IN_CATALOG);
-    await line1.blur();
-    await expect(line1).not.toBeFocused();
+    // Select the matching catalog suggestion to ensure catalog_service_id is wired.
+    const suggestion = this.page.getByRole("listbox").getByRole("button", {
+      name: new RegExp(E2E_DEMO_SERVICE_NAME_IN_CATALOG, "i"),
+    });
+    await expect(suggestion).toBeVisible({ timeout: 10_000 });
+    await suggestion.click();
 
     await this.page.getByLabel("Issue Notes").fill(issueNotesMarker);
   }
@@ -143,5 +147,39 @@ export class StaffRepairsPage {
   async expectKanbanCardShowsIssueNotes(marker: string): Promise<void> {
     const cardIssue = this.page.locator(".kanban-card-issue").filter({ hasText: marker });
     await expect(cardIssue.first()).toBeVisible({ timeout: 30_000 });
+  }
+
+  /**
+   * `.kanban-card-plate` inside the given kanban card.
+   * Returns the plate span scoped to the card so callers can assert text content.
+   */
+  cardPlate(card: Locator): Locator {
+    return card.locator(".kanban-card-plate");
+  }
+
+  /**
+   * `.kanban-card-model` inside the given kanban card.
+   * Rendered only when vehicle_model/year/mileage data is present.
+   */
+  cardModel(card: Locator): Locator {
+    return card.locator(".kanban-card-model");
+  }
+
+  /**
+   * `time.kanban-card-time` inside the given kanban card.
+   * Rendered only when `started_at` is non-null on the repair.
+   */
+  cardTime(card: Locator): Locator {
+    return card.locator("time.kanban-card-time");
+  }
+
+  /**
+   * First kanban card in the "In Progress" column.
+   * The column header contains the text "In Progress" — scoped via `.kanban-col` that contains it.
+   */
+  firstInProgressCard(): Locator {
+    const board = this.page.getByLabel("Repairs kanban board");
+    const inProgressCol = board.locator(".kanban-col").filter({ hasText: "In Progress" });
+    return inProgressCol.locator(".kanban-card").first();
   }
 }

@@ -9,6 +9,7 @@ from vehicles.models import Vehicle
 
 
 def repair_pdf_upload_to(instance: "RepairDocument", filename: str) -> str:
+    """Return the upload path for a repair PDF export, versioned by document version."""
     repair_id = instance.repair_id if instance.repair_id is not None else instance.repair.pk
     return f"repair_exports/{repair_id}/v{instance.version}.pdf"
 
@@ -36,6 +37,7 @@ class Repair(models.Model):
     tracking_code = models.CharField(max_length=20, unique=True, blank=True)
     portal_token = models.CharField(max_length=40, unique=True, blank=True)
     estimated_date = models.DateField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -45,9 +47,13 @@ class Repair(models.Model):
         ordering = ("-created_at", "-id")
 
     def __str__(self):
+        """Return a human-readable representation using tracking code and service name."""
         return f"{self.tracking_code} — {self.service_name}"
 
     def save(self, *args, **kwargs):
+        """Auto-set started_at on first in_progress save; manage completed_at; generate tracking_code and portal_token."""
+        if self.status == self.Status.IN_PROGRESS and self.started_at is None:
+            self.started_at = timezone.now()
         if self.status != self.Status.COMPLETED:
             self.completed_at = None
         elif self.completed_at is None:

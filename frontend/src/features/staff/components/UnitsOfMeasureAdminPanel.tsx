@@ -143,7 +143,7 @@ function UnitRow({
       <td>
         <input
           type="text"
-          className="uom-admin-cell-input uom-admin-cell-input--compact"
+          className="uom-admin-cell-input uom-admin-cell-input--compact form--compact"
           value={name}
           onChange={(ev) => setName(ev.target.value)}
           disabled={busy}

@@ -1,0 +1,46 @@
+/* ═══════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizelegibility;
+  width: 100%;
+  /* After pinch-zoom out, visual viewport width can exceed layout width — prevent side gutters. */
+  min-width: max(100%, var(--layout-sync-min-width, 0px));
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  width: 100%;
+  min-height: 100vh;
+  font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--bg);
+}
+
+#root {
+  width: 100%;
+  min-height: 100%;
+}
+
+button, input, select, textarea { font: inherit; }
+
+::selection {
+  background: rgba(205, 216, 58, 0.22);
+  color: var(--text);
+}
+
+::placeholder { color: var(--text-soft); }
+
+/* Scrollbar */
+::-webkit-scrollbar               { width: 6px; height: 6px; }
+::-webkit-scrollbar-track         { background: transparent; }
+::-webkit-scrollbar-thumb         { background: var(--surface-high); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover   { background: var(--border-strong); }

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { randomUuid } from "../../../lib/randomUuid";
 
 export type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed";
@@ -45,9 +46,14 @@ export type RepairEntry = {
   completed_at: string;
   vehicle_id: number;
   vehicle_label: string;
+  vehicle_plate: string | null;
+  vehicle_model: string | null;
+  vehicle_year: number | null;
+  mileage: number | null;
   owner_name: string;
-  master_id: string;
-  master_name: string;
+  master_id: string | null;
+  master_name: string | null;
+  started_at: string | null;
   service_name: string;
   service_lines: RepairServiceLineEntry[];
   issue_notes: string;
@@ -78,6 +84,10 @@ export const REPAIR_STATUS_LABELS: Record<RepairStatus, string> = {
   waiting_parts: "Waiting for Parts",
   completed: "Completed",
 };
+
+export function repairStatusLabel(status: RepairStatus): string {
+  return REPAIR_STATUS_LABELS[status];
+}
 
 export const REPAIR_KANBAN_COLUMNS: { status: RepairStatus; label: string }[] = [
   { status: "new", label: "New" },
@@ -119,6 +129,30 @@ export function formatRepairCardDateRow(repair: RepairEntry) {
   }
 
   return [createdLabel, `Completed ${formatRepairDisplayDate(repair.completed_at)}`];
+}
+
+export function masterTint(masterId: string | number | null | undefined): CSSProperties {
+  if (!masterId) return {};
+  const hue = (Number(masterId) * 47) % 360;
+  return { background: `hsl(${hue} 45% 28%)`, color: `hsl(${hue} 60% 80%)` };
+}
+
+export function initials(name: string | null | undefined): string {
+  if (!name) return "?";
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export function formatStartedAt(startedAt: string | null | undefined): string {
+  if (!startedAt) return "";
+  const d = new Date(startedAt);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  }).format(d);
 }
 
 /** Parse digits from vehicle profile mileage field (string from API / form). */

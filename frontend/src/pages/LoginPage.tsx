@@ -68,7 +68,7 @@ export function LoginPage() {
               </p>
             </div>
 
-            <form className="login-form" onSubmit={handleSubmit}>
+            <form className="login-form form--cozy" onSubmit={handleSubmit}>
               <label>
                 <span>Email</span>
                 <input
@@ -118,7 +118,7 @@ export function LoginPage() {
               </p>
             </div>
 
-            <form className="login-form" onSubmit={handlePortalAccess}>
+            <form className="login-form form--cozy" onSubmit={handlePortalAccess}>
               <label>
                 <span>Access Code</span>
                 <input

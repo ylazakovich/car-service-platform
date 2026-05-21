@@ -6,13 +6,16 @@ import {
   useState,
   useSyncExternalStore,
   type ReactElement,
+  type ReactNode,
 } from "react";
+import * as React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ScrollToWorkspaceHeaderFab } from "./components/ScrollToWorkspaceHeaderFab";
 import { BrandMark } from "./components/BrandMark";
 import { useAuth } from "./context/AuthContext";
 import { updateUserName } from "./api/users";
+import { fetchRepairs } from "./api/repairs";
 import { AcceptInvitePage } from "./pages/AcceptInvitePage";
 import { ClientPortalPage } from "./pages/ClientPortalPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -47,76 +50,95 @@ const sectionOrder: StaffSection[] = [
   "users",
 ];
 
-/* ── Nav icons (16 × 16 stroke SVG) ────────────────────── */
+/* ── Nav icons (20 × 20 stroke SVG) ────────────────────── */
+
+function NavIcon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
 
 function IconDashboard() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="1" width="6" height="6" rx="1.5" />
-      <rect x="9" y="1" width="6" height="6" rx="1.5" />
-      <rect x="1" y="9" width="6" height="6" rx="1.5" />
-      <rect x="9" y="9" width="6" height="6" rx="1.5" />
-    </svg>
+    <NavIcon>
+      <rect x="2.5"  y="2.5"  width="6" height="6" rx="1.5" />
+      <rect x="11.5" y="2.5"  width="6" height="6" rx="1.5" />
+      <rect x="2.5"  y="11.5" width="6" height="6" rx="1.5" />
+      <rect x="11.5" y="11.5" width="6" height="6" rx="1.5" />
+    </NavIcon>
   );
 }
 
 function IconCustomers() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="5" r="3" />
-      <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" />
-    </svg>
+    <NavIcon>
+      <circle cx="10" cy="7" r="3" />
+      <path d="M3.5 17.5c0-3.6 2.9-5.5 6.5-5.5s6.5 1.9 6.5 5.5" />
+    </NavIcon>
   );
 }
 
 function IconVehicles() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 9l1.5-4h9L13 9" />
-      <rect x="1" y="9" width="14" height="4" rx="1.5" />
-      <circle cx="4.5" cy="13" r="1" fill="currentColor" stroke="none" />
-      <circle cx="11.5" cy="13" r="1" fill="currentColor" stroke="none" />
-    </svg>
+    <NavIcon>
+      <path d="M2.5 12.5h15" />
+      <path d="M3.5 12.5l1.5-4.5a2 2 0 0 1 1.9-1.3h7.2a2 2 0 0 1 1.7 1l2 4.8" />
+      <path d="M2.5 12.5v3M17.5 12.5v3" />
+      <circle cx="6.5"  cy="15.5" r="1.5" />
+      <circle cx="13.5" cy="15.5" r="1.5" />
+    </NavIcon>
   );
 }
 
 function IconRepairs() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9.5 2.5a4 4 0 0 1-5 5.5L2 11.5A1.5 1.5 0 0 0 4 13.5l3.5-2.5A4 4 0 0 1 13 6" />
-      <circle cx="12" cy="3.5" r="1.5" />
-    </svg>
+    <NavIcon>
+      <path d="M13.5 2.5a4 4 0 0 0-3.6 5.6L3 14.9a1.6 1.6 0 0 0 2.3 2.3l6.8-6.9a4 4 0 0 0 5-5L14.7 8 12 5.3z" />
+    </NavIcon>
   );
 }
 
 function IconPurchases() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 2h1.5l2 7h7l1.5-5H5" />
-      <circle cx="7" cy="13" r="1" />
-      <circle cx="12" cy="13" r="1" />
-    </svg>
+    <NavIcon>
+      <path d="M2 3h2.2l2 9.5h9.3" />
+      <path d="M5.5 6h11.2l-1.6 5.5a1.2 1.2 0 0 1-1.2.9H6.2" />
+      <circle cx="8"    cy="16.5" r="1.2" />
+      <circle cx="14.5" cy="16.5" r="1.2" />
+    </NavIcon>
+  );
+}
+
+function IconReference() {
+  return (
+    <NavIcon>
+      <rect x="3.5" y="3" width="13" height="14" rx="1.5" />
+      <path d="M7 3v-.5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 13 2.5V3" />
+      <path d="M6.5 8h7M6.5 11h7M6.5 14h4.5" />
+    </NavIcon>
   );
 }
 
 function IconUsers() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="6" cy="5" r="2.5" />
-      <path d="M1 14c0-2.76 2.24-4.5 5-4.5s5 1.74 5 4.5" />
-      <path d="M11 2a2.5 2.5 0 0 1 0 5" />
-      <path d="M13.5 14c.3-.7.5-1.44.5-2.2 0-1.1-.4-2.12-1.1-2.9" />
-    </svg>
-  );
-}
-
-/** Registers (reference data: units, services, …) */
-function IconReference() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 2.5h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z" />
-      <path d="M5 5.5v5M7.5 4v7M10 6.5v3" />
-    </svg>
+    <NavIcon>
+      <circle cx="7.5" cy="7" r="3" />
+      <path d="M2 17c0-3.3 2.46-5.5 5.5-5.5s5.5 2.2 5.5 5.5" />
+      <path d="M13.5 3.2A3 3 0 0 1 13.5 11" />
+      <path d="M18 16.5c0-.83-.15-1.62-.43-2.34A6 6 0 0 0 14.8 11.5" />
+    </NavIcon>
   );
 }
 
@@ -195,6 +217,50 @@ function subscribeShellMobileNarrow(onChange: () => void) {
 /** Viewport ≤820px: mobile shell (sticky header + picker), desktop sidebar hidden. */
 function useShellMobileNarrow() {
   return useSyncExternalStore(subscribeShellMobileNarrow, shellMobileNarrowSnapshot, () => false);
+}
+
+/* ── Today Summary ──────────────────────────────────────── */
+
+function useTodayRepairCounts() {
+  const [repairs, setRepairs] = useState<{ status: string }[]>([]);
+
+  useEffect(() => {
+    fetchRepairs().then((data) => setRepairs(data)).catch(() => {});
+  }, []);
+
+  const counts = React.useMemo(() => ({
+    open:    repairs.filter((r) => r.status === "new" || r.status === "in_progress").length,
+    waiting: repairs.filter((r) => r.status === "waiting_parts").length,
+    ready:   repairs.filter((r) => r.status === "completed").length,
+  }), [repairs]);
+
+  return { counts };
+}
+
+function TodaySummary({ onAddRepair }: { onAddRepair: () => void }) {
+  const { counts } = useTodayRepairCounts();
+  const today = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short", day: "numeric", month: "short",
+  }).format(new Date());
+  return (
+    <section className="sidebar-summary">
+      <header className="sidebar-summary__head">
+        <p className="eyebrow">Today · {today}</p>
+        <span className="sidebar-summary__live">
+          <span className="sidebar-summary__pulse" />live
+        </span>
+      </header>
+      <ul className="sidebar-summary__stats">
+        <li><span className="sidebar-summary__dot" data-status="open" /><span>Open</span><strong>{counts.open}</strong></li>
+        <li><span className="sidebar-summary__dot" data-status="waiting" /><span>Waiting parts</span>
+          <strong className={counts.waiting > 2 ? "is-alert" : ""}>{counts.waiting}</strong></li>
+        <li><span className="sidebar-summary__dot" data-status="ready" /><span>Ready to pickup</span><strong>{counts.ready}</strong></li>
+      </ul>
+      <button type="button" className="sidebar-summary__cta" onClick={onAddRepair}>
+        + Add new repair
+      </button>
+    </section>
+  );
 }
 
 /* ── Staff Shell ────────────────────────────────────────── */
@@ -493,18 +559,7 @@ function StaffShell() {
               ))}
             </nav>
 
-            <section className="sidebar-panel">
-              <p className="eyebrow">Quick Focus</p>
-              <h2>Start with records.</h2>
-              <p>
-                Create repair jobs, assign masters, and keep every vehicle moving through the workshop.
-              </p>
-              <div className="sidebar-actions">
-                <button type="button" className="button" onClick={handleOpenRepairComposer}>
-                  Add New Repair
-                </button>
-              </div>
-            </section>
+            {activeSection === "repairs" && <TodaySummary onAddRepair={handleOpenRepairComposer} />}
           </div>
 
           <div className="shell-user">

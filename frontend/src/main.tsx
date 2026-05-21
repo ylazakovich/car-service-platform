@@ -1,5 +1,5 @@
 /* Global styles before App so a parse/runtime error in the app tree does not leave a blank white page. */
-import "./styles.css";
+import "./styles/index.css";
 import { installViewportLayoutSync } from "./viewportLayoutSync";
 
 installViewportLayoutSync();

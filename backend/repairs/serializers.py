@@ -32,6 +32,7 @@ class RepairServiceLineSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
     def validate_name(self, value):
+        """Reject blank or whitespace-only service line names."""
         v = (value or "").strip()
         if not v:
             raise serializers.ValidationError("Service name cannot be empty.")
@@ -40,6 +41,10 @@ class RepairServiceLineSerializer(serializers.ModelSerializer):
 
 class RepairSerializer(serializers.ModelSerializer):
     vehicle_label = serializers.SerializerMethodField()
+    vehicle_plate = serializers.SerializerMethodField()
+    vehicle_model = serializers.SerializerMethodField()
+    vehicle_year = serializers.SerializerMethodField()
+    mileage = serializers.SerializerMethodField()
     owner_name = serializers.SerializerMethodField()
     master_name = serializers.SerializerMethodField()
     has_pdf = serializers.SerializerMethodField()
@@ -65,6 +70,10 @@ class RepairSerializer(serializers.ModelSerializer):
             "id",
             "vehicle_id",
             "vehicle_label",
+            "vehicle_plate",
+            "vehicle_model",
+            "vehicle_year",
+            "mileage",
             "owner_name",
             "master_id",
             "master_name",
@@ -78,6 +87,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "portal_token",
             "has_pdf",
             "latest_act_document_total",
+            "started_at",
             "completed_at",
             "estimated_date",
             "repair_notes",
@@ -87,9 +97,10 @@ class RepairSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "tracking_code", "portal_token", "created_at", "updated_at")
+        read_only_fields = ("id", "tracking_code", "portal_token", "started_at", "created_at", "updated_at")
 
     def to_representation(self, instance):
+        """Backfill service_lines from legacy service_name when no explicit lines exist."""
         data = super().to_representation(instance)
         if not data.get("service_lines") and instance.service_name:
             data["service_lines"] = [
@@ -98,25 +109,58 @@ class RepairSerializer(serializers.ModelSerializer):
         return data
 
     def get_vehicle_label(self, obj):
+        """Return a formatted label combining license plate, make, and model."""
         v = obj.vehicle
         return f"{v.license_plate} • {v.make} {v.model}"
 
+    def get_vehicle_plate(self, obj):
+        """Return the vehicle license plate, or None if no vehicle is linked."""
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.license_plate
+
+    def get_vehicle_model(self, obj):
+        """Return the vehicle model name, or None if no vehicle is linked."""
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.model
+
+    def get_vehicle_year(self, obj):
+        """Return the vehicle manufacture year, or None if no vehicle is linked."""
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.year
+
+    def get_mileage(self, obj):
+        """Return the current vehicle odometer reading, or None if no vehicle is linked."""
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.mileage
+
     def get_owner_name(self, obj):
+        """Return the full name of the vehicle's customer."""
         return obj.vehicle.customer.full_name
 
     def get_master_name(self, obj):
+        """Return the assigned master's display name, falling back to email, or empty string if unassigned."""
         if not obj.master:
             return ""
         parts = [obj.master.first_name, obj.master.last_name]
         return " ".join(p for p in parts if p).strip() or obj.master.email
 
     def get_has_pdf(self, obj):
+        """Return True if a PDF export exists for this repair, using annotation when available."""
         annotated = getattr(obj, "has_pdf", None)
         if annotated is not None:
             return bool(annotated)
         return obj.documents.exists()
 
     def get_latest_act_document_total(self, obj):
+        """Return the total from the most recent act document, or None if none exists."""
         annotated = getattr(obj, "latest_act_document_total", None)
         if annotated is not None:
             return float(annotated)
@@ -129,15 +173,19 @@ class RepairSerializer(serializers.ModelSerializer):
         return float(snap) if snap is not None else None
 
     def get_before_photos(self, obj):
+        """Return before-service photos (placeholder, not yet implemented)."""
         return []
 
     def get_during_photos(self, obj):
+        """Return in-progress photos (placeholder, not yet implemented)."""
         return []
 
     def get_after_photos(self, obj):
+        """Return after-service photos (placeholder, not yet implemented)."""
         return []
 
     def validate(self, attrs):
+        """Require mileage_at_service when marking a repair as completed."""
         effective_status = attrs.get("status", getattr(self.instance, "status", None))
         effective_mileage = attrs.get(
             "mileage_at_service",
@@ -155,6 +203,7 @@ class RepairSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def _can_edit_service_lines(request, repair) -> bool:
+        """Return True if the requesting user is an admin or the repair's assigned master."""
         if not request or not request.user.is_authenticated:
             return False
         if getattr(request.user, "role", None) == User.Role.ADMIN:
@@ -164,6 +213,7 @@ class RepairSerializer(serializers.ModelSerializer):
         return False
 
     def _apply_service_lines(self, repair, lines_data: list | None, *, fallback_name: str = "") -> None:
+        """Replace all service lines on a repair, auto-creating catalog entries when needed."""
         repair.service_lines.all().delete()
         if lines_data is not None:
             if len(lines_data) == 0:
@@ -203,6 +253,7 @@ class RepairSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        """Create a repair with its service lines atomically."""
         lines_data = validated_data.pop("service_lines", None)
         repair = Repair.objects.create(**validated_data)
         fallback = (repair.service_name or "").strip()
@@ -217,6 +268,7 @@ class RepairSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        """Update a repair and optionally replace its service lines, enforcing permission check."""
         request = self.context.get("request")
         lines_data = validated_data.pop("service_lines", serializers.empty)
         repair = super().update(instance, validated_data)
@@ -251,6 +303,7 @@ class PortalRepairSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_service_lines(self, obj: Repair) -> list[dict]:
+        """Return ordered service lines with catalog IDs, falling back to legacy service_name."""
         lines = list(obj.service_lines.order_by("sort_order", "id"))
         if lines:
             return [{"name": ln.name, "catalog_service_id": ln.catalog_service_id} for ln in lines]
@@ -259,6 +312,7 @@ class PortalRepairSerializer(serializers.ModelSerializer):
         return []
 
     def get_vehicle_info(self, obj: Repair) -> dict:
+        """Return basic vehicle details for the customer portal."""
         v = obj.vehicle
         return {
             "label": f"{v.make} {v.model}",
@@ -267,6 +321,7 @@ class PortalRepairSerializer(serializers.ModelSerializer):
         }
 
     def get_status_display(self, obj: Repair) -> str:
+        """Return the human-readable status label."""
         return obj.get_status_display()
 
 
@@ -291,6 +346,7 @@ class VehicleRepairHistorySerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_service_lines(self, obj: Repair) -> list[dict]:
+        """Return ordered service line names for repair history display."""
         lines = list(obj.service_lines.order_by("sort_order", "id"))
         if lines:
             return [{"name": ln.name} for ln in lines]
@@ -299,6 +355,7 @@ class VehicleRepairHistorySerializer(serializers.ModelSerializer):
         return []
 
     def get_master_name(self, obj):
+        """Return the assigned master's display name, or empty string if unassigned."""
         if not obj.master:
             return ""
         parts = [obj.master.first_name, obj.master.last_name]

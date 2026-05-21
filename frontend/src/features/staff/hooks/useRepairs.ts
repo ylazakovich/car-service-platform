@@ -70,6 +70,11 @@ function mapApiRepairToEntry(item: RepairItem): RepairEntry {
     completed_at: item.completed_at ?? "",
     vehicle_id: item.vehicle_id,
     vehicle_label: item.vehicle_label,
+    vehicle_plate: item.vehicle_plate ?? null,
+    vehicle_model: item.vehicle_model ?? null,
+    vehicle_year: item.vehicle_year ?? null,
+    mileage: item.mileage ?? null,
+    started_at: item.started_at ?? null,
     owner_name: item.owner_name,
     master_id: item.master_id != null ? String(item.master_id) : "",
     master_name: item.master_name,
@@ -236,7 +241,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   function openRepairModal(repair: RepairEntry) {
     setSelectedRepairId(repair.id);
     setRepairModalStatus(repair.status);
-    setRepairModalMasterId(repair.master_id);
+    setRepairModalMasterId(repair.master_id ?? "");
     setRepairModalCompletedAt(repair.completed_at);
     setRepairModalMileageAtService(
       repair.mileage_at_service != null ? String(repair.mileage_at_service) : ""
