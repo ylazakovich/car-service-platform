@@ -31,6 +31,12 @@ Items here block **spec completeness** or **safe implementation**. Agents must s
 19. **Who updates `TASKS.md`?** — Same PR as code vs batch edits at end of sprint (team convention).
 20. **ID stability** — `T-*` IDs are stable; do not renumber when reordering — mark cancelled tasks as `[cancelled]` with a note instead.
 
+## UI / Responsive
+
+24. **Breakpoint canonicalization** — The CSS audit found 10+ different `max-width` values in use. Should all per-feature deviations be migrated to the 4 canonical values (820/1023/1080px + coarse-pointer), or are some intentionally feature-specific (e.g. `max-width: 420px` for VIN copy button text)?
+25. **Mobile component duplication policy** — Currently mobile and desktop render entirely different React component trees (`features/staff/mobile/` vs `features/staff/web/`). As the app grows, should new features always ship both desktop and mobile components? Or should some features be CSS-only responsive? Define the threshold and document it in `UI_RESPONSIVE.md`.
+26. **Mobile E2E coverage gap** — The `repair-make-act-updates-vehicle-panel.spec.ts` E2E test is `@desktop` only. The mobile equivalent (`StaffVehicleMobileDetail`) renders the act total differently (inline card, not a table cell). Should a `@mobile` variant of this test be added? What is the policy for which E2E tests require both `@mobile` and `@desktop` variants?
+
 ## Not closed in your message (gaps)
 
 21. **Priority order among NOW epics** — You did not restack Figma vs M3 functional gaps vs E2E hardening; default remains order in `TASKS.md` until you say otherwise.
