@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { E2E_DEMO_REPAIR_TRACKING_CODE, E2E_DEMO_REPAIR_VEHICLE_PLATE } from "./e2e-seed";
 import { openStaffApp } from "./fixtures/auth";
+import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
 import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
@@ -52,7 +53,9 @@ test.describe("Make Act → Vehicle panel shows act total without reload @deskto
     await page.getByRole("dialog", { name: /AA 1234 BB/ }).getByRole("button", { name: "Cancel" }).click();
 
     // Step 2: go to Vehicles, open detail panel for AA 1234 BB — WITHOUT page reload
-    await registry.gotoVehiclesSection();
+    // Navigate directly without waitForResponse: vehicles data may already be in SPA state (no new network request)
+    await new StaffMobileNavigationPage(page).gotoStaffSection("Vehicles");
+    await expect(page.locator(".vehicles-workspace")).toBeVisible({ timeout: 25_000 });
 
     const vehicleRow = registry.vehicleRowByPlate(E2E_DEMO_REPAIR_VEHICLE_PLATE, "desktop");
     await expect(vehicleRow).toBeVisible({ timeout: 15_000 });
