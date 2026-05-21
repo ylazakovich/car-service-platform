@@ -1,35 +1,35 @@
 # Test pyramid snapshot
 
-_Generated: `2026-05-21T10:32:09.488Z`_
-_Source workflow run id: `26220447976`_
-_Head SHA: `dddb6e2`_
+_Generated: `2026-05-21T10:38:11.066Z`_
+_Source workflow run id: `26220705730`_
+_Head SHA: `ded6ba1`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
 | Layer | `epic` / `layer` | Cases | Passed | Failed | Broken | Skipped |
 | --- | --- | --: | --: | --: | --: | --: |
-| Unit (base) | `unit` | **69** | 57 | 0 | 12 | 0 |
+| Unit (base) | `unit` | **69** | 67 | 0 | 2 | 0 |
 | Integration (middle) | `api` / `integration` | **157** | 157 | 0 | 0 | 0 |
-| UI / E2E (top) | `end-to-end` / `ui` | **38** | 17 | 3 | 1 | 17 |
-| **Σ pyramid layers** | | **264** | | | | |
+| UI / E2E (top) | `end-to-end` / `ui` | **43** | 39 | 3 | 1 | 0 |
+| **Σ pyramid layers** | | **269** | | | | |
 
 ## Shares (pyramid layers only)
 
 | Layer | Share of Σ layers |
 | --- | ---: |
-| Unit (base) | 26.1% |
-| Integration (middle) | 59.5% |
-| UI / E2E (top) | 14.4% |
+| Unit (base) | 25.7% |
+| Integration (middle) | 58.4% |
+| UI / E2E (top) | 16.0% |
 
 ```text
 Unit (base)    ██████ (69)
 Integration (middle) ██████████████ (157)
-UI / E2E (top) ███ (38)
+UI / E2E (top) ████ (43)
 ```
 
 ## Advisory (planning only)
 
-- **Unit share** 26.1% is below the soft planning target (~45%+). Consider adding or restoring fast unit tests before expanding API/E2E.
+- **Unit share** 25.7% is below the soft planning target (~45%+). Consider adding or restoring fast unit tests before expanding API/E2E.
 
 ## Quality gates (non-blocking, advisory)
 
@@ -37,8 +37,8 @@ These checks **never fail the workflow**; they surface in GitHub **Annotations**
 
 | Gate id | Status | Detail |
 | --- | --- | --- |
-| PYRAMID_UNIT_SHARE_LOW | ⚠️ warning | unit ≥ 45% of Σ layers (actual 26.1%) |
-| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 14.4%) |
+| PYRAMID_UNIT_SHARE_LOW | ⚠️ warning | unit ≥ 45% of Σ layers (actual 25.7%) |
+| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 16.0%) |
 | PYRAMID_UNKNOWN_EPIC | ✓ ok | other epic count: 0 |
 
 _Blocking failures: none (reserved for a future strict mode)._
