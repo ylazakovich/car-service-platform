@@ -252,6 +252,12 @@
   min-height: 12rem;
 }
 
+@media (max-width: 720px) {
+  .reference-workspace .dashboard-folder-panel {
+    min-height: 0;
+  }
+}
+
 /* Registers: collapsible guidance (details/summary) */
 .registers-help-disclosure {
   margin: var(--s3) 0 var(--s4);
