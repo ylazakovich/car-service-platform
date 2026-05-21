@@ -1899,11 +1899,28 @@ button.moneyflow-series-toggle {
   .dashboard-warehouse-cumulative-strip { grid-template-columns: 1fr; }
   .dashboard-warehouse-value-list { grid-template-columns: 1fr; }
 
+  .dashboard-folder-tabs {
+    margin-bottom: 0;
+    gap: var(--s2);
+  }
+
+  .dashboard-folder-tab {
+    flex: 1;
+    justify-content: center;
+    border-radius: 10px;
+  }
+
+  .dashboard-folder-tab-active {
+    margin-bottom: 0;
+    border-radius: 10px;
+  }
+
   .dashboard-folder-panel {
     background: none;
     border: none;
     border-radius: 0;
     padding: 0;
+    margin-top: var(--s3) !important;
   }
 }
 
