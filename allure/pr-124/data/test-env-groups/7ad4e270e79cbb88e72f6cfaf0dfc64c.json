@@ -1,1 +1,1 @@
-{"id":"7ad4e270e79cbb88e72f6cfaf0dfc64c","fullName":"staff-purchases-vehicles-registry.spec.ts:88:3","name":"mobile uses single-line rows and act indicator for seeded plate","status":"broken","testResultsByEnv":{"e2e":"c23353fbdc8fcdfa38379778836b1224"}}
+{"id":"7ad4e270e79cbb88e72f6cfaf0dfc64c","fullName":"staff-purchases-vehicles-registry.spec.ts:88:3","name":"mobile uses single-line rows and act indicator for seeded plate","status":"passed","testResultsByEnv":{"e2e":"72d32ccfc44d94de1fdef173eae0032c"}}
