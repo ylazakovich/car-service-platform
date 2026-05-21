@@ -98,7 +98,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: currentColor;
+  background: currentcolor;
   flex-shrink: 0;
 }
 
@@ -115,7 +115,7 @@
 .status-btn.repair-status-completed    { color: var(--success); }
 /* reset text color for unselected so label is readable */
 .status-btn:not(.status-btn-active) { color: var(--text-mid); }
-.status-btn:not(.status-btn-active) .status-btn-dot { background: currentColor; }
+.status-btn:not(.status-btn-active) .status-btn-dot { background: currentcolor; }
 /* dot keeps semantic color even when button text is muted */
 .status-btn.repair-status-new .status-btn-dot          { background: #5b9cf6; }
 .status-btn.repair-status-in_progress .status-btn-dot  { background: var(--warning); }

@@ -229,7 +229,7 @@ function useTodayRepairCounts() {
   }, []);
 
   const counts = React.useMemo(() => ({
-    open:    repairs.filter((r) => r.status === "in_progress").length,
+    open:    repairs.filter((r) => r.status === "new" || r.status === "in_progress").length,
     waiting: repairs.filter((r) => r.status === "waiting_parts").length,
     ready:   repairs.filter((r) => r.status === "completed").length,
   }), [repairs]);

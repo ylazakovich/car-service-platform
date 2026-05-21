@@ -149,6 +149,7 @@ export function initials(name: string | null | undefined): string {
 export function formatStartedAt(startedAt: string | null | undefined): string {
   if (!startedAt) return "";
   const d = new Date(startedAt);
+  if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
   }).format(d);

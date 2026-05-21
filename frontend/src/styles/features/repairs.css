@@ -1551,6 +1551,8 @@
 @media (pointer: coarse) {
   .kanban-date-chip { padding: 12px 16px; }
   .kanban-drag-handle { opacity: 1; padding: 12px 8px; }
+  .kanban-col-collapse { padding: 12px 14px; }
+  .kanban-col-collapse::before { inset: -6px; }
 }
 
 .kanban-card-label {

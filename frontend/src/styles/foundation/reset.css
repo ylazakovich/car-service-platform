@@ -6,7 +6,7 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
   width: 100%;
   /* After pinch-zoom out, visual viewport width can exceed layout width — prevent side gutters. */
   min-width: max(100%, var(--layout-sync-min-width, 0px));

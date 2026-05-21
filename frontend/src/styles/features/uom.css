@@ -291,8 +291,8 @@
   width: 0.45rem;
   height: 0.45rem;
   margin-left: auto;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
   transform: rotate(45deg);
   transition: transform 0.18s ease;
   opacity: 0.85;
@@ -408,7 +408,6 @@
   line-height: 1.45;
   white-space: normal;
   overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 /* Segmented toggle: Inactive | Active (replaces checkbox in Services register) */

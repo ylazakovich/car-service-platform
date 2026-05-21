@@ -185,7 +185,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .purchase-invoice-line-primary--placeholder {
@@ -197,7 +197,7 @@
   font-size: 0.78rem;
   color: var(--text-soft);
   line-height: 1.3;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .purchase-invoice-add-line-wrap {
@@ -1733,7 +1733,7 @@ input[type="date"].inventory-stock-input {
 
 .purchases-mobile-consumable-invoice-value {
   min-width: 0;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .purchases-mobile-consumable-detail .consumable-inventory-actions {
