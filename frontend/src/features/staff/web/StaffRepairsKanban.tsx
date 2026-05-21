@@ -118,7 +118,7 @@ export function StaffRepairsKanban({
                       const parts = [
                         repair.vehicle_model,
                         repair.vehicle_year,
-                        repair.mileage ? `${repair.mileage.toLocaleString("en-US")} km` : null,
+                        repair.mileage != null ? `${repair.mileage.toLocaleString("en-US")} km` : null,
                       ].filter(Boolean);
                       return parts.length > 0 ? <p className="kanban-card-model">{parts.join(" · ")}</p> : null;
                     })()}
@@ -134,7 +134,7 @@ export function StaffRepairsKanban({
                             <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"/>
                           </svg>
                         </span>
-                        <span>{repair.master_name ?? "Unassigned"}</span>
+                        <span>{repair.master_name?.trim() || "Unassigned"}</span>
                       </div>
                       {repair.started_at ? <time className="kanban-card-time">{formatStartedAt(repair.started_at)}</time> : null}
                     </footer>
