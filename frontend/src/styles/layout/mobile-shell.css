@@ -276,12 +276,12 @@
 
   .shell-mobile-header-hint {
     display: block;
-    margin-top: 2px;
-    font-size: 0.62rem;
-    font-weight: 600;
-    letter-spacing: 0.03em;
+    font-size: 0.6rem;
+    font-weight: 500;
     color: var(--text-soft);
-    line-height: 1.2;
+    margin-top: 1px;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
   }
 
   .shell-mobile-header-chevron-wrap {
