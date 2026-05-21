@@ -24,8 +24,8 @@ Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyra
 | :--- | :--- | ---: |
 | Unit (base) | `unit` | **69** |
 | Integration (middle) | `api` / `integration` | **157** |
-| UI / E2E (top) | `end-to-end` / `ui` | **43** |
-| **Σ pyramid layers** | | **269** |
+| UI / E2E (top) | `end-to-end` / `ui` | **38** |
+| **Σ pyramid layers** | | **264** |
 <!-- CSP_PYRAMID_TABLE_END -->
 
 Quick start (details in the runbook):
