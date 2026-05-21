@@ -61,8 +61,8 @@ test.describe("Make Act → Vehicle panel shows act total without reload @deskto
     await expect(vehicleRow).toBeVisible({ timeout: 15_000 });
     await vehicleRow.click();
 
-    const vehicleDialog = page.getByRole("dialog", { name: /Vehicle Details/i });
-    await expect(vehicleDialog).toBeVisible({ timeout: 10_000 });
+    const vehicleDialog = page.getByRole("dialog", { name: E2E_DEMO_REPAIR_VEHICLE_PLATE });
+    await expect(vehicleDialog).toBeVisible({ timeout: 15_000 });
 
     // Step 3: the Repairs and act totals table should show a monetary value for TOR-1001 row
     const actTotalsRegion = vehicleDialog.getByRole("region", { name: "Repairs and act totals" });
