@@ -1,14 +1,14 @@
 # Test pyramid snapshot
 
-_Generated: `2026-05-21T12:58:15.913Z`_
-_Source workflow run id: `26227226012`_
-_Head SHA: `714f5d7`_
+_Generated: `2026-05-21T13:14:12.091Z`_
+_Source workflow run id: `26228046337`_
+_Head SHA: `d528526`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
 | Layer | `epic` / `layer` | Cases | Passed | Failed | Broken | Skipped |
 | --- | --- | --: | --: | --: | --: | --: |
-| Unit (base) | `unit` | **74** | 74 | 0 | 0 | 0 |
+| Unit (base) | `unit` | **74** | 71 | 0 | 3 | 0 |
 | Integration (middle) | `api` / `integration` | **162** | 162 | 0 | 0 | 0 |
 | UI / E2E (top) | `end-to-end` / `ui` | **47** | 47 | 0 | 0 | 0 |
 | **Σ pyramid layers** | | **283** | | | | |
