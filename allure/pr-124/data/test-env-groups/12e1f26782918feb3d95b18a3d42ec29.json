@@ -1,1 +1,1 @@
-{"id":"12e1f26782918feb3d95b18a3d42ec29","fullName":"staff-repairs-seeded-tor-detail.spec.ts:16:3","name":"kanban shows demo card summary; opening card shows repair dialog with PDF affordance","status":"failed","testResultsByEnv":{"e2e":"a1c47b90880a62df4616a9f607c17894"}}
+{"id":"12e1f26782918feb3d95b18a3d42ec29","fullName":"staff-repairs-seeded-tor-detail.spec.ts:16:3","name":"kanban shows demo card summary; opening card shows repair dialog with PDF affordance","status":"passed","testResultsByEnv":{"e2e":"847567d5613d03b9ab9e0dee2ed8a6ec"}}

@@ -1,1 +1,1 @@
-{"id":"03f139ccd7fbd8483a62ee0d3feb654f","fullName":"staff-mobile-navigation.spec.ts:63:3","name":"mobile vehicles list opens detail with Open Repairs affordance","status":"skipped","testResultsByEnv":{"e2e":"889ff6cb14fc5b01ed14a85098476286"}}
+{"id":"03f139ccd7fbd8483a62ee0d3feb654f","fullName":"staff-mobile-navigation.spec.ts:63:3","name":"mobile vehicles list opens detail with Open Repairs affordance","status":"failed","testResultsByEnv":{"e2e":"f1867fe00d222489acb12356ef49aaed"}}
