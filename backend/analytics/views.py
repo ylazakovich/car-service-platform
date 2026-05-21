@@ -292,7 +292,7 @@ class StaffDashboardAnalyticsView(APIView):
         )
 
         completed_in_range = Repair.objects.filter(
-            status=Repair.Status.COMPLETED,
+            status__in=[Repair.Status.COMPLETED, Repair.Status.PICKED_UP],
             completed_at__gte=start,
             completed_at__lte=end,
         )
@@ -414,7 +414,7 @@ class StaffDashboardAnalyticsView(APIView):
             funnel[row["status"]] = row["c"]
 
         completed_for_cycle = Repair.objects.filter(
-            status=Repair.Status.COMPLETED,
+            status__in=[Repair.Status.COMPLETED, Repair.Status.PICKED_UP],
             completed_at__gte=op_start,
             completed_at__lte=op_end,
         )
@@ -442,7 +442,7 @@ class StaffDashboardAnalyticsView(APIView):
                 created_at__date__gte=op_start,
                 created_at__date__lte=op_end,
             )
-            .exclude(status=Repair.Status.COMPLETED)
+            .exclude(status__in=[Repair.Status.COMPLETED, Repair.Status.PICKED_UP])
             .select_related("vehicle")
             .order_by("-updated_at")[:8]
         )
@@ -512,7 +512,7 @@ class StaffDashboardAnalyticsView(APIView):
         non_returning_customers_in_range = len(range_customer_id_set) - returning_customers_in_range
 
         completed_in_range_qs = Repair.objects.filter(
-            status=Repair.Status.COMPLETED,
+            status__in=[Repair.Status.COMPLETED, Repair.Status.PICKED_UP],
             completed_at__gte=op_start,
             completed_at__lte=op_end,
         )
@@ -523,7 +523,7 @@ class StaffDashboardAnalyticsView(APIView):
             cycle_days.append((repair.completed_at - repair.created_at.date()).days)
         median_cycle_time_days = float(statistics.median(cycle_days)) if cycle_days else None
 
-        current_open_qs = Repair.objects.exclude(status=Repair.Status.COMPLETED)
+        current_open_qs = Repair.objects.exclude(status__in=[Repair.Status.COMPLETED, Repair.Status.PICKED_UP])
         waiting_parts_current = current_open_qs.filter(status=Repair.Status.WAITING_PARTS).count()
         open_repairs_current = current_open_qs.count()
 

@@ -525,7 +525,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id));
 
     let mileageForPayload: number | null = null;
-    if (repairModalStatus === "completed") {
+    if (repairModalStatus === "completed" || repairModalStatus === "picked_up") {
       const parsed = parseMileageAtServiceInput(repairModalMileageAtService);
       if (!parsed.ok) {
         showErrorToast(parsed.message);
@@ -541,9 +541,9 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     const payload: Partial<RepairWritePayload> = {
       status: repairModalStatus,
       master_id: repairModalMasterId ? Number(repairModalMasterId) : null,
-      completed_at: repairModalStatus === "completed" ? repairModalCompletedAt || null : null,
+      completed_at: (repairModalStatus === "completed" || repairModalStatus === "picked_up") ? repairModalCompletedAt || null : null,
       estimated_date: repairModalEstimatedDate || null,
-      mileage_at_service: repairModalStatus === "completed" ? mileageForPayload : null,
+      mileage_at_service: (repairModalStatus === "completed" || repairModalStatus === "picked_up") ? mileageForPayload : null,
     };
 
     if (canEditServicesAndNotes) {

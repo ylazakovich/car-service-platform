@@ -2420,7 +2420,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const vehicleIdsNeedingActExport = useMemo(() => {
     const ids = new Set<number>();
     for (const repair of repairs) {
-      if (repair.status === "completed" && !repair.has_pdf) {
+      if ((repair.status === "completed" || repair.status === "picked_up") && !repair.has_pdf) {
         ids.add(repair.vehicle_id);
       }
     }
@@ -7023,7 +7023,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     </div>
                   )}
                 </div>
-                {selectedRepair.status !== "completed" ? (
+                {(selectedRepair.status !== "completed" && selectedRepair.status !== "picked_up") ? (
                   <div className="field-section">
                     <SectionHead label="Repair notes" />
                     <FieldRow label="Add repair note">

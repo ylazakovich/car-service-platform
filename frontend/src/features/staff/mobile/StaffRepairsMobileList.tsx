@@ -36,6 +36,8 @@ function getRepairNextAction(repair: RepairEntry) {
       return repair.mileage_at_service == null
         ? "Add odometer (km) when the vehicle was returned"
         : "Review the summary and share tracking when needed";
+    case "picked_up":
+      return "Vehicle collected — repair is closed";
     default:
       return "Open the repair card";
   }
