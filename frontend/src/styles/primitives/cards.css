@@ -1,0 +1,142 @@
+/* ═══════════════════════════════════════════════
+   PANELS & CARDS
+   ═══════════════════════════════════════════════ */
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: var(--s5);
+}
+
+.panel-dark       { background: var(--surface-mid); }
+.panel-dark-large { padding: var(--s6); }
+
+.panel-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+}
+
+/* ── List Cards ──────────────────────────────────── */
+
+.queue-list,
+.compact-list,
+.registry-list,
+.stack-form {
+  display: grid;
+  gap: var(--s3);
+}
+
+.registry-list {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.queue-item,
+.compact-card,
+.registry-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-mid);
+  padding: var(--s4);
+  transition: border-color 0.14s;
+}
+
+.queue-item:hover,
+.compact-card:hover,
+.registry-card:hover {
+  border-color: var(--border-strong);
+}
+
+.compact-card,
+.registry-card {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+
+.compact-card h4,
+.registry-card h4 { margin: 0; font-size: 0.9rem; }
+
+.compact-card p,
+.registry-card p,
+.queue-item p     { color: var(--text-mid); font-size: 0.82rem; margin: 3px 0 0; }
+
+/* ── Tags / Pills ──────────────────────────────── */
+
+.tag, .status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border-accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  line-height: 1;
+}
+
+.status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s4);
+}
+
+/* ── Search ────────────────────────────────────── */
+
+.search-field       { margin-top: var(--s2); }
+.search-field-tight { margin-top: 0; margin-bottom: var(--s3); }
+
+/* ── Subnav tabs ───────────────────────────────── */
+
+.subnav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-bottom: var(--s5);
+}
+
+.subnav-tab {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-mid);
+  color: var(--text-mid);
+  cursor: pointer;
+  padding: 0.48rem 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.subnav-tab:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.subnav-tab-active {
+  border-color: var(--border-accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── Role Cards ────────────────────────────────── */
+
+.role-card       { border: 1px solid var(--border); border-radius: 12px; background: var(--surface-mid); padding: var(--s4); }
+.role-list       { display: grid; gap: var(--s3); margin-top: var(--s4); }
+.credential-list { display: grid; gap: var(--s3); margin-top: var(--s4); }
+
+.role-item {
+  border-radius: 10px;
+  background: var(--surface-high);
+  padding: var(--s3) var(--s4);
+}
+
+.role-item strong { display: block; margin-bottom: var(--s1); color: var(--accent); font-size: 0.88rem; }
+.role-item p      { margin: 0; color: var(--text-mid); font-size: 0.82rem; }
