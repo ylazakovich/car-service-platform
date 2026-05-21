@@ -129,8 +129,12 @@ export class StaffRepairsPage {
 
     const line1 = this.page.getByRole("textbox", { name: /Line 1/ });
     await line1.fill(E2E_DEMO_SERVICE_NAME_IN_CATALOG);
-    await line1.blur();
-    await expect(line1).not.toBeFocused();
+    // Select the matching catalog suggestion to ensure catalog_service_id is wired.
+    const suggestion = this.page.getByRole("listbox").getByRole("button", {
+      name: new RegExp(E2E_DEMO_SERVICE_NAME_IN_CATALOG, "i"),
+    });
+    await expect(suggestion).toBeVisible({ timeout: 10_000 });
+    await suggestion.click();
 
     await this.page.getByLabel("Issue Notes").fill(issueNotesMarker);
   }

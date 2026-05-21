@@ -2,6 +2,11 @@
    RESPONSIVE
    ═══════════════════════════════════════════════ */
 
+.vehicles-mobile-surface { display: none; }
+.vehicle-mobile-detail-surface { display: none; }
+.staff-mobile-taskbar { display: none; }
+.repairs-mobile-surface { display: none; }
+
 @media (max-width: 1080px) {
   .shell { grid-template-columns: 1fr; }
 

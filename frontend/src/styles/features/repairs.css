@@ -339,9 +339,6 @@
   min-height: 0;
 }
 
-.staff-mobile-taskbar {
-  display: none;
-}
 
 .staff-mobile-switcher {
   display: flex;
@@ -410,9 +407,6 @@
   min-height: 46px;
 }
 
-.repairs-mobile-surface {
-  display: none;
-}
 
 .repair-mobile-filter-strip {
   display: flex;
@@ -607,10 +601,6 @@
   gap: var(--s3);
 }
 
-.vehicles-mobile-surface {
-  display: none;
-}
-
 .vehicle-mobile-list {
   display: grid;
   gap: var(--s3);
@@ -719,7 +709,6 @@
 }
 
 .vehicle-mobile-detail-surface {
-  display: none;
   gap: var(--s4);
 }
 
@@ -1679,70 +1668,72 @@
   font-size: 0.82rem;
 }
 
-.shell:has(.kanban-workspace) {
-  height: 100vh;
-  overflow: hidden;
-}
+@media (min-width: 821px) {
+  .shell:has(.kanban-workspace) {
+    height: 100vh;
+    overflow: hidden;
+  }
 
-.shell:has(.kanban-workspace) .shell-sidebar {
-  overflow-y: auto;
-}
+  .shell:has(.kanban-workspace) .shell-sidebar {
+    overflow-y: auto;
+  }
 
-.shell:has(.kanban-workspace) .shell-main {
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 0;
-  height: 100%;
-}
+  .shell:has(.kanban-workspace) .shell-main {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+    height: 100%;
+  }
 
-.shell:has(.kanban-workspace) .shell-main > .workspace {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  grid-template-rows: 1fr;
-}
+  .shell:has(.kanban-workspace) .shell-main > .workspace {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    grid-template-rows: 1fr;
+  }
 
-.kanban-workspace {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
+  .kanban-workspace {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
 
-.kanban-workspace .repairs-surface-stack {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  grid-template-rows: 1fr;
-}
+  .kanban-workspace .repairs-surface-stack {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    grid-template-rows: 1fr;
+  }
 
-.kanban-workspace .repairs-web-surface {
-  overflow: hidden;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
+  .kanban-workspace .repairs-web-surface {
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
 
-.kanban-workspace .kanban-board {
-  flex: 1;
-  min-height: 0;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-}
+  .kanban-workspace .kanban-board {
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+    grid-template-rows: 1fr;
+  }
 
-.kanban-workspace .kanban-col {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
+  .kanban-workspace .kanban-col {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
-.kanban-workspace .kanban-cards {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-bottom: var(--s4);
+  .kanban-workspace .kanban-cards {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: var(--s4);
+  }
 }
 
 .kanban-drag-handle {
