@@ -133,6 +133,9 @@ export function StaffRepairsKanban({
                       </div>
                       <time className="kanban-card-time">{formatStartedAt(repair.started_at)}</time>
                     </footer>
+                    <div className="kanban-card-footer">
+                      <span className="tracking-chip">#{repair.tracking_code}</span>
+                    </div>
                   </article>
                 ))}
 
