@@ -71,7 +71,8 @@ test.describe("Make Act → Vehicle panel shows act total without reload @deskto
     const tor1001Row = actTotalsRegion.getByRole("button", {
       name: new RegExp(`${E2E_DEMO_REPAIR_TRACKING_CODE}.*open repair`),
     });
-    await expect(tor1001Row).toBeVisible({ timeout: 10_000 });
+    // Scroll into view — other e2e tests may have created extra repairs for this vehicle
+    await tor1001Row.scrollIntoViewIfNeeded({ timeout: 15_000 });
 
     // The money cell must NOT contain "—" (i.e. the null placeholder)
     const moneyCell = tor1001Row.locator(".vehicle-history-td--money");
