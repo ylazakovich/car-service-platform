@@ -1,0 +1,450 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: staff-mobile-navigation.spec.ts >> Staff mobile shell and navigation @mobile-only >> Jump to top FAB scrolls up and focuses workspace menu toggle
+- Location: e2e/staff-mobile-navigation.spec.ts:81:3
+
+# Error details
+
+```
+Error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 72
+Received:   0
+
+Call Log:
+- Timeout 25000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e5]:
+    - button "Open workspace menu" [ref=e6] [cursor=pointer]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - strong [ref=e9]: Repairs
+          - generic [ref=e10]: Sections · account · sign out
+        - generic [ref=e12]: ▾
+  - main [ref=e13]:
+    - generic "Repairs kanban board" [ref=e17]:
+      - generic [ref=e18]:
+        - generic:
+          - generic [ref=e19]:
+            - generic [ref=e20]: New
+            - generic [ref=e21]:
+              - generic [ref=e22]: "3"
+              - button "▼" [ref=e23] [cursor=pointer]
+          - generic [ref=e24]:
+            - article [ref=e25] [cursor=pointer]:
+              - generic [ref=e26]:
+                - generic [ref=e27]: AA 1234 BB
+                - generic [ref=e28]: New
+              - paragraph [ref=e29]: Camry · 2019 · 87,400 km
+              - paragraph [ref=e30]: AC service
+              - paragraph [ref=e31]: e2e-intake-1779363297472
+              - generic [ref=e33]:
+                - img [ref=e35]
+                - generic [ref=e38]: Ivan Master
+              - generic [ref=e40]: "#TOR-0063"
+            - article [ref=e41] [cursor=pointer]:
+              - generic [ref=e42]:
+                - generic [ref=e43]: KA 1357 UU
+                - generic [ref=e44]: New
+              - paragraph [ref=e45]: Eclipse Cross · 2019 · 53,800 km
+              - paragraph [ref=e46]: Tire service — winter set
+              - paragraph [ref=e47]: Customer-supplied winter tyres mounted and balanced.
+              - generic [ref=e49]:
+                - img [ref=e51]
+                - generic [ref=e54]: Ivan Master
+              - generic [ref=e56]: "#TOR-2034"
+            - article [ref=e57] [cursor=pointer]:
+              - generic [ref=e58]:
+                - generic [ref=e59]: AA 1234 BB
+                - generic [ref=e60]: New
+              - paragraph [ref=e61]: Camry · 2019 · 87,400 km
+              - paragraph [ref=e62]: Tire rotation and balancing
+              - paragraph [ref=e63]: Routine rotation at customer request. Rear tires moved to front.
+              - generic [ref=e65]:
+                - img [ref=e67]
+                - generic [ref=e70]: Ivan Master
+              - generic [ref=e72]: "#TOR-1006"
+        - generic [ref=e73]:
+          - generic [ref=e74]:
+            - generic [ref=e75]: In Progress
+            - generic [ref=e76]:
+              - generic [ref=e77]: "2"
+              - button "▼" [ref=e78] [cursor=pointer]
+          - generic [ref=e79]:
+            - article [ref=e80] [cursor=pointer]:
+              - generic [ref=e81]:
+                - generic [ref=e82]: BH 7788 GG
+                - generic [ref=e83]: In Progress
+              - paragraph [ref=e84]: Megane · 2015 · 148,500 km
+              - paragraph [ref=e85]: AC system diagnostics and re-gas
+              - paragraph [ref=e86]: AC blows warm air. Suspected refrigerant leak at condenser.
+              - generic [ref=e88]:
+                - img [ref=e90]
+                - generic [ref=e93]: Ivan Master
+              - generic [ref=e95]: "#TOR-1005"
+            - article [ref=e96] [cursor=pointer]:
+              - generic [ref=e97]:
+                - generic [ref=e98]: KA 4321 EE
+                - generic [ref=e99]: In Progress
+              - paragraph [ref=e100]: 3 Series · 2021 · 31,000 km
+              - paragraph [ref=e101]: Engine diagnostics
+              - paragraph [ref=e102]: Check engine light on. Fault codes P0171 and P0174 stored.
+              - generic [ref=e104]:
+                - img [ref=e106]
+                - generic [ref=e109]: Ivan Master
+              - generic [ref=e111]: "#TOR-1003"
+        - generic [ref=e112]:
+          - generic [ref=e113]:
+            - generic [ref=e114]: Waiting Parts
+            - generic [ref=e115]:
+              - generic [ref=e116]: "1"
+              - button "▼" [ref=e117] [cursor=pointer]
+          - article [ref=e119] [cursor=pointer]:
+            - generic [ref=e120]:
+              - generic [ref=e121]: BH 5566 FF
+              - generic [ref=e122]: Waiting for Parts
+            - paragraph [ref=e123]: Passat · 2018 · 112,000 km
+            - paragraph [ref=e124]: Timing belt + water pump replacement
+            - paragraph [ref=e125]: Manufacturer interval exceeded. Belt shows visible cracking.
+            - generic [ref=e127]:
+              - img [ref=e129]
+              - generic [ref=e132]: Ivan Master
+            - generic [ref=e134]: "#TOR-1004"
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - generic [ref=e137]: Completed
+            - generic [ref=e138]:
+              - generic [ref=e139]: "57"
+              - button "▼" [ref=e140] [cursor=pointer]
+          - generic [ref=e141]:
+            - article [ref=e142] [cursor=pointer]:
+              - generic [ref=e143]:
+                - generic [ref=e144]: AA 1234 BB
+                - generic [ref=e145]: Completed
+              - paragraph [ref=e146]: Camry · 2019 · 87,400 km
+              - paragraph [ref=e147]: Oil change + filter replacement +1
+              - paragraph [ref=e148]: Scheduled maintenance at 87 400 km. Customer requests synthetic 5W-40.
+              - generic [ref=e150]:
+                - img [ref=e152]
+                - generic [ref=e155]: Ivan Master
+              - generic [ref=e157]: "#TOR-1001"
+            - article [ref=e158] [cursor=pointer]:
+              - generic [ref=e159]:
+                - generic [ref=e160]: BH 1111 XX
+                - generic [ref=e161]: Completed
+              - paragraph [ref=e162]: 370Z · 2018 · 38,900 km
+              - paragraph [ref=e163]: Coilover installation + alignment
+              - paragraph [ref=e164]: "March 2026 demo case: spring setup refresh with new camber plates and alignment session."
+              - generic [ref=e166]:
+                - img [ref=e168]
+                - generic [ref=e171]: Ivan Master
+              - generic [ref=e173]: "#TOR-3008"
+            - article [ref=e174] [cursor=pointer]:
+              - generic [ref=e175]:
+                - generic [ref=e176]: BH 9876 WW
+                - generic [ref=e177]: Completed
+              - paragraph [ref=e178]: Civic Type R · 2022 · 24,600 km
+              - paragraph [ref=e179]: Alignment check — track setup
+              - paragraph [ref=e180]: "March 2026 demo case: suspension dial-in before the first circuit session of the season."
+              - generic [ref=e182]:
+                - img [ref=e184]
+                - generic [ref=e187]: Ivan Master
+              - generic [ref=e189]: "#TOR-3007"
+            - article [ref=e190] [cursor=pointer]:
+              - generic [ref=e191]:
+                - generic [ref=e192]: BH 1122 PP
+                - generic [ref=e193]: Completed
+              - paragraph [ref=e194]: Transporter · 2019 · 195,000 km
+              - paragraph [ref=e195]: Brake pads — full axle replacement
+              - paragraph [ref=e196]: "March 2026 demo case: van brake overhaul completed ahead of fleet inspection."
+              - generic [ref=e198]:
+                - img [ref=e200]
+                - generic [ref=e203]: Ivan Master
+              - generic [ref=e205]: "#TOR-3006"
+            - article [ref=e206] [cursor=pointer]:
+              - generic [ref=e207]:
+                - generic [ref=e208]: KA 8899 MM
+                - generic [ref=e209]: Completed
+              - paragraph [ref=e210]: Tucson · 2022 · 18,700 km
+              - paragraph [ref=e211]: Oil change + all filters
+              - paragraph [ref=e212]: "March 2026 demo case: post-winter maintenance with a full filter set and fluids top-up."
+              - generic [ref=e214]:
+                - img [ref=e216]
+                - generic [ref=e219]: Ivan Master
+              - generic [ref=e221]: "#TOR-3005"
+            - article [ref=e222] [cursor=pointer]:
+              - generic [ref=e223]:
+                - generic [ref=e224]: AA 4455 KK
+                - generic [ref=e225]: Completed
+              - paragraph [ref=e226]: 6 · 2018 · 78,200 km
+              - paragraph [ref=e227]: Suspension & steering
+              - paragraph [ref=e228]: "March 2026 demo case: vibration at motorway speed traced to worn tie rod ends and front links."
+              - generic [ref=e230]:
+                - img [ref=e232]
+                - generic [ref=e235]: Ivan Master
+              - generic [ref=e237]: "#TOR-3004"
+            - article [ref=e238] [cursor=pointer]:
+              - generic [ref=e239]:
+                - generic [ref=e240]: BH 5566 FF
+                - generic [ref=e241]: Completed
+              - paragraph [ref=e242]: Passat · 2018 · 112,000 km
+              - paragraph [ref=e243]: Timing belt + water pump replacement
+              - paragraph [ref=e244]: "March 2026 demo case: fleet Passat scheduled before regional delivery route starts."
+              - generic [ref=e246]:
+                - img [ref=e248]
+                - generic [ref=e251]: Ivan Master
+              - generic [ref=e253]: "#TOR-3003"
+            - article [ref=e254] [cursor=pointer]:
+              - generic [ref=e255]:
+                - generic [ref=e256]: KA 4321 EE
+                - generic [ref=e257]: Completed
+              - paragraph [ref=e258]: 3 Series · 2021 · 31,000 km
+              - paragraph [ref=e259]: AC service
+              - paragraph [ref=e260]: "March 2026 demo case: AC performance dropped before spring season, condenser leak repaired and re-gassed."
+              - generic [ref=e262]:
+                - img [ref=e264]
+                - generic [ref=e267]: Ivan Master
+              - generic [ref=e269]: "#TOR-3002"
+            - article [ref=e270] [cursor=pointer]:
+              - generic [ref=e271]:
+                - generic [ref=e272]: AA 1234 BB
+                - generic [ref=e273]: Completed
+              - paragraph [ref=e274]: Camry · 2019 · 87,400 km
+              - paragraph [ref=e275]: Brake system service
+              - paragraph [ref=e276]: "March 2026 demo case: front discs scored, full brake service completed with same-week parts arrival."
+              - generic [ref=e278]:
+                - img [ref=e280]
+                - generic [ref=e283]: Ivan Master
+              - generic [ref=e285]: "#TOR-3001"
+            - article [ref=e286] [cursor=pointer]:
+              - generic [ref=e287]:
+                - generic [ref=e288]: KA 8899 MM
+                - generic [ref=e289]: Completed
+              - paragraph [ref=e290]: Tucson · 2022 · 18,700 km
+              - paragraph [ref=e291]: Oil change — Hyundai Genuine 5W-30
+              - paragraph [ref=e292]: First service at workshop. Hyundai Genuine oil and OEM filter.
+              - generic [ref=e294]:
+                - img [ref=e296]
+                - generic [ref=e299]: Ivan Master
+              - generic [ref=e301]: "#TOR-2046"
+            - article [ref=e302] [cursor=pointer]:
+              - generic [ref=e303]:
+                - generic [ref=e304]: BH 9876 WW
+                - generic [ref=e305]: Completed
+              - paragraph [ref=e306]: Civic Type R · 2022 · 24,600 km
+              - paragraph [ref=e307]: Brake fluid flush — Motul RBF 660
+              - paragraph [ref=e308]: High-temp racing brake fluid for track use. Full system bleed.
+              - generic [ref=e310]:
+                - img [ref=e312]
+                - generic [ref=e315]: Ivan Master
+              - generic [ref=e317]: "#TOR-2041"
+            - article [ref=e318] [cursor=pointer]:
+              - generic [ref=e319]:
+                - generic [ref=e320]: BH 9876 WW
+                - generic [ref=e321]: Completed
+              - paragraph [ref=e322]: Civic Type R · 2022 · 24,600 km
+              - paragraph [ref=e323]: Oil change — Shell Helix Ultra 0W-20
+              - paragraph [ref=e324]: Track prep service. Engine oil and filter only, as owner specified.
+              - generic [ref=e326]:
+                - img [ref=e328]
+                - generic [ref=e331]: Ivan Master
+              - generic [ref=e333]: "#TOR-2040"
+            - article [ref=e334] [cursor=pointer]:
+              - generic [ref=e335]:
+                - generic [ref=e336]: AA 2233 HH
+                - generic [ref=e337]: Completed
+              - paragraph [ref=e338]: Corolla · 2020 · 42,500 km
+              - paragraph [ref=e339]: Oil change — Toyota Genuine 0W-20
+              - paragraph [ref=e340]: First service at our workshop. OEM filter and genuine Toyota oil.
+              - generic [ref=e342]:
+                - img [ref=e344]
+                - generic [ref=e347]: Ivan Master
+              - generic [ref=e349]: "#TOR-2012"
+            - article [ref=e350] [cursor=pointer]:
+              - generic [ref=e351]:
+                - generic [ref=e352]: AA 9876 CC
+                - generic [ref=e353]: Completed
+              - paragraph [ref=e354]: Focus · 2017 · 54,200 km
+              - paragraph [ref=e355]: Brake pad replacement — front axle
+              - paragraph [ref=e356]: Customer reports squealing on light braking. Front pads worn to 2 mm.
+              - generic [ref=e358]:
+                - img [ref=e360]
+                - generic [ref=e363]: Ivan Master
+              - generic [ref=e365]: "#TOR-1002"
+            - article [ref=e366] [cursor=pointer]:
+              - generic [ref=e367]:
+                - generic [ref=e368]: AA 6677 SS
+                - generic [ref=e369]: Completed
+              - paragraph [ref=e370]: Sportage · 2021 · 29,300 km
+              - paragraph [ref=e371]: Oil change — 5W-30
+              - paragraph [ref=e372]: First scheduled service at 29 000 km. OEM Kia oil and filter.
+              - generic [ref=e374]:
+                - img [ref=e376]
+                - generic [ref=e379]: Ivan Master
+              - generic [ref=e381]: "#TOR-2026"
+            - button "Show 42 more" [ref=e382] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  1   | import { expect, test } from "@playwright/test";
+  2   | import { e2eBehaviors } from "./allure-helpers";
+  3   | import { openStaffApp } from "./fixtures/auth";
+  4   | import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+  5   | import { StaffRepairsPage } from "./pages/StaffRepairsPage";
+  6   | 
+  7   | /**
+  8   |  * @mobile-only — проект mobile-chrome (Pixel 5, ≤820px).
+  9   |  * Покрывает мобильный staff-shell из ветки: шапка, drawer, task switcher, Add New Repair, список ТС, FAB «Jump to top».
+  10  |  */
+  11  | test.describe("Staff mobile shell and navigation @mobile-only", () => {
+  12  |   test.beforeEach(async ({ page }) => {
+  13  |     await openStaffApp(page);
+  14  |   });
+  15  | 
+  16  |   test("workspace menu switches Vehicles and Repairs; header title matches section", async ({ page }) => {
+  17  |     await e2eBehaviors("staff", "mobile · workspace menu · section header");
+  18  |     const nav = new StaffMobileNavigationPage(page);
+  19  |     await nav.waitForStaffNavigationChrome();
+  20  |     await nav.expectMobileWorkspaceMenuToggle();
+  21  | 
+  22  |     // На ≤820px `.staff-mobile-switcher` скрыт в CSS — смена секций только через shell picker.
+  23  |     await nav.openWorkspaceMenu();
+  24  |     await nav.staffQuickNav().getByRole("button", { name: "Repairs" }).click();
+  25  |     await nav.expectHeaderShows("Repairs");
+  26  | 
+  27  |     await nav.openWorkspaceMenu();
+  28  |     await nav.staffQuickNav().getByRole("button", { name: "Vehicles" }).click();
+  29  |     await nav.expectHeaderShows("Vehicles");
+  30  |   });
+  31  | 
+  32  |   test("workspace menu lists only staff sections, then closes on backdrop", async ({ page }) => {
+  33  |     await e2eBehaviors("staff", "mobile · workspace menu · backdrop");
+  34  |     const nav = new StaffMobileNavigationPage(page);
+  35  |     await nav.waitForStaffNavigationChrome();
+  36  |     await nav.expectMobileWorkspaceMenuToggle();
+  37  | 
+  38  |     await nav.openWorkspaceMenu();
+  39  |     const quickSections = page.locator(".shell-mobile-quick-sections");
+  40  |     await expect(quickSections.getByRole("button", { name: "Dashboard" })).toHaveCount(0);
+  41  |     await expect(quickSections.getByRole("button", { name: "Vehicles" })).toBeVisible();
+  42  |     await expect(quickSections.getByRole("button", { name: "Repairs" })).toBeVisible();
+  43  | 
+  44  |     await nav.closeWorkspaceMenuViaBackdrop();
+  45  |     await expect(nav.workspaceMenuToggle()).toHaveAttribute("aria-label", /Open workspace menu/);
+  46  |   });
+  47  | 
+  48  |   test("Add New Repair from workspace menu opens create dialog", async ({ page }) => {
+  49  |     await e2eBehaviors("staff", "mobile · Add New Repair · modal");
+  50  |     const nav = new StaffMobileNavigationPage(page);
+  51  |     await nav.waitForStaffNavigationChrome();
+  52  |     await nav.expectMobileWorkspaceMenuToggle();
+  53  | 
+  54  |     await nav.openWorkspaceMenu();
+  55  |     await page.getByRole("button", { name: "Add New Repair" }).click();
+  56  | 
+  57  |     await expect(page.getByRole("heading", { name: "Create Repair" })).toBeVisible({ timeout: 15_000 });
+  58  |     const formModal = page.locator(".repair-form-modal");
+  59  |     await formModal.getByRole("button", { name: "Cancel" }).click();
+  60  |     await expect(page.getByRole("heading", { name: "Create Repair" })).toBeHidden();
+  61  |   });
+  62  | 
+  63  |   test("mobile vehicles list opens detail with Open Repairs affordance", async ({ page }) => {
+  64  |     await e2eBehaviors("staff", "mobile · vehicles list · detail");
+  65  |     const nav = new StaffMobileNavigationPage(page);
+  66  |     await nav.gotoStaffSection("Vehicles");
+  67  |     await nav.expectMobileWorkspaceMenuToggle();
+  68  | 
+  69  |     const openVehicle = page.getByRole("button", { name: /^Open vehicle / }).first();
+  70  |     await expect(openVehicle).toBeVisible({
+  71  |       timeout: 35_000,
+  72  |     });
+  73  | 
+  74  |     await expect(page.getByLabel("Mobile vehicles list")).toBeVisible();
+  75  |     await openVehicle.click();
+  76  | 
+  77  |     await expect(page.getByLabel("Mobile vehicle details")).toBeVisible({ timeout: 15_000 });
+  78  |     await expect(page.getByRole("button", { name: "Open Repairs" })).toBeVisible();
+  79  |   });
+  80  | 
+  81  |   test("Jump to top FAB scrolls up and focuses workspace menu toggle", async ({ page }) => {
+  82  |     await e2eBehaviors("staff", "mobile · scroll · FAB");
+  83  |     const nav = new StaffMobileNavigationPage(page);
+  84  |     const repairs = new StaffRepairsPage(page);
+  85  |     await repairs.gotoRepairsSection();
+  86  |     await repairs.expectRepairsKanbanVisible();
+  87  |     await nav.waitForStaffNavigationChrome();
+  88  |     await nav.expectMobileWorkspaceMenuToggle();
+  89  | 
+  90  |     // FAB only mounts when scrollHeight > clientHeight + threshold and user is near the bottom.
+> 91  |     await expect
+      |     ^ Error: expect(received).toBeGreaterThan(expected)
+  92  |       .poll(
+  93  |         async () =>
+  94  |           page.evaluate(() => {
+  95  |             const root = document.scrollingElement ?? document.documentElement;
+  96  |             return root.scrollHeight - root.clientHeight;
+  97  |           }),
+  98  |         { timeout: 25_000 },
+  99  |       )
+  100 |       .toBeGreaterThan(72);
+  101 | 
+  102 |     await page.evaluate(() => {
+  103 |       const root = document.scrollingElement ?? document.documentElement;
+  104 |       root.scrollTop = root.scrollHeight;
+  105 |       window.dispatchEvent(new Event("scroll"));
+  106 |       document.dispatchEvent(new Event("scroll"));
+  107 |     });
+  108 |     // Wheel nudges ensure scroll listeners run after layout (programmatic scrollTop alone can be flaky in CI).
+  109 |     for (let i = 0; i < 24; i += 1) {
+  110 |       await page.mouse.wheel(0, 600);
+  111 |     }
+  112 | 
+  113 |     await page.waitForFunction(
+  114 |       () => {
+  115 |         const r = document.scrollingElement ?? document.documentElement;
+  116 |         return r.scrollTop + r.clientHeight >= r.scrollHeight - 72;
+  117 |       },
+  118 |       { timeout: 25_000 },
+  119 |     );
+  120 |     await page.evaluate(() => {
+  121 |       window.dispatchEvent(new Event("scroll"));
+  122 |       document.dispatchEvent(new Event("scroll"));
+  123 |     });
+  124 | 
+  125 |     const fab = page.getByRole("button", { name: /Jump to top of page and focus workspace menu/ });
+  126 |     await expect
+  127 |       .poll(async () => fab.isVisible(), {
+  128 |         timeout: 25_000,
+  129 |         intervals: [50, 100, 200],
+  130 |       })
+  131 |       .toBe(true);
+  132 |     await fab.click();
+  133 | 
+  134 |     await expect
+  135 |       .poll(
+  136 |         async () => {
+  137 |           const y = await page.evaluate(() => window.scrollY || document.documentElement.scrollTop);
+  138 |           return y;
+  139 |         },
+  140 |         { timeout: 8_000 },
+  141 |       )
+  142 |       .toBeLessThan(80);
+  143 | 
+  144 |     await expect(nav.workspaceMenuToggle()).toBeFocused({ timeout: 3_000 });
+  145 |   });
+  146 | });
+  147 | 
+```
