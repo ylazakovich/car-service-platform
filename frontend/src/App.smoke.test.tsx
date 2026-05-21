@@ -2522,7 +2522,9 @@ describe("bootstrap application", () => {
     await screen.findByLabelText("Repairs kanban board");
 
     const board = await screen.findByLabelText("Repairs kanban board");
-    const card = within(board).getByText("TOR-2003").closest("article") as HTMLElement;
+    const card = Array.from(board.querySelectorAll("article.kanban-card")).find(
+      (el) => el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2003"),
+    ) as HTMLElement;
     const modelRow = card.querySelector(".kanban-card-model");
     expect(modelRow).not.toBeNull();
     expect(modelRow?.textContent).toContain("Corolla");
@@ -2593,7 +2595,9 @@ describe("bootstrap application", () => {
     await screen.findByLabelText("Repairs kanban board");
 
     const board2 = await screen.findByLabelText("Repairs kanban board");
-    const card2 = within(board2).getByText("TOR-2004").closest("article") as HTMLElement;
+    const card2 = Array.from(board2.querySelectorAll("article.kanban-card")).find(
+      (el) => el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2004"),
+    ) as HTMLElement;
     expect(card2.querySelector(".kanban-card-time")).not.toBeNull();
   });
 
@@ -2660,7 +2664,9 @@ describe("bootstrap application", () => {
     await screen.findByLabelText("Repairs kanban board");
 
     const board3 = await screen.findByLabelText("Repairs kanban board");
-    const card3 = within(board3).getByText("TOR-2005").closest("article") as HTMLElement;
+    const card3 = Array.from(board3.querySelectorAll("article.kanban-card")).find(
+      (el) => el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2005"),
+    ) as HTMLElement;
     expect(card3.querySelector(".kanban-card-time")).toBeNull();
   });
 
@@ -2883,7 +2889,7 @@ describe("bootstrap application", () => {
           ],
         });
       }
-      if (url === "/repairs/11/") {
+      if (url === "/repairs/11") {
         return Promise.resolve({
           data: {
             id: 11,
