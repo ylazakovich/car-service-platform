@@ -468,7 +468,7 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     expect(screen.getByText("Run the entire workshop from one board.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add New Repair" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+ Add new repair" })).toBeInTheDocument();
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
 
@@ -489,7 +489,7 @@ describe("bootstrap application", () => {
     renderApp("/app");
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "Add New Repair" }));
+    await user.click(screen.getByRole("button", { name: "+ Add new repair" }));
 
     expect(await screen.findByRole("heading", { name: "Create Repair", level: 3 })).toBeInTheDocument();
   });
