@@ -7,12 +7,14 @@ import {
   useSyncExternalStore,
   type ReactElement,
 } from "react";
+import * as React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ScrollToWorkspaceHeaderFab } from "./components/ScrollToWorkspaceHeaderFab";
 import { BrandMark } from "./components/BrandMark";
 import { useAuth } from "./context/AuthContext";
 import { updateUserName } from "./api/users";
+import { fetchRepairs } from "./api/repairs";
 import { AcceptInvitePage } from "./pages/AcceptInvitePage";
 import { ClientPortalPage } from "./pages/ClientPortalPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -195,6 +197,50 @@ function subscribeShellMobileNarrow(onChange: () => void) {
 /** Viewport ≤820px: mobile shell (sticky header + picker), desktop sidebar hidden. */
 function useShellMobileNarrow() {
   return useSyncExternalStore(subscribeShellMobileNarrow, shellMobileNarrowSnapshot, () => false);
+}
+
+/* ── Today Summary ──────────────────────────────────────── */
+
+function useTodayRepairCounts() {
+  const [repairs, setRepairs] = useState<{ status: string }[]>([]);
+
+  useEffect(() => {
+    fetchRepairs().then((data) => setRepairs(data)).catch(() => {});
+  }, []);
+
+  const counts = React.useMemo(() => ({
+    open:    repairs.filter((r) => r.status === "in_progress").length,
+    waiting: repairs.filter((r) => r.status === "waiting_parts").length,
+    ready:   repairs.filter((r) => r.status === "completed").length,
+  }), [repairs]);
+
+  return { counts };
+}
+
+function TodaySummary({ onAddRepair }: { onAddRepair: () => void }) {
+  const { counts } = useTodayRepairCounts();
+  const today = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short", day: "numeric", month: "short",
+  }).format(new Date());
+  return (
+    <section className="sidebar-summary">
+      <header className="sidebar-summary__head">
+        <p className="eyebrow">Today · {today}</p>
+        <span className="sidebar-summary__live">
+          <span className="sidebar-summary__pulse" />live
+        </span>
+      </header>
+      <ul className="sidebar-summary__stats">
+        <li><span className="sidebar-summary__dot" data-status="open" /><span>Open</span><strong>{counts.open}</strong></li>
+        <li><span className="sidebar-summary__dot" data-status="waiting" /><span>Waiting parts</span>
+          <strong className={counts.waiting > 2 ? "is-alert" : ""}>{counts.waiting}</strong></li>
+        <li><span className="sidebar-summary__dot" data-status="ready" /><span>Ready to pickup</span><strong>{counts.ready}</strong></li>
+      </ul>
+      <button type="button" className="sidebar-summary__cta" onClick={onAddRepair}>
+        + Add new repair
+      </button>
+    </section>
+  );
 }
 
 /* ── Staff Shell ────────────────────────────────────────── */
@@ -493,18 +539,7 @@ function StaffShell() {
               ))}
             </nav>
 
-            <section className="sidebar-panel">
-              <p className="eyebrow">Quick Focus</p>
-              <h2>Start with records.</h2>
-              <p>
-                Create repair jobs, assign masters, and keep every vehicle moving through the workshop.
-              </p>
-              <div className="sidebar-actions">
-                <button type="button" className="button" onClick={handleOpenRepairComposer}>
-                  Add New Repair
-                </button>
-              </div>
-            </section>
+            <TodaySummary onAddRepair={handleOpenRepairComposer} />
           </div>
 
           <div className="shell-user">

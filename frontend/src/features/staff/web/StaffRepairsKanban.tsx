@@ -1,11 +1,13 @@
 import { useState, type DragEvent } from "react";
 import {
-  formatRepairCardDateRow,
   formatRepairServicesSummary,
+  formatStartedAt,
   getRepairStatusClass,
+  initials,
+  masterTint,
+  repairStatusLabel,
   REPAIR_KANBAN_COLUMNS,
   type RepairEntry,
-  type RepairPartsSummary,
   type RepairStatus,
 } from "../shared/repairs";
 
@@ -22,8 +24,6 @@ type StaffRepairsKanbanProps = {
   onCardDragOver: (repairId: number, event: DragEvent<HTMLElement>) => void;
   onCardDrop: (repairId: number, status: RepairStatus, event: DragEvent<HTMLElement>) => void;
   onOpenRepair: (repair: RepairEntry) => void;
-  onCopyTrackingCode: (trackingCode: string, event?: { stopPropagation?: () => void }) => void;
-  repairPartSummaries: Record<string, RepairPartsSummary>;
 };
 
 export function StaffRepairsKanban({
@@ -39,8 +39,6 @@ export function StaffRepairsKanban({
   onCardDragOver,
   onCardDrop,
   onOpenRepair,
-  onCopyTrackingCode,
-  repairPartSummaries,
 }: StaffRepairsKanbanProps) {
   const DONE_CAP = 15;
   const [collapsedColumns, setCollapsedColumns] = useState<Set<RepairStatus>>(new Set());
@@ -101,9 +99,6 @@ export function StaffRepairsKanban({
 
               {isCollapsed ? null : <div className="kanban-cards">
                 {displayedRepairs.map((repair) => (
-                  (() => {
-                    const partsSummary = repairPartSummaries[repair.tracking_code];
-                    return (
                   <article
                     key={repair.id}
                     className={`kanban-card ${draggingRepairId === repair.id ? "kanban-card-dragging" : ""} ${dragOverCardId === repair.id && draggingRepairId !== repair.id ? "kanban-card-drop-target" : ""}`}
@@ -115,60 +110,30 @@ export function StaffRepairsKanban({
                     onClick={() => onOpenRepair(repair)}
                   >
                     <div className="kanban-card-top">
-                      <h4 className="kanban-card-vehicle">{repair.vehicle_label}</h4>
-                      <span className="kanban-drag-handle" title="Drag to move">
-                        ⠿
+                      <span className="kanban-card-plate">{repair.vehicle_plate ?? repair.vehicle_label}</span>
+                      <span className={`repair-status-chip repair-status-${repair.status}`}>
+                        {repairStatusLabel(repair.status)}
                       </span>
                     </div>
-
-                    <p className="kanban-card-owner">
-                      <span className="kanban-card-label">Client:</span> {repair.owner_name}
+                    <p className="kanban-card-model">
+                      {[repair.vehicle_model, repair.vehicle_year, repair.mileage
+                        ? `${repair.mileage.toLocaleString("pl")} km` : null]
+                        .filter(Boolean).join(" · ")}
                     </p>
                     <p className="kanban-card-service">{formatRepairServicesSummary(repair)}</p>
-
-                    {repair.issue_notes ? <p className="kanban-card-issue">{repair.issue_notes}</p> : null}
-
-                    {partsSummary ? (
-                      <div className="repair-parts-summary">
-                        <span className="repair-parts-badge">
-                          {partsSummary.lineCount} linked {partsSummary.lineCount === 1 ? "part" : "parts"}
+                    {repair.issue_notes ? (
+                      <p className="kanban-card-issue" title={repair.issue_notes}>{repair.issue_notes}</p>
+                    ) : null}
+                    <footer className="kanban-card-meta">
+                      <div className="kanban-card-master">
+                        <span className="kanban-card-avatar" style={masterTint(repair.master_id)}>
+                          {initials(repair.master_name)}
                         </span>
-                        <p className="repair-parts-preview">{partsSummary.preview.join(" • ")}</p>
+                        <span>{repair.master_name ?? "Unassigned"}</span>
                       </div>
-                    ) : null}
-
-                    <div className="kanban-card-footer">
-                      <span className="tracking-chip">#{repair.tracking_code}</span>
-                      <button
-                        type="button"
-                        className="copy-chip"
-                        aria-label={`Copy tracking code ${repair.tracking_code}`}
-                        onClick={(event) => void onCopyTrackingCode(repair.tracking_code, event)}
-                      >
-                        ⧉
-                      </button>
-                    </div>
-
-                    {repair.status === "completed" && repair.mileage_at_service == null ? (
-                      <p className="kanban-card-mileage-reminder" role="status">
-                        Odometer (km) not set — open the card to add it.
-                      </p>
-                    ) : null}
-
-                    <div className="kanban-card-meta">
-                      <span>
-                        <span className="kanban-card-label">Master:</span>{" "}
-                        {repair.master_name || "Unassigned"}
-                      </span>
-                      <div className="repair-card-date-stack">
-                        {formatRepairCardDateRow(repair).map((label) => (
-                          <span key={label}>{label}</span>
-                        ))}
-                      </div>
-                    </div>
+                      <time className="kanban-card-time">{formatStartedAt(repair.started_at)}</time>
+                    </footer>
                   </article>
-                    );
-                  })()
                 ))}
 
                 {columnRepairs.length === 0 ? (
