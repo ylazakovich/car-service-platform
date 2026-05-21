@@ -1,8 +1,19 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices", "mergeConfidence:all-badges"],
-  "commitMessageTopic": "{{depName}}",
-  "dependencyDashboardApproval": true,
+  "extends": [
+    "github>ylazakovich/renovate-config//presets/python/default",
+    "github>ylazakovich/renovate-config//presets/npm/default",
+    "github>ylazakovich/renovate-config//presets/docker/default",
+    "github>ylazakovich/renovate-config//presets/github-actions/default"
+  ],
+  "enabledManagers": [
+    "pip_requirements",
+    "npm",
+    "docker-compose",
+    "dockerfile",
+    "github-actions",
+    "custom.regex"
+  ],
   "registryAliases": {
     "allure-cli": "npm:allure"
   },
@@ -48,46 +59,15 @@
       "groupName": "minor and patch updates"
     },
     {
-      "description": "Group Vite ecosystem major updates",
-      "matchPackageNames": ["vite", "vitest", "@vitejs/plugin-react", "jsdom"],
+      "description": "Auto-update postgres digest and minor/patch within major 18 only",
+      "matchPackageNames": ["postgres"],
       "matchUpdateTypes": ["major"],
-      "groupName": "vite ecosystem major"
-    },
-    {
-      "description": "Override vitest monorepo preset and merge into vite ecosystem major",
-      "matchSourceUrls": ["https://github.com/vitest-dev/vitest"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "vite ecosystem major"
-    },
-    {
-      "description": "Group React major updates",
-      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom", "react-router-dom"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "react major"
-    },
-    {
-      "description": "Group Django stack major updates",
-      "matchPackageNames": ["django", "djangorestframework", "django-cors-headers", "whitenoise"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "django stack major"
-    },
-    {
-      "description": "Group backend runtime major updates",
-      "matchPackageNames": ["gunicorn", "psycopg", "psycopg-binary", "python-json-logger", "unittest-xml-reporting"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "backend runtime major"
+      "enabled": false
     },
     {
       "description": "Do not update @e965/xlsx because this project intentionally uses that fork",
       "matchPackageNames": ["@e965/xlsx"],
       "enabled": false
-    },
-    {
-      "description": "Group Allure Report 3: CLI (report.yml, depName allure-cli) + npm packages allure-*",
-      "groupName": "allure report",
-      "matchPackageNames": [
-        "//^allure//"
-      ]
     }
   ]
 }
