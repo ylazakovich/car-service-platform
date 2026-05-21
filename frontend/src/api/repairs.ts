@@ -89,7 +89,7 @@ export async function fetchRepairs(q?: string, masterId?: number): Promise<Repai
 }
 
 export async function fetchRepair(id: number): Promise<RepairItem> {
-  const response = await api.get<RepairItem>(`/repairs/${id}/`);
+  const response = await api.get<RepairItem>(`/repairs/${id}`);
   return response.data;
 }
 
