@@ -1,1 +1,0 @@
-{"timestamp": "2026-05-21 11:43:41,907", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/repairs/1/regenerate-portal-token/", "request": "<WSGIRequest: POST '/api/repairs/1/regenerate-portal-token/'>", "status_code": 403}
