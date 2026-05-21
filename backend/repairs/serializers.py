@@ -40,6 +40,10 @@ class RepairServiceLineSerializer(serializers.ModelSerializer):
 
 class RepairSerializer(serializers.ModelSerializer):
     vehicle_label = serializers.SerializerMethodField()
+    vehicle_plate = serializers.SerializerMethodField()
+    vehicle_model = serializers.SerializerMethodField()
+    vehicle_year = serializers.SerializerMethodField()
+    mileage = serializers.SerializerMethodField()
     owner_name = serializers.SerializerMethodField()
     master_name = serializers.SerializerMethodField()
     has_pdf = serializers.SerializerMethodField()
@@ -65,6 +69,10 @@ class RepairSerializer(serializers.ModelSerializer):
             "id",
             "vehicle_id",
             "vehicle_label",
+            "vehicle_plate",
+            "vehicle_model",
+            "vehicle_year",
+            "mileage",
             "owner_name",
             "master_id",
             "master_name",
@@ -78,6 +86,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "portal_token",
             "has_pdf",
             "latest_act_document_total",
+            "started_at",
             "completed_at",
             "estimated_date",
             "repair_notes",
@@ -87,7 +96,7 @@ class RepairSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "tracking_code", "portal_token", "created_at", "updated_at")
+        read_only_fields = ("id", "tracking_code", "portal_token", "started_at", "created_at", "updated_at")
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -100,6 +109,30 @@ class RepairSerializer(serializers.ModelSerializer):
     def get_vehicle_label(self, obj):
         v = obj.vehicle
         return f"{v.license_plate} • {v.make} {v.model}"
+
+    def get_vehicle_plate(self, obj):
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.license_plate
+
+    def get_vehicle_model(self, obj):
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.model
+
+    def get_vehicle_year(self, obj):
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.year
+
+    def get_mileage(self, obj):
+        v = obj.vehicle
+        if v is None:
+            return None
+        return v.mileage
 
     def get_owner_name(self, obj):
         return obj.vehicle.customer.full_name

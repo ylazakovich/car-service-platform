@@ -3,7 +3,6 @@ import {
   formatRepairServicesSummary,
   formatStartedAt,
   getRepairStatusClass,
-  initials,
   masterTint,
   repairStatusLabel,
   REPAIR_KANBAN_COLUMNS,
@@ -115,11 +114,14 @@ export function StaffRepairsKanban({
                         {repairStatusLabel(repair.status)}
                       </span>
                     </div>
-                    <p className="kanban-card-model">
-                      {[repair.vehicle_model, repair.vehicle_year, repair.mileage
-                        ? `${repair.mileage.toLocaleString("en-US")} km` : null]
-                        .filter(Boolean).join(" · ")}
-                    </p>
+                    {(() => {
+                      const parts = [
+                        repair.vehicle_model,
+                        repair.vehicle_year,
+                        repair.mileage ? `${repair.mileage.toLocaleString("en-US")} km` : null,
+                      ].filter(Boolean);
+                      return parts.length > 0 ? <p className="kanban-card-model">{parts.join(" · ")}</p> : null;
+                    })()}
                     <p className="kanban-card-service">{formatRepairServicesSummary(repair)}</p>
                     {repair.issue_notes ? (
                       <p className="kanban-card-issue" title={repair.issue_notes}>{repair.issue_notes}</p>
@@ -127,11 +129,14 @@ export function StaffRepairsKanban({
                     <footer className="kanban-card-meta">
                       <div className="kanban-card-master">
                         <span className="kanban-card-avatar" style={masterTint(repair.master_id)}>
-                          {initials(repair.master_name)}
+                          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <circle cx="10" cy="7" r="3.5"/>
+                            <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"/>
+                          </svg>
                         </span>
                         <span>{repair.master_name ?? "Unassigned"}</span>
                       </div>
-                      <time className="kanban-card-time">{formatStartedAt(repair.started_at)}</time>
+                      {repair.started_at ? <time className="kanban-card-time">{formatStartedAt(repair.started_at)}</time> : null}
                     </footer>
                     <div className="kanban-card-footer">
                       <span className="tracking-chip">#{repair.tracking_code}</span>

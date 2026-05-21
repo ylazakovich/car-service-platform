@@ -1612,10 +1612,15 @@
 }
 
 .kanban-card-avatar {
-  width: 20px; height: 20px; border-radius: 50%;
+  width: 24px; height: 24px; border-radius: 50%;
   background: var(--surface-high); color: var(--text-mid);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 0.6rem; font-weight: 700; line-height: 1;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.kanban-card-avatar svg {
+  width: 15px; height: 15px;
 }
 
 .kanban-card-time {
@@ -1655,6 +1660,14 @@
   border-top: 1px solid var(--border);
   color: var(--text-soft);
   font-size: 0.75rem;
+}
+
+.kanban-card-master {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+  line-height: 1;
 }
 
 .kanban-empty {
