@@ -2329,6 +2329,335 @@ describe("bootstrap application", () => {
     expect(screen.getByText("#TOR-1011")).toBeInTheDocument();
   });
 
+  it("kanban card shows vehicle_plate when present", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 11,
+              vehicle_id: 1,
+              vehicle_label: "Toyota Corolla",
+              vehicle_plate: "AA 1234 BB",
+              vehicle_model: "Corolla",
+              vehicle_year: 2020,
+              mileage: 85000,
+              started_at: null,
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Oil Change",
+              issue_notes: "",
+              status: "new",
+              tracking_code: "TOR-2001",
+              portal_token: "token-2001",
+              has_pdf: false,
+              estimated_date: null,
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2026-05-01T08:00:00Z",
+              updated_at: "2026-05-01T08:00:00Z",
+            },
+          ],
+        });
+      }
+      if (isPurchasesIndexGet(url)) {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findByLabelText("Repairs kanban board");
+
+    expect(screen.getByText("AA 1234 BB")).toBeInTheDocument();
+  });
+
+  it("kanban card falls back to vehicle_label when vehicle_plate is null", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 12,
+              vehicle_id: 1,
+              vehicle_label: "Toyota Corolla",
+              vehicle_plate: null,
+              vehicle_model: null,
+              vehicle_year: null,
+              mileage: null,
+              started_at: null,
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Oil Change",
+              issue_notes: "",
+              status: "new",
+              tracking_code: "TOR-2002",
+              portal_token: "token-2002",
+              has_pdf: false,
+              estimated_date: null,
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2026-05-01T08:00:00Z",
+              updated_at: "2026-05-01T08:00:00Z",
+            },
+          ],
+        });
+      }
+      if (isPurchasesIndexGet(url)) {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    const board = await screen.findByLabelText("Repairs kanban board");
+
+    expect(within(board).getAllByText("Toyota Corolla").length).toBeGreaterThan(0);
+  });
+
+  it("kanban card shows model year mileage row when all fields present", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 13,
+              vehicle_id: 1,
+              vehicle_label: "Corolla",
+              vehicle_plate: null,
+              vehicle_model: "Corolla",
+              vehicle_year: 2020,
+              mileage: 85000,
+              started_at: null,
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Inspection",
+              issue_notes: "",
+              status: "new",
+              tracking_code: "TOR-2003",
+              portal_token: "token-2003",
+              has_pdf: false,
+              estimated_date: null,
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2026-05-01T08:00:00Z",
+              updated_at: "2026-05-01T08:00:00Z",
+            },
+          ],
+        });
+      }
+      if (isPurchasesIndexGet(url)) {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findByLabelText("Repairs kanban board");
+
+    const modelRow = document.querySelector(".kanban-card-model");
+    expect(modelRow).not.toBeNull();
+    expect(modelRow!.textContent).toContain("Corolla");
+    expect(modelRow!.textContent).toContain("2020");
+    expect(modelRow!.textContent).toContain("85,000 km");
+  });
+
+  it("kanban card shows time element when started_at is set", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 14,
+              vehicle_id: 1,
+              vehicle_label: "WB 1234K",
+              vehicle_plate: "WB 1234K",
+              vehicle_model: null,
+              vehicle_year: null,
+              mileage: null,
+              started_at: "2026-05-01T09:00:00Z",
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Brake Check",
+              issue_notes: "",
+              status: "in_progress",
+              tracking_code: "TOR-2004",
+              portal_token: "token-2004",
+              has_pdf: false,
+              estimated_date: null,
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2026-05-01T09:00:00Z",
+              updated_at: "2026-05-01T09:00:00Z",
+            },
+          ],
+        });
+      }
+      if (isPurchasesIndexGet(url)) {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findByLabelText("Repairs kanban board");
+
+    expect(document.querySelector(".kanban-card-time")).not.toBeNull();
+  });
+
+  it("kanban card omits time element when started_at is null", async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/auth/csrf") {
+        return Promise.resolve({ data: { detail: "CSRF cookie set" } });
+      }
+      if (url === "/auth/me") {
+        return Promise.resolve({
+          data: { id: 1, email: "manager@test.local", first_name: "Test", last_name: "Manager", role: "admin", is_staff: false },
+        });
+      }
+      if (isPurchasesUnitsGet(url)) {
+        return Promise.resolve({ data: SMOKE_UNITS_OF_MEASURE_LIST });
+      }
+      if (url === "/repairs/") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 15,
+              vehicle_id: 1,
+              vehicle_label: "WB 9999 ZZ",
+              vehicle_plate: "WB 9999 ZZ",
+              vehicle_model: null,
+              vehicle_year: null,
+              mileage: null,
+              started_at: null,
+              owner_name: "Alex Johnson",
+              master_id: null,
+              master_name: "",
+              service_name: "Tire Change",
+              issue_notes: "",
+              status: "new",
+              tracking_code: "TOR-2005",
+              portal_token: "token-2005",
+              has_pdf: false,
+              estimated_date: null,
+              completed_at: null,
+              repair_notes: [],
+              before_photos: [],
+              during_photos: [],
+              after_photos: [],
+              created_at: "2026-05-01T08:00:00Z",
+              updated_at: "2026-05-01T08:00:00Z",
+            },
+          ],
+        });
+      }
+      if (isPurchasesIndexGet(url)) {
+        return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url.startsWith("/analytics/dashboard/")) {
+        return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const user = userEvent.setup();
+    renderApp("/app");
+
+    await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await screen.findByLabelText("Repairs kanban board");
+
+    expect(document.querySelector(".kanban-card-time")).toBeNull();
+  });
+
   it("shows regenerate portal link button to admin", async () => {
     const user = userEvent.setup();
     renderApp("/app");

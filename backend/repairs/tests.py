@@ -644,6 +644,73 @@ class RepairApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["estimated_date"], "2025-12-31")
 
+    def test_started_at_is_readonly(self):
+        response = self._create_repair()
+        repair_id = response.json()["id"]
+        self.client.force_authenticate(self.staff_user)
+
+        patch_response = self.client.patch(
+            f"/api/repairs/{repair_id}",
+            {"started_at": "2020-01-01T00:00:00Z"},
+            format="json",
+        )
+
+        self.assertEqual(patch_response.status_code, 200)
+        repair = Repair.objects.get(pk=repair_id)
+        self.assertIsNone(repair.started_at)
+
+    def test_started_at_latch_persists_across_status_transitions(self):
+        response = self._create_repair()
+        repair_id = response.json()["id"]
+        self.client.force_authenticate(self.staff_user)
+
+        self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        repair = Repair.objects.get(pk=repair_id)
+        self.assertIsNotNone(repair.started_at)
+        original_started_at = repair.started_at
+
+        self.client.patch(f"/api/repairs/{repair_id}", {"status": "waiting_parts"}, format="json")
+        repair.refresh_from_db()
+        self.assertEqual(repair.started_at, original_started_at)
+
+        self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        repair.refresh_from_db()
+        self.assertEqual(repair.started_at, original_started_at)
+
+    def test_portal_endpoint_does_not_expose_started_at(self):
+        response = self._create_repair()
+        repair_id = response.json()["id"]
+        self.client.force_authenticate(self.staff_user)
+        self.client.patch(f"/api/repairs/{repair_id}", {"status": "in_progress"}, format="json")
+        repair = Repair.objects.get(pk=repair_id)
+        self.assertIsNotNone(repair.started_at)
+        self.client.force_authenticate(None)
+
+        portal_response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(portal_response.status_code, 200)
+        self.assertNotIn("started_at", portal_response.data)
+
+    def test_list_vehicle_fields_null_for_repair_with_vehicle_missing_year(self):
+        vehicle_no_year = Vehicle.objects.create(
+            customer=self.customer,
+            license_plate="NO YEAR 01",
+            make="Honda",
+            model="Civic",
+        )
+        Repair.objects.create(
+            vehicle=vehicle_no_year,
+            service_name="Brake Flush",
+            status="new",
+        )
+        self.client.force_authenticate(self.staff_user)
+
+        response = self.client.get("/api/repairs/", format="json")
+
+        self.assertEqual(response.status_code, 200)
+        repair_data = next(r for r in response.json() if r["vehicle_id"] == vehicle_no_year.id)
+        self.assertIsNone(repair_data["vehicle_year"])
+
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class RepairPdfViewTests(TestCase):

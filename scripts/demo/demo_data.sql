@@ -683,6 +683,10 @@ UPDATE repairs SET portal_token = 'demo-' || tracking_code WHERE portal_token IS
 -- E2E / Kanban: Completed column caps at 15 cards; pin TOR-1001 to the top so Playwright always finds it without "Show more".
 UPDATE repairs SET position = 0 WHERE tracking_code = 'TOR-1001';
 
+-- E2E / Kanban: Backfill started_at for in-progress repairs so the kanban-card-time element is visible.
+-- Direct SQL inserts bypass model.save(), so started_at must be set explicitly.
+UPDATE repairs SET started_at = created_at WHERE status = 'in_progress' AND started_at IS NULL;
+
 -- Service lines (one per demo repair; link catalog row when service name matches)
 INSERT INTO repair_service_lines (repair_id, name, catalog_service_id, sort_order)
 SELECT r.id, r.service_name, s.id, 0
