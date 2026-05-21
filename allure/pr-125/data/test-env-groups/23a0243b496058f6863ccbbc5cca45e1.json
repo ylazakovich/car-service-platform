@@ -1,1 +1,1 @@
-{"id":"23a0243b496058f6863ccbbc5cca45e1","fullName":"staff-repairs-kanban-card-fields.spec.ts:29:3","name":"TOR-1001 kanban card shows vehicle model line","status":"passed","testResultsByEnv":{"e2e":"63f98fbb3c602d1165fab179c86d2fe6"}}
+{"id":"23a0243b496058f6863ccbbc5cca45e1","fullName":"staff-repairs-kanban-card-fields.spec.ts:29:3","name":"TOR-1001 kanban card shows vehicle model line","status":"failed","testResultsByEnv":{"e2e":"8ba480b27a7463c1ab39d295446e8976"}}
