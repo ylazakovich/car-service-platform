@@ -1,0 +1,1023 @@
+/* ═══════════════════════════════════════════════
+   UOM / REGISTERS ADMIN
+   ═══════════════════════════════════════════════ */
+
+/* Units of measure — admin (Settings → Registers) */
+.uom-admin-page {
+  margin-top: var(--s4);
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.uom-admin-page-intro {
+  margin-bottom: var(--s3);
+}
+
+.uom-admin-page-intro h3 {
+  margin: 0 0 var(--s2);
+  font-size: 1.05rem;
+}
+
+/* Units (Registers): compact mobile list — name-first row, color = active, tap to edit */
+.uom-mobile-unit-list {
+  list-style: none;
+  margin: var(--s3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uom-mobile-unit-empty {
+  list-style: none;
+  padding: var(--s3);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+}
+
+.uom-mobile-unit-item {
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-mid);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.uom-mobile-unit-item.kanban-card-drop-target {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.uom-mobile-unit-item--dragging {
+  opacity: 0.65;
+}
+
+.uom-mobile-unit-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  position: relative;
+}
+
+.uom-mobile-unit-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.uom-mobile-unit-summary-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+}
+
+.uom-mobile-unit-summary--on .uom-mobile-unit-summary-accent {
+  background: linear-gradient(180deg, #b8c92e 0%, var(--accent) 100%);
+  box-shadow: 0 0 10px rgba(205, 216, 58, 0.35);
+}
+
+.uom-mobile-unit-summary--off .uom-mobile-unit-summary-accent {
+  background: rgba(120, 128, 140, 0.7);
+}
+
+.uom-mobile-unit-summary--off .uom-mobile-unit-name {
+  color: var(--text-mid);
+}
+
+.uom-mobile-unit-summary-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-left: 6px;
+}
+
+.uom-mobile-unit-name {
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.uom-mobile-unit-code {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+}
+
+.uom-mobile-unit-status-pill {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.uom-mobile-unit-status-pill[data-active="true"] {
+  color: var(--accent);
+  border-color: rgba(205, 216, 58, 0.45);
+  background: rgba(205, 216, 58, 0.12);
+}
+
+.uom-mobile-unit-status-pill[data-active="false"] {
+  color: var(--text-soft);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.uom-mobile-unit-chevron {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--text-soft);
+  transition: transform 0.2s ease;
+}
+
+.uom-mobile-unit-chevron--open {
+  transform: rotate(180deg);
+}
+
+.uom-mobile-unit-detail {
+  padding: 0 var(--s3) var(--s3);
+  border-top: 1px solid var(--border);
+  background: rgba(8, 10, 14, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.uom-mobile-unit-reorder-note {
+  margin: var(--s3) 0 0;
+}
+
+.uom-mobile-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: 10px;
+  border: 1px dashed rgba(205, 216, 58, 0.35);
+  background: rgba(205, 216, 58, 0.06);
+  font-size: 0.82rem;
+  color: var(--text-mid);
+  cursor: grab;
+  user-select: none;
+}
+
+.uom-mobile-drag-handle:active {
+  cursor: grabbing;
+}
+
+.uom-mobile-drag-handle--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.uom-mobile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uom-mobile-field > span:first-child,
+.uom-mobile-field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-soft);
+}
+
+.uom-mobile-code-readonly {
+  display: inline-block;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.uom-mobile-customer-vehicles-readonly {
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.uom-mobile-unit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.uom-mobile-unit-actions .button {
+  flex: 1;
+  min-width: 6rem;
+  justify-content: center;
+}
+
+.reference-section-topbar .workspace-copy {
+  margin: 0.35rem 0 0;
+  max-width: 42rem;
+}
+
+.reference-workspace .dashboard-folder-panel {
+  min-height: 12rem;
+}
+
+/* Registers: collapsible guidance (details/summary) */
+.registers-help-disclosure {
+  margin: var(--s3) 0 var(--s4);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-mid);
+  overflow: hidden;
+}
+
+.reference-workspace .kanban-topbar .registers-help-disclosure {
+  margin-top: var(--s3);
+  margin-bottom: 0;
+}
+
+.registers-help-disclosure-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--accent);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.registers-help-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.registers-help-disclosure-summary::after {
+  content: "";
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+  opacity: 0.85;
+}
+
+.registers-help-disclosure[open] .registers-help-disclosure-summary::after {
+  transform: rotate(225deg);
+}
+
+.registers-help-disclosure-summary:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.registers-help-disclosure-body {
+  padding: 0 var(--s4) var(--s4);
+  border-top: 1px solid var(--border);
+}
+
+.registers-help-disclosure-copy {
+  margin: 0;
+  padding-top: var(--s3);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-mid);
+}
+
+.registers-help-disclosure-inner.uom-admin-lead {
+  margin: 0;
+  padding-top: var(--s3);
+  max-width: none;
+}
+
+/* Shown only under @media (max-width: 820px) — see Registers mobile block */
+.registers-mobile-table-hint {
+  display: none;
+}
+
+.registers-embedded-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+
+.registers-search-toolbar {
+  margin-bottom: var(--s3);
+}
+
+.registers-search-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  max-width: 22rem;
+}
+
+.registers-search-field span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.registers-search-field input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.5rem var(--s3);
+  font-size: 0.88rem;
+}
+
+.services-register-page .registers-search-field {
+  max-width: none;
+  width: 100%;
+}
+
+.services-register-page .registers-search-field input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.registers-search-hint {
+  margin: 0 0 var(--s2);
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
+.uom-admin-table.uom-admin-table--kanban tbody tr.uom-kanban-row--reorder-locked {
+  cursor: default;
+}
+
+.uom-admin-table.uom-admin-table--kanban tbody tr.uom-kanban-row--reorder-locked .uom-row-drag-handle {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Registers: clear editable grid + scroll + sticky header */
+.registers-table-wrap,
+.services-register-table-wrap {
+  max-height: min(70vh, 36rem);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.services-register-table-hint {
+  margin: 0 0 var(--s2);
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Segmented toggle: Inactive | Active (replaces checkbox in Services register) */
+.services-active-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.services-active-toggle__btn {
+  appearance: none;
+  margin: 0;
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-soft);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease;
+  white-space: nowrap;
+}
+
+.services-active-toggle__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.services-active-toggle__btn:not(:disabled):hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.services-active-toggle__btn--selected-inactive {
+  background: var(--surface-mid);
+  color: var(--text-mid);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.services-active-toggle__btn--selected-active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--border-accent);
+}
+
+.services-active-toggle__btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--surface-mid),
+    0 0 0 4px var(--accent);
+  z-index: 1;
+  position: relative;
+}
+
+.services-active-toggle__btn--selected-inactive:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px var(--border-strong),
+    0 0 0 2px var(--surface-mid),
+    0 0 0 4px rgba(255, 255, 255, 0.22);
+}
+
+.services-active-toggle__btn--selected-active:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px var(--border-accent),
+    0 0 0 2px var(--surface-mid),
+    0 0 0 4px var(--accent);
+}
+
+.registers-editor-table,
+.services-register-editor-table {
+  border: 1px solid var(--border-strong);
+  table-layout: fixed;
+  width: 100%;
+}
+
+.registers-editor-table th,
+.registers-editor-table td,
+.services-register-editor-table th,
+.services-register-editor-table td {
+  border-left: 1px solid var(--border);
+}
+
+.registers-editor-table td,
+.services-register-editor-table td {
+  min-width: 0;
+}
+
+.registers-units-table th:nth-child(1),
+.registers-units-table td:nth-child(1) {
+  width: 6%;
+}
+
+.registers-units-table th:nth-child(2),
+.registers-units-table td:nth-child(2) {
+  width: 16%;
+}
+
+.registers-units-table th:nth-child(3),
+.registers-units-table td:nth-child(3) {
+  width: 34%;
+}
+
+.registers-units-table th:nth-child(4),
+.registers-units-table td:nth-child(4) {
+  width: 18%;
+}
+
+.registers-units-table th:nth-child(5),
+.registers-units-table td:nth-child(5) {
+  width: 26%;
+}
+
+/* Units register: left-aligned text; drag column stays centered */
+.registers-units-table th,
+.registers-units-table td {
+  text-align: left;
+}
+
+.registers-units-table th.uom-admin-order-th,
+.registers-units-table td.uom-admin-order-cell {
+  text-align: center;
+}
+
+.registers-units-table td:last-child .uom-admin-row-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.registers-units-table td:last-child .uom-admin-row-actions .button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.registers-customers-table th:nth-child(1),
+.registers-customers-table td:nth-child(1) {
+  width: 20%;
+}
+
+.registers-customers-table th:nth-child(2),
+.registers-customers-table td:nth-child(2) {
+  width: 15%;
+}
+
+.registers-customers-table th:nth-child(3),
+.registers-customers-table td:nth-child(3) {
+  width: 21%;
+}
+
+.registers-customers-table th:nth-child(4),
+.registers-customers-table td:nth-child(4) {
+  width: 18%;
+}
+
+.registers-customers-table th:nth-child(5),
+.registers-customers-table td:nth-child(5) {
+  width: 8%;
+}
+
+.registers-customers-table th:nth-child(6),
+.registers-customers-table td:nth-child(6) {
+  width: 18%;
+}
+
+/* Customers register: Save + Delete in one row */
+.registers-customers-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.registers-customers-actions .button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.services-register-editor-table th:nth-child(1),
+.services-register-editor-table td:nth-child(1) {
+  width: 17%;
+}
+
+.services-register-editor-table th:nth-child(2),
+.services-register-editor-table td:nth-child(2) {
+  width: 39%;
+}
+
+.services-register-editor-table th:nth-child(3),
+.services-register-editor-table td:nth-child(3) {
+  width: 11%;
+  min-width: 5.5rem;
+}
+
+.services-register-editor-table th:nth-child(4),
+.services-register-editor-table td:nth-child(4) {
+  width: 14%;
+  min-width: 8.75rem;
+  white-space: nowrap;
+}
+
+.services-register-editor-table th:nth-child(5),
+.services-register-editor-table td:nth-child(5) {
+  width: 19%;
+  min-width: 9rem;
+}
+
+/* Services register: left-aligned headers/cells; actions fill column */
+.services-register-editor-table th,
+.services-register-editor-table td,
+.registers-customers-table th,
+.registers-customers-table td {
+  text-align: left;
+}
+
+.services-register-editor-table td:last-child .uom-admin-row-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.services-register-editor-table td:last-child .uom-admin-row-actions .button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.registers-editor-table th:first-child,
+.registers-editor-table td:first-child,
+.services-register-editor-table th:first-child,
+.services-register-editor-table td:first-child {
+  border-left: none;
+}
+
+.registers-editor-table thead th,
+.services-register-editor-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-mid);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+.registers-editor-table tbody tr:nth-child(even) td,
+.services-register-editor-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@media (hover: hover) {
+  .registers-editor-table tbody tr:hover td,
+  .services-register-editor-table tbody tr:hover td {
+    background: rgba(205, 216, 58, 0.04);
+  }
+}
+
+.uom-admin-tip {
+  margin: var(--s3) 0 var(--s4);
+  padding: var(--s4);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  background: var(--surface-mid);
+}
+
+.uom-admin-tip-title {
+  margin: 0 0 var(--s2);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  letter-spacing: 0.02em;
+}
+
+.uom-admin-tip-body {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.uom-admin-table th .uom-admin-th-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-weight: 500;
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.uom-delete-overlay.modal-overlay,
+.uom-add-overlay.modal-overlay {
+  z-index: 50;
+}
+
+.uom-delete-confirm-modal.modal-card {
+  width: min(100%, 440px);
+  max-height: min(90vh, 560px);
+}
+
+.uom-delete-confirm-header.panel-header {
+  margin-bottom: var(--s3);
+}
+
+.uom-delete-confirm-header.panel-header h3 {
+  margin: 0;
+}
+
+.uom-delete-confirm-body {
+  margin-bottom: var(--s2);
+}
+
+.uom-delete-confirm-lead {
+  margin-bottom: var(--s3);
+}
+
+.uom-delete-name {
+  color: var(--text-mid);
+}
+
+.uom-delete-modal-error {
+  margin-top: var(--s3);
+}
+
+.uom-delete-confirm-actions {
+  justify-content: flex-end;
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+
+.uom-add-unit-actions {
+  justify-content: flex-end;
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+
+.uom-admin-table-wrap {
+  overflow-x: auto;
+  margin: var(--s3) 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.uom-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.uom-admin-table th,
+.uom-admin-table td {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+/* Registers: row middle-align (textarea rows are tall) */
+.uom-admin-table.registers-editor-table th,
+.uom-admin-table.registers-editor-table td,
+.uom-admin-table.services-register-editor-table th,
+.uom-admin-table.services-register-editor-table td {
+  vertical-align: middle;
+}
+
+.uom-admin-table th {
+  font-weight: 600;
+  color: var(--text-soft);
+  background: var(--surface-mid);
+}
+
+.uom-admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Match stack-form / form-grid field chrome (table cells are outside .stack-form) */
+.uom-admin-table input.uom-admin-cell-input {
+  width: 100%;
+  max-width: 16rem;
+  min-width: 4rem;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.72rem var(--s4);
+  min-height: 48px;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.uom-admin-table input.uom-admin-cell-input:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.uom-admin-table input.uom-admin-cell-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.uom-admin-table input.uom-admin-cell-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.services-register-editor-table input.uom-admin-cell-input,
+.services-register-editor-table input.uom-admin-cell-input--compact {
+  max-width: none;
+  min-width: 0;
+}
+
+.services-register-editor-table textarea.uom-admin-cell-input--compact {
+  display: block;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.45rem var(--s3);
+  min-height: 3rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.services-register-editor-table textarea.uom-admin-cell-input--compact:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.services-register-editor-table textarea.uom-admin-cell-input--compact:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.services-register-editor-table textarea.uom-admin-cell-input--compact:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.uom-admin-order-th {
+  width: 2.75rem;
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+.uom-admin-order-cell {
+  width: 2.75rem;
+  min-width: 2.5rem;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.uom-admin-order-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.uom-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.2rem;
+  color: var(--text-soft);
+  cursor: grab;
+  border-radius: 8px;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.uom-drag-handle:active {
+  cursor: grabbing;
+}
+
+.uom-drag-handle:hover {
+  color: var(--text-mid);
+  background: var(--surface-mid);
+}
+
+/* Registers UoM rows: same classes as Repairs kanban cards (.kanban-card-dragging / .kanban-card-drop-target) */
+.uom-admin-table.uom-admin-table--kanban tbody tr.uom-kanban-row {
+  cursor: grab;
+}
+
+.uom-admin-table.uom-admin-table--kanban tbody tr.uom-kanban-row:active {
+  cursor: grabbing;
+}
+
+.uom-admin-table.uom-admin-table--kanban tbody tr.kanban-card-dragging td {
+  opacity: 0.38;
+}
+
+.uom-admin-table.uom-admin-table--kanban tbody tr.kanban-card-drop-target td {
+  background: var(--accent-dim);
+  box-shadow: 0 -3px 0 0 var(--accent);
+}
+
+.uom-admin-subtitle {
+  margin: 0 0 var(--s2);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.uom-admin-lead {
+  margin: 0 0 var(--s3);
+  max-width: 44rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.uom-accent-inline {
+  color: var(--accent);
+}
+
+.uom-admin-table--compact th,
+.uom-admin-table--compact td {
+  padding: 0.35rem 0.5rem;
+  vertical-align: middle;
+}
+
+.uom-admin-table--compact input.uom-admin-cell-input--compact {
+  min-height: 36px;
+  padding: 0.45rem var(--s3);
+  font-size: 0.85rem;
+}
+
+.uom-row-drag-handle.kanban-drag-handle:hover {
+  color: var(--text-mid);
+  background: var(--surface-mid);
+}
+
+.uom-delete-row-btn.button-danger {
+  flex-shrink: 0;
+}
+
+.uom-admin-active-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.uom-admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.uom-admin-row-error {
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  color: #e07070;
+  font-size: 0.8rem;
+}
+
+.uom-admin-create-grid {
+  margin-top: var(--s2);
+}
+
+.uom-admin-create-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 520px) {
+  .uom-add-unit-modal .uom-admin-create-grid--two {
+    grid-template-columns: 1fr;
+  }
+}
+
+.uom-add-order-hint {
+  margin: var(--s2) 0 0;
+  max-width: 36rem;
+}

@@ -1,0 +1,17 @@
+/* ═══════════════════════════════════════════════
+   FOCUS — keyboard navigation
+   ═══════════════════════════════════════════════ */
+:where(
+  .button, .button-secondary, .button-ghost, .button-danger,
+  .text-action, .nav-link, .subnav-tab, .kanban-card,
+  .kanban-date-chip, .kanban-show-more, .kanban-drag-handle,
+  .kanban-col-collapse, .repair-status-chip, .client-toggle-btn,
+  .profile-edit-trigger
+):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+/* Inset where the element itself is the chrome (nav-link active strip etc.) */
+:where(.nav-link-active):focus-visible { outline-offset: -2px; }
