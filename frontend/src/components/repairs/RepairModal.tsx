@@ -1,4 +1,4 @@
-import { useEffect, useId, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, type FormEvent, type ReactNode } from "react";
 import { RepairIcon } from "./repairIcons";
 import { FieldRow, SectionHead } from "./FieldRow";
 import { StatusAutotag } from "./StatusAutotag";
@@ -53,9 +53,13 @@ export function RepairModalShell({
 }: RepairModalShellProps) {
   const formId = useId();
   const errorCount = errors ? countRepairFieldErrors(errors) : 0;
+  const modalRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      if (!modalRef.current?.contains(event.target as Node)) {
+        return;
+      }
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && onSubmit && !locked && !saving) {
         event.preventDefault();
         onSubmit();
@@ -74,7 +78,10 @@ export function RepairModalShell({
 
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
-    onSubmit?.();
+    if (!onSubmit || locked || saving) {
+      return;
+    }
+    onSubmit();
   }
 
   const modalClass = [
@@ -89,6 +96,7 @@ export function RepairModalShell({
   return (
     <div className="modal-overlay repair-modal-overlay" role="presentation" onClick={onClose}>
       <section
+        ref={modalRef}
         className={modalClass}
         role="dialog"
         aria-modal="true"

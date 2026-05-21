@@ -116,7 +116,7 @@ class RepairPdfView(APIView):
         )
         if repair.status not in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP):
             return Response(
-                {"detail": "PDF is only available for completed repairs."},
+                {"detail": "PDF is only available for completed or picked up repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         from .pdf_export import get_latest_repair_document
@@ -152,7 +152,7 @@ class RepairPdfExportView(APIView):
         )
         if repair.status not in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP):
             return Response(
-                {"detail": "PDF export is only available for completed repairs."},
+                {"detail": "PDF export is only available for completed or picked up repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if repair.mileage_at_service is None:

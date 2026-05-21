@@ -1398,8 +1398,8 @@ describe("bootstrap application", () => {
               mileage: null,
               started_at: null,
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "Wheel Alignment",
               issue_notes: "Steering wheel is slightly off-centre.",
               status: "in_progress",
@@ -1419,6 +1419,9 @@ describe("bootstrap application", () => {
       if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
+      }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
       }
@@ -1437,8 +1440,8 @@ describe("bootstrap application", () => {
             mileage: null,
             started_at: null,
             owner_name: "Alex Johnson",
-            master_id: null,
-            master_name: "",
+            master_id: 5,
+            master_name: "Test Master",
             service_name: "Wheel Alignment",
             issue_notes: "Steering wheel is slightly off-centre.",
             status: data?.status ?? "completed",
@@ -3011,8 +3014,8 @@ describe("bootstrap application", () => {
             mileage: null,
             started_at: null,
             owner_name: "Alex Johnson",
-            master_id: null,
-            master_name: "",
+            master_id: 5,
+            master_name: "Test Master",
             service_name: "No Odometer Repair",
             issue_notes: "Completed repair without return mileage.",
             status: (data?.status as string) ?? "in_progress",
@@ -3079,8 +3082,8 @@ describe("bootstrap application", () => {
               mileage: null,
               started_at: null,
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "No Odometer Repair",
               issue_notes: "Completed repair without return mileage.",
               status: "in_progress",
@@ -3103,8 +3106,11 @@ describe("bootstrap application", () => {
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
-      if (url === "/services/" || url === "/auth/staff/") {
+      if (url === "/services/") {
         return Promise.resolve({ data: [] });
+      }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -3175,8 +3181,8 @@ describe("bootstrap application", () => {
               mileage: null,
               started_at: null,
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "Existing Act With Odometer",
               issue_notes: "Completed repair with stored act.",
               status: "in_progress",
@@ -3199,8 +3205,11 @@ describe("bootstrap application", () => {
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
-      if (url === "/services/" || url === "/auth/staff/") {
+      if (url === "/services/") {
         return Promise.resolve({ data: [] });
+      }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -3223,8 +3232,8 @@ describe("bootstrap application", () => {
             mileage: null,
             started_at: null,
             owner_name: "Alex Johnson",
-            master_id: null,
-            master_name: "",
+            master_id: 5,
+            master_name: "Test Master",
             service_name: "Existing Act With Odometer",
             issue_notes: "Completed repair with stored act.",
             status: (data?.status as string) ?? "completed",
@@ -3308,8 +3317,8 @@ describe("bootstrap application", () => {
               mileage: 85000,
               started_at: "2026-05-21T10:30:00Z",
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "Pending Mileage Repair",
               issue_notes: "Ready except for returned odometer.",
               status: "in_progress",
@@ -3332,8 +3341,11 @@ describe("bootstrap application", () => {
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
-      if (url === "/services/" || url === "/auth/staff/") {
+      if (url === "/services/") {
         return Promise.resolve({ data: [] });
+      }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -3367,9 +3379,7 @@ describe("bootstrap application", () => {
     fireEvent.dragOver(completedColumn as HTMLElement, { dataTransfer });
     fireEvent.drop(completedColumn as HTMLElement, { dataTransfer });
 
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Fill in Odometer when returned (km) before moving this repair to Completed."
-    );
+    expect(await screen.findByText("Fill in Odometer when returned (km) before moving this repair to Completed.")).toBeInTheDocument();
     expect(mockApi.patch).not.toHaveBeenCalled();
     const dialog = await screen.findByRole("dialog", { name: smokeRepairDialogName("TOR-1022") });
     const mileageInput = within(dialog).getByLabelText("Odometer reading in kilometers when vehicle was returned");

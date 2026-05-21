@@ -466,35 +466,53 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     if (!selectedRepair) {
       return;
     }
-    const updated = await updateRepair(selectedRepair.id, { status: "in_progress", completed_at: null });
-    setRepairs((current) =>
-      current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
-    );
+    const previous = repairModalStatus;
     setRepairModalStatus("in_progress");
+    try {
+      const updated = await updateRepair(selectedRepair.id, { status: "in_progress", completed_at: null });
+      setRepairs((current) =>
+        current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
+      );
+    } catch {
+      setRepairModalStatus(previous);
+      showErrorToast("Failed to reopen repair. Please try again.");
+    }
   }
 
   async function handleRepairPickUp() {
     if (!selectedRepair) {
       return;
     }
-    const updated = await updateRepair(selectedRepair.id, { status: "picked_up" });
-    setRepairs((current) =>
-      current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
-    );
+    const previous = repairModalStatus;
     setRepairModalStatus("picked_up");
-    setRepairModalOpenedAsCompleted(true);
+    try {
+      const updated = await updateRepair(selectedRepair.id, { status: "picked_up" });
+      setRepairs((current) =>
+        current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
+      );
+      setRepairModalOpenedAsCompleted(true);
+    } catch {
+      setRepairModalStatus(previous);
+      showErrorToast("Failed to mark repair as picked up. Please try again.");
+    }
   }
 
   async function handleRepairUndoPickUp() {
     if (!selectedRepair) {
       return;
     }
-    const updated = await updateRepair(selectedRepair.id, { status: "completed" });
-    setRepairs((current) =>
-      current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
-    );
+    const previous = repairModalStatus;
     setRepairModalStatus("completed");
-    setRepairModalOpenedAsCompleted(true);
+    try {
+      const updated = await updateRepair(selectedRepair.id, { status: "completed" });
+      setRepairs((current) =>
+        current.map((repair) => (repair.id === selectedRepair.id ? mapApiRepairToEntry(updated) : repair))
+      );
+      setRepairModalOpenedAsCompleted(true);
+    } catch {
+      setRepairModalStatus(previous);
+      showErrorToast("Failed to undo pickup. Please try again.");
+    }
   }
 
   async function deleteRepairFromModal(repair: RepairEntry) {
