@@ -559,7 +559,7 @@ function StaffShell() {
               ))}
             </nav>
 
-            <TodaySummary onAddRepair={handleOpenRepairComposer} />
+            {activeSection === "repairs" && <TodaySummary onAddRepair={handleOpenRepairComposer} />}
           </div>
 
           <div className="shell-user">

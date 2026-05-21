@@ -453,8 +453,16 @@
   padding: var(--s5);
 }
 
-.dashboard-folder-tabs + .dashboard-folder-panel {
-  margin-top: calc(var(--s4) * -1 + 0.25rem);
+@media (min-width: 1024px) {
+  .dashboard-folder-tabs + .dashboard-folder-panel {
+    margin-top: calc(var(--s4) * -1 + 0.25rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .dashboard-folder-tabs + .dashboard-folder-panel {
+    margin-top: var(--s3);
+  }
 }
 
 .dashboard-metric-grid {
@@ -634,6 +642,10 @@
   letter-spacing: 0.16em;
   line-height: 1;
   text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .dashboard-shell-head .workspace-copy { display: none; }
 }
 
 @media (max-width: 900px) {
@@ -1877,4 +1889,21 @@ button.moneyflow-series-toggle {
 .dashboard-worker-status-cell strong {
   font-size: 1.05rem;
   line-height: 1;
+}
+
+@media (max-width: 720px) {
+  .metric-grid        { grid-template-columns: 1fr; gap: var(--s3); }
+  .metric-grid-three  { grid-template-columns: 1fr; }
+  .dashboard-metric-grid-triple { grid-template-columns: 1fr; }
+  .dashboard-worker-status-grid { grid-template-columns: 1fr; }
+  .dashboard-warehouse-cumulative-strip { grid-template-columns: 1fr; }
+  .dashboard-warehouse-value-list { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 721px) and (max-width: 1023px) {
+  .metric-grid        { grid-template-columns: repeat(2, 1fr); }
+  .metric-grid-three  { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-metric-grid-triple { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-metric-grid-triple > :last-child { grid-column: 1 / -1; }
+  .dashboard-worker-status-grid { grid-template-columns: repeat(2, 1fr); }
 }

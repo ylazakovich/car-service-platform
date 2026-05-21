@@ -158,6 +158,9 @@
   padding: var(--s4);
   display: grid; gap: var(--s3);
 }
+@media (max-width: 720px) {
+  .sidebar-summary { display: none; }
+}
 .sidebar-summary__head { display: flex; align-items: center; justify-content: space-between; }
 .sidebar-summary__live {
   display: inline-flex; align-items: center; gap: 5px;
