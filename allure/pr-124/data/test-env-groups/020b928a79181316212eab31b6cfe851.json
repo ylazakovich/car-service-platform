@@ -1,1 +1,1 @@
-{"id":"020b928a79181316212eab31b6cfe851","fullName":"src/lib/formatPolishPhone.test.ts#formatPolishPhoneDisplay handles leading 0 trunk (10 digits)","name":"handles leading 0 trunk (10 digits)","status":"passed","testResultsByEnv":{"frontend":"e9d9cade4f5397b468cde910392e4af3"}}
+{"id":"020b928a79181316212eab31b6cfe851","fullName":"src/lib/formatPolishPhone.test.ts#formatPolishPhoneDisplay handles leading 0 trunk (10 digits)","name":"handles leading 0 trunk (10 digits)","status":"passed","testResultsByEnv":{"frontend":"a761a23c8bf418b4cf365525dc265bf9"}}
