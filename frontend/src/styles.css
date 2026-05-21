@@ -31,12 +31,38 @@
   --s5: 1.25rem;
   --s6: 1.5rem;
   --s8: 2rem;
+
+  --field-h-compact: 36px;
+  --field-h:         44px;
+  --field-h-cozy:    48px;
 }
+
+.form--compact { --field-h: var(--field-h-compact); }
+.form--default { --field-h: 44px; }
+.form--cozy    { --field-h: var(--field-h-cozy); }
 
 /* ═══════════════════════════════════════════════
    RESET & BASE
    ═══════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; }
+
+/* ═══════════════════════════════════════════════
+   FOCUS — keyboard navigation
+   ═══════════════════════════════════════════════ */
+:where(
+  .button, .button-secondary, .button-ghost, .button-danger,
+  .text-action, .nav-link, .subnav-tab, .kanban-card,
+  .kanban-date-chip, .kanban-show-more, .kanban-drag-handle,
+  .kanban-col-collapse, .repair-status-chip, .client-toggle-btn,
+  .profile-edit-trigger
+):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+/* Inset where the element itself is the chrome (nav-link active strip etc.) */
+:where(.nav-link-active):focus-visible { outline-offset: -2px; }
 
 html {
   -webkit-font-smoothing: antialiased;
@@ -408,7 +434,7 @@ select:focus,
 }
 
 input, select, textarea {
-  min-height: 48px;
+  min-height: var(--field-h, 44px);
   line-height: 1.2;
   color-scheme: dark;
 }
@@ -425,13 +451,16 @@ input, select, textarea {
   width: 100%;
 }
 
-/* Compact vs global input min-height (48px); keeps picker trigger aligned with repair info rows */
+/* Compact vs global input min-height; keeps picker trigger aligned with repair info rows */
 input.friendly-date-input {
-  min-height: 2.25rem;
-  padding: 0.35rem 0.65rem;
+  padding-left: 0.85rem;
+  padding-right: 2rem;       /* room for calendar icon */
+  cursor: pointer;
+}
+.form--compact input.friendly-date-input {
   font-size: 0.82rem;
-  line-height: 1.35;
   border-radius: 8px;
+  padding-left: 0.65rem;
 }
 
 .friendly-date-popover {
@@ -940,24 +969,74 @@ textarea { resize: vertical; }
   padding-left: calc(var(--s3) - 3px);
 }
 
-/* ── Sidebar quick-focus panel ─────────────────── */
+/* ── Sidebar today summary ─────────────────────── */
 
-.sidebar-panel {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.sidebar-summary {
+  border: 1px solid var(--border);
   border-radius: 14px;
   background:
-    radial-gradient(circle at top left, rgba(205, 216, 58, 0.06), transparent 46%),
+    radial-gradient(circle at top left, rgba(205, 216, 58, 0.05), transparent 50%),
     var(--surface-mid);
   padding: var(--s4);
+  display: grid; gap: var(--s3);
 }
-
-.sidebar-panel .eyebrow     { color: var(--text-soft); }
-.sidebar-panel h2           { font-size: 0.92rem; color: var(--text); }
-.sidebar-panel p            { color: var(--text-soft); font-size: 0.8rem; margin-top: var(--s2); line-height: 1.5; }
-
-.sidebar-actions            { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
-.sidebar-actions .button    { font-size: 0.82rem; padding: 0.58rem 0.92rem; border-radius: 10px; }
-.sidebar-actions .button-ghost { font-size: 0.8rem; padding: 0.5rem 0.85rem; border-radius: 8px; }
+.sidebar-summary__head { display: flex; align-items: center; justify-content: space-between; }
+.sidebar-summary__live {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--success); text-transform: uppercase; line-height: 1;
+}
+.sidebar-summary__pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 0 rgba(78,201,148,0.55);
+  animation: sidebarSummaryPulse 1.8s ease-out infinite;
+}
+@keyframes sidebarSummaryPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(78,201,148,0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(78,201,148,0); }
+  100% { box-shadow: 0 0 0 0 rgba(78,201,148,0); }
+}
+.sidebar-summary__stats { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.sidebar-summary__stats li {
+  display: grid; grid-template-columns: 8px 1fr auto;
+  align-items: center; gap: var(--s3);
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.sidebar-summary__stats li:last-child { border-bottom: 0; }
+.sidebar-summary__stats li:hover { color: var(--text); }
+.sidebar-summary__dot { width: 8px; height: 8px; border-radius: 50%; }
+.sidebar-summary__dot[data-status="open"]    { background: var(--info); }
+.sidebar-summary__dot[data-status="waiting"] { background: var(--danger); }
+.sidebar-summary__dot[data-status="ready"]   { background: var(--success); }
+.sidebar-summary__stats span { font-size: 0.82rem; color: var(--text-mid); line-height: 1; }
+.sidebar-summary__stats strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.25rem; font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.sidebar-summary__stats strong.is-alert { color: var(--danger); }
+.sidebar-summary__cta {
+  margin-top: var(--s1);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text-mid);
+  padding: 0.55rem;
+  font-size: 0.8rem; font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s, background 0.14s;
+}
+.sidebar-summary__cta:hover {
+  color: var(--accent);
+  border-color: var(--border-accent);
+  background: var(--accent-glow);
+}
 
 /* ── Sidebar user ──────────────────────────────── */
 
@@ -8334,12 +8413,16 @@ label.purchase-field--needs-attention > span:first-child {
   border: 1px solid var(--border);
   border-radius: 20px;
   color: var(--text-soft);
-  font-size: 0.78rem;
-  font-weight: 500;
-  padding: 4px 12px;
+  font-size: 0.78rem; font-weight: 500;
+  padding: 8px 14px;          /* was 4px 12px */
+  position: relative;
+  line-height: 1;
   cursor: pointer;
   transition: border-color 0.14s, color 0.14s, background 0.14s;
   white-space: nowrap;
+}
+.kanban-date-chip::before {
+  content: ""; position: absolute; inset: -6px -2px; border-radius: inherit;
 }
 
 .kanban-date-chip:hover {
@@ -8393,6 +8476,19 @@ label.purchase-field--needs-attention > span:first-child {
   background: var(--surface-mid);
 }
 
+.kanban-col-collapse {
+  padding: 10px 12px;
+  margin: -6px -8px;
+  position: relative;
+  border-radius: 8px;
+}
+.kanban-col-collapse::before { content: ""; position: absolute; inset: -2px; }
+
+@media (pointer: coarse) {
+  .kanban-date-chip { padding: 12px 16px; }
+  .kanban-drag-handle { opacity: 1; padding: 12px 8px; }
+}
+
 .kanban-card-label {
   color: var(--text-soft);
   font-size: 0.72rem;
@@ -8432,24 +8528,34 @@ label.purchase-field--needs-attention > span:first-child {
   gap: var(--s2);
 }
 
-.kanban-card-vehicle {
-  font-size: 0.88rem;
-  font-weight: 700;
+.kanban-card-plate {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.98rem; font-weight: 700;
+  letter-spacing: 0.04em; line-height: 1;
   color: var(--text);
-  margin: 0;
-  line-height: 1.3;
 }
 
-.kanban-card-owner {
-  color: var(--text-mid);
-  font-size: 0.82rem;
-  margin: 0;
+.kanban-card-model {
+  font-size: 0.78rem; line-height: 1.35;
+  color: var(--text-mid); margin: 0;
 }
 
 .kanban-card-service {
-  color: var(--text-mid);
-  font-size: 0.8rem;
-  margin: 0;
+  font-size: 0.88rem; font-weight: 600; line-height: 1.35;
+  color: var(--text); margin: 4px 0 0;
+}
+
+.kanban-card-avatar {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--surface-high); color: var(--text-mid);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 700; line-height: 1;
+}
+
+.kanban-card-time {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.72rem; color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .kanban-card-issue {
@@ -8458,7 +8564,7 @@ label.purchase-field--needs-attention > span:first-child {
   margin: 0;
   line-height: 1.45;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -8576,13 +8682,20 @@ label.purchase-field--needs-attention > span:first-child {
 .kanban-drag-handle {
   cursor: grab;
   color: var(--text-soft);
-  font-size: 1rem;
-  line-height: 1;
-  padding: 2px 4px;
-  border-radius: 4px;
+  font-size: 0.95rem;
+  padding: 10px 6px;
+  margin: -8px -4px;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.14s, color 0.14s;
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
   user-select: none;
   flex-shrink: 0;
 }
+.kanban-drag-handle::before { content: ""; position: absolute; inset: -8px -10px; }
+.kanban-card:hover .kanban-drag-handle,
+.kanban-drag-handle:focus-visible { opacity: 1; }
 .kanban-drag-handle:active { cursor: grabbing; }
 
 /* card being dragged */
@@ -8764,22 +8877,22 @@ label.purchase-field--needs-attention > span:first-child {
 
 /* active state: border matches chip color */
 .status-btn-active.repair-status-new          { background: rgba(91,156,246,0.12); border-color: rgba(91,156,246,0.4); color: #5b9cf6; }
-.status-btn-active.repair-status-in_progress  { background: rgba(205,216,58,0.12); border-color: rgba(205,216,58,0.4); color: var(--accent); }
-.status-btn-active.repair-status-waiting_parts{ background: rgba(240,168,74,0.12); border-color: rgba(240,168,74,0.4); color: var(--warning); }
+.status-btn-active.repair-status-in_progress  { background: rgba(240,168,74,0.12); border-color: rgba(240,168,74,0.4); color: var(--warning); }
+.status-btn-active.repair-status-waiting_parts{ background: rgba(224, 82,82,0.12); border-color: rgba(224, 82,82,0.4); color: var(--danger);  }
 .status-btn-active.repair-status-completed    { background: rgba(78,201,148,0.12); border-color: rgba(78,201,148,0.4); color: var(--success); }
 
 /* idle dot tint per status */
 .status-btn.repair-status-new          { color: #5b9cf6; }
-.status-btn.repair-status-in_progress  { color: var(--accent); }
-.status-btn.repair-status-waiting_parts{ color: var(--warning); }
+.status-btn.repair-status-in_progress  { color: var(--warning); }
+.status-btn.repair-status-waiting_parts{ color: var(--danger);  }
 .status-btn.repair-status-completed    { color: var(--success); }
 /* reset text color for unselected so label is readable */
 .status-btn:not(.status-btn-active) { color: var(--text-mid); }
 .status-btn:not(.status-btn-active) .status-btn-dot { background: currentColor; }
 /* dot keeps semantic color even when button text is muted */
 .status-btn.repair-status-new .status-btn-dot          { background: #5b9cf6; }
-.status-btn.repair-status-in_progress .status-btn-dot  { background: var(--accent); }
-.status-btn.repair-status-waiting_parts .status-btn-dot{ background: var(--warning); }
+.status-btn.repair-status-in_progress .status-btn-dot  { background: var(--warning); }
+.status-btn.repair-status-waiting_parts .status-btn-dot{ background: var(--danger);  }
 .status-btn.repair-status-completed .status-btn-dot    { background: var(--success); }
 
 @media (max-width: 1200px) {
