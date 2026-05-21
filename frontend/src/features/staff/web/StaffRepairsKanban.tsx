@@ -117,7 +117,7 @@ export function StaffRepairsKanban({
                     </div>
                     <p className="kanban-card-model">
                       {[repair.vehicle_model, repair.vehicle_year, repair.mileage
-                        ? `${repair.mileage.toLocaleString("pl")} km` : null]
+                        ? `${repair.mileage.toLocaleString("en-US")} km` : null]
                         .filter(Boolean).join(" · ")}
                     </p>
                     <p className="kanban-card-service">{formatRepairServicesSummary(repair)}</p>
