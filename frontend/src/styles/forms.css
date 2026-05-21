@@ -1,0 +1,302 @@
+/* ═══════════════════════════════════════════════
+   FORMS
+   ═══════════════════════════════════════════════ */
+
+.login-form {
+  display: grid;
+  gap: var(--s4);
+  margin-top: var(--s6);
+}
+
+.login-form label,
+.stack-form label,
+.search-field {
+  display: grid;
+  gap: var(--s2);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  letter-spacing: 0.01em;
+}
+
+.login-form input,
+.stack-form input,
+textarea,
+select,
+.stack-form select,
+.search-field input,
+.form-grid input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.72rem var(--s4);
+  width: 100%;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.login-form input:hover,
+.stack-form input:hover,
+textarea:hover,
+select:hover,
+.stack-form select:hover,
+.search-field input:hover,
+.form-grid input:hover {
+  border-color: var(--border-strong);
+}
+
+.login-form input:focus,
+.stack-form input:focus,
+textarea:focus,
+select:focus,
+.stack-form select:focus,
+.search-field input:focus,
+.form-grid input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+input, select, textarea {
+  min-height: var(--field-h, 44px);
+  line-height: 1.2;
+  color-scheme: dark;
+}
+
+.friendly-date {
+  position: relative;
+}
+
+.friendly-date-input-wrap {
+  display: block;
+}
+
+.friendly-date-input {
+  width: 100%;
+}
+
+/* Compact vs global input min-height; keeps picker trigger aligned with repair info rows */
+input.friendly-date-input {
+  padding-left: 0.85rem;
+  padding-right: 2rem;       /* room for calendar icon */
+  cursor: pointer;
+}
+.form--compact input.friendly-date-input {
+  font-size: 0.82rem;
+  border-radius: 8px;
+  padding-left: 0.65rem;
+}
+
+.friendly-date-popover {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 25;
+  width: min(100%, 320px);
+  min-width: 280px;
+  border: 1px solid rgba(205, 216, 58, 0.2);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    rgba(18, 20, 29, 0.98);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+  padding: 0.9rem;
+}
+
+.friendly-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.friendly-date-header strong {
+  font-size: 0.98rem;
+}
+
+.friendly-date-nav {
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  padding: 0 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.friendly-date-nav:hover:not(:disabled) {
+  border-color: rgba(205, 216, 58, 0.28);
+  color: var(--accent);
+}
+
+.friendly-date-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.friendly-date-weekdays,
+.friendly-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.friendly-date-weekdays {
+  margin-bottom: 0.45rem;
+}
+
+.friendly-date-weekdays span {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.friendly-date-day {
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.friendly-date-day:hover:not(:disabled) {
+  border-color: rgba(205, 216, 58, 0.2);
+  background: rgba(205, 216, 58, 0.08);
+}
+
+.friendly-date-day-muted {
+  color: var(--text-soft);
+  opacity: 0.6;
+}
+
+.friendly-date-day-selected {
+  border-color: rgba(205, 216, 58, 0.34);
+  background: rgba(205, 216, 58, 0.16);
+  color: var(--accent);
+}
+
+.friendly-date-range-input {
+  cursor: pointer;
+}
+
+.friendly-date-range-popover {
+  width: min(100%, 360px);
+  min-width: min(320px, calc(100vw - 2rem));
+}
+
+.friendly-date-range-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.6rem;
+}
+
+.friendly-date-range-chip {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.friendly-date-range-chip span {
+  color: var(--text-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.friendly-date-range-chip strong {
+  font-size: 0.92rem;
+}
+
+.friendly-date-range-chip-active {
+  border-color: rgba(205, 216, 58, 0.24);
+  background: rgba(205, 216, 58, 0.08);
+}
+
+.friendly-date-range-copy {
+  margin: 0 0 0.8rem;
+  color: var(--text-mid);
+  font-size: 0.8rem;
+}
+
+.friendly-date-day-in-range {
+  border-color: rgba(205, 216, 58, 0.08);
+  background: rgba(205, 216, 58, 0.1);
+  color: var(--text);
+}
+
+.friendly-date-day-range-boundary {
+  border-color: rgba(205, 216, 58, 0.34);
+  background: rgba(205, 216, 58, 0.18);
+  color: var(--accent);
+}
+
+.friendly-date-day:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--surface-mid) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+select {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  background-color: var(--surface-mid);
+  background-image:
+    linear-gradient(45deg,  transparent      50%, var(--text-soft) 50%),
+    linear-gradient(135deg, var(--text-soft) 50%, transparent      50%);
+  background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.4rem;
+}
+
+select::-ms-expand { display: none; }
+textarea { resize: vertical; }
+
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.field-hint {
+  display: block;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 400;
+  margin-top: var(--s1);
+}
+
+.form-grid {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.form-grid > label         { align-self: start; align-content: start; }
+.form-grid .field-hint     { min-height: 1.1rem; }
