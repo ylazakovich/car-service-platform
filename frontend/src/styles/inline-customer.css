@@ -1,0 +1,298 @@
+/* ═══════════════════════════════════════════════
+   INLINE CUSTOMER (inside Vehicle form)
+   ═══════════════════════════════════════════════ */
+
+.inline-owner-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.inline-owner-header {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s3);
+}
+
+.inline-owner-select {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: var(--s2);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+
+.inline-owner-toggle {
+  flex-shrink: 0;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+
+.inline-owner-hint {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.inline-customer-form {
+  display: grid;
+  gap: var(--s4);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  background: var(--accent-dim);
+  padding: var(--s4);
+}
+
+.inline-customer-form-expanded {
+  border-top: 1px solid var(--border);
+  padding-top: var(--s4);
+}
+
+.inline-customer-hint {
+  color: var(--text-mid);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.inline-owner-actions {
+  margin-top: 0;
+}
+
+/* ── Vehicle info split card ─────────────────── */
+
+.vehicle-info-split {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.vehicle-info-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  padding: var(--s4);
+  min-width: 0;
+}
+
+.vehicle-info-col strong {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-bottom: 0.05rem;
+}
+
+.vehicle-info-col p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+.vehicle-detail-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.vehicle-detail-hero-title-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  margin-top: 0;
+  color: rgba(205, 216, 58, 0.82);
+}
+
+.vehicle-detail-hero-title-text {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.vehicle-detail-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  margin: 0;
+  min-height: 1.55rem;
+}
+
+.vehicle-detail-meta-row--vin {
+  align-items: center;
+}
+
+.vehicle-vin-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.42rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.vehicle-detail-meta-row--vin .vehicle-detail-meta-text--vin-wrap {
+  display: inline-flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1;
+}
+
+.vehicle-detail-meta-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: rgba(205, 216, 58, 0.78);
+  margin-top: 0;
+}
+
+.vehicle-detail-meta-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--text-mid);
+  line-height: 1.45;
+}
+
+.vehicle-detail-meta-text--mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.vehicle-detail-meta-text--vin-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  font-family: ui-monospace, monospace;
+}
+
+.vehicle-vin-label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(205, 216, 58, 0.88);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.vehicle-vin-digits {
+  min-width: 0;
+  flex: 0 1 auto;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+  color: var(--text-mid);
+  line-height: 1.1;
+}
+
+.vin-copy-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  flex-shrink: 0;
+  align-self: center;
+  min-height: 1.9rem;
+  padding: 0.22rem 0.58rem;
+  border-radius: 8px;
+  border: 1px solid rgba(205, 216, 58, 0.4);
+  background: rgba(205, 216, 58, 0.12);
+  color: #e8ee9a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.vin-copy-button:hover {
+  background: rgba(205, 216, 58, 0.22);
+  border-color: rgba(205, 216, 58, 0.65);
+}
+
+.vin-copy-button__text {
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 420px) {
+  .vin-copy-button__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .vin-copy-button {
+    padding: 0.32rem;
+    min-width: 2.25rem;
+  }
+}
+
+.copy-chip--compact {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  font-size: 0.7rem;
+}
+
+.vehicle-mobile-plate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 var(--s2);
+}
+
+.vehicle-mobile-plate-row .vehicle-mobile-license {
+  margin: 0;
+}
+
+.vehicle-mobile-detail-surface .vehicle-detail-meta-row {
+  margin-top: 0;
+}
+
+.vehicle-mobile-detail-surface .vehicle-mobile-plate-row + .vehicle-detail-hero-title {
+  margin-top: 0;
+}
+
+.vehicle-info-col > .vehicle-detail-meta-row,
+.vehicle-info-col > .vehicle-detail-hero-title,
+.vehicle-info-col > .meta-line {
+  margin-top: 0;
+}
+
+.detail-item .vehicle-detail-meta-row {
+  margin-top: var(--s2);
+}
+
+.vehicle-info-divider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.vehicle-web-surface {
+  display: block;
+}

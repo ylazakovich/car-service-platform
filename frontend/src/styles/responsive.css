@@ -1,0 +1,1751 @@
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 1080px) {
+  .shell { grid-template-columns: 1fr; }
+
+  .metric-grid,
+  .dashboard-metric-grid-single,
+  .dashboard-metric-grid-triple,
+  .dashboard-metric-grid-warehouse-hero,
+  .dashboard-grid,
+  .dashboard-warehouse-value-grid,
+  .dashboard-warehouse-invoice-grid,
+  .dashboard-warehouse-cumulative-strip,
+  .section-split,
+  .customer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-calendar-month-banner {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .dashboard-calendar-month-banner-copy {
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 1500px) {
+  .service-board-range-flow-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard-worker-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.load-more-bar {
+  display: flex;
+  justify-content: center;
+  padding: var(--s4) 0 var(--s2);
+}
+
+.registry-count {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+@media (max-width: 820px) {
+  .registry-list {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-calendar-shell,
+  .dashboard-calendar-detail {
+    padding: 0;
+  }
+
+  .dashboard-calendar-monthboard {
+    min-width: 620px;
+  }
+
+  /*
+   * Иначе при min-height: 100vh у .shell строки grid растягиваются (align-content: stretch по умолчанию),
+   * первая строка «съедает» высоту — между sticky-шапкой и main получается огромный пустой зазор
+   * на коротких страницах (Purchases, Users, Vehicles и т.д.).
+   */
+  .shell {
+    align-content: start;
+  }
+
+  /*
+   * Purchases only: reclaim horizontal space (similar to pinch-zoom out) without scaling text globally.
+   * :has() supported Safari 15.4+ / current Chromium.
+   */
+  .shell:has(.purchases-workspace) .shell-main {
+    padding-left: max(var(--s2), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s2), env(safe-area-inset-right, 0px));
+  }
+
+  .shell:has(.purchases-workspace) .shell-mobile-sticky-stack {
+    margin-left: max(var(--s3), env(safe-area-inset-left, 0px));
+    margin-right: max(var(--s3), env(safe-area-inset-right, 0px));
+  }
+
+  /* Let the main column shrink with the grid when zoom / viewport changes (avoids header vs content width mismatch). */
+  .shell-main .workspace {
+    min-width: 0;
+  }
+
+  /* Staff desktop sidebar must not appear in the mobile shell (defense in depth vs JS breakpoint). */
+  #staff-shell-sidebar {
+    display: none !important;
+  }
+
+  body.mobile-shell-picker-open {
+    overflow: hidden;
+  }
+
+  /*
+   * Полоса «в шапку» на всю ширину между отступами — те же отступы/радиус/фон, что у .shell-mobile-sticky-stack.
+   */
+  .shell-scroll-to-header-fab {
+    position: fixed;
+    z-index: 28;
+    left: max(var(--s4), env(safe-area-inset-left, 0px));
+    right: max(var(--s4), env(safe-area-inset-right, 0px));
+    bottom: max(var(--s3), env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: 10px var(--s4);
+    margin: 0;
+    width: auto;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(
+        0deg,
+        rgba(205, 216, 58, 0.075) 0%,
+        rgba(205, 216, 58, 0.045) 42%,
+        rgba(205, 216, 58, 0.018) 100%
+      ),
+      var(--surface);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.22);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease,
+      box-shadow 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .shell-scroll-to-header-fab:hover {
+    border-color: var(--border-accent);
+    color: var(--accent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      0 10px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  .shell-scroll-to-header-fab:focus-visible {
+    outline: 2px solid rgba(205, 216, 58, 0.55);
+    outline-offset: 2px;
+  }
+
+  .shell-scroll-to-header-fab-label {
+    display: block;
+    margin: 0;
+    max-width: 100%;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .shell-mobile-picker-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(5, 5, 8, 0.55);
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Sticky «шапка»: подсветка на всю высоту блока (без узкой полосы только у верхнего края). */
+  .shell-mobile-sticky-stack {
+    display: block;
+    position: sticky;
+    min-width: 0;
+    /* Воздух от верха + на iPhone не под вырез: один раз через max, не дублируем с padding. */
+    --shell-mobile-stack-inset-top: max(var(--s3), env(safe-area-inset-top, 0px));
+    top: var(--shell-mobile-stack-inset-top);
+    z-index: 32;
+    margin: var(--shell-mobile-stack-inset-top) var(--s4) var(--s3);
+    padding-top: 0;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(205, 216, 58, 0.075) 0%,
+        rgba(205, 216, 58, 0.045) 42%,
+        rgba(205, 216, 58, 0.018) 100%
+      ),
+      var(--surface);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+  }
+
+  .shell-mobile-sticky-stack.shell-mobile-sticky-stack--menu-open {
+    border-radius: 22px 22px 18px 18px;
+  }
+
+  /* Закрытое меню: высота = только шапка, без «пустой половины карточки». */
+  .shell-mobile-sticky-stack:not(.shell-mobile-sticky-stack--menu-open) {
+    height: fit-content;
+    padding-bottom: 0;
+  }
+
+  .shell-mobile-bar {
+    position: static;
+    top: auto;
+    z-index: auto;
+    display: block;
+    border-bottom: none;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    box-shadow: none;
+    min-height: 0;
+  }
+
+  .shell-mobile-header-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0;
+    padding: 10px var(--s4) 10px;
+    border: 0;
+    border-bottom: none;
+    border-radius: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+  }
+
+  .shell-mobile-header-toggle:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .shell-mobile-header-toggle:focus-visible {
+    outline: 2px solid rgba(205, 216, 58, 0.5);
+    outline-offset: -2px;
+  }
+
+  .shell-mobile-header-toggle-text {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding-right: 1.35rem;
+    box-sizing: border-box;
+  }
+
+  .shell-mobile-header-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text-soft);
+    line-height: 1.2;
+  }
+
+  .shell-mobile-header-chevron-wrap {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+  }
+
+  .shell-mobile-header-chevron {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: var(--text-soft);
+    line-height: 1;
+  }
+
+  .shell-mobile-context {
+    justify-self: stretch;
+    text-align: center;
+    min-width: 0;
+    display: block;
+  }
+
+  .shell-mobile-context--title-only {
+    padding: 0 0.25rem;
+  }
+
+  .shell-mobile-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .shell-mobile-bar .shell-mobile-context strong.shell-mobile-section-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    -webkit-box-orient: unset;
+    max-width: 100%;
+  }
+
+  .shell-mobile-quick-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 10px 10px;
+    border-top: 1px solid var(--border);
+    background: transparent;
+    position: relative;
+    z-index: 31;
+  }
+
+  .shell-mobile-quick-nav--expanded {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .shell-mobile-quick-sections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Компактные «вкладки» секций (Users / Vehicles / …) — ~44px по высоте, без лишнего min-height. */
+  .shell-mobile-quick-section {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 5.6rem;
+    min-height: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.3rem 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-mid);
+    color: var(--text-mid);
+    font: inherit;
+    font-size: 0.63rem;
+    font-weight: 700;
+    line-height: 1.12;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.14s, background 0.14s, color 0.14s;
+  }
+
+  .shell-mobile-quick-section:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
+
+  .shell-mobile-quick-section-active {
+    border-color: var(--border-accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .shell-mobile-quick-section-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .shell-mobile-quick-section-label {
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    word-break: normal;
+  }
+
+  .shell-mobile-picker-cta {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .shell-mobile-account {
+    display: grid;
+    gap: var(--s3);
+    padding: var(--s3);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-mid);
+  }
+
+  .shell-mobile-account-row {
+    display: flex;
+    gap: var(--s3);
+    align-items: flex-start;
+  }
+
+  .shell-mobile-account .user-avatar {
+    flex-shrink: 0;
+  }
+
+  .shell-mobile-account-details {
+    display: grid;
+    gap: var(--s2);
+    min-width: 0;
+    flex: 1;
+  }
+
+  .shell-mobile-account-email {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .shell-mobile-sign-out {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .shell-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(88vw, 320px);
+    z-index: 45;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    padding: calc(var(--s6) + env(safe-area-inset-top, 0px)) var(--s4) calc(var(--s6) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .shell-sidebar-mobile-open {
+    transform: translateX(0);
+  }
+
+  .shell-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+  }
+
+  .shell-main {
+    padding:
+      var(--s4)
+      var(--s4)
+      calc(var(--s6) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .workspace-topbar,
+  .dashboard-shell-head,
+  .dashboard-report-head,
+  .dashboard-hero,
+  .compact-card,
+  .registry-card,
+  .panel-header,
+  .repair-card-topline,
+  .dashboard-inline-card {
+    flex-direction: column;
+  }
+
+  .form-grid          { grid-template-columns: 1fr; }
+  .photo-preview-grid { grid-template-columns: repeat(2, 1fr); }
+  /* Sit below the sticky shell stack; --shell-mobile-sticky-top is set in App.tsx (includes safe-area via header padding). */
+  .staff-mobile-taskbar {
+    display: grid;
+    gap: var(--s3);
+    position: sticky;
+    top: var(--shell-mobile-sticky-top, 3.05rem);
+    z-index: 12;
+  }
+
+  /* Один источник заголовка секции — shell picker; убираем второй «плашечный» блок (Staff Task + summary). */
+  .staff-mobile-taskbar .staff-mobile-taskcopy {
+    display: none;
+  }
+
+  .staff-mobile-taskbar .staff-mobile-taskcard {
+    padding: var(--s3);
+    gap: var(--s3);
+  }
+
+  /* Единая мобильная шапка / drawer: дублирующий switcher не нужен (раньше завязка на :has(.shell-mobile-quick-nav)). */
+  .staff-mobile-switcher {
+    display: none;
+  }
+
+  @media (min-width: 380px) {
+    .staff-mobile-taskactions {
+      grid-template-columns: 1fr minmax(7.5rem, auto);
+      align-items: end;
+      gap: var(--s2);
+    }
+  }
+
+  .section-desktop-header,
+  .section-desktop-search,
+  .section-desktop-topbar {
+    display: none;
+  }
+
+  .kanban-topbar {
+    padding: var(--s4);
+  }
+
+  .shell:has(.kanban-workspace) {
+    height: auto;
+    overflow: visible;
+  }
+
+  .shell:has(.kanban-workspace) .shell-main,
+  .shell:has(.kanban-workspace) .shell-sidebar,
+  .kanban-workspace,
+  .kanban-workspace .kanban-board,
+  .kanban-workspace .kanban-col,
+  .kanban-workspace .kanban-cards {
+    overflow: visible;
+    min-height: auto;
+    flex: initial;
+  }
+
+  /* Список фильтров/карточек скрыт: на мобилке только вертикальный канбан (колонки сверху вниз). */
+  .repairs-mobile-surface {
+    display: none !important;
+  }
+
+  /* Мобильная доска ремонтов: одна колонка сетки = весь статусный столбец, интуитивно тянуть к низу. */
+  .repairs-workspace .kanban-board {
+    grid-template-columns: 1fr;
+    gap: var(--s4);
+  }
+
+  .vehicles-mobile-surface {
+    display: grid;
+    gap: var(--s4);
+  }
+
+  .vehicle-web-surface,
+  .vehicle-web-detail-surface {
+    display: none;
+  }
+
+  .vehicle-mobile-detail-surface {
+    display: grid;
+    gap: var(--s4);
+  }
+
+  .repair-mobile-card,
+  .vehicle-mobile-card {
+    padding: var(--s4);
+    gap: var(--s3);
+  }
+
+  .repair-mobile-issue {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  /* Dashboard tabs: equal-width segments — no horizontal drag/scrolling */
+  .dashboard-folder-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    align-items: stretch;
+  }
+
+  .dashboard-folder-tab {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    min-height: 44px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.35rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  .dashboard-folder-tab-active {
+    margin-bottom: 0;
+  }
+
+  .dashboard-folder-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    display: block;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    word-break: normal;
+    hyphens: manual;
+  }
+
+  .dashboard-folder-label-long {
+    display: none;
+  }
+
+  .dashboard-folder-label-short {
+    display: inline;
+  }
+
+  .dashboard-folder-panel {
+    border-radius: 14px;
+    padding: var(--s4);
+    margin-top: 0;
+    border-top-left-radius: 14px;
+  }
+
+  .purchases-workspace .dashboard-folder-panel.purchases-folder-panel,
+  .reference-workspace .dashboard-folder-panel.purchases-folder-panel {
+    margin-top: var(--s3);
+    border-color: rgba(205, 216, 58, 0.28);
+    background:
+      radial-gradient(circle at top left, rgba(205, 216, 58, 0.1), transparent 36%),
+      rgba(14, 16, 22, 0.98);
+  }
+
+  /* Registers (Settings): same tab pattern as Purchases + comfortable tables on phones */
+  .reference-workspace .dashboard-folder-tabs.purchases-folder-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .reference-workspace .dashboard-folder-tab {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Shell уже показывает «Registers» — убираем дублирующий блок и About Registers */
+  .registers-shell-header {
+    display: none;
+  }
+
+  .reference-workspace .dashboard-folder-panel.purchases-folder-panel {
+    padding: var(--s3);
+    min-height: 0;
+  }
+
+  .reference-workspace .workspace-stack {
+    gap: var(--s4);
+  }
+
+  .reference-workspace .uom-admin-page,
+  .reference-workspace .services-register-page,
+  .reference-workspace .registers-customers-page {
+    margin-top: 0;
+    padding: var(--s3);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(8, 10, 14, 0.35);
+    min-width: 0;
+  }
+
+  .reference-workspace .uom-admin-subtitle {
+    font-size: 1.02rem;
+    line-height: 1.25;
+  }
+
+  .reference-workspace .registers-help-disclosure-body .uom-admin-lead,
+  .reference-workspace .registers-help-disclosure-inner {
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-mid);
+  }
+
+  .reference-workspace .services-register-table-hint {
+    font-size: 0.82rem;
+    margin-bottom: var(--s3);
+  }
+
+  .reference-workspace .registers-embedded-section-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+  }
+
+  .reference-workspace .registers-embedded-section-head .button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .reference-workspace .registers-search-toolbar {
+    margin-bottom: var(--s2);
+  }
+
+  .reference-workspace .registers-search-field {
+    max-width: none;
+  }
+
+  .reference-workspace .registers-search-field input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .reference-workspace .invoice-parse-register-toolbar .button,
+  .reference-workspace .invoice-parse-form-actions .button {
+    min-height: 44px;
+  }
+
+  .reference-workspace .invoice-parse-dropzone {
+    min-height: 10rem;
+  }
+
+  .reference-workspace .invoice-parse-raw-textarea {
+    font-size: 16px;
+  }
+
+  /*
+   * Только горизонтальный скролл для широких таблиц — без max-height, чтобы скроллилась страница,
+   * а не «коробка внутри коробки» (удобнее на телефоне).
+   */
+  .reference-workspace .registers-table-wrap,
+  .reference-workspace .services-register-table-wrap,
+  .reference-workspace .uom-admin-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    margin: var(--s3) 0 0;
+    box-sizing: border-box;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+    border-radius: 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-mid);
+  }
+
+  /* На узкой ширине не сжимаем колонки до нечитаемости — прокрутка по X */
+  .reference-workspace .registers-editor-table,
+  .reference-workspace .services-register-editor-table {
+    table-layout: auto;
+    min-width: 36rem;
+  }
+
+  .reference-workspace .registers-customers-table.registers-editor-table {
+    min-width: 40rem;
+  }
+
+  /*
+   * Units — табличный вид: горизонтальный скролл контейнера, минимальные ширины колонок без обрыва текста.
+   */
+  .reference-workspace .registers-units-table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(205, 216, 58, 0.35) transparent;
+    padding-bottom: var(--s2);
+  }
+
+  .reference-workspace .registers-units-table-wrap::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  .reference-workspace .registers-units-table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(205, 216, 58, 0.38);
+    border-radius: 999px;
+  }
+
+  .reference-workspace .registers-units-table {
+    width: max-content;
+    min-width: 42rem;
+    table-layout: auto;
+  }
+
+  .reference-workspace .registers-units-table thead th {
+    white-space: nowrap;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(1),
+  .reference-workspace .registers-units-table td:nth-child(1) {
+    min-width: 2.75rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(2),
+  .reference-workspace .registers-units-table td:nth-child(2) {
+    min-width: 4.5rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(3),
+  .reference-workspace .registers-units-table td:nth-child(3) {
+    min-width: 11rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(4),
+  .reference-workspace .registers-units-table td:nth-child(4) {
+    min-width: 13rem;
+  }
+
+  .reference-workspace .registers-units-table th:nth-child(5),
+  .reference-workspace .registers-units-table td:nth-child(5) {
+    min-width: 10.5rem;
+  }
+
+  .reference-workspace .registers-units-table .services-active-toggle {
+    flex-shrink: 0;
+  }
+
+  .registers-mobile-table-hint {
+    display: block;
+    margin-top: var(--s3);
+    padding: var(--s3) var(--s3);
+    text-align: center;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-soft);
+    border-radius: 10px;
+    border: 1px dashed rgba(205, 216, 58, 0.28);
+    background: rgba(205, 216, 58, 0.06);
+  }
+
+  .reference-workspace .uom-admin-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    box-shadow: 0 1px 0 var(--border);
+  }
+
+  .reference-workspace .uom-admin-table th,
+  .reference-workspace .uom-admin-table td {
+    padding: 0.55rem 0.45rem;
+    font-size: 0.82rem;
+  }
+
+  .reference-workspace .uom-admin-table code {
+    font-size: 0.76rem;
+    word-break: break-all;
+  }
+
+  .reference-workspace .uom-admin-row-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .reference-workspace .uom-admin-row-actions .button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    justify-content: center;
+    padding-left: var(--s2);
+    padding-right: var(--s2);
+  }
+
+  .reference-workspace .uom-admin-table input.uom-admin-cell-input,
+  .reference-workspace .uom-admin-table input.uom-admin-cell-input--compact {
+    min-height: 44px;
+    font-size: 16px;
+    max-width: none;
+    width: 100%;
+  }
+
+  .reference-workspace .services-register-editor-table textarea.uom-admin-cell-input--compact {
+    min-height: 5rem;
+    font-size: 16px;
+    max-width: none;
+    width: 100%;
+    line-height: 1.35;
+  }
+
+  .reference-workspace .uom-admin-active-label {
+    font-size: 0.82rem;
+  }
+
+  .reference-workspace .uom-admin-active-label input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .reference-workspace .services-active-toggle {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: stretch;
+  }
+
+  .reference-workspace .services-active-toggle__btn {
+    flex: 1;
+    min-height: 44px;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+    font-size: 0.82rem;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.15;
+  }
+
+  .reference-workspace .uom-add-overlay.modal-overlay,
+  .reference-workspace .uom-delete-overlay.modal-overlay {
+    padding: var(--s3);
+    padding-left: max(var(--s3), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s3), env(safe-area-inset-right, 0px));
+    padding-bottom: max(var(--s4), env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+
+  .reference-workspace .uom-add-unit-modal.modal-card,
+  .reference-workspace .uom-delete-confirm-modal.modal-card {
+    width: min(100%, calc(100vw - 2 * var(--s3)));
+    max-height: min(85dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem));
+    overflow-y: auto;
+  }
+
+  .reference-workspace .uom-add-unit-modal .form-actions,
+  .reference-workspace .uom-delete-confirm-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: var(--s2);
+  }
+
+  .reference-workspace .uom-add-unit-modal .form-actions .button,
+  .reference-workspace .uom-delete-confirm-actions .button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .vehicles-workspace .vehicles-section-topbar {
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+  }
+
+  /* Staff: дублирует shell + mobile rail (поиск уже в rail). */
+  .vehicles-workspace .vehicles-section-topbar--staff-mobile-skip {
+    display: none !important;
+  }
+
+  /* Repairs: same as vehicles — staff uses sticky rail; admins see this bar on phones */
+  .repairs-workspace .repairs-section-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+  }
+
+  .repairs-workspace .repairs-section-topbar--staff-mobile-skip {
+    display: none !important;
+  }
+
+  .repairs-workspace .repairs-section-topbar h2 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+  }
+
+  .repairs-workspace .repairs-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .repairs-workspace .workspace-top-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: var(--s2);
+  }
+
+  .repairs-workspace .kanban-date-filter {
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .repairs-workspace .kanban-search input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .repairs-workspace .workspace-top-actions .button {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
+  }
+
+  .vehicles-workspace .vehicles-section-topbar h2 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+  }
+
+  /* Eyebrow repeats the title sense (Registry + Vehicle Registry) — keep title only */
+  .vehicles-workspace .vehicles-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .vehicles-workspace .vehicles-top-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+  }
+
+  .vehicles-workspace .vehicles-top-actions .kanban-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .vehicles-workspace .vehicles-top-actions .kanban-search input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehicles-workspace .vehicles-top-actions .button {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
+  }
+
+  .vehicles-workspace .purchases-controls-bar.kanban-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+    padding: var(--s3);
+  }
+
+  .vehicles-workspace .purchases-controls-cluster {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .vehicles-workspace .purchases-seg {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    padding: 0.45rem 0.4rem;
+  }
+
+  /* Sort / group selects are awkward on small screens — hidden until a better mobile UX exists */
+  .vehicles-workspace .purchases-controls-selects {
+    display: none;
+  }
+
+  .vehicles-workspace .purchases-controls-footnote {
+    display: none;
+  }
+
+  /* Mobile vehicle compact = dense list rows (not cards, not wide horizontal table) */
+  .vehicles-mobile-surface .vehicles-mobile-compact-list {
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface-mid);
+  }
+
+  .vehicles-mobile-surface .vehicles-mobile-list-row {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+    padding: 0.55rem var(--s3);
+    background: transparent;
+    overflow: visible;
+    text-align: left;
+  }
+
+  .vehicles-mobile-surface .vehicles-mobile-list-row:last-child {
+    border-bottom: none;
+  }
+
+  .vehicles-mobile-surface .vehicles-mobile-list-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+  }
+
+  .vehicles-mobile-list-main {
+    display: grid;
+    grid-template-columns:
+      1.1rem
+      minmax(3.5rem, 0.5fr)
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(4.5rem, max-content)
+      minmax(3.75rem, max-content);
+    grid-template-rows: auto;
+    gap: var(--s2) var(--s3);
+    min-width: 26rem !important;
+    align-items: center;
+  }
+
+  .vehicles-mobile-list-main .vehicle-registry-plate-cell .purchases-compact-part-text {
+    font-weight: 700;
+    font-size: 0.84rem;
+    letter-spacing: 0.03em;
+    color: var(--accent);
+  }
+
+  /*
+   * Purchases (phones): block sideways movement — tables are desktop-only here;
+   * Stock / Consume / Supp. use card lists at this breakpoint (see StaffHomePage + REGISTERS_MOBILE_BREAKPOINT).
+   */
+  .purchases-workspace {
+    overflow-x: hidden;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .purchases-workspace .dashboard-folder-panel.purchases-folder-panel {
+    min-width: 0;
+    max-width: 100%;
+    padding: var(--s3);
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .purchases-consumables-layout {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .purchases-workspace .purchases-registry-table-wrap {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  .purchases-workspace .load-more-bar {
+    justify-content: stretch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .load-more-bar .button {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .consumable-out-of-stock-toggle {
+    width: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+    box-sizing: border-box;
+  }
+
+  /* Default tab layout = vertical: wrap long lines instead of one-line ellipsis (no sideways pan). */
+  .purchases-workspace .purchases-mobile-stock-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+    font-size: 0.93rem;
+  }
+
+  .purchases-workspace .purchases-mobile-stock-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .purchases-workspace .purchases-mobile-stock-delivery {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .purchases-workspace .purchases-mobile-stock-sale {
+    align-self: flex-end;
+    padding-top: 1px;
+  }
+
+  .purchases-workspace .purchases-mobile-consumable-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+    font-size: 0.93rem;
+  }
+
+  .purchases-workspace .purchases-mobile-consumable-meta {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+  }
+
+  .purchases-workspace .purchases-mobile-supplier-name {
+    display: block;
+    overflow: visible;
+    -webkit-box-orient: unset;
+    -webkit-line-clamp: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
+  .purchases-workspace .purchases-mobile-supplier-line {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Purchases workspace — mirror vehicles controls; keep search (no duplicate rail) */
+  .purchases-workspace .purchases-section-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3);
+    box-sizing: border-box;
+  }
+
+  .purchases-workspace .purchases-section-topbar > div:first-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .purchases-workspace .purchases-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .purchases-workspace .purchases-section-topbar h2 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .purchases-workspace .purchases-section-topbar .registry-count {
+    display: block;
+    min-height: 1.35em;
+    line-height: 1.35;
+  }
+
+  .purchases-workspace .purchases-top-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+  }
+
+  .purchases-workspace .purchases-top-actions .kanban-search input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .purchases-workspace .purchases-top-actions .button {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
+  }
+
+  .purchases-workspace .purchases-controls-bar.kanban-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+    padding: var(--s3);
+  }
+
+  .purchases-workspace .purchases-controls-cluster {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .purchases-workspace .purchases-seg {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    padding: 0.45rem 0.4rem;
+  }
+
+  .purchases-workspace .purchases-controls-selects {
+    display: none;
+  }
+
+  .purchases-workspace .purchases-controls-footnote {
+    display: none;
+  }
+
+  .purchases-workspace .purchases-compact-list {
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface-mid);
+  }
+
+  .purchases-workspace .purchases-compact-row {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+    padding: 0.55rem var(--s3);
+    background: transparent;
+    overflow: visible;
+  }
+
+  .purchases-workspace .purchases-compact-row:last-child {
+    border-bottom: none;
+  }
+
+  .purchases-workspace .purchases-compact-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+  }
+
+  .purchases-workspace .purchases-registry-table tbody.purchases-compact-list {
+    display: table-row-group;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .purchases-workspace .purchases-registry-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-mid);
+  }
+
+  .purchases-workspace .purchases-registry-table tr.purchases-compact-row {
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .purchases-workspace .purchases-folder-tabs.dashboard-folder-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    align-items: stretch;
+  }
+
+  .purchases-workspace .dashboard-folder-tab {
+    align-self: stretch;
+  }
+
+  .purchases-workspace .purchases-compact-row-main {
+    min-width: 0 !important;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+    align-items: start;
+  }
+
+  /* part | qty — supplier full width — dates row — money row */
+  .purchases-workspace .purchases-compact-row-main > :nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(5) {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    white-space: normal;
+    font-size: 0.78rem;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(3) {
+    grid-column: 1;
+    grid-row: 3;
+    font-size: 0.7rem;
+    color: var(--text-soft);
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(4) {
+    grid-column: 2;
+    grid-row: 3;
+    font-size: 0.7rem;
+    color: var(--text-soft);
+    text-align: right;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(6) {
+    grid-column: 1;
+    grid-row: 4;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .purchases-workspace .purchases-compact-row-main > :nth-child(7) {
+    grid-column: 2;
+    grid-row: 4;
+    text-align: right;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .purchases-workspace .purchases-compact-row-main .purchases-compact-part-text {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .users-workspace .users-section-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+  }
+
+  .users-workspace .users-section-head h2 {
+    font-size: 1.08rem;
+  }
+
+  .users-workspace .users-section-topbar .eyebrow {
+    display: none;
+  }
+
+  .users-workspace .users-section-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: var(--s2);
+  }
+
+  .users-workspace .users-section-actions .button {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.75rem;
+  }
+
+  .users-workspace .invite-panel {
+    margin-bottom: var(--s4);
+    border-radius: 14px;
+  }
+
+  .users-workspace .invite-panel-body,
+  .users-workspace form.invite-panel-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+  }
+
+  .users-workspace .invite-name-row {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--s2);
+  }
+
+  .users-workspace .invite-email-input {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .users-workspace .invite-role-toggle {
+    width: 100%;
+  }
+
+  .users-workspace .invite-role-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .users-workspace .user-card {
+    flex-direction: column;
+    padding: var(--s3) var(--s4);
+    gap: var(--s3);
+  }
+
+  .users-workspace .user-card:has(.user-badge[data-role="admin"]) {
+    padding-left: var(--s4);
+  }
+
+  .users-workspace .user-card-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .users-workspace .user-card-actions .button-secondary {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .users-workspace .user-edit-row {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .users-workspace .user-edit-input {
+    width: 100%;
+    max-width: none;
+  }
+
+  .users-workspace .user-edit-btn {
+    opacity: 0.55;
+  }
+
+  .dashboard-shell {
+    padding: var(--s4);
+    border-radius: 18px;
+  }
+
+  .dashboard-shell-head h2 {
+    font-size: 1.28rem;
+  }
+
+  .dashboard-date-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-date-field {
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+  }
+
+  .dashboard-inline-meta {
+    justify-items: start;
+    text-align: left;
+  }
+
+  /* Шит вплотную к краю вьюпорта: safe-area переносим в padding карточки + компенсируем margin шапки/футера. */
+  .modal-overlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .modal-card,
+  .modal-card-large {
+    width: 100%;
+    max-height: min(94vh, 960px);
+    border-radius: 20px 20px 0 0;
+    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
+    padding-right: calc(var(--s4) + env(safe-area-inset-right, 0px));
+    padding-bottom: var(--s4);
+    padding-left: calc(var(--s4) + env(safe-area-inset-left, 0px));
+  }
+
+  /*
+   * Нижний «призрак» вплотную к низу карточки — без двойного padding.
+   * Верхний padding карточки = 0: иначе отрицательный margin-top у шапки поднимал блок визуально,
+   * а поток формы оставался выше — при открытии первая строка (Order Date) оказывалась под sticky-шапкой.
+   */
+  .modal-card.repair-update-modal,
+  .modal-card.repair-form-modal,
+  .modal-card.vehicle-detail-modal,
+  .modal-card.vehicle-form-modal,
+  .modal-card.customer-form-modal,
+  .modal-card.customer-detail-modal,
+  .modal-card.purchase-detail-modal,
+  .modal-card.purchase-form-modal {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .modal-card.repair-update-modal.modal-card-large {
+    max-height: min(97vh, 1200px);
+  }
+
+  .repair-update-modal .panel-header,
+  .vehicle-detail-modal .panel-header,
+  .vehicle-form-modal .panel-header,
+  .customer-form-modal .panel-header,
+  .customer-detail-modal .panel-header,
+  .purchase-detail-modal .panel-header,
+  .purchase-form-modal .panel-header {
+    margin-top: 0;
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    margin-bottom: var(--s3);
+    padding-top: calc(var(--s4) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s3);
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    border-radius: 20px 20px 0 0;
+    top: 0;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 0;
+    box-sizing: border-box;
+    /* Сплошная шапка без прозрачного «хвоста» — форма не просвечивает и не перекрывается при scrollTop=0 */
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /*
+   * Repairs / Vehicles: в глобальном @media .panel-header = column — заголовок и кнопки штабелируются
+   * и шапка модалки выглядит «жирной». Как у Purchases: ряд title | actions, плотнее padding.
+   */
+  .repair-update-modal .panel-header:has(.inline-actions),
+  .vehicle-detail-modal .panel-header:has(.inline-actions),
+  .customer-detail-modal .panel-header:has(.inline-actions) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s3);
+    text-align: start;
+    padding-top: calc(var(--s3) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s2);
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) > div:first-child,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) > div:first-child,
+  .customer-detail-modal .panel-header:has(.inline-actions) > div:first-child {
+    text-align: start;
+    flex: 1 1 auto;
+    min-width: min(100%, 11rem);
+  }
+
+  .repair-update-modal .panel-header:has(.inline-actions) .inline-actions,
+  .vehicle-detail-modal .panel-header:has(.inline-actions) .inline-actions,
+  .customer-detail-modal .panel-header:has(.inline-actions) .inline-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .repair-form-modal .panel-header,
+  .customer-form-modal .panel-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin-top: 0;
+    margin-bottom: var(--s3);
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s3);
+    text-align: start;
+    padding-top: calc(var(--s3) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--s2);
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    background: var(--surface);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .repair-form-modal .panel-header > div:first-child,
+  .customer-form-modal .panel-header > div:first-child {
+    text-align: start;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .repair-modal-actions,
+  .vehicle-modal-actions,
+  .purchase-modal-actions,
+  .repair-modal-footer-bar {
+    position: sticky;
+    bottom: 0;
+    margin-left: calc(-1 * (var(--s4) + env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * (var(--s4) + env(safe-area-inset-right, 0px)));
+    margin-top: var(--s3);
+    margin-bottom: 0;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    /* Как шапка: сплошная плашка + тонкая линия к контенту (сверху у футера) */
+    background: var(--surface);
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.04);
+    min-height: 0;
+    padding-top: var(--s3);
+    padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+    padding-bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px));
+    padding-left: max(var(--s4), env(safe-area-inset-left, 0px));
+  }
+
+  .vehicle-info-split {
+    flex-direction: column;
+  }
+
+  .vehicle-info-divider {
+    width: auto;
+    height: 1px;
+  }
+
+  .vehicle-form-section,
+  .inline-customer-form {
+    padding: var(--s4);
+  }
+
+  /* Селект и кнопка в одном ряду + width:100% у кнопки давали наложение на узкой ширине. */
+  .inline-owner-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+  }
+
+  .inline-owner-select {
+    width: 100%;
+    flex: none;
+  }
+
+  .inline-owner-toggle {
+    justify-content: center;
+    width: 100%;
+    align-self: stretch;
+  }
+
+}

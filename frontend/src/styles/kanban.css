@@ -1,0 +1,568 @@
+/* ═══════════════════════════════════════════════
+   KANBAN BOARD
+   ═══════════════════════════════════════════════ */
+
+.kanban-topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: var(--s4) var(--s5);
+}
+
+.kanban-search {
+  display: flex;
+}
+
+.kanban-search input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-mid);
+  color: var(--text);
+  padding: 0.62rem var(--s4);
+  width: 240px;
+  font-size: 0.88rem;
+  transition: border-color 0.14s;
+}
+
+.kanban-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s4);
+  align-items: start;
+}
+
+.kanban-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 0 var(--s2) var(--s1);
+  border-bottom: 1px solid var(--border);
+}
+
+.kanban-count {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: right;
+}
+
+.kanban-date-filter {
+  display: flex;
+  gap: var(--s1);
+  align-items: center;
+}
+
+.kanban-date-chip {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-soft);
+  font-size: 0.78rem; font-weight: 500;
+  padding: 8px 14px;          /* was 4px 12px */
+  position: relative;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s, background 0.14s;
+  white-space: nowrap;
+}
+.kanban-date-chip::before {
+  content: ""; position: absolute; inset: -6px -2px; border-radius: inherit;
+}
+
+.kanban-date-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-mid);
+}
+
+.kanban-date-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.kanban-show-more {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  padding: var(--s2) var(--s3);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: border-color 0.14s, color 0.14s;
+}
+
+.kanban-show-more:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.kanban-col-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.kanban-col-collapse {
+  background: none;
+  border: none;
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.kanban-col-collapse:hover {
+  color: var(--text-mid);
+  background: var(--surface-mid);
+}
+
+.kanban-col-collapse {
+  padding: 10px 12px;
+  margin: -6px -8px;
+  position: relative;
+  border-radius: 8px;
+}
+.kanban-col-collapse::before { content: ""; position: absolute; inset: -2px; }
+
+@media (pointer: coarse) {
+  .kanban-date-chip { padding: 12px 16px; }
+  .kanban-drag-handle { opacity: 1; padding: 12px 8px; }
+}
+
+.kanban-card-label {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.kanban-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: var(--s4);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  transition: border-color 0.14s, background 0.14s, transform 0.12s;
+}
+
+.kanban-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-mid);
+  transform: translateY(-1px);
+}
+
+.kanban-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.kanban-card-plate {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.98rem; font-weight: 700;
+  letter-spacing: 0.04em; line-height: 1;
+  color: var(--text);
+}
+
+.kanban-card-model {
+  font-size: 0.78rem; line-height: 1.35;
+  color: var(--text-mid); margin: 0;
+}
+
+.kanban-card-service {
+  font-size: 0.88rem; font-weight: 600; line-height: 1.35;
+  color: var(--text); margin: 4px 0 0;
+}
+
+.kanban-card-avatar {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--surface-high); color: var(--text-mid);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 700; line-height: 1;
+}
+
+.kanban-card-time {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.72rem; color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.kanban-card-issue {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kanban-card .repair-parts-summary {
+  margin-top: var(--s1);
+}
+
+.kanban-card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
+.kanban-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 0.75rem;
+}
+
+.kanban-empty {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: var(--s6) var(--s4);
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+/* ── Kanban fills the full viewport height ───── */
+
+/* Lock the shell to the viewport so nothing overflows */
+.shell:has(.kanban-workspace) {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Make sidebar scrollable on its own */
+.shell:has(.kanban-workspace) .shell-sidebar {
+  overflow-y: auto;
+}
+
+/* Main area becomes a flex column, no outer scroll */
+.shell:has(.kanban-workspace) .shell-main {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+  height: 100%;
+}
+
+/* Intermediate .workspace grid must be a flex item that fills shell-main */
+.shell:has(.kanban-workspace) .shell-main > .workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: 1fr;
+}
+
+/* The kanban workspace fills the remaining column height */
+.kanban-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* repairs-surface-stack fills remaining space below topbar */
+.kanban-workspace .repairs-surface-stack {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: 1fr;
+}
+
+/* repairs-web-surface fills its grid cell */
+.kanban-workspace .repairs-web-surface {
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Board grows to fill everything below the topbar */
+.kanban-workspace .kanban-board {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+  grid-template-rows: 1fr;
+}
+
+/* Each column is a tall flex column */
+.kanban-workspace .kanban-col {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cards area scrolls independently — this is how Trello/Jira solve "too many cards" */
+.kanban-workspace .kanban-cards {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--s4);
+}
+
+/* drag handle */
+.kanban-drag-handle {
+  cursor: grab;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  padding: 10px 6px;
+  margin: -8px -4px;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.14s, color 0.14s;
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  user-select: none;
+  flex-shrink: 0;
+}
+.kanban-drag-handle::before { content: ""; position: absolute; inset: -8px -10px; }
+.kanban-card:hover .kanban-drag-handle,
+.kanban-drag-handle:focus-visible { opacity: 1; }
+.kanban-drag-handle:active { cursor: grabbing; }
+
+/* card being dragged */
+.kanban-card-dragging {
+  opacity: 0.38;
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+.kanban-card-drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 -3px 0 0 var(--accent);
+}
+
+/* column drop target highlight */
+.kanban-col-drop-target {
+  background: var(--accent-dim);
+  border-radius: 14px;
+  outline: 1.5px dashed var(--accent);
+  outline-offset: -2px;
+}
+.kanban-col-drop-target .kanban-empty { border-color: var(--accent); color: var(--accent); }
+
+/* ── Status switcher (repair modal) ─────────────────── */
+
+.status-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4);
+  background: var(--surface-mid);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: var(--s5);
+  overflow: visible;
+  min-height: 0;
+}
+
+/* Repair Update modal only: no "Status" caption, tighter chrome */
+.status-switcher.status-switcher--repair-modal {
+  gap: var(--s1);
+  padding: var(--s2) var(--s3);
+  margin-bottom: var(--s3);
+  border-radius: 10px;
+}
+
+.status-switcher.status-switcher--repair-modal .status-switcher-options-stacked {
+  gap: var(--s1);
+}
+
+.status-switcher.status-switcher--repair-modal .status-switcher-row {
+  gap: var(--s1);
+}
+
+.status-switcher.status-switcher--repair-modal .status-switcher-final {
+  margin-top: 0;
+  padding-top: var(--s2);
+}
+
+.status-switcher.status-switcher--repair-modal .status-btn {
+  min-height: 2.05rem;
+  padding: 0.32rem var(--s2);
+  font-size: 0.76rem;
+  border-radius: 7px;
+  gap: 0.35rem;
+}
+
+.status-switcher.status-switcher--repair-modal .status-btn.status-btn-completed-final {
+  min-height: 2.3rem;
+  padding: var(--s2) var(--s3);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.status-switcher.status-switcher--repair-modal .status-btn-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.status-switcher-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.status-switcher-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+  align-content: start;
+}
+
+.status-switcher-options-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.status-switcher-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+/* Waiting Parts — full width of the row */
+.status-switcher-row-waiting .status-btn {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+}
+
+.status-switcher-final {
+  margin-top: var(--s1);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+
+.status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--s2) var(--s3);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--surface-high);
+  color: var(--text-mid);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: normal;
+  text-align: center;
+  box-sizing: border-box;
+}
+.status-btn:hover { background: var(--surface); color: var(--text); }
+
+/* Full-width final status — must follow .status-btn so padding/border win */
+.status-btn.status-btn-completed-final {
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--s3) var(--s4);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 10px;
+  border-width: 2px;
+  border-style: solid;
+}
+
+/* Inactive "Completed" should read as a goal, not already-done (green chrome only when active) */
+.status-btn.status-btn-completed-final:not(.status-btn-active) {
+  border-width: 1px;
+  border-color: transparent;
+  background: var(--surface-high);
+  color: var(--text-mid);
+}
+
+.status-btn.status-btn-completed-final:not(.status-btn-active):hover {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.status-btn.status-btn-completed-final.status-btn-active {
+  border-width: 2px;
+}
+
+.status-btn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* active state: border matches chip color */
+.status-btn-active.repair-status-new          { background: rgba(91,156,246,0.12); border-color: rgba(91,156,246,0.4); color: #5b9cf6; }
+.status-btn-active.repair-status-in_progress  { background: rgba(240,168,74,0.12); border-color: rgba(240,168,74,0.4); color: var(--warning); }
+.status-btn-active.repair-status-waiting_parts{ background: rgba(224, 82,82,0.12); border-color: rgba(224, 82,82,0.4); color: var(--danger);  }
+.status-btn-active.repair-status-completed    { background: rgba(78,201,148,0.12); border-color: rgba(78,201,148,0.4); color: var(--success); }
+
+/* idle dot tint per status */
+.status-btn.repair-status-new          { color: #5b9cf6; }
+.status-btn.repair-status-in_progress  { color: var(--warning); }
+.status-btn.repair-status-waiting_parts{ color: var(--danger);  }
+.status-btn.repair-status-completed    { color: var(--success); }
+/* reset text color for unselected so label is readable */
+.status-btn:not(.status-btn-active) { color: var(--text-mid); }
+.status-btn:not(.status-btn-active) .status-btn-dot { background: currentColor; }
+/* dot keeps semantic color even when button text is muted */
+.status-btn.repair-status-new .status-btn-dot          { background: #5b9cf6; }
+.status-btn.repair-status-in_progress .status-btn-dot  { background: var(--warning); }
+.status-btn.repair-status-waiting_parts .status-btn-dot{ background: var(--danger);  }
+.status-btn.repair-status-completed .status-btn-dot    { background: var(--success); }
+
+@media (max-width: 1200px) {
+  .kanban-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .kanban-board { grid-template-columns: 1fr; }
+  .kanban-search input { width: 100%; }
+}

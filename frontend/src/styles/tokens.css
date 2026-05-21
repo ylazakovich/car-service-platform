@@ -1,0 +1,42 @@
+/* ═══════════════════════════════════════════════
+   TOKENS
+   ═══════════════════════════════════════════════ */
+:root {
+  --bg:            #0d0d11;
+  --surface:       #15151c;
+  --surface-mid:   #1c1c26;
+  --surface-high:  #232330;
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(205, 216, 58, 0.30);
+
+  --text:          #eceef4;
+  --text-mid:      #b4bace;
+  --text-soft:     #7e8699;
+
+  --accent:        #cdd83a;
+  --accent-dim:    rgba(205, 216, 58, 0.12);
+  --accent-glow:   rgba(205, 216, 58, 0.06);
+
+  --danger:        #e05252;
+  --success:       #4ec994;
+  --info:          #5b9cf6;
+  --warning:       #f0a84a;
+
+  /* spacing scale */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.25rem;
+  --s6: 1.5rem;
+  --s8: 2rem;
+
+  --field-h-compact: 36px;
+  --field-h:         44px;
+  --field-h-cozy:    48px;
+}
+
+.form--compact { --field-h: var(--field-h-compact); }
+.form--default { --field-h: 44px; }
+.form--cozy    { --field-h: var(--field-h-cozy); }
