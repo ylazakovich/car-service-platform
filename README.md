@@ -22,10 +22,10 @@ Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyra
 <!-- CSP_PYRAMID_TABLE_START -->
 | Layer | `epic` / `layer` | Cases |
 | :--- | :--- | ---: |
-| Unit (base) | `unit` | **0** |
+| Unit (base) | `unit` | **74** |
 | Integration (middle) | `api` / `integration` | **162** |
-| UI / E2E (top) | `end-to-end` / `ui` | **0** |
-| **Σ pyramid layers** | | **162** |
+| UI / E2E (top) | `end-to-end` / `ui` | **52** |
+| **Σ pyramid layers** | | **288** |
 <!-- CSP_PYRAMID_TABLE_END -->
 
 Quick start (details in the runbook):
