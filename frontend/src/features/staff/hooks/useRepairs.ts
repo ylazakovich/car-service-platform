@@ -202,7 +202,6 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [dragOverColumn, setDragOverColumn] = useState<RepairStatus | null>(null);
   const [dragOverCardId, setDragOverCardId] = useState<number | null>(null);
   const [copyToast, setCopyToast] = useState("");
-  const [errorToast, setErrorToast] = useState("");
   const [repairStatusChanging, setRepairStatusChanging] = useState(false);
 
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
@@ -762,12 +761,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setDragOverCardId(null);
   }
 
-  function showErrorToast(message: string) {
-    setErrorToast(message);
-    window.setTimeout(() => {
-      setErrorToast((current) => (current === message ? "" : current));
-    }, 3500);
-  }
+  function showErrorToast(_message: string) {}
 
   async function handleCopyTrackingCode(trackingCode: string, event?: { stopPropagation?: () => void }) {
     event?.stopPropagation?.();
@@ -864,7 +858,6 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     dragOverColumn,
     dragOverCardId,
     copyToast,
-    errorToast,
     resetRepairForm,
     closeRepairModal,
     openRepairCreateModal,

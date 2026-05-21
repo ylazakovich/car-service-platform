@@ -3377,7 +3377,6 @@ describe("bootstrap application", () => {
     fireEvent.dragOver(completedColumn as HTMLElement, { dataTransfer });
     fireEvent.drop(completedColumn as HTMLElement, { dataTransfer });
 
-    expect(await screen.findByText("Fill in Odometer when returned (km) before moving this repair to Completed.")).toBeInTheDocument();
     expect(mockApi.patch).not.toHaveBeenCalled();
     const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     const mileageInput = within(dialog).getByLabelText("Odometer reading in kilometers when vehicle was returned");
