@@ -1,1 +1,1 @@
-{"id":"30d0e9473e8a9e0cb920b480470e255e","fullName":"repair-service-lines.spec.ts:39:3","name":"completed demo card shows multi-service summary (+N) on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"cd9064aeadd5685ab02bfd1c18d9f2c4"}}
+{"id":"30d0e9473e8a9e0cb920b480470e255e","fullName":"repair-service-lines.spec.ts:39:3","name":"completed demo card shows multi-service summary (+N) on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"d56473724f54e054f90fad8ceb355946"}}
