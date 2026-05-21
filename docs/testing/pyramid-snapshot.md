@@ -1,8 +1,8 @@
 # Test pyramid snapshot
 
-_Generated: `2026-05-21T13:42:21.481Z`_
-_Source workflow run id: `26229573935`_
-_Head SHA: `8345d9b`_
+_Generated: `2026-05-21T13:46:33.897Z`_
+_Source workflow run id: `26229814939`_
+_Head SHA: `dcb07d8`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
@@ -10,26 +10,26 @@ _Head SHA: `8345d9b`_
 | --- | --- | --: | --: | --: | --: | --: |
 | Unit (base) | `unit` | **74** | 74 | 0 | 0 | 0 |
 | Integration (middle) | `api` / `integration` | **162** | 162 | 0 | 0 | 0 |
-| UI / E2E (top) | `end-to-end` / `ui` | **43** | 26 | 1 | 0 | 16 |
-| **Σ pyramid layers** | | **279** | | | | |
+| UI / E2E (top) | `end-to-end` / `ui` | **48** | 48 | 0 | 0 | 0 |
+| **Σ pyramid layers** | | **284** | | | | |
 
 ## Shares (pyramid layers only)
 
 | Layer | Share of Σ layers |
 | --- | ---: |
-| Unit (base) | 26.5% |
-| Integration (middle) | 58.1% |
-| UI / E2E (top) | 15.4% |
+| Unit (base) | 26.1% |
+| Integration (middle) | 57.0% |
+| UI / E2E (top) | 16.9% |
 
 ```text
 Unit (base)    ██████ (74)
 Integration (middle) ██████████████ (162)
-UI / E2E (top) ████ (43)
+UI / E2E (top) ████ (48)
 ```
 
 ## Advisory (planning only)
 
-- **Unit share** 26.5% is below the soft planning target (~45%+). Consider adding or restoring fast unit tests before expanding API/E2E.
+- **Unit share** 26.1% is below the soft planning target (~45%+). Consider adding or restoring fast unit tests before expanding API/E2E.
 
 ## Quality gates (non-blocking, advisory)
 
@@ -37,8 +37,8 @@ These checks **never fail the workflow**; they surface in GitHub **Annotations**
 
 | Gate id | Status | Detail |
 | --- | --- | --- |
-| PYRAMID_UNIT_SHARE_LOW | ⚠️ warning | unit ≥ 45% of Σ layers (actual 26.5%) |
-| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 15.4%) |
+| PYRAMID_UNIT_SHARE_LOW | ⚠️ warning | unit ≥ 45% of Σ layers (actual 26.1%) |
+| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 16.9%) |
 | PYRAMID_UNKNOWN_EPIC | ✓ ok | other epic count: 0 |
 
 _Blocking failures: none (reserved for a future strict mode)._
