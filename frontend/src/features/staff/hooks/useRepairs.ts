@@ -188,6 +188,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [repairModalCompletedAt, setRepairModalCompletedAt] = useState("");
   const [repairModalMileageAtService, setRepairModalMileageAtService] = useState("");
   const [repairModalNeedsMileageAttention, setRepairModalNeedsMileageAttention] = useState(false);
+  const [repairModalNeedsMasterAttention, setRepairModalNeedsMasterAttention] = useState(false);
   const [repairModalEstimatedDate, setRepairModalEstimatedDate] = useState("");
   const [repairModalNewNote, setRepairModalNewNote] = useState("");
   const [repairModalServiceLines, setRepairModalServiceLines] = useState<RepairServiceLineDraft[]>([
@@ -201,6 +202,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
   const [dragOverColumn, setDragOverColumn] = useState<RepairStatus | null>(null);
   const [dragOverCardId, setDragOverCardId] = useState<number | null>(null);
   const [copyToast, setCopyToast] = useState("");
+  const [errorToast, setErrorToast] = useState("");
   const [repairStatusChanging, setRepairStatusChanging] = useState(false);
 
   const selectedRepair = repairs.find((repair) => repair.id === selectedRepairId) ?? null;
@@ -222,6 +224,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalCompletedAt("");
     setRepairModalMileageAtService("");
     setRepairModalNeedsMileageAttention(false);
+    setRepairModalNeedsMasterAttention(false);
     setRepairModalEstimatedDate("");
     setRepairModalNewNote("");
     setRepairModalServiceLines([newRepairServiceLineDraft()]);
@@ -258,6 +261,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       repair.mileage_at_service != null ? String(repair.mileage_at_service) : ""
     );
     setRepairModalNeedsMileageAttention(false);
+    setRepairModalNeedsMasterAttention(false);
     setRepairModalEstimatedDate(repair.estimated_date);
     setRepairModalNewNote("");
     setRepairModalServiceLines(repairDraftsFromEntryLines(repair.service_lines));
@@ -308,13 +312,18 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setRepairModalNeedsMileageAttention(true);
   }
 
+  function promptRepairForMaster(repair: RepairEntry, targetStatus: RepairStatus) {
+    openRepairModal(repair);
+    setRepairModalStatus(targetStatus);
+    setRepairModalNeedsMasterAttention(true);
+  }
+
   async function handleRepairSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setRepairError("");
     setIsSavingRepair(true);
 
     const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === repairForm.vehicle_id);
-    const selectedMaster = staffUsers.find((master) => String(master.id) === repairForm.master_id);
 
     const trimmedLines = repairForm.service_lines
       .map((l) => ({ ...l, name: l.name.trim() }))
@@ -322,12 +331,6 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
 
     if (!selectedVehicle) {
       setRepairError("Select a vehicle for this repair.");
-      setIsSavingRepair(false);
-      return;
-    }
-
-    if (!selectedMaster) {
-      setRepairError("Select a master for this repair.");
       setIsSavingRepair(false);
       return;
     }
@@ -430,20 +433,21 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     if (!selectedRepair) {
       return;
     }
-    const previous = repairModalStatus;
+    if ((next === "in_progress" || next === "completed" || next === "picked_up") && !repairModalMasterId) {
+      setRepairError("Assign a master before moving to this status.");
+      return;
+    }
     setRepairModalStatus(next);
     if (next === "completed") {
       setRepairModalCompletedAt((current) => current || selectedRepair.completed_at || getLocalTodayDate());
+      return;
     }
+    const previous = repairModalStatus;
     setRepairStatusChanging(true);
     try {
-      const completedAt =
-        next === "completed"
-          ? repairModalCompletedAt || selectedRepair.completed_at || getLocalTodayDate()
-          : null;
       const updated = await updateRepair(selectedRepair.id, {
         status: next,
-        completed_at: completedAt,
+        completed_at: null,
       });
       setRepairs((current) =>
         current.map((repair) =>
@@ -511,6 +515,11 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
       return;
     }
 
+    if ((repairModalStatus === "in_progress" || repairModalStatus === "completed" || repairModalStatus === "picked_up") && !repairModalMasterId) {
+      showErrorToast("Assign a master before moving to this status.");
+      return;
+    }
+
     const canEditServicesAndNotes =
       user?.role === "admin" ||
       (Boolean(selectedRepair.master_id) && String(selectedRepair.master_id) === String(user?.id));
@@ -519,11 +528,11 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     if (repairModalStatus === "completed") {
       const parsed = parseMileageAtServiceInput(repairModalMileageAtService);
       if (!parsed.ok) {
-        window.alert(parsed.message);
+        showErrorToast(parsed.message);
         return;
       }
       if (parsed.value == null) {
-        window.alert(COMPLETION_ODOMETER_REQUIRED_MESSAGE);
+        showErrorToast(COMPLETION_ODOMETER_REQUIRED_MESSAGE);
         return;
       }
       mileageForPayload = parsed.value;
@@ -542,7 +551,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
         .map((l) => ({ ...l, name: l.name.trim() }))
         .filter((l) => l.name.length > 0);
       if (trimmedLines.length === 0) {
-        window.alert("Add at least one service.");
+        showErrorToast("Add at least one service.");
         return;
       }
       const missingPriceLine = trimmedLines.find(
@@ -552,7 +561,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
           parseCatalogServicePrice(line.catalog_service_price) == null
       );
       if (missingPriceLine) {
-        window.alert(`Add a price for the new service "${missingPriceLine.name}".`);
+        showErrorToast(`Add a price for the new service "${missingPriceLine.name}".`);
         return;
       }
       payload.service_lines = trimmedLines.map((l, i) => ({
@@ -644,8 +653,16 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     const dragged = repairs.find((r) => r.id === draggedId);
     if (!dragged) return;
 
+    if ((targetStatus === "in_progress" || targetStatus === "completed" || targetStatus === "picked_up") && !dragged.master_id) {
+      promptRepairForMaster(dragged, targetStatus);
+      setDraggingRepairId(null);
+      setDragOverColumn(null);
+      setDragOverCardId(null);
+      return;
+    }
+
     if (targetStatus === "completed" && !hasReturnedOdometer(dragged)) {
-      window.alert(COMPLETION_ODOMETER_REQUIRED_MESSAGE);
+      showErrorToast(COMPLETION_ODOMETER_REQUIRED_MESSAGE);
       promptRepairForCompletedOdometer(dragged);
       setDraggingRepairId(null);
       setDragOverColumn(null);
@@ -693,8 +710,15 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     const repairId = Number(event.dataTransfer.getData("repair-id"));
     if (repairId) {
       const dragged = repairs.find((r) => r.id === repairId);
+      if ((status === "in_progress" || status === "completed" || status === "picked_up") && dragged && !dragged.master_id) {
+        promptRepairForMaster(dragged, status);
+        setDraggingRepairId(null);
+        setDragOverColumn(null);
+        setDragOverCardId(null);
+        return;
+      }
       if (status === "completed" && dragged && !hasReturnedOdometer(dragged)) {
-        window.alert(COMPLETION_ODOMETER_REQUIRED_MESSAGE);
+        showErrorToast(COMPLETION_ODOMETER_REQUIRED_MESSAGE);
         promptRepairForCompletedOdometer(dragged);
         setDraggingRepairId(null);
         setDragOverColumn(null);
@@ -718,6 +742,13 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     setDraggingRepairId(null);
     setDragOverColumn(null);
     setDragOverCardId(null);
+  }
+
+  function showErrorToast(message: string) {
+    setErrorToast(message);
+    window.setTimeout(() => {
+      setErrorToast((current) => (current === message ? "" : current));
+    }, 3500);
   }
 
   async function handleCopyTrackingCode(trackingCode: string, event?: { stopPropagation?: () => void }) {
@@ -798,6 +829,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     repairModalMileageAtService,
     setRepairModalMileageAtService: handleRepairModalMileageAtServiceChange,
     repairModalNeedsMileageAttention,
+    repairModalNeedsMasterAttention,
     repairModalEstimatedDate,
     setRepairModalEstimatedDate,
     repairModalNewNote,
@@ -814,6 +846,7 @@ export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterI
     dragOverColumn,
     dragOverCardId,
     copyToast,
+    errorToast,
     resetRepairForm,
     closeRepairModal,
     openRepairCreateModal,

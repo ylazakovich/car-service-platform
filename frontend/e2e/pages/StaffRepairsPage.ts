@@ -122,6 +122,32 @@ export class StaffRepairsPage {
     });
   }
 
+  /**
+   * Desktop staff: topbar **+ New Repair**. Mobile staff (≤820px): rail primary **New Repair** (no `+`).
+   * Waits for the create modal titled "New Repair" (not the intake step "Repair Intake").
+   */
+  async openNewRepairCreateModal(): Promise<void> {
+    const desktop = this.page.getByRole("button", { name: "+ New Repair" });
+    const mobile = this.page.getByRole("button", { name: /^New Repair$/ });
+    await expect(desktop.or(mobile)).toBeVisible({ timeout: 20_000 });
+    if (await desktop.isVisible()) {
+      await desktop.click();
+    } else {
+      await mobile.click();
+    }
+    await expect(this.page.getByRole("dialog", { name: /New Repair/ })).toBeVisible({
+      timeout: 15_000,
+    });
+  }
+
+  async expectNewRepairDialogVisible(): Promise<void> {
+    await expect(this.page.getByRole("dialog", { name: /New Repair/ })).toBeVisible({ timeout: 15_000 });
+  }
+
+  async expectNewRepairDialogHidden(): Promise<void> {
+    await expect(this.page.getByRole("dialog", { name: /New Repair/ })).toBeHidden({ timeout: 15_000 });
+  }
+
   /** Fill intake using demo vehicle + catalog service (`scripts/demo/demo_data.sql`). */
   async fillCreateRepairForm(issueNotesMarker: string): Promise<void> {
     await this.page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);

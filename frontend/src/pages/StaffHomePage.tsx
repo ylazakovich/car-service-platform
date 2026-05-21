@@ -1626,6 +1626,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     repairModalMileageAtService,
     setRepairModalMileageAtService,
     repairModalNeedsMileageAttention,
+    repairModalNeedsMasterAttention,
     repairModalNewNote,
     setRepairModalNewNote,
     repairModalServiceLines,
@@ -1639,6 +1640,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     draggingRepairId,
     dragOverColumn,
     copyToast,
+    errorToast,
     resetRepairForm,
     closeRepairModal,
     openRepairCreateModal,
@@ -6904,6 +6906,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             status={repairModalStatus}
             openedAsCompleted={repairModalOpenedAsCompleted}
             masterId={repairModalMasterId}
+            needsMasterAttention={repairModalNeedsMasterAttention}
             serviceLines={repairModalServiceLines}
             issueNotes={repairModalIssueNotes}
             estimatedDate={repairModalEstimatedDate}
@@ -7108,6 +7111,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
       {renderVehicleFormModal()}
       {copyToast ? <div className="copy-toast">{copyToast}</div> : null}
+      {errorToast ? <div className="error-toast">{errorToast}</div> : null}
     </div>
   );
 }

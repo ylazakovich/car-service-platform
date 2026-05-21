@@ -867,14 +867,14 @@
   border-top: 1px solid var(--border);
 }
 
-.repair-update-modal .repair-modal-mileage-at-service {
+.repair-modal-mileage-at-service {
   display: flex;
   flex-direction: column;
   gap: var(--s3);
   margin-top: var(--s4);
 }
 
-.repair-update-modal .repair-modal-mileage-at-service--attention {
+.repair-modal-mileage-at-service--attention {
   padding: var(--s3);
   margin-inline: calc(var(--s3) * -1);
   border-radius: 12px;
@@ -882,42 +882,14 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warning, #c27803) 34%, var(--border));
 }
 
-.repair-update-modal .repair-modal-mileage-input {
-  width: 100%;
-  border-radius: 10px;
-  padding: 0.72rem var(--s4);
-  border: 1px solid var(--border);
-  background: var(--surface-mid);
-  color: var(--text);
-  font-size: 0.95rem;
-  transition: border-color 0.14s, box-shadow 0.14s;
-}
-
-.repair-update-modal .repair-modal-mileage-input:hover {
-  border-color: var(--border-strong);
-}
-
-.repair-update-modal .repair-modal-mileage-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-.repair-update-modal .repair-modal-mileage-input--attention,
-.repair-update-modal .repair-modal-mileage-input--attention:hover,
-.repair-update-modal .repair-modal-mileage-input--attention:focus {
+.repair-modal-overlay .repair-modal-mileage-input--attention,
+.repair-modal-overlay .repair-modal-mileage-input--attention:hover,
+.repair-modal-overlay .repair-modal-mileage-input--attention:focus {
   border-color: color-mix(in srgb, var(--warning, #c27803) 72%, var(--accent));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning, #c27803) 24%, transparent);
 }
 
-.repair-update-modal .repair-modal-mileage-readonly {
-  margin: 0;
-  color: var(--text);
-  font-size: 0.95rem;
-  line-height: 1.45;
-}
-
-.repair-update-modal .repair-mileage-reminder {
+.repair-mileage-reminder {
   margin: 0;
   padding: var(--s3) var(--s4);
   border-radius: 10px;

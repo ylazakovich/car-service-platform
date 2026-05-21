@@ -13,6 +13,7 @@
 @import "./features/auth.css";
 @import "./features/dashboard.css";
 @import "./features/repairs.css";
+@import "./features/repair-modals.css";
 @import "./features/purchases.css";
 @import "./features/vehicles.css";
 @import "./features/uom.css";

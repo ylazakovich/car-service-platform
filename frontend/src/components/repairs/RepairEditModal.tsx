@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ServiceItem } from "../../api/services";
 import type { StaffUser } from "../../api/repairs";
 import {
@@ -29,6 +29,7 @@ type RepairEditModalProps = {
   repair: RepairEntry;
   status: RepairStatus;
   masterId: string;
+  needsMasterAttention?: boolean;
   serviceLines: RepairServiceLineDraft[];
   issueNotes: string;
   estimatedDate: string;
@@ -67,6 +68,7 @@ export function RepairEditModal({
   repair,
   status,
   masterId,
+  needsMasterAttention = false,
   serviceLines,
   issueNotes,
   estimatedDate,
@@ -107,6 +109,13 @@ export function RepairEditModal({
   const [kebabOpen, setKebabOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmReopen, setConfirmReopen] = useState(false);
+
+  useEffect(() => {
+    if (needsMasterAttention && !masterId) {
+      setErrors((prev) => ({ ...prev, master: "Assign a master before moving to this status." }));
+      window.setTimeout(() => document.getElementById("repair-field-master")?.focus(), 50);
+    }
+  }, [needsMasterAttention, masterId]);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [reopenBusy, setReopenBusy] = useState(false);
 
@@ -189,6 +198,7 @@ export function RepairEditModal({
     }
     const nextErrors = validateRepairEditFields({
       masterId,
+      status,
       serviceLines,
       canEditServices: canEditWorkDetails,
     });
@@ -201,6 +211,16 @@ export function RepairEditModal({
       return;
     }
     onSave();
+  }
+
+  function handleStatusChange(next: RepairStatus) {
+    if ((next === "in_progress" || next === "completed" || next === "picked_up") && !masterId) {
+      setErrors((prev) => ({ ...prev, master: "Assign a master before moving to this status." }));
+      document.getElementById("repair-field-master")?.focus();
+      return;
+    }
+    setErrors((prev) => { const { master: _, ...rest } = prev; return rest; });
+    onStatusChange(next);
   }
 
   function handleClose() {
@@ -260,7 +280,7 @@ export function RepairEditModal({
               value={status}
               layout={mobile ? "grid" : "row"}
               disabled={statusChanging}
-              onChange={onStatusChange}
+              onChange={handleStatusChange}
             />
           </div>
         ) : null}

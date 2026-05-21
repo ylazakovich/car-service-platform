@@ -35,6 +35,18 @@
   --field-h-compact: 36px;
   --field-h:         44px;
   --field-h-cozy:    48px;
+
+  /* radius scale */
+  --r-sm:  8px;
+  --r-md:  10px;
+  --r-lg:  12px;
+  --r-xl:  14px;
+  --r-2xl: 20px;
+  --r-pill: 999px;
+
+  /* elevation */
+  --shadow-card: 0 2px 4px rgba(0,0,0,0.3), 0 12px 40px rgba(0,0,0,0.4);
+  --shadow-pop:  0 18px 48px rgba(0,0,0,0.38);
 }
 
 .form--compact { --field-h: var(--field-h-compact); }
