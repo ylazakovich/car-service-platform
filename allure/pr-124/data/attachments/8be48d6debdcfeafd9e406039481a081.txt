@@ -1,1 +1,0 @@
-{"timestamp": "2026-05-21 13:35:55,396", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/customers/", "request": "<WSGIRequest: GET '/api/customers/'>", "status_code": 403}

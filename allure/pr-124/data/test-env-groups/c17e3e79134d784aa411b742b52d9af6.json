@@ -1,1 +1,1 @@
-{"id":"c17e3e79134d784aa411b742b52d9af6","fullName":"purchases.tests.PurchaseApiTests#test_staff_cannot_create_unit_of_measure","name":"test_staff_cannot_create_unit_of_measure","status":"passed","testResultsByEnv":{"backend":"39ee1b92bbbdda68d576cb3a0016f952"}}
+{"id":"c17e3e79134d784aa411b742b52d9af6","fullName":"purchases.tests.PurchaseApiTests#test_staff_cannot_create_unit_of_measure","name":"test_staff_cannot_create_unit_of_measure","status":"passed","testResultsByEnv":{"backend":"6d1a4adf7265bce234a158496e6e4036"}}
