@@ -1906,14 +1906,19 @@ button.moneyflow-series-toggle {
 
   .dashboard-folder-tab {
     flex: 1;
-    justify-content: center;
+    min-width: 0;
     border-radius: 10px;
+    padding: 0.65rem 0.5rem;
+    text-align: center;
   }
 
   .dashboard-folder-tab-active {
     margin-bottom: 0;
     border-radius: 10px;
   }
+
+  .dashboard-folder-label-long { display: none; }
+  .dashboard-folder-label-short { display: block; }
 
   .dashboard-folder-panel {
     background: none;
