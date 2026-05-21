@@ -1898,6 +1898,13 @@ button.moneyflow-series-toggle {
   .dashboard-worker-status-grid { grid-template-columns: 1fr; }
   .dashboard-warehouse-cumulative-strip { grid-template-columns: 1fr; }
   .dashboard-warehouse-value-list { grid-template-columns: 1fr; }
+
+  .dashboard-folder-panel {
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
 }
 
 @media (min-width: 721px) and (max-width: 1023px) {
