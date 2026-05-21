@@ -1183,7 +1183,7 @@
     white-space: normal;
     overflow: visible;
     text-overflow: unset;
-    word-break: break-word;
+    overflow-wrap: break-word;
     overflow-wrap: anywhere;
     line-height: 1.35;
     font-size: 0.93rem;
@@ -1210,7 +1210,7 @@
     white-space: normal;
     overflow: visible;
     text-overflow: unset;
-    word-break: break-word;
+    overflow-wrap: break-word;
     overflow-wrap: anywhere;
     line-height: 1.35;
     font-size: 0.93rem;
@@ -1220,7 +1220,7 @@
     white-space: normal;
     overflow: visible;
     text-overflow: unset;
-    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .purchases-workspace .purchases-mobile-supplier-name {
@@ -1228,7 +1228,7 @@
     overflow: visible;
     -webkit-box-orient: unset;
     -webkit-line-clamp: unset;
-    word-break: break-word;
+    overflow-wrap: break-word;
     overflow-wrap: anywhere;
     line-height: 1.35;
   }
@@ -1237,7 +1237,7 @@
     white-space: normal;
     overflow: visible;
     text-overflow: unset;
-    word-break: break-word;
+    overflow-wrap: break-word;
     overflow-wrap: anywhere;
   }
 
