@@ -140,6 +140,32 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
+## NOW — Design system & UI/UX consolidation
+
+Sourced from a code-driven audit of `frontend/src/styles.css` (11 423 lines) +
+`frontend/src/App.tsx`. Each task is independent and can ship as a standalone PR.
+Full visual rationale + before/after demos: `design-system/fixes.html` (in the
+design-system project).
+
+- [ ] `T-DSY-001` Canonical status color mapping — drop the second mapping in `.status-btn-active.repair-status-*` / `.status-btn.repair-status-*` (`styles.css` L 8765–8786); keep the kanban-chip mapping as the single source: `new=info`, `in_progress=warning`, `waiting_parts=danger`, `completed=success`. Brand `--accent` stops being a status color.
+- [ ] `T-DSY-002` Global `:focus-visible` ring for the core interactive primitives (`.button`, `.button-secondary`, `.button-ghost`, `.button-danger`, `.text-action`, `.nav-link`, `.subnav-tab`, `.kanban-card`, `.kanban-date-chip`, `.repair-status-chip`). Implementation: single `:where(...)` block with zero specificity using existing `--accent` + `--accent-glow` tokens; existing per-component `:focus-visible` overrides (purchase rows, dropzones, mobile fab) keep working.
+- [ ] `T-DSY-003` Kanban card information hierarchy — 3-tier layout: **plate** (Plex Mono, 0.98rem, primary anchor) → **model/year/mileage** (context) → **service** (0.88rem semibold, scan target). Issue notes clamp to 1 line + `title` tooltip. Master row replaced with avatar (deterministic tint) + tabular-nums time. Files: `styles.css` L 8410–8500, `StaffRepairsKanban.tsx` L 105–165. **Backend dependency:** see `T-DSY-003-BE`.
+- [ ] `T-DSY-003-BE` Backend: split `repair.vehicle_label` into discrete fields on the repair list API: `vehicle_plate`, `vehicle_model`, `vehicle_year`, `mileage`. Required by `T-DSY-003`; client-side parsing acceptable as temporary fallback.
+- [ ] `T-DSY-004` Touch targets ≥ 44 px for `.kanban-drag-handle`, `.kanban-date-chip`, `.kanban-col-collapse`. Pattern: keep visual size compact via `padding`, extend tap zone via transparent `::before` overlay + negative `margin` compensation. Add `@media (pointer: coarse)` to switch visible elements to 44 px on touch contexts (iPad/phone shop usage).
+- [ ] `T-DSY-005` Form density scale — introduce `--field-h-compact: 36px`, `--field-h: 44px`, `--field-h-cozy: 48px` as `:root` tokens. Bind global `input, select, textarea { min-height: var(--field-h) }`. Density context via class on form/section wrapper: `.form--compact` / `.form--default` / `.form--cozy`. Remove the hardcoded `2.25rem` override on `input.friendly-date-input`. Follow-up cleanup of ~5 other hardcoded heights (`uom-mobile-input`, `purchases-delivered-field__input`, `invoice-parse-dropzone`, etc.) — non-blocking.
+- [ ] `T-DSY-006` Sidebar nav icons — redraw 7 icons on 20×20 viewBox with stroke 1.5 (was 16×16 / 1.6); extract `<NavIcon>` helper component; differentiate Vehicles silhouette (side-profile car) from Purchases (cart without body-circles); Registers → clipboard; Repairs → balanced single-stroke wrench. File: `App.tsx` L 51–122.
+- [ ] `T-DSY-007` Sidebar `Quick Focus` panel → `TodaySummary` — replace marketing copy + duplicate CTA with 3 live counts: open / waiting parts / ready to pickup. `waiting_parts >= 3` rendered in `--danger`. Compact secondary CTA at bottom. **Backend dependency:** see `T-DSY-007-BE`.
+- [ ] `T-DSY-007-BE` Backend: `GET /api/repairs/counts/today/` returning `{ open: int, waiting_parts: int, ready: int }`. Define "ready to pickup" semantics in `DOMAIN_RULES.md` — either a 5th explicit status or `completed AND NOT picked_up_at`. Required by `T-DSY-007`; counts can be derived client-side from `useRepairs()` as a temporary fallback.
+- [ ] `T-DSY-008` Split `styles.css` (11 423 lines) into per-feature partials under `src/styles/`. Use existing `═══`-delimited section markers as the cut boundaries. Two-commit plan: (1) mechanical split preserving source order (cascade-safe); (2) post-split cleanups (media-query relocation, hardcoded-height cleanup from `T-DSY-005`, de-dupe two `repair-modal-*` definitions at L 5605 and L 6610). No `vite.config.ts` changes needed.
+
+### Open questions for `T-DSY-*`
+
+- **Q1 (T-DSY-001):** Is red the correct alarm level for `waiting_parts`? If parts-blocks are routine, introduce a 5th `blocked` status and use orange for `waiting_parts`. Add to [`OPEN_QUESTIONS.md`](./OPEN_QUESTIONS.md) before closing T-DSY-001.
+- **Q2 (T-DSY-007):** Keep `TodaySummary` or remove the sidebar panel entirely? Decide with shift-shop floor staff; survey-driven, not designer-driven.
+- **Q3 (T-DSY-003 / T-DSY-007):** Are the backend tasks `T-DSY-003-BE` and `T-DSY-007-BE` in scope for the same milestone, or do they slip to NEXT?
+
+---
+
 ## NOW — Dashboard: masters + consumables
 
 - [ ] `T-DSH-001` Link MoneyFlow ↔ ServiceBoard for master filter / drill / shared query state (UX spec + data boundaries snapshot vs live)
