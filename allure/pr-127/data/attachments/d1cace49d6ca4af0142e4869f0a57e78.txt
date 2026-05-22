@@ -1,0 +1,2 @@
+[33mWARNING [0m django.request:log.py:249 Forbidden: /api/repairs/1/pdf/
+[33mWARNING [0m django.request:log.py:249 Forbidden: /api/repairs/1/pdf/export/
