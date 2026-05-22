@@ -1130,7 +1130,12 @@ const ACT_EXPORT_ODOMETER_REQUIRED_MESSAGE =
   "Fill in Odometer when returned (km) before exporting the act.";
 const ODOMETER_NUMBER_MESSAGE = "Odometer must be a whole number (km), or leave empty.";
 
-/** Kanban-style pinned status strip: maps to `delivered` on save (false = not at workshop, true = received). */
+/**
+ * Two-option delivery status card that toggles a purchase's `delivered` state.
+ *
+ * @param delivered - Current delivery state; `false` means not at workshop, `true` means received.
+ * @param onChange - Called with the updated `delivered` value when the user selects a segment.
+ */
 function PurchaseDeliveryStatusCard({
   delivered,
   onChange,
@@ -1170,6 +1175,19 @@ function PurchaseDeliveryStatusCard({
   );
 }
 
+/**
+ * Staff workspace UI component that renders and manages the entire staff interface:
+ * dashboard, customers, vehicles, repairs, purchases, reference registers, and users.
+ *
+ * The component performs data loading, maintains local UI state for registries, modals,
+ * filters, calendars and analytics, wires up repair and purchase hooks, and renders
+ * all workspace pages and related modals. When provided, `onRepairCountsChange` is
+ * invoked with a derived { open, waiting, ready } repair counts object whenever the
+ * repairs list changes.
+ *
+ * @param onRepairCountsChange - Optional callback invoked with current repair counts: `{ open, waiting, ready }`.
+ * @returns The staff workspace JSX element.
+ */
 export function StaffHomePage({ activeSection, onSelectSection, openRepairComposerRequest, onRepairCountsChange }: StaffHomePageProps) {
   const { user, isStaff, isAdmin } = useAuth();
   const lastHandledRepairComposerRequest = useRef(0);

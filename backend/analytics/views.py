@@ -285,6 +285,22 @@ class StaffDashboardAnalyticsView(APIView):
         }
 
     def _pdf_block(self, start: date, end: date) -> dict:
+        """
+        Produce PDF-related coverage and financial aggregates for repairs and their latest exported snapshots within the given date range.
+        
+        Parameters:
+            start (date): Inclusive start date for completed repairs and snapshots (YYYY-MM-DD).
+            end (date): Inclusive end date for completed repairs and snapshots (YYYY-MM-DD).
+        
+        Returns:
+            dict: A payload containing:
+                - latest_act_totals: Financial sums across latest repair snapshots and a count of repairs with a latest act.
+                - coverage: Counts of completed repairs in range and how many lack a latest PDF.
+                - exports_in_period: Count of repair documents created in the period.
+                - completed_repairs_with_multiple_exports: Number of completed repairs that have more than one exported document.
+                - completed_to_first_export_lag_days: Summary statistics (`average`, `median`, `p90`, `sample_size`) of days between repair completion and first export for completed repairs.
+                - series_by_export_day: Daily series of export-day aggregates including totals for labor, client parts, purchase parts, other expenses, document totals, and export event counts.
+        """
         latest_doc_pk = (
             RepairDocument.objects.filter(repair_id=OuterRef("pk"))
             .order_by("-version", "-id")
@@ -403,6 +419,26 @@ class StaffDashboardAnalyticsView(APIView):
         }
 
     def _operational_block(self, op_start: date, op_end: date) -> dict:
+        """
+        Builds operational KPIs for repairs within the given operational date range.
+        
+        Constructs a funnel of repairs by status for items created in the range, cycle-time statistics for completed repairs in the range, a short preview of active workload (recently updated open repairs), and a preview of recently created repairs.
+        
+        Parameters:
+            op_start (date): Inclusive start date for the operational range.
+            op_end (date): Inclusive end date for the operational range.
+        
+        Returns:
+            dict: A payload containing:
+                - "funnel_by_status": mapping of Repair.Status values to counts for repairs created in the range.
+                - "repairs_created_in_range": integer count of repairs created in the range.
+                - "cycle_time_days": dict with keys:
+                    - "median": median cycle time in days (float) for completed repairs, or None if no samples.
+                    - "p90": 90th percentile cycle time in days (float) for completed repairs, or None if no samples.
+                    - "sample_completed_in_range": integer sample size used for the statistics.
+                - "active_workload_preview": list of up to 8 recent open repairs created in the range; each item contains id, tracking_code, service_name, status, vehicle_label, and updated_at ISO string.
+                - "recently_created_preview": list of up to 5 most recently created repairs in the range; each item contains id, tracking_code, service_name, status, vehicle_label, and created_at ISO string.
+        """
         created_in_range = Repair.objects.filter(
             created_at__date__gte=op_start,
             created_at__date__lte=op_end,
@@ -487,6 +523,25 @@ class StaffDashboardAnalyticsView(APIView):
         }
 
     def _service_board_block(self, op_start: date, op_end: date) -> dict:
+        """
+        Compute service-board KPIs and snapshots for the operational date range.
+        
+        Parameters:
+            op_start (date): Start of the operational range (inclusive).
+            op_end (date): End of the operational range (inclusive).
+        
+        Returns:
+            dict: Dictionary containing:
+                - range_summary: counts and ratios for the range (open repairs at end of range, vehicles/customers in range,
+                  returning/non-returning customers, returning ratio, median cycle time in days, completed repairs count).
+                - current_snapshot: current open-work snapshot (waiting_parts_current, open_repairs_current).
+                - all_time_totals: cumulative totals across all time (repairs, vehicles, customers, returning/non-returning customers,
+                  masters total).
+                - masters_current: list of per-master current assignment rows with assigned open counts, status counts,
+                  waiting parts count and estimated assigned value.
+                - masters_range: list of per-master completed-range rows with completed count, median cycle time, and actual
+                  service value completed.
+        """
         range_repairs = Repair.objects.filter(
             created_at__date__lte=op_end,
         ).filter(Q(completed_at__isnull=True) | Q(completed_at__gte=op_start))

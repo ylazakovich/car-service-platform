@@ -7,6 +7,15 @@ type StatusSwitcherProps = {
   onChange: (next: RepairStatus) => void;
 };
 
+/**
+ * Render a group of buttons for switching between repair statuses defined by `REPAIR_KANBAN_COLUMNS`.
+ *
+ * @param value - The currently selected `RepairStatus` to mark as active.
+ * @param layout - Layout mode, either `"row"` or `"grid"`. When `"row"`, directional arrows are rendered between buttons and the container receives a row-specific class.
+ * @param disabled - If truthy, disables all buttons.
+ * @param onChange - Callback invoked with the selected `RepairStatus` when a button is clicked.
+ * @returns A JSX element containing the status switcher UI.
+ */
 export function StatusSwitcher({ value, layout = "row", disabled, onChange }: StatusSwitcherProps) {
   const opts = REPAIR_KANBAN_COLUMNS;
   const activeIdx = opts.findIndex((o) => o.status === value);

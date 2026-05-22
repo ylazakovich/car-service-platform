@@ -10,6 +10,17 @@ type ConfirmReopenModalProps = {
   onConfirm: () => void;
 };
 
+/**
+ * Modal dialog prompting the user to reopen a completed repair.
+ *
+ * @param trackingCode - Repair tracking identifier displayed as "ID"
+ * @param vehicleLabel - Human-readable vehicle label displayed as "Vehicle"
+ * @param completedAt - Completion timestamp; when falsy the component shows "—" for Completed
+ * @param busy - When true, disables both Cancel and Reopen action buttons
+ * @param onCancel - Invoked when the overlay or Cancel button is clicked
+ * @param onConfirm - Invoked when the Reopen repair button is clicked
+ * @returns The React element for the confirmation modal
+ */
 export function ConfirmReopenModal({
   trackingCode,
   vehicleLabel,

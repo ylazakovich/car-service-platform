@@ -185,7 +185,21 @@ class RepairSerializer(serializers.ModelSerializer):
         return []
 
     def validate(self, attrs):
-        """Require mileage_at_service when marking a repair as completed."""
+        """
+        Ensure `mileage_at_service` is provided when finalizing a repair.
+        
+        If `status` is set to `Repair.Status.COMPLETED` or `Repair.Status.PICKED_UP` (either in `attrs` or on the existing instance)
+        and `mileage_at_service` is not present, raises a validation error for the `mileage_at_service` field.
+        
+        Parameters:
+            attrs (dict): Incoming validated data for the serializer.
+        
+        Returns:
+            dict: The validated `attrs` unchanged.
+        
+        Raises:
+            serializers.ValidationError: If `mileage_at_service` is required but missing.
+        """
         effective_status = attrs.get("status", getattr(self.instance, "status", None))
         effective_mileage = attrs.get(
             "mileage_at_service",

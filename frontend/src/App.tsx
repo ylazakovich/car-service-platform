@@ -218,7 +218,13 @@ function useShellMobileNarrow() {
   return useSyncExternalStore(subscribeShellMobileNarrow, shellMobileNarrowSnapshot, () => false);
 }
 
-/* ── Today Summary ──────────────────────────────────────── */
+/**
+ * Render a sidebar "Today" summary with today's date, live repair counts, and an Add new repair action.
+ *
+ * @param onAddRepair - Callback invoked when the "+ Add new repair" button is clicked.
+ * @param counts - Repair counts grouped as `open`, `waiting`, and `ready`.
+ * @returns A section element containing the date header, live indicator, a list of counts, and the add-repair button.
+ */
 
 function TodaySummary({ onAddRepair, counts }: { onAddRepair: () => void; counts: RepairCounts }) {
   const today = new Intl.DateTimeFormat("en-GB", {
@@ -245,7 +251,13 @@ function TodaySummary({ onAddRepair, counts }: { onAddRepair: () => void; counts
   );
 }
 
-/* ── Staff Shell ────────────────────────────────────────── */
+/**
+ * Render the staff shell layout that provides section navigation, account controls, responsive mobile picker, and the main workspace.
+ *
+ * This component manages active section state (persisted to localStorage), enforces staff/admin section visibility, handles profile editing flows, exposes repair counts state to child pages, and coordinates mobile-specific behaviors such as the sticky header, picker open/close and focus management.
+ *
+ * @returns The React element for the staff shell layout containing navigation, account UI, main content, and related controls.
+ */
 
 function StaffShell() {
   const shellMobileNarrow = useShellMobileNarrow();

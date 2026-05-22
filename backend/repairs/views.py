@@ -110,6 +110,14 @@ class RepairPdfView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
+        """
+        Return the latest exported PDF file for the specified repair as a downloadable attachment.
+        
+        Looks up the Repair by `pk` (404 if not found). If the repair is not in status COMPLETED or PICKED_UP, returns a 400 response with a descriptive `detail` message. If no exported PDF exists for the repair, returns a 404 response with instructions to create one. Otherwise returns an HttpResponse containing the PDF bytes with `Content-Disposition` set to an attachment filename.
+        
+        Returns:
+            An HttpResponse with the repair PDF bytes and attachment headers on success; a DRF Response with status 400 when the repair status is not eligible; a DRF Response with status 404 when no exported PDF exists (or when the repair is not found).
+        """
         repair = generics.get_object_or_404(
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,
@@ -146,6 +154,17 @@ class RepairPdfExportView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
+        """
+        Generate and return a PDF export (act) for the specified repair as a file attachment.
+        
+        Validates that the repair's status is Completed or Picked Up and that the odometer at return is set; on success returns an HttpResponse with PDF bytes and a Content-Disposition attachment filename. On validation failure returns a Response with a 400 status and a JSON `detail` message.
+        
+        Parameters:
+            pk (int): Primary key of the repair to export.
+        
+        Returns:
+            HttpResponse: PDF file bytes served with `Content-Type: application/pdf` and `Content-Disposition` set to an attachment filename, or a DRF `Response` with a 400 status and an error `detail`.
+        """
         repair = generics.get_object_or_404(
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,

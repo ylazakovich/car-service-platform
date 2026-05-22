@@ -9,6 +9,19 @@ type ConfirmDeleteModalProps = {
   onConfirm: () => void;
 };
 
+/**
+ * Render a confirmation modal prompting the user to delete a repair.
+ *
+ * Shows repair identifiers (tracking code, vehicle label, owner name) and provides Cancel and Delete actions.
+ *
+ * @param trackingCode - Repair identifier displayed in the modal
+ * @param vehicleLabel - Vehicle label displayed in the modal
+ * @param ownerName - Owner name displayed in the modal
+ * @param busy - When truthy, disables both action buttons
+ * @param onCancel - Callback invoked when the overlay is clicked or the Cancel button is pressed
+ * @param onConfirm - Callback invoked when the Delete repair button is pressed
+ * @returns The modal element to be rendered
+ */
 export function ConfirmDeleteModal({
   trackingCode,
   vehicleLabel,

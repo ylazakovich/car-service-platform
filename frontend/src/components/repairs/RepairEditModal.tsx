@@ -64,6 +64,39 @@ type RepairEditModalProps = {
   openedAsCompleted?: boolean;
 };
 
+/**
+ * Render an editable modal for a repair entry, including status, vehicle/customer, assignment, services, notes, metadata, and related actions.
+ *
+ * @param repair - The repair record being edited; used to populate fields and metadata.
+ * @param openedAsCompleted - When true, treat the modal as locked (read-only) and surface completed-state actions.
+ * @param needsMasterAttention - When true and no `masterId` is set, mark the master field with a validation error and focus it.
+ * @param canEditWorkDetails - Controls whether work-related fields (status, services, assignment, estimated date) are editable.
+ * @param staffUsers - List of staff options used to populate the master assignment dropdown.
+ * @param getStaffUserLabel - Function that returns the display label for a staff user in the master dropdown.
+ * @param vehicles - Vehicle list used to resolve the selected vehicle; a fallback vehicle is constructed from `repair` when not found.
+ * @param saving - When true, show save progress state in the modal.
+ * @param statusChanging - When true, disable the status switcher while a status transition is in progress.
+ * @param portalUrl - Public client portal URL shown in the client link row.
+ * @param extension - Optional React node rendered at the end of the modal content.
+ * @param mileageExtension - Optional React node rendered in the Assignment section when status is `completed` or `picked_up`.
+ * @param onStatusChange - Callback invoked with a new repair status.
+ * @param onMasterChange - Callback invoked when the selected master changes (receives master id or empty string).
+ * @param onServiceLinesChange - Callback invoked with the updated array of service lines.
+ * @param onIssueNotesChange - Callback invoked with updated issue/notes text.
+ * @param onEstimatedDateChange - Callback invoked with the updated estimated completion date (YYYY-MM-DD).
+ * @param onSave - Callback invoked when the user submits and validation passes.
+ * @param onDelete - Callback invoked to delete the repair (used by the confirm delete flow).
+ * @param onReopen - Callback invoked to reopen a completed repair (used by the confirm reopen flow).
+ * @param onPickUp - Optional callback to mark a repair as picked up (available when locked and status is `completed`).
+ * @param onUndoPickUp - Optional callback to undo a pickup (available when locked and status is `picked_up`).
+ * @param onHandoffCreate - Callback to create a new card assigned to another master (kebab menu action).
+ * @param onDuplicate - Optional callback to duplicate the repair (kebab menu action).
+ * @param onExportPdf - Optional callback to export or view the repair PDF (kebab menu action).
+ * @param onCopyPortalLink - Callback invoked when the client portal link is copied.
+ * @param onRegeneratePortalLink - Optional callback to regenerate the client portal link (admin only).
+ *
+ * @returns The modal JSX element for editing a repair.
+ */
 export function RepairEditModal({
   repair,
   status,

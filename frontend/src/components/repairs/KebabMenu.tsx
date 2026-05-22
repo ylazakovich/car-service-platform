@@ -20,6 +20,14 @@ type KebabMenuProps = {
   items: KebabMenuItem[];
 };
 
+/**
+ * Render a kebab (three-dot) action button and, when open, a pop-up menu of provided items.
+ *
+ * @param open - Whether the menu is currently open
+ * @param onOpenChange - Callback invoked with the new open state when the menu should open or close
+ * @param items - Array of menu entries; items may be actionable menu items or dividers
+ * @returns The kebab button and its conditional menu as a React element
+ */
 export function KebabMenu({ open, onOpenChange, items }: KebabMenuProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
 

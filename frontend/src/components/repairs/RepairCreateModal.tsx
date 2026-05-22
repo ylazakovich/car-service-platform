@@ -35,10 +35,31 @@ type RepairCreateModalProps = {
   onAddNewVehicle?: () => void;
 };
 
+/**
+ * Builds a display label from a staff user's first and last name, or uses their email if neither name is present.
+ *
+ * @param staff - Staff user object to derive the label from
+ * @returns The concatenated `first_name` and `last_name` separated by a space, or `staff.email` if both are empty
+ */
 function getStaffUserLabelFallback(staff: StaffUser): string {
   return [staff.first_name, staff.last_name].filter(Boolean).join(" ") || staff.email;
 }
 
+/**
+ * Modal component that provides a form for creating a new repair.
+ *
+ * Renders sections for vehicle & customer selection, assignment (master), service lines, and notes.
+ * Validates fields on submit and focuses the first invalid field when validation fails.
+ * Clears local field errors when the modal is closed. Returns nothing (renders null) when `open` is false.
+ *
+ * @param getStaffUserLabel - Optional function to format a staff user's display label; defaults to `getStaffUserLabelFallback`.
+ * @param onFormChange - Callback invoked with an updater function to apply partial updates to the repair form state.
+ * @param onSubmit - Callback invoked when the form passes validation and the user confirms creation.
+ * @param onClose - Callback invoked when the modal is closed; local validation errors are cleared before calling.
+ * @param onAddNewVehicle - Optional callback invoked when the user requests adding a new vehicle from the picker.
+ *
+ * @returns The modal's rendered JSX when `open` is true, otherwise `null`.
+ */
 export function RepairCreateModal({
   open,
   form,
