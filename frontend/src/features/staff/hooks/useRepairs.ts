@@ -52,6 +52,19 @@ const COMPLETION_ODOMETER_REQUIRED_MESSAGE =
 /** @deprecated Intake form uses multi-line services; kept for any legacy imports. */
 export const customRepairServiceOption = "Custom Service";
 
+/**
+ * Convert an API-side RepairItem into a UI-friendly RepairEntry with normalized and display-ready fields.
+ *
+ * @param item - The raw repair object returned by the API
+ * @returns A RepairEntry with:
+ *  - `service_lines` normalized to an array (legacy single-line fallback applied)
+ *  - `master_id` coerced to a string or empty string when absent
+ *  - optional numeric fields normalized to `null` when missing or invalid
+ *  - `completed_at` and `estimated_date` provided as strings (empty when absent)
+ *  - `repair_notes` converted to UI format with `created_at` truncated to `YYYY-MM-DD HH:mm`
+ *  - photo arrays and `portal_token` preserved
+ *  - `has_pdf` set to `false` when not provided
+ */
 function mapApiRepairToEntry(item: RepairItem): RepairEntry {
   const sl =
     item.service_lines && item.service_lines.length > 0
@@ -172,6 +185,20 @@ export function sanitizeImageUrl(url: string): string {
   return "";
 }
 
+/**
+ * Manages repair list state and all actions for creating, editing, deleting, and transitioning repairs in the UI.
+ *
+ * Provides state (repairs, search/filter, create form, modal fields, drag-and-drop state, toasts, and flags) and a comprehensive set of handlers to:
+ * - fetch and refresh repairs,
+ * - open/close create and edit modals and prefill create forms,
+ * - create, update, delete repairs and repair notes,
+ * - change statuses (including reopen, pickup, undo pickup) with required master/odometer gating,
+ * - reorder repairs via drag-and-drop and move repairs between status columns,
+ * - copy/regenerate portal links and copy tracking codes,
+ * - mark PDF availability for a repair.
+ *
+ * @returns An object exposing current repair state values, setters for form/modal fields, and action handlers for all repair-related operations (create/update/delete/status transitions/notes/drag-and-drop/portal links/PDF marking).
+ */
 export function useRepairs(vehicles: Vehicle[], staffUsers: StaffUser[], masterId?: number) {
   const { user } = useAuth();
   const [repairs, setRepairs] = useState<RepairEntry[]>([]);

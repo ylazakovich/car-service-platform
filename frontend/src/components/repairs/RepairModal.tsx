@@ -29,6 +29,36 @@ type RepairModalShellProps = {
   children: ReactNode;
 };
 
+/**
+ * Render a repairs modal dialog shell with header, optional meta/status, form body, validation banner, and footer.
+ *
+ * The component displays a titled modal with an optional status autotag or metadata, shows a validation banner when
+ * there are field errors, and renders action controls via the footer. It also wires keyboard shortcuts while the
+ * modal is focused: `Cmd/Ctrl+Enter` triggers submission when available and not locked/saving; `Escape` invokes
+ * `onEscape` if provided, otherwise `onClose`.
+ *
+ * @param mode - Either `"create"` or `"edit"`, determines footer action availability
+ * @param title - Visible modal title
+ * @param meta - Optional metadata node shown in the header when `showStatusAutotag` is false
+ * @param mobile - Whether to render mobile-optimized modal styles
+ * @param locked - When true, disables editing actions and switches footer to locked-only actions
+ * @param errors - Field error object used to compute and display the validation banner
+ * @param saving - Whether a save operation is in progress; disables submit controls and shows saving state
+ * @param kebab - Optional actions node rendered in the header actions area
+ * @param footerLayout - Footer layout mode, `"right"` or `"split"`
+ * @param showStatusAutotag - When true, shows the status autotag in the header instead of `meta`
+ * @param primaryLabel - Label for the primary submit button
+ * @param savingLabel - Label to show on the primary button while saving
+ * @param onClose - Called to close the modal (also used for the Cancel action)
+ * @param onEscape - Optional handler invoked on `Escape` key; if absent `onClose` is used
+ * @param onSubmit - Optional submit handler invoked from the form or Cmd/Ctrl+Enter
+ * @param onDelete - Optional destructive delete handler shown in edit mode when not locked
+ * @param onReopen - Optional handler to reopen a locked repair
+ * @param onPickUp - Optional handler to mark a repair as picked up (locked-only action)
+ * @param onUndoPickUp - Optional handler to undo a pickup (locked-only action)
+ * @param children - Form/body content to render inside the modal
+ * @returns A JSX element representing the repairs modal dialog
+ */
 export function RepairModalShell({
   mode,
   title,
@@ -171,6 +201,25 @@ type RepairModalFooterProps = {
   onSubmit?: () => void;
 };
 
+/**
+ * Render the modal footer with action buttons and layout-specific placement.
+ *
+ * Renders a cancel button, an optional primary submit button (hidden when `locked` or `onSubmit` is not provided, disabled and showing `savingLabel` with a spinner when `saving`), and other conditional actions: a destructive Delete (when `mode === "edit"`, not `locked`, and `onDelete` is provided), Reopen / Pick Up / Undo Pickup (when `locked` and the corresponding handler is provided). The visual arrangement follows `layout` ("right" or "split") and shows a keyboard save hint when not `locked`.
+ *
+ * @param mode - Either "create" or "edit"; determines whether the destructive Delete button is eligible.
+ * @param layout - Footer layout, `"right"` places actions on the right cluster, `"split"` separates destructive/hint area from the primary cluster.
+ * @param locked - When true, hides the primary submit and shows locked-only actions (reopen, pick up, undo pickup) instead of the save hint.
+ * @param saving - When true, disables the primary submit, adds `data-saving="true"`, shows a spinner, and swaps the primary label to `savingLabel`.
+ * @param primaryLabel - Label for the primary submit button when not saving.
+ * @param savingLabel - Label for the primary submit button while `saving` is true.
+ * @param onCancel - Callback invoked when the Cancel button is clicked.
+ * @param onDelete - Optional callback invoked by the destructive Delete button.
+ * @param onReopen - Optional callback invoked by the Reopen repair button (shown only when `locked`).
+ * @param onPickUp - Optional callback invoked by the Mark as Picked Up button (shown only when `locked`).
+ * @param onUndoPickUp - Optional callback invoked by the Undo Pickup button (shown only when `locked`).
+ * @param onSubmit - Optional submit handler; when provided and `locked` is false, a `<button type="submit">` primary action is rendered.
+ * @returns The footer JSX element containing the arranged action buttons and optional hint.
+ */
 function RepairModalFooter({
   mode,
   layout,
@@ -269,6 +318,12 @@ function RepairModalFooter({
   );
 }
 
+/**
+ * Render a definition list of metadata key/value pairs.
+ *
+ * @param items - Array of `[label, value]` tuples to render; `label` is shown as the term (`<dt>`) and `value` as the description (`<dd>`).
+ * @returns A `<dl>` element containing the provided metadata as rows.
+ */
 export function MetaList({ items }: { items: [string, string][] }) {
   return (
     <dl className="meta-list">
@@ -282,6 +337,16 @@ export function MetaList({ items }: { items: [string, string][] }) {
   );
 }
 
+/**
+ * Displays a client portal URL with a Copy button and an optional Regenerate control.
+ *
+ * @param portalUrl - The URL string shown to the user.
+ * @param onCopy - Callback invoked when the Copy button is clicked.
+ * @param onRegenerate - Optional callback invoked when the Regenerate button is clicked.
+ * @param showRegenerate - When true and `onRegenerate` is provided, shows the Regenerate button.
+ * @param disabled - When true, hides action controls (Copy and Regenerate).
+ * @returns A JSX element that renders the portal URL and its action controls.
+ */
 export function ClientLinkRow({
   portalUrl,
   onCopy,

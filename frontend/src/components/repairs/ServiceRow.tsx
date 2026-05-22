@@ -14,6 +14,13 @@ type ServiceRowProps = {
   onRemove: () => void;
 };
 
+/**
+ * Finds a catalog service whose name exactly matches the provided name, ignoring surrounding whitespace and case.
+ *
+ * @param name - The service name to match against the catalog
+ * @param catalog - The list of catalog services to search
+ * @returns The matching `ServiceItem` if an exact match is found after trimming and case-insensitive comparison, `null` otherwise
+ */
 function matchCatalog(name: string, catalog: ServiceItem[]): ServiceItem | null {
   const t = name.trim().toLowerCase();
   if (!t) {
@@ -22,6 +29,13 @@ function matchCatalog(name: string, catalog: ServiceItem[]): ServiceItem | null 
   return catalog.find((s) => s.name.trim().toLowerCase() === t) ?? null;
 }
 
+/**
+ * Produce up to six active catalog entries matching the provided service name query.
+ *
+ * @param name - The input text used to match service names (trimmed and matched case-insensitively).
+ * @param catalog - The list of ServiceItem objects to search; only items with `is_active` truthy are considered.
+ * @returns An array of up to six `ServiceItem` objects whose `name` contains the trimmed, case-insensitive `name` substring; if `name` is empty, returns the first six active items.
+ */
 function filterCatalog(name: string, catalog: ServiceItem[]): ServiceItem[] {
   const activeCatalog = catalog.filter((service) => service.is_active);
   const query = name.trim().toLowerCase();
@@ -33,6 +47,19 @@ function filterCatalog(name: string, catalog: ServiceItem[]): ServiceItem[] {
     .slice(0, 6);
 }
 
+/**
+ * Renders an editable service line with catalog autocomplete, optional custom pricing, and a remove control.
+ *
+ * @param index - Zero-based row index used for display and stable element IDs
+ * @param line - Current service line draft, including `name` and `catalog_service_price`
+ * @param catalog - Catalog of services used for exact matching and autocomplete suggestions
+ * @param disabled - When true, disables inputs and suppresses suggestion rendering
+ * @param removable - Enables or disables the remove button when true/false
+ * @param idPrefix - Prefix used to construct stable DOM IDs for accessibility attributes
+ * @param onChange - Called with a partial patch to update the parent draft (e.g., `{ name, catalog_service_id, catalog_service_price }`)
+ * @param onRemove - Called when the row's remove button is activated
+ * @returns The JSX element for a single editable service row with keyboard/mouse accessible suggestions and controls
+ */
 export function ServiceRow({
   index,
   line,

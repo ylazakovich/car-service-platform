@@ -3,6 +3,13 @@ type RepairIconProps = {
   size?: number;
 };
 
+/**
+ * Render an SVG icon corresponding to the provided repair icon name.
+ *
+ * @param name - One of: "x", "plus", "trash", "check", "chevron-down", "search", "info", "lock", "edit", or "kebab".
+ * @param size - Icon width and height in pixels; defaults to 16.
+ * @returns An SVG element for the requested icon, or `null` if the name is not recognized.
+ */
 export function RepairIcon({ name, size = 16 }: RepairIconProps) {
   const common = {
     width: size,

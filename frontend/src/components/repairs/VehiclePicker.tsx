@@ -17,10 +17,22 @@ type VehiclePickerProps = {
   onAddNewVehicle?: () => void;
 };
 
+/**
+ * Normalize a vehicle search string by trimming surrounding whitespace and converting to lowercase.
+ *
+ * @param value - The raw search input
+ * @returns The trimmed and lowercased form of `value`
+ */
 function normalizeVehicleSearchValue(value: string) {
   return value.trim().toLowerCase();
 }
 
+/**
+ * Builds a lowercase searchable string for a vehicle.
+ *
+ * @param vehicle - Vehicle object; uses `license_plate`, `make`, `model`, `customer.full_name`, and `vin`
+ * @returns A single lowercase string containing the present values of the listed fields joined by spaces
+ */
 function buildVehicleSearchText(vehicle: Vehicle) {
   return [vehicle.license_plate, vehicle.make, vehicle.model, vehicle.customer.full_name, vehicle.vin]
     .filter(Boolean)
@@ -28,6 +40,13 @@ function buildVehicleSearchText(vehicle: Vehicle) {
     .toLowerCase();
 }
 
+/**
+ * Filter a list of vehicles by a search query and return up to six matches.
+ *
+ * @param vehicles - The array of vehicles to search.
+ * @param query - The search string; leading/trailing whitespace and case are ignored.
+ * @returns An array of vehicles whose searchable fields contain the normalized query, limited to at most six items.
+ */
 function filterVehicles(vehicles: Vehicle[], query: string) {
   const normalizedQuery = normalizeVehicleSearchValue(query);
   return vehicles
@@ -35,6 +54,23 @@ function filterVehicles(vehicles: Vehicle[], query: string) {
     .slice(0, 6);
 }
 
+/**
+ * Render a vehicle search-and-select picker used in repair flows.
+ *
+ * Displays either a compact selected-vehicle card with a "Change" action, or a searchable input
+ * with a list of matching vehicles and an optional "Add new vehicle" CTA.
+ *
+ * @param mode - Current UI mode: `"empty"`, `"results"`, or `"picked"`
+ * @param vehicles - Array of vehicles available for matching and selection
+ * @param query - Current search query value shown in the input
+ * @param selectedVehicle - Currently selected vehicle, if any
+ * @param disabled - When true, disables input and actions
+ * @param onQueryChange - Called with the new query string when the input changes
+ * @param onSelect - Called with a vehicle when a search result is chosen
+ * @param onClear - Called to clear the current selection (used by the "Change" action)
+ * @param onAddNewVehicle - Optional callback for the "Add new vehicle" CTA
+ * @returns The vehicle picker UI as a React element
+ */
 export function VehiclePicker({
   mode,
   vehicles,
@@ -150,6 +186,13 @@ export function VehiclePicker({
   );
 }
 
+/**
+ * Determine the picker mode based on the selected vehicle and search query.
+ *
+ * @param vehicleId - The id of the currently selected vehicle (empty string if none)
+ * @param query - The current search input
+ * @returns `"picked"` if `vehicleId` is non-empty, `"results"` if `query` trimmed has length greater than zero, `"empty"` otherwise
+ */
 export function getVehiclePickerMode(
   vehicleId: string,
   query: string

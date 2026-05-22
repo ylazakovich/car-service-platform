@@ -1,5 +1,12 @@
 import { RepairIcon } from "./repairIcons";
 
+/**
+ * Renders a status banner indicating a repair has been completed.
+ *
+ * Displays a check icon and text explaining that fields are read-only until the repair is reopened.
+ *
+ * @returns The JSX element for the "Repair completed" status banner.
+ */
 export function LockBanner() {
   return (
     <div className="lock-banner" role="status">

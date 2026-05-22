@@ -11,6 +11,21 @@ type FieldRowProps = {
   children: ReactNode;
 };
 
+/**
+ * Renders a labeled form row that displays a label, its children, and either an error message or a hint.
+ *
+ * The component adds modifier classes when `required`, `error`, or `fullWidth` are truthy. When both `error`
+ * and `htmlFor` are provided, the error element receives an `id` of `${htmlFor}-error` and has `role="alert"`.
+ *
+ * @param label - Optional label text shown at the start of the row
+ * @param hint - Optional hint text displayed when there is no error
+ * @param error - Optional error text; when present it overrides `hint` and is announced with `role="alert"`
+ * @param required - When true, adds a required modifier class to the row
+ * @param fullWidth - When true, applies the full-width grid modifier class
+ * @param htmlFor - Associates the label with a control by id; used to compute the error element id when `error` is present
+ * @param children - The control(s) rendered inside the row
+ * @returns A label element wrapping the provided content and contextual hint or error
+ */
 export function FieldRow({ label, hint, error, required, fullWidth, htmlFor, children }: FieldRowProps) {
   const cls = ["field-row"];
   if (required) {
@@ -41,6 +56,14 @@ export function FieldRow({ label, hint, error, required, fullWidth, htmlFor, chi
   );
 }
 
+/**
+ * Render a section header with a label and an optional right-side node or hint.
+ *
+ * @param label - The visible section title.
+ * @param hint - Short secondary text shown on the right when `right` is not provided.
+ * @param right - A React node rendered on the right side; if present it replaces the `hint`.
+ * @returns The header element for a field section.
+ */
 export function SectionHead({
   label,
   hint,
