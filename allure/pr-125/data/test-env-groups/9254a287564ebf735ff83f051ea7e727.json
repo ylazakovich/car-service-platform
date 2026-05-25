@@ -1,1 +1,1 @@
-{"id":"9254a287564ebf735ff83f051ea7e727","fullName":"vehicles.tests.VehicleApiTests#test_create_vehicle_with_extra_fields","name":"test_create_vehicle_with_extra_fields","status":"passed","testResultsByEnv":{"backend":"bd8de6eab48bac63b07084359c9dceaf"}}
+{"id":"9254a287564ebf735ff83f051ea7e727","fullName":"vehicles.tests.VehicleApiTests#test_create_vehicle_with_extra_fields","name":"test_create_vehicle_with_extra_fields","status":"passed","testResultsByEnv":{"backend":"472fee45e05ce391d68bb76a8a0b5020"}}
