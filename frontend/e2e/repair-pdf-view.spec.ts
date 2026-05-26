@@ -1,9 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { openStaffApp } from "./fixtures/auth";
 import { cleanupIsolatedRepair, createIsolatedRepair, type IsolatedRepairFixture } from "./fixtures/repairFactory";
 import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
+
+async function waitForPdfExportPost<T>(page: Page, action: () => Promise<T>): Promise<T> {
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      response.url().includes("/api/repairs/") &&
+      response.url().includes("/pdf/export") &&
+      response.ok(),
+    { timeout: 30_000 },
+  );
+  const result = await action();
+  await responsePromise;
+  return result;
+}
 
 /** @desktop — POST /pdf/export на широком layout; узкий viewport — блок `@mobile-only` ниже. */
 test.describe("Repair PDF: view without new export @desktop", () => {
@@ -62,8 +76,8 @@ test.describe("Repair PDF: view without new export @desktop", () => {
 
     await repairs.openCertificateFromViewPdf();
     const afterOpen = exportPostUrls.length;
-    await repairs.exportNewVersionButton().click();
-    await expect.poll(() => exportPostUrls.length, { timeout: 30_000 }).toBeGreaterThan(afterOpen);
+    await waitForPdfExportPost(page, () => repairs.exportNewVersionButton().click());
+    expect(exportPostUrls.length).toBeGreaterThan(afterOpen);
   });
 });
 
@@ -125,7 +139,7 @@ test.describe("Repair PDF: view without new export @mobile-only", () => {
 
     await repairs.openCertificateFromViewPdf();
     const afterOpen = exportPostUrls.length;
-    await repairs.exportNewVersionButton().click();
-    await expect.poll(() => exportPostUrls.length, { timeout: 30_000 }).toBeGreaterThan(afterOpen);
+    await waitForPdfExportPost(page, () => repairs.exportNewVersionButton().click());
+    expect(exportPostUrls.length).toBeGreaterThan(afterOpen);
   });
 });

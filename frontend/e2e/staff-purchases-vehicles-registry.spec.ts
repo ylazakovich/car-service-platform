@@ -157,6 +157,7 @@ test.describe("Purchases registry — mobile table @mobile-only", () => {
     const unit = await createE2eUnit(page, "mpur");
     const purchase = await createE2ePurchase(page, { unitId: unit.id, partPrefix: "E2E mobile Castrol EDGE" });
     try {
+      await openAdminApp(page);
       const reg = new StaffRecordsRegistryPage(page);
       await reg.gotoPurchasesSection();
       await reg.expectPurchasesRegistryChrome();
@@ -173,6 +174,7 @@ test.describe("Purchases registry — mobile table @mobile-only", () => {
     const unit = await createE2eUnit(page, "mpurd");
     const purchase = await createE2ePurchase(page, { unitId: unit.id, partPrefix: "E2E mobile Castrol EDGE" });
     try {
+      await openAdminApp(page);
       const reg = new StaffRecordsRegistryPage(page);
       await reg.gotoPurchasesSection();
       await reg.purchaseRowByPartSnippet(purchase.partName).click();

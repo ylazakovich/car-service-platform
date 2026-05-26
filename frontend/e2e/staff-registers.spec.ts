@@ -159,6 +159,6 @@ test.describe("Registers workspace @mobile-only", () => {
     await reg.gotoRegistersSection();
     await reg.expectUnitsTabActive();
     await expect(page.locator(".reference-workspace .uom-admin-page details.registers-help-disclosure")).toHaveCount(1);
-    await expect(page.getByRole("button", { name: "How units work" })).toBeVisible();
+    await expect(page.locator(".reference-workspace .uom-admin-page summary.registers-help-disclosure-summary", { hasText: "How units work" })).toBeVisible();
   });
 });

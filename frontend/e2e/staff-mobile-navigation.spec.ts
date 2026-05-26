@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { openStaffApp } from "./fixtures/auth";
+import { cleanupE2eData, createE2eCustomerWithVehicle } from "./fixtures/e2eDataFactory";
 import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
@@ -54,28 +55,35 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
     await nav.openWorkspaceMenu();
     await page.getByRole("button", { name: "Add New Repair" }).click();
 
-    await expect(page.getByRole("heading", { name: "Create Repair" })).toBeVisible({ timeout: 15_000 });
-    const formModal = page.locator(".repair-form-modal");
-    await formModal.getByRole("button", { name: "Cancel" }).click();
-    await expect(page.getByRole("heading", { name: "Create Repair" })).toBeHidden();
+    const dialog = page.getByRole("dialog", { name: "New Repair" });
+    await expect(dialog.getByRole("heading", { name: "New Repair" })).toBeVisible({ timeout: 15_000 });
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toBeHidden();
   });
 
   test("mobile vehicles list opens detail with Open Repairs affordance", async ({ page }) => {
     await e2eBehaviors("staff", "mobile · vehicles list · detail");
     const nav = new StaffMobileNavigationPage(page);
-    await nav.gotoStaffSection("Vehicles");
-    await nav.expectMobileWorkspaceMenuToggle();
+    const fixture = await createE2eCustomerWithVehicle(page, "mobile-nav-vehicle");
+    try {
+      await openStaffApp(page);
+      await nav.gotoStaffSection("Vehicles");
+      await nav.expectMobileWorkspaceMenuToggle();
 
-    const openVehicle = page.getByRole("button", { name: /^Open vehicle / }).first();
-    await expect(openVehicle).toBeVisible({
-      timeout: 35_000,
-    });
+      const escapedPlate = fixture.vehiclePlate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const openVehicle = page.getByLabel("Mobile vehicles list").getByRole("button", { name: new RegExp(`^Open vehicle ${escapedPlate}`) });
+      await expect(openVehicle).toBeVisible({
+        timeout: 35_000,
+      });
 
-    await expect(page.getByLabel("Mobile vehicles list")).toBeVisible();
-    await openVehicle.click();
+      await expect(page.getByLabel("Mobile vehicles list")).toBeVisible();
+      await openVehicle.click();
 
-    await expect(page.getByLabel("Mobile vehicle details")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "Open Repairs" })).toBeVisible();
+      await expect(page.getByLabel("Mobile vehicle details")).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByRole("button", { name: "Open Repairs" })).toBeVisible();
+    } finally {
+      await cleanupE2eData(page, { vehicleIds: [fixture.vehicleId], customerIds: [fixture.customerId] });
+    }
   });
 
   test("Jump to top FAB scrolls up and focuses workspace menu toggle", async ({ page }) => {
