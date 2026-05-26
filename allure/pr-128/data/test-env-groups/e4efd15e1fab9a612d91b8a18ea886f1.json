@@ -1,1 +1,1 @@
-{"id":"e4efd15e1fab9a612d91b8a18ea886f1","fullName":"staff-purchases-vehicles-registry.spec.ts:90:3","name":"completed repair without PDF shows act-pending affordance","status":"passed","testResultsByEnv":{"e2e":"b8db7d682fd90d51e3ed329e2685366b"}}
+{"id":"e4efd15e1fab9a612d91b8a18ea886f1","fullName":"staff-purchases-vehicles-registry.spec.ts:90:3","name":"completed repair without PDF shows act-pending affordance","status":"skipped","testResultsByEnv":{"e2e":"eeb2f48beca922805e8785d7b4db7e7b"}}
