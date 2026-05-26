@@ -54,7 +54,17 @@
   ],
   "packageRules": [
     {
-      "description": "Group all minor and patch updates into a single PR",
+      "description": "Group remaining minor and patch updates into a single PR",
+      "matchPackageNames": [
+        "*",
+        "!@playwright/test",
+        "!playwright",
+        "!playwright-core",
+        "!postgres",
+        "!python",
+        "!node",
+        "!nginx"
+      ],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "minor and patch updates"
     },
