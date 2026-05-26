@@ -1,1 +1,1 @@
-{"id":"bd7fc38747b9489b34695301fe5a3b95","fullName":"src/lib/formatPolishPhone.test.ts#formatPolishPhoneDisplay returns empty for null/empty","name":"returns empty for null/empty","status":"passed","testResultsByEnv":{"frontend":"ffbcd0c4de066d5aa0cd4f6372d1556f"}}
+{"id":"bd7fc38747b9489b34695301fe5a3b95","fullName":"src/lib/formatPolishPhone.test.ts#formatPolishPhoneDisplay returns empty for null/empty","name":"returns empty for null/empty","status":"passed","testResultsByEnv":{"frontend":"2442a9c6168a666b9954caad7b0053dd"}}
