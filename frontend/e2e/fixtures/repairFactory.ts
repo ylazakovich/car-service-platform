@@ -93,6 +93,12 @@ export async function createIsolatedRepair(page: Page, options: IsolatedRepairOp
         }
         return (await response.json()) as T;
       };
+      const cleanupCustomerAndVehicle = async (customerId: number, vehicleId: number | null): Promise<void> => {
+        if (vehicleId) {
+          await fetch(`/api/vehicles/${vehicleId}`, { method: "DELETE", credentials: "include", headers });
+        }
+        await fetch(`/api/customers/${customerId}`, { method: "DELETE", credentials: "include", headers });
+      };
 
       const me = assignMasterValue ? await jsonFetch<{ id: number }>("/api/auth/me", { method: "GET" }) : null;
       const customer = await jsonFetch<ApiCustomer>("/api/customers/", {
@@ -104,34 +110,46 @@ export async function createIsolatedRepair(page: Page, options: IsolatedRepairOp
           notes: markerText,
         }),
       });
-      const vehicle = await jsonFetch<ApiVehicle>("/api/vehicles/", {
-        method: "POST",
-        body: JSON.stringify({
-          customer_id: customer.id,
-          license_plate: plateValue,
-          make: vehicleMakeValue,
-          model: vehicleModelValue,
-          year: vehicleYearValue,
-          vin: `VIN${plateValue.replace(/\s+/g, "")}${Date.now()}`.slice(0, 17),
-          color: "Blue",
-          notes: markerText,
-          mileage: mileageValue,
-          added_date: completedAtValue ?? undefined,
-        }),
-      });
-      const repair = await jsonFetch<ApiRepair>("/api/repairs/", {
-        method: "POST",
-        body: JSON.stringify({
-          vehicle_id: vehicle.id,
-          ...(me ? { master_id: me.id } : {}),
-          service_name: serviceNameValue,
-          service_lines: serviceLinesValue,
-          issue_notes: markerText,
-          status: statusValue,
-          ...(completedAtValue ? { completed_at: completedAtValue } : {}),
-          mileage_at_service: mileageValue,
-        }),
-      });
+      let vehicle: ApiVehicle;
+      try {
+        vehicle = await jsonFetch<ApiVehicle>("/api/vehicles/", {
+          method: "POST",
+          body: JSON.stringify({
+            customer_id: customer.id,
+            license_plate: plateValue,
+            make: vehicleMakeValue,
+            model: vehicleModelValue,
+            year: vehicleYearValue,
+            vin: `VIN${plateValue.replace(/\s+/g, "")}${Date.now()}`.slice(0, 17),
+            color: "Blue",
+            notes: markerText,
+            mileage: mileageValue,
+            added_date: completedAtValue ?? undefined,
+          }),
+        });
+      } catch (error) {
+        await cleanupCustomerAndVehicle(customer.id, null).catch(() => {});
+        throw error;
+      }
+      let repair: ApiRepair;
+      try {
+        repair = await jsonFetch<ApiRepair>("/api/repairs/", {
+          method: "POST",
+          body: JSON.stringify({
+            vehicle_id: vehicle.id,
+            ...(me ? { master_id: me.id } : {}),
+            service_name: serviceNameValue,
+            service_lines: serviceLinesValue,
+            issue_notes: markerText,
+            status: statusValue,
+            ...(completedAtValue ? { completed_at: completedAtValue } : {}),
+            mileage_at_service: mileageValue,
+          }),
+        });
+      } catch (error) {
+        await cleanupCustomerAndVehicle(customer.id, vehicle.id).catch(() => {});
+        throw error;
+      }
 
       return {
         customerId: customer.id,

@@ -18,15 +18,22 @@ test.describe("Consumables out of stock @desktop", () => {
 
   test("admin expands Out of stock and sees desktop OOS row", async ({ page }) => {
     await e2eBehaviors("admin", "purchases · consumables · out of stock section");
-    const unit = await createE2eUnit(page, "oos");
-    const purchase = await createE2ePurchase(page, {
-      unitId: unit.id,
-      partPrefix: "E2E out of stock gloves",
-      isShopConsumable: true,
-      currentStockQuantity: "0.00",
-      inventoryCheckedOn: new Date().toISOString().slice(0, 10),
-    });
+    const purchaseIds: number[] = [];
+    const unitIds: number[] = [];
+    let purchase: { purchaseId: number; partName: string };
+
     try {
+      const unit = await createE2eUnit(page, "oos");
+      unitIds.push(unit.id);
+      purchase = await createE2ePurchase(page, {
+        unitId: unit.id,
+        partPrefix: "E2E out of stock gloves",
+        isShopConsumable: true,
+        currentStockQuantity: "0.00",
+        inventoryCheckedOn: new Date().toISOString().slice(0, 10),
+      });
+      purchaseIds.push(purchase.purchaseId);
+
       await openAdminApp(page);
       const reg = new StaffRecordsRegistryPage(page);
       await reg.gotoPurchasesConsumablesTab();
@@ -43,7 +50,7 @@ test.describe("Consumables out of stock @desktop", () => {
       await expect(oosRegion.getByRole("spinbutton", { name: /On hand .+ out of stock/i }).first()).toBeVisible();
       await expect(oosRegion.locator("tbody.purchases-compact-list tr").filter({ hasText: purchase.partName })).toBeVisible();
     } finally {
-      await cleanupE2eData(page, { purchaseIds: [purchase.purchaseId], unitIds: [unit.id] });
+      await cleanupE2eData(page, { purchaseIds, unitIds });
     }
   });
 });
@@ -58,15 +65,19 @@ test.describe("Consumables out of stock @mobile-only", () => {
 
   test("admin expands Out of stock on narrow viewport", async ({ page }) => {
     await e2eBehaviors("admin", "purchases · consumables · out of stock · mobile");
-    const unit = await createE2eUnit(page, "moos");
-    const purchase = await createE2ePurchase(page, {
-      unitId: unit.id,
-      partPrefix: "E2E mobile out of stock gloves",
-      isShopConsumable: true,
-      currentStockQuantity: "0.00",
-      inventoryCheckedOn: new Date().toISOString().slice(0, 10),
-    });
+    let unit: { id: number } | null = null;
+    let purchase: { purchaseId: number; partName: string } | null = null;
+
     try {
+      unit = await createE2eUnit(page, "moos");
+      purchase = await createE2ePurchase(page, {
+        unitId: unit.id,
+        partPrefix: "E2E mobile out of stock gloves",
+        isShopConsumable: true,
+        currentStockQuantity: "0.00",
+        inventoryCheckedOn: new Date().toISOString().slice(0, 10),
+      });
+
       await openAdminApp(page);
       const reg = new StaffRecordsRegistryPage(page);
       await reg.gotoPurchasesConsumablesTab();
@@ -85,7 +96,10 @@ test.describe("Consumables out of stock @mobile-only", () => {
       const desktopOosQty = oosRegion.getByRole("spinbutton", { name: /On hand .+ out of stock/i });
       await expect(mobileOosName.or(desktopOosQty)).toBeVisible({ timeout: 20_000 });
     } finally {
-      await cleanupE2eData(page, { purchaseIds: [purchase.purchaseId], unitIds: [unit.id] });
+      await cleanupE2eData(page, {
+        purchaseIds: purchase ? [purchase.purchaseId] : [],
+        unitIds: unit ? [unit.id] : [],
+      });
     }
   });
 });

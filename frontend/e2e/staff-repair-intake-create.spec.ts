@@ -16,11 +16,13 @@ test.describe("Staff repair intake — create kanban card @desktop", () => {
   test("desktop: New Repair → intake → card on board", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · intake · create card (desktop)");
     const repairs = new StaffRepairsPage(page);
-    const fixture = await createE2eCustomerWithVehicle(page, "intake-create");
-    const service = await createE2eService(page, "E2E intake service");
     const marker = uniqueIssueMarker();
+    let fixture: Awaited<ReturnType<typeof createE2eCustomerWithVehicle>> | null = null;
+    let service: Awaited<ReturnType<typeof createE2eService>> | null = null;
 
     try {
+      fixture = await createE2eCustomerWithVehicle(page, "intake-create");
+      service = await createE2eService(page, "E2E intake service");
       await openStaffApp(page);
       await repairs.gotoRepairsSection();
       await repairs.expectRepairsKanbanVisible();
@@ -35,7 +37,11 @@ test.describe("Staff repair intake — create kanban card @desktop", () => {
       await repairs.expectKanbanCardShowsIssueNotes(marker);
     } finally {
       await cleanupRepairsByIssueMarker(page, marker);
-      await cleanupE2eData(page, { serviceIds: [service.id], vehicleIds: [fixture.vehicleId], customerIds: [fixture.customerId] });
+      await cleanupE2eData(page, {
+        serviceIds: service ? [service.id] : [],
+        vehicleIds: fixture ? [fixture.vehicleId] : [],
+        customerIds: fixture ? [fixture.customerId] : [],
+      });
     }
   });
 });
@@ -48,11 +54,13 @@ test.describe("Staff repair intake — create kanban card @mobile-only", () => {
   test("mobile: New Repair → intake → card on board", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · intake · create card (mobile)");
     const repairs = new StaffRepairsPage(page);
-    const fixture = await createE2eCustomerWithVehicle(page, "intake-create-mobile");
-    const service = await createE2eService(page, "E2E mobile intake service");
     const marker = uniqueIssueMarker();
+    let fixture: Awaited<ReturnType<typeof createE2eCustomerWithVehicle>> | null = null;
+    let service: Awaited<ReturnType<typeof createE2eService>> | null = null;
 
     try {
+      fixture = await createE2eCustomerWithVehicle(page, "intake-create-mobile");
+      service = await createE2eService(page, "E2E mobile intake service");
       await openStaffApp(page);
       await expect(repairs.staffMobileWorkspaceMenuToggle()).toBeVisible({ timeout: 20_000 });
 
@@ -69,7 +77,11 @@ test.describe("Staff repair intake — create kanban card @mobile-only", () => {
       await repairs.expectKanbanCardShowsIssueNotes(marker);
     } finally {
       await cleanupRepairsByIssueMarker(page, marker);
-      await cleanupE2eData(page, { serviceIds: [service.id], vehicleIds: [fixture.vehicleId], customerIds: [fixture.customerId] });
+      await cleanupE2eData(page, {
+        serviceIds: service ? [service.id] : [],
+        vehicleIds: fixture ? [fixture.vehicleId] : [],
+        customerIds: fixture ? [fixture.customerId] : [],
+      });
     }
   });
 });

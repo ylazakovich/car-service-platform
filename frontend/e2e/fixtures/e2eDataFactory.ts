@@ -211,7 +211,10 @@ export async function cleanupRepairsByIssueMarker(page: Page, marker: string): P
     for (const repair of repairs) {
       const haystack = `${repair.issue_description ?? ""} ${repair.issue_notes ?? ""} ${repair.description ?? ""}`;
       if (haystack.includes(markerValue)) {
-        await fetch(`/api/repairs/${repair.id}`, { method: "DELETE", credentials: "include", headers });
+        const deleteResponse = await fetch(`/api/repairs/${repair.id}`, { method: "DELETE", credentials: "include", headers });
+        if (!deleteResponse.ok) {
+          throw new Error(`DELETE /api/repairs/${repair.id} failed: ${deleteResponse.status} ${await deleteResponse.text()}`);
+        }
       }
     }
   }, { markerValue: marker });

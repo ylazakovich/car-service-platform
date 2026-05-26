@@ -22,7 +22,7 @@ async function waitForPdfExportPost<T>(page: Page, action: () => Promise<T>): Pr
 /** @desktop — POST /pdf/export на широком layout; узкий viewport — блок `@mobile-only` ниже. */
 test.describe("Repair PDF: view without new export @desktop", () => {
   test.describe.configure({ mode: "serial" });
-  let fixture: IsolatedRepairFixture;
+  let fixture: IsolatedRepairFixture | null = null;
 
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
@@ -37,7 +37,13 @@ test.describe("Repair PDF: view without new export @desktop", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await cleanupIsolatedRepair(page, fixture);
+    if (fixture) {
+      try {
+        await cleanupIsolatedRepair(page, fixture);
+      } finally {
+        fixture = null;
+      }
+    }
   });
 
   test("two View PDF opens only call POST export once (first time) or zero times (if already exported)", async ({ page }) => {
@@ -51,7 +57,7 @@ test.describe("Repair PDF: view without new export @desktop", () => {
 
     const repairs = new StaffRepairsPage(page);
     await repairs.gotoRepairsSection();
-    await repairs.openRepairCardByTrackingCode(fixture.trackingCode);
+    await repairs.openRepairCardByTrackingCode(fixture!.trackingCode);
 
     await repairs.openCertificateFromViewPdf();
     const exportCountAfterFirstOpen = exportPostUrls.length;
@@ -72,7 +78,7 @@ test.describe("Repair PDF: view without new export @desktop", () => {
 
     const repairs = new StaffRepairsPage(page);
     await repairs.gotoRepairsSection();
-    await repairs.openRepairCardByTrackingCode(fixture.trackingCode);
+    await repairs.openRepairCardByTrackingCode(fixture!.trackingCode);
 
     await repairs.openCertificateFromViewPdf();
     const afterOpen = exportPostUrls.length;
@@ -83,7 +89,7 @@ test.describe("Repair PDF: view without new export @desktop", () => {
 
 test.describe("Repair PDF: view without new export @mobile-only", () => {
   test.describe.configure({ mode: "serial" });
-  let fixture: IsolatedRepairFixture;
+  let fixture: IsolatedRepairFixture | null = null;
 
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
@@ -100,7 +106,13 @@ test.describe("Repair PDF: view without new export @mobile-only", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await cleanupIsolatedRepair(page, fixture);
+    if (fixture) {
+      try {
+        await cleanupIsolatedRepair(page, fixture);
+      } finally {
+        fixture = null;
+      }
+    }
   });
 
   test("two View PDF opens only call POST export once (first time) or zero times (if already exported)", async ({ page }) => {
@@ -114,7 +126,7 @@ test.describe("Repair PDF: view without new export @mobile-only", () => {
 
     const repairs = new StaffRepairsPage(page);
     await repairs.gotoRepairsSection();
-    await repairs.openRepairCardByTrackingCode(fixture.trackingCode);
+    await repairs.openRepairCardByTrackingCode(fixture!.trackingCode);
 
     await repairs.openCertificateFromViewPdf();
     const exportCountAfterFirstOpen = exportPostUrls.length;
@@ -135,7 +147,7 @@ test.describe("Repair PDF: view without new export @mobile-only", () => {
 
     const repairs = new StaffRepairsPage(page);
     await repairs.gotoRepairsSection();
-    await repairs.openRepairCardByTrackingCode(fixture.trackingCode);
+    await repairs.openRepairCardByTrackingCode(fixture!.trackingCode);
 
     await repairs.openCertificateFromViewPdf();
     const afterOpen = exportPostUrls.length;

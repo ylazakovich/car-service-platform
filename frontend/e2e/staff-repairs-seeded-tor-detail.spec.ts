@@ -6,7 +6,7 @@ import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /** Без `@desktop` / `@mobile-only` в имени describe — выполняется в desktop-chrome и mobile-chrome. */
 test.describe("Staff repairs — isolated kanban and detail", () => {
-  let fixture: IsolatedRepairFixture;
+  let fixture: IsolatedRepairFixture | null = null;
 
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
@@ -24,7 +24,13 @@ test.describe("Staff repairs — isolated kanban and detail", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await cleanupIsolatedRepair(page, fixture);
+    if (fixture) {
+      try {
+        await cleanupIsolatedRepair(page, fixture);
+      } finally {
+        fixture = null;
+      }
+    }
   });
 
   test("kanban shows test-owned card summary; opening card shows repair dialog with PDF affordance", async ({ page }) => {
@@ -33,11 +39,11 @@ test.describe("Staff repairs — isolated kanban and detail", () => {
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();
 
-    const card = await repairs.repairKanbanCardByTrackingCode(fixture.trackingCode);
+    const card = await repairs.repairKanbanCardByTrackingCode(fixture!.trackingCode);
     await expect(card).toContainText("Kanban detail oil service +1");
 
-    await repairs.openRepairCardByTrackingCode(fixture.trackingCode);
-    await expect(repairs.repairDialogByVehicleLabel(fixture.vehiclePlate, fixture.vehicleMake, fixture.vehicleModel)).toBeVisible({
+    await repairs.openRepairCardByTrackingCode(fixture!.trackingCode);
+    await expect(repairs.repairDialogByVehicleLabel(fixture!.vehiclePlate, fixture!.vehicleMake, fixture!.vehicleModel)).toBeVisible({
       timeout: 20_000,
     });
     await page.getByRole("button", { name: "More actions" }).click();
