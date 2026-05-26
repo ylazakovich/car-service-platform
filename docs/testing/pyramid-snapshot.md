@@ -1,8 +1,8 @@
 # Test pyramid snapshot
 
-_Generated: `2026-05-26T07:51:35.943Z`_
-_Source workflow run id: `26439464975`_
-_Head SHA: `a974137`_
+_Generated: `2026-05-26T19:14:46.287Z`_
+_Source workflow run id: `26469440632`_
+_Head SHA: `e52667e`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
