@@ -1,1 +1,1 @@
-{"id":"45e01bf4302d58af04aed464dda816f6","fullName":"staff-purchases-vehicles-registry.spec.ts:192:3","name":"admin sees Purchases section tabs (Warehouse / Consumables / Suppliers) on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"24efb38bb1c98b586711540f273df22c"}}
+{"id":"45e01bf4302d58af04aed464dda816f6","fullName":"staff-purchases-vehicles-registry.spec.ts:192:3","name":"admin sees Purchases section tabs (Warehouse / Consumables / Suppliers) on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"440dd1af712ac0621e9d5913d0d4b6f0"}}
