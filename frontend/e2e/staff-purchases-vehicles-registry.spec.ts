@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
-import {
-  E2E_DEMO_PURCHASE_PART_SUBSTRING,
-  E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE,
-} from "./e2e-seed";
 import { AUTH_STATE_ADMIN, openAdminApp, openStaffApp } from "./fixtures/auth";
+import {
+  cleanupE2eData,
+  createE2eCustomerWithVehicle,
+  createE2ePurchase,
+  createE2eUnit,
+} from "./fixtures/e2eDataFactory";
+import { cleanupIsolatedRepair, createIsolatedRepair } from "./fixtures/repairFactory";
 import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
 import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 
-/**
- * Табличные реестры Purchases / Vehicles и индикатор «завершённый ремонт без выгруженного акта (PDF)».
- * Данные: `scripts/demo/demo_data.sql` (CI и локально после `bash scripts/db/load-demo.sh`).
- */
+/** Purchases / Vehicles registries create their own data; CI does not load demo data. */
 
 test.describe("Purchases registry — table-only chrome @desktop", () => {
   test.use({ storageState: AUTH_STATE_ADMIN });
@@ -24,26 +24,40 @@ test.describe("Purchases registry — table-only chrome @desktop", () => {
 
   test("admin sees compact rows without Cards/Compact or sort controls", async ({ page }) => {
     await e2eBehaviors("admin", "purchases · table-only registry");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoPurchasesSection();
-    await reg.expectPurchasesRegistryChrome();
+    const unit = await createE2eUnit(page, "pur");
+    const purchase = await createE2ePurchase(page, { unitId: unit.id, partPrefix: "E2E Castrol EDGE", delivered: false });
+    try {
+      await openAdminApp(page);
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoPurchasesSection();
+      await reg.expectPurchasesRegistryChrome();
 
-    const row = reg.purchaseRowByPartSnippet(E2E_DEMO_PURCHASE_PART_SUBSTRING);
-    await expect(row).toBeVisible({ timeout: 20_000 });
-    await expect(row).toHaveAttribute("role", "button");
+      const row = reg.purchaseRowByPartSnippet(purchase.partName);
+      await expect(row).toBeVisible({ timeout: 20_000 });
+      await expect(row).toHaveAttribute("role", "button");
+    } finally {
+      await cleanupE2eData(page, { purchaseIds: [purchase.purchaseId], unitIds: [unit.id] });
+    }
   });
 
   test("clicking a purchase row opens detail dialog", async ({ page }) => {
     await e2eBehaviors("admin", "purchases · row opens modal");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoPurchasesSection();
-    await reg.purchaseRowByPartSnippet(E2E_DEMO_PURCHASE_PART_SUBSTRING).click();
+    const unit = await createE2eUnit(page, "purdlg");
+    const purchase = await createE2ePurchase(page, { unitId: unit.id, partPrefix: "E2E Castrol EDGE", delivered: false });
+    try {
+      await openAdminApp(page);
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoPurchasesSection();
+      await reg.purchaseRowByPartSnippet(purchase.partName).click();
 
-    const dialog = page.getByRole("dialog", { name: new RegExp(E2E_DEMO_PURCHASE_PART_SUBSTRING, "i") });
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
-    await expect(dialog.getByRole("heading", { level: 3, name: new RegExp(E2E_DEMO_PURCHASE_PART_SUBSTRING, "i") })).toBeVisible({
-      timeout: 10_000,
-    });
+      const dialog = page.getByRole("dialog", { name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") });
+      await expect(dialog).toBeVisible({ timeout: 15_000 });
+      await expect(dialog.getByRole("heading", { level: 3, name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeVisible({
+        timeout: 10_000,
+      });
+    } finally {
+      await cleanupE2eData(page, { purchaseIds: [purchase.purchaseId], unitIds: [unit.id] });
+    }
   });
 });
 
@@ -56,27 +70,44 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
 
   test("staff sees compact rows without Cards/Compact or sort controls", async ({ page }) => {
     await e2eBehaviors("staff", "vehicles · table-only registry");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoVehiclesSection();
-    await reg.expectVehiclesRegistryChrome();
+    const fixture = await createE2eCustomerWithVehicle(page, "vehicle-registry");
+    try {
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoVehiclesSection();
+      await reg.expectVehiclesRegistryChrome();
 
-    await expect(page.locator(".vehicle-web-surface .purchases-compact-list")).toBeVisible({
-      timeout: 45_000,
-    });
+      await expect(page.locator(".vehicle-web-surface .purchases-compact-list")).toBeVisible({
+        timeout: 45_000,
+      });
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "desktop");
-    await expect(row).toBeVisible({ timeout: 45_000 });
+      const row = reg.vehicleRowByPlate(fixture.vehiclePlate, "desktop");
+      await expect(row).toBeVisible({ timeout: 45_000 });
+    } finally {
+      await cleanupE2eData(page, { vehicleIds: [fixture.vehicleId], customerIds: [fixture.customerId] });
+    }
   });
 
-  test("demo vehicle with completed repair and no PDF shows act-pending affordance", async ({ page }) => {
+  test("completed repair without PDF shows act-pending affordance", async ({ page }) => {
     await e2eBehaviors("staff", "vehicles · completed without exported act indicator");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoVehiclesSection();
+    const fixture = await createIsolatedRepair(page, {
+      markerPrefix: "vehicle-act-pending",
+      status: "completed",
+      assignMaster: true,
+      serviceName: "Vehicle pending act service",
+      vehicleModel: "Act Pending",
+    });
+    try {
+      await openStaffApp(page);
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoVehiclesSection();
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "desktop");
-    await expect(row).toBeVisible({ timeout: 45_000 });
-    await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
-    await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
+      const row = reg.vehicleRowByPlate(fixture.vehiclePlate, "desktop");
+      await expect(row).toBeVisible({ timeout: 45_000 });
+      await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
+      await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
+    } finally {
+      await cleanupIsolatedRepair(page, fixture);
+    }
   });
 });
 
@@ -85,19 +116,31 @@ test.describe("Vehicles registry — mobile compact list @mobile-only", () => {
     await openStaffApp(page);
   });
 
-  test("mobile uses single-line rows and act indicator for seeded plate", async ({ page }) => {
+  test("mobile uses single-line rows and act indicator for test-owned plate", async ({ page }) => {
     await e2eBehaviors("staff", "vehicles · mobile · table row + act hint");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoVehiclesSection();
-
-    await expect(page.locator(".vehicles-mobile-surface .vehicles-mobile-compact-list")).toBeVisible({
-      timeout: 45_000,
+    const fixture = await createIsolatedRepair(page, {
+      markerPrefix: "vehicle-act-mobile",
+      status: "completed",
+      assignMaster: true,
+      serviceName: "Vehicle mobile pending act service",
+      vehicleModel: "Mobile Act Pending",
     });
+    try {
+      await openStaffApp(page);
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoVehiclesSection();
 
-    const row = reg.vehicleRowByPlate(E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE, "mobile");
-    await expect(row).toBeVisible({ timeout: 45_000 });
-    await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
-    await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
+      await expect(page.locator(".vehicles-mobile-surface .vehicles-mobile-compact-list")).toBeVisible({
+        timeout: 45_000,
+      });
+
+      const row = reg.vehicleRowByPlate(fixture.vehiclePlate, "mobile");
+      await expect(row).toBeVisible({ timeout: 45_000 });
+      await expect(row).toHaveClass(/vehicles-compact-row--needs-act/);
+      await expect(row.locator(".vehicle-row-act-dot")).toBeVisible();
+    } finally {
+      await cleanupIsolatedRepair(page, fixture);
+    }
   });
 });
 
@@ -111,25 +154,37 @@ test.describe("Purchases registry — mobile table @mobile-only", () => {
 
   test("admin reaches Purchases and sees compact list on narrow viewport", async ({ page }) => {
     await e2eBehaviors("admin", "purchases · mobile · compact list");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoPurchasesSection();
-    await reg.expectPurchasesRegistryChrome();
+    const unit = await createE2eUnit(page, "mpur");
+    const purchase = await createE2ePurchase(page, { unitId: unit.id, partPrefix: "E2E mobile Castrol EDGE" });
+    try {
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoPurchasesSection();
+      await reg.expectPurchasesRegistryChrome();
 
-    const row = reg.purchaseRowByPartSnippet(E2E_DEMO_PURCHASE_PART_SUBSTRING);
-    await expect(row).toBeVisible({ timeout: 20_000 });
+      const row = reg.purchaseRowByPartSnippet(purchase.partName);
+      await expect(row).toBeVisible({ timeout: 20_000 });
+    } finally {
+      await cleanupE2eData(page, { purchaseIds: [purchase.purchaseId], unitIds: [unit.id] });
+    }
   });
 
   test("clicking a purchase row opens detail dialog on narrow viewport", async ({ page }) => {
     await e2eBehaviors("admin", "purchases · mobile · row opens modal");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoPurchasesSection();
-    await reg.purchaseRowByPartSnippet(E2E_DEMO_PURCHASE_PART_SUBSTRING).click();
+    const unit = await createE2eUnit(page, "mpurd");
+    const purchase = await createE2ePurchase(page, { unitId: unit.id, partPrefix: "E2E mobile Castrol EDGE" });
+    try {
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoPurchasesSection();
+      await reg.purchaseRowByPartSnippet(purchase.partName).click();
 
-    const dialog = page.getByRole("dialog", { name: new RegExp(E2E_DEMO_PURCHASE_PART_SUBSTRING, "i") });
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
-    await expect(dialog.getByRole("heading", { level: 3, name: new RegExp(E2E_DEMO_PURCHASE_PART_SUBSTRING, "i") })).toBeVisible({
-      timeout: 10_000,
-    });
+      const dialog = page.getByRole("dialog", { name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") });
+      await expect(dialog).toBeVisible({ timeout: 15_000 });
+      await expect(dialog.getByRole("heading", { level: 3, name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeVisible({
+        timeout: 10_000,
+      });
+    } finally {
+      await cleanupE2eData(page, { purchaseIds: [purchase.purchaseId], unitIds: [unit.id] });
+    }
   });
 
   test("admin sees Purchases section tabs (Warehouse / Consumables / Suppliers) on narrow viewport", async ({

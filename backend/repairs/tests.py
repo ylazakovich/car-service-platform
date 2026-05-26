@@ -889,6 +889,20 @@ class RepairPdfViewTests(TestCase):
         self.assertEqual(versions, [1, 2])
         self.assertEqual(RepairFinancialSnapshot.objects.filter(repair=repair).count(), 2)
 
+    def test_delete_repair_with_exported_pdf_removes_documents_and_snapshots(self):
+        repair = self._create_completed_repair()
+        self.client.force_authenticate(self.staff_user)
+        self.assertEqual(self.client.post(f"/api/repairs/{repair.id}/pdf/export/").status_code, 200)
+        self.assertEqual(RepairDocument.objects.filter(repair=repair).count(), 1)
+        self.assertEqual(RepairFinancialSnapshot.objects.filter(repair=repair).count(), 1)
+
+        response = self.client.delete(f"/api/repairs/{repair.id}")
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Repair.objects.filter(id=repair.id).exists())
+        self.assertEqual(RepairDocument.objects.filter(repair_id=repair.id).count(), 0)
+        self.assertEqual(RepairFinancialSnapshot.objects.filter(repair_id=repair.id).count(), 0)
+
     def test_repairs_list_includes_has_pdf_flag(self):
         without_pdf = self._create_completed_repair()
         with_pdf = self._create_completed_repair()

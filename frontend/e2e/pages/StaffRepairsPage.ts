@@ -33,9 +33,9 @@ export class StaffRepairsPage {
     return this.page.getByRole("dialog", { name: "Certificate of Completion" });
   }
 
-  /** Completed repair without an export yet shows **Make Act**; after first open — **View PDF**. */
+  /** Completed repair PDF action lives in the repair modal kebab menu. */
   repairPdfPrimaryButton(): Locator {
-    return this.page.getByRole("button", { name: /^(View PDF|Make Act)$/ });
+    return this.page.getByRole("menuitem", { name: /^(View PDF|Export PDF act)(?:\s|$)/ });
   }
 
   exportNewVersionButton(): Locator {
@@ -51,13 +51,10 @@ export class StaffRepairsPage {
     await new StaffMobileNavigationPage(this.page).gotoStaffSection("Repairs");
   }
 
-  /**
-   * Карточка демо-ремонта TOR-1001 на канбане (колонка Completed может показывать только 15 карточек).
-   */
-  async seededRepairKanbanCard(): Promise<Locator> {
+  async repairKanbanCardByTrackingCode(trackingCode: string): Promise<Locator> {
     const board = this.page.getByLabel("Repairs kanban board");
     await expect(board).toBeVisible({ timeout: 25_000 });
-    const tracking = `#${E2E_DEMO_REPAIR_TRACKING_CODE}`;
+    const tracking = `#${trackingCode}`;
 
     for (let attempt = 0; attempt < 24; attempt += 1) {
       const card = board.locator(".kanban-card").filter({ hasText: tracking });
@@ -66,7 +63,6 @@ export class StaffRepairsPage {
       }
       const showMore = this.page.getByRole("button", { name: SHOW_MORE_COMPLETED });
       if (await showMore.isVisible()) {
-        /* Fixed shell FAB (.shell-scroll-to-header-fab) can overlap bottom actions on narrow viewports. */
         await showMore.click({ force: true });
       } else {
         break;
@@ -76,6 +72,25 @@ export class StaffRepairsPage {
     const card = board.locator(".kanban-card").filter({ hasText: tracking });
     await expect(card.first()).toBeVisible({ timeout: 25_000 });
     return card.first();
+  }
+
+  async openRepairCardByTrackingCode(trackingCode: string): Promise<void> {
+    const card = await this.repairKanbanCardByTrackingCode(trackingCode);
+    await card.click();
+  }
+
+  repairDialogByVehicleLabel(plate: string, make: string, model: string): Locator {
+    const escapedPlate = plate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedMake = make.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedModel = model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return this.page.getByRole("dialog", { name: new RegExp(`${escapedPlate}\\s*•\\s*${escapedMake} ${escapedModel}`) });
+  }
+
+  /**
+   * Карточка демо-ремонта TOR-1001 на канбане (колонка Completed может показывать только 15 карточек).
+   */
+  async seededRepairKanbanCard(): Promise<Locator> {
+    return this.repairKanbanCardByTrackingCode(E2E_DEMO_REPAIR_TRACKING_CODE);
   }
 
   /**
@@ -96,6 +111,7 @@ export class StaffRepairsPage {
   }
 
   async openCertificateFromViewPdf(): Promise<void> {
+    await this.page.getByRole("button", { name: "More actions" }).click();
     await this.repairPdfPrimaryButton().click();
     await expect(this.certificateDialog()).toBeVisible({ timeout: 30_000 });
   }
@@ -117,7 +133,7 @@ export class StaffRepairsPage {
     } else {
       await mobile.click();
     }
-    await expect(this.page.getByRole("dialog").filter({ hasText: "Repair Intake" })).toBeVisible({
+    await expect(this.page.getByRole("dialog", { name: /New Repair/ })).toBeVisible({
       timeout: 15_000,
     });
   }
@@ -148,21 +164,26 @@ export class StaffRepairsPage {
     await expect(this.page.getByRole("dialog", { name: /New Repair/ })).toBeHidden({ timeout: 15_000 });
   }
 
-  /** Fill intake using demo vehicle + catalog service (`scripts/demo/demo_data.sql`). */
-  async fillCreateRepairForm(issueNotesMarker: string): Promise<void> {
-    await this.page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);
-    await this.page.getByRole("button", { name: new RegExp(`${E2E_DEMO_REPAIR_VEHICLE_PLATE}\\s*•`) }).click();
+  /** Fill create repair modal using test-owned vehicle + catalog service. */
+  async fillCreateRepairForm(
+    issueNotesMarker: string,
+    vehiclePlate = E2E_DEMO_REPAIR_VEHICLE_PLATE,
+    serviceName = E2E_DEMO_SERVICE_NAME_IN_CATALOG,
+  ): Promise<void> {
+    await this.page.getByLabel("Search vehicle for repair").fill(vehiclePlate);
+    const escapedPlate = vehiclePlate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    await this.page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) }).click();
 
     const line1 = this.page.getByRole("textbox", { name: /Line 1/ });
-    await line1.fill(E2E_DEMO_SERVICE_NAME_IN_CATALOG);
+    await line1.fill(serviceName);
     // Select the matching catalog suggestion to ensure catalog_service_id is wired.
     const suggestion = this.page.getByRole("listbox").getByRole("button", {
-      name: new RegExp(E2E_DEMO_SERVICE_NAME_IN_CATALOG, "i"),
+      name: new RegExp(serviceName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
     });
     await expect(suggestion).toBeVisible({ timeout: 10_000 });
     await suggestion.click();
 
-    await this.page.getByLabel("Issue Notes").fill(issueNotesMarker);
+    await this.page.getByPlaceholder("Describe the issue, customer expectations, additional context…").fill(issueNotesMarker);
   }
 
   async submitCreateRepair(): Promise<void> {

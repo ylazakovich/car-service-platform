@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { openStaffApp } from "./fixtures/auth";
+import { cleanupE2eData, cleanupRepairsByIssueMarker, createE2eCustomerWithVehicle, createE2eService } from "./fixtures/e2eDataFactory";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 function uniqueIssueMarker(): string {
@@ -15,19 +16,27 @@ test.describe("Staff repair intake — create kanban card @desktop", () => {
   test("desktop: New Repair → intake → card on board", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · intake · create card (desktop)");
     const repairs = new StaffRepairsPage(page);
-
-    await repairs.gotoRepairsSection();
-    await repairs.expectRepairsKanbanVisible();
-
-    await repairs.openNewRepairIntakeModal();
+    const fixture = await createE2eCustomerWithVehicle(page, "intake-create");
+    const service = await createE2eService(page, "E2E intake service");
     const marker = uniqueIssueMarker();
-    await repairs.fillCreateRepairForm(marker);
-    await repairs.submitCreateRepair();
 
-    await expect(page.getByRole("dialog").filter({ hasText: "Repair Intake" })).toBeHidden({
-      timeout: 25_000,
-    });
-    await repairs.expectKanbanCardShowsIssueNotes(marker);
+    try {
+      await openStaffApp(page);
+      await repairs.gotoRepairsSection();
+      await repairs.expectRepairsKanbanVisible();
+
+      await repairs.openNewRepairIntakeModal();
+      await repairs.fillCreateRepairForm(marker, fixture.vehiclePlate, service.name);
+      await repairs.submitCreateRepair();
+
+      await expect(page.getByRole("dialog", { name: /New Repair/ })).toBeHidden({
+        timeout: 25_000,
+      });
+      await repairs.expectKanbanCardShowsIssueNotes(marker);
+    } finally {
+      await cleanupRepairsByIssueMarker(page, marker);
+      await cleanupE2eData(page, { serviceIds: [service.id], vehicleIds: [fixture.vehicleId], customerIds: [fixture.customerId] });
+    }
   });
 });
 
@@ -39,20 +48,28 @@ test.describe("Staff repair intake — create kanban card @mobile-only", () => {
   test("mobile: New Repair → intake → card on board", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · intake · create card (mobile)");
     const repairs = new StaffRepairsPage(page);
-
-    await expect(repairs.staffMobileWorkspaceMenuToggle()).toBeVisible({ timeout: 20_000 });
-
-    await repairs.gotoRepairsSection();
-    await repairs.expectRepairsKanbanVisible();
-
-    await repairs.openNewRepairIntakeModal();
+    const fixture = await createE2eCustomerWithVehicle(page, "intake-create-mobile");
+    const service = await createE2eService(page, "E2E mobile intake service");
     const marker = uniqueIssueMarker();
-    await repairs.fillCreateRepairForm(marker);
-    await repairs.submitCreateRepair();
 
-    await expect(page.getByRole("dialog").filter({ hasText: "Repair Intake" })).toBeHidden({
-      timeout: 25_000,
-    });
-    await repairs.expectKanbanCardShowsIssueNotes(marker);
+    try {
+      await openStaffApp(page);
+      await expect(repairs.staffMobileWorkspaceMenuToggle()).toBeVisible({ timeout: 20_000 });
+
+      await repairs.gotoRepairsSection();
+      await repairs.expectRepairsKanbanVisible();
+
+      await repairs.openNewRepairIntakeModal();
+      await repairs.fillCreateRepairForm(marker, fixture.vehiclePlate, service.name);
+      await repairs.submitCreateRepair();
+
+      await expect(page.getByRole("dialog", { name: /New Repair/ })).toBeHidden({
+        timeout: 25_000,
+      });
+      await repairs.expectKanbanCardShowsIssueNotes(marker);
+    } finally {
+      await cleanupRepairsByIssueMarker(page, marker);
+      await cleanupE2eData(page, { serviceIds: [service.id], vehicleIds: [fixture.vehicleId], customerIds: [fixture.customerId] });
+    }
   });
 });

@@ -75,6 +75,17 @@ class RepairDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return build_repair_queryset()
 
+    def perform_destroy(self, instance):
+        """Delete generated repair artifacts before deleting the repair itself.
+
+        Django's `on_delete=CASCADE` is ORM-level behavior, not a database
+        `ON DELETE CASCADE` constraint. Deleting via the detail API must remain
+        safe for repairs that already have exported PDF documents/snapshots.
+        """
+        RepairFinancialSnapshot.objects.filter(repair=instance).delete()
+        RepairDocument.objects.filter(repair=instance).delete()
+        instance.delete()
+
 
 class RepairNoteCreateView(APIView):
     def post(self, request, repair_pk):

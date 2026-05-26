@@ -1,116 +1,26 @@
 import { expect, test, type Page } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
-import { E2E_DEMO_REPAIR_TRACKING_CODE } from "./e2e-seed";
 import { openStaffApp } from "./fixtures/auth";
+import { cleanupIsolatedRepair, createIsolatedRepair, escapeRegExp, type IsolatedRepairFixture } from "./fixtures/repairFactory";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 const SHOW_MORE_COMPLETED = /^Show \d+ more$/;
 
-type ApiRepair = {
-  id: number;
-  vehicle_id: number;
-  master_id: number | null;
-  service_name: string;
-  service_lines?: Array<{ name: string; catalog_service_id: number | null; sort_order?: number }>;
-  issue_notes: string;
-  mileage: number | null;
-  mileage_at_service?: number | null;
-  tracking_code: string;
-};
-
-function todayIsoDate() {
-  return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
-
 function readyToPickupCounter(page: Page) {
-  return page.locator(".sidebar-summary__stats li").filter({ hasText: "Ready to pickup" }).locator("strong");
+  return page.locator(".sidebar-summary__stats:visible li").filter({ hasText: "Ready to pickup" }).locator("strong").first();
 }
 
 async function readReadyToPickupCount(page: Page) {
-  const counter = readyToPickupCounter(page);
-  await expect(counter).toHaveText(/^[1-9]\d*$/, { timeout: 15_000 });
-  return parseInt(await counter.innerText(), 10);
-}
-
-async function createCompletedRepairClone(page: Page, marker: string): Promise<ApiRepair> {
-  return page.evaluate(
-    async ({ seedTrackingCode, issueMarker, completedAt }) => {
-      const seedResponse = await fetch(`/api/repairs/?q=${encodeURIComponent(seedTrackingCode)}`, {
-        credentials: "include",
-      });
-      if (!seedResponse.ok) {
-        throw new Error(`Failed to find seed repair ${seedTrackingCode}: ${seedResponse.status}`);
-      }
-
-      const repairs = (await seedResponse.json()) as ApiRepair[];
-      const seed = repairs.find((entry) => entry.tracking_code === seedTrackingCode);
-      if (!seed) {
-        throw new Error(`Seed repair ${seedTrackingCode} was not found`);
-      }
-
-      const csrf = document.cookie
-        .split(";")
-        .map((entry) => entry.trim())
-        .find((entry) => entry.startsWith("csrftoken="))
-        ?.split("=")[1];
-
-      const createResponse = await fetch("/api/repairs/", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrf ? { "X-CSRFToken": csrf } : {}),
-        },
-        body: JSON.stringify({
-          vehicle_id: seed.vehicle_id,
-          master_id: seed.master_id,
-          service_name: seed.service_name,
-          service_lines: (seed.service_lines ?? [{ name: seed.service_name, catalog_service_id: null, sort_order: 0 }]).map(
-            (line, index) => ({
-              name: line.name,
-              catalog_service_id: line.catalog_service_id,
-              sort_order: line.sort_order ?? index,
-            }),
-          ),
-          issue_notes: issueMarker,
-          status: "completed",
-          completed_at: completedAt,
-          mileage_at_service: seed.mileage_at_service ?? seed.mileage ?? 123456,
-        }),
-      });
-      if (!createResponse.ok) {
-        throw new Error(`Failed to create isolated completed repair: ${createResponse.status}`);
-      }
-
-      return (await createResponse.json()) as ApiRepair;
-    },
-    {
-      seedTrackingCode: E2E_DEMO_REPAIR_TRACKING_CODE,
-      issueMarker: marker,
-      completedAt: todayIsoDate(),
-    },
-  );
-}
-
-async function deleteRepairViaApi(page: Page, repairId: number) {
-  await page.evaluate(async (id) => {
-    const csrf = document.cookie
-      .split(";")
-      .map((entry) => entry.trim())
-      .find((entry) => entry.startsWith("csrftoken="))
-      ?.split("=")[1];
-
-    const deleteResponse = await fetch(`/api/repairs/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-      headers: {
-        ...(csrf ? { "X-CSRFToken": csrf } : {}),
-      },
+  await expect(readyToPickupCounter(page)).toHaveText(/^[1-9]\d*$/, { timeout: 15_000 });
+  return page.evaluate(() => {
+    const counters = Array.from(document.querySelectorAll(".sidebar-summary__stats li"));
+    const item = counters.find((entry) => {
+      const rect = entry.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && entry.textContent?.includes("Ready to pickup");
     });
-    if (!deleteResponse.ok && deleteResponse.status !== 404) {
-      throw new Error(`Failed to delete repair ${id}: ${deleteResponse.status}`);
-    }
-  }, repairId);
+    const value = item?.querySelector("strong")?.textContent?.trim();
+    return Number(value ?? 0);
+  });
 }
 
 async function openRepairCard(page: Page, trackingCode: string) {
@@ -137,26 +47,39 @@ async function openRepairCard(page: Page, trackingCode: string) {
   await card.first().click();
 }
 
+function repairDialog(page: Page, fixture: IsolatedRepairFixture) {
+  const name = new RegExp(`${escapeRegExp(fixture.vehiclePlate)}\\s*•\\s*${escapeRegExp(fixture.vehicleMake)} ${escapeRegExp(fixture.vehicleModel)}`);
+  return page.getByRole("dialog", { name });
+}
+
 test.describe("Staff repairs — picked up status @desktop", () => {
-  let createdRepairIds: number[] = [];
+  test.describe.configure({ mode: "serial" });
+
+  let createdFixtures: IsolatedRepairFixture[] = [];
 
   test.beforeEach(async ({ page }) => {
-    createdRepairIds = [];
+    createdFixtures = [];
     await openStaffApp(page);
   });
 
   test.afterEach(async ({ page }) => {
-    for (const repairId of createdRepairIds) {
-      await deleteRepairViaApi(page, repairId);
+    for (const fixture of createdFixtures.reverse()) {
+      await cleanupIsolatedRepair(page, fixture);
     }
   });
 
-  async function createIsolatedCompletedRepair(page: Page, testTitle: string) {
-    const repair = await createCompletedRepairClone(page, `picked-up-e2e · ${testTitle} · ${Date.now()}`);
-    createdRepairIds.push(repair.id);
+  async function createFixture(page: Page) {
+    const fixture = await createIsolatedRepair(page, {
+      markerPrefix: "picked-up-e2e",
+      status: "completed",
+      assignMaster: true,
+      serviceName: "Picked up isolation service",
+      vehicleModel: "Pickup Isolation",
+    });
+    createdFixtures.push(fixture);
     await page.reload();
     await openStaffApp(page);
-    return repair;
+    return fixture;
   }
 
   test(
@@ -165,44 +88,33 @@ test.describe("Staff repairs — picked up status @desktop", () => {
     async ({ page }) => {
       await e2eBehaviors("staff", "repairs · picked up · mark + counter decrease");
       const repairs = new StaffRepairsPage(page);
-      const repair = await createIsolatedCompletedRepair(page, "mark picked up");
+      const fixture = await createFixture(page);
 
       await repairs.gotoRepairsSection();
       await repairs.expectRepairsKanbanVisible();
 
-      // Read initial "Ready to pickup" count from Today Summary after async repairs have loaded.
       const readyCounter = readyToPickupCounter(page);
       const initialCount = await readReadyToPickupCount(page);
 
-      // Open an isolated completed repair created for this test.
-      await openRepairCard(page, repair.tracking_code);
-      await repairs.expectRepairDetailDialogVisible();
-
-      const dialog = page.getByRole("dialog", { name: /AA 1234 BB/ });
+      await openRepairCard(page, fixture.trackingCode);
+      const dialog = repairDialog(page, fixture);
       await expect(dialog).toBeVisible({ timeout: 15_000 });
 
-      // "Mark as Picked Up" button must be visible for completed repairs
       const pickUpBtn = dialog.getByRole("button", { name: "Mark as Picked Up" });
       await expect(pickUpBtn).toBeVisible();
       await pickUpBtn.click();
 
-      // Dialog stays open (locked mode) and shows "Undo Pickup"
       const undoBtn = dialog.getByRole("button", { name: "Undo Pickup" });
       await expect(undoBtn).toBeVisible({ timeout: 10_000 });
-
-      // "Mark as Picked Up" is gone
       await expect(pickUpBtn).toBeHidden();
 
-      // Counter must have decreased by 1 before checking the kanban column.
       await expect(readyCounter).toHaveText(String(initialCount - 1), { timeout: 10_000 });
 
-      // Close the dialog
       await dialog.getByRole("button", { name: "Cancel" }).click();
       await expect(dialog).toBeHidden();
 
-      // Card no longer on kanban board
       const board = page.getByLabel("Repairs kanban board");
-      await expect(board.locator(".kanban-card").filter({ hasText: `#${repair.tracking_code}` })).toBeHidden();
+      await expect(board.locator(".kanban-card").filter({ hasText: `#${fixture.trackingCode}` })).toBeHidden();
     },
   );
 
@@ -212,33 +124,28 @@ test.describe("Staff repairs — picked up status @desktop", () => {
     async ({ page }) => {
       await e2eBehaviors("staff", "repairs · picked up · undo restores completed");
       const repairs = new StaffRepairsPage(page);
-      const repair = await createIsolatedCompletedRepair(page, "undo pickup");
+      const fixture = await createFixture(page);
 
       await repairs.gotoRepairsSection();
       await repairs.expectRepairsKanbanVisible();
       await readReadyToPickupCount(page);
 
-      // Mark as picked up first
-      await openRepairCard(page, repair.tracking_code);
-      const dialog = page.getByRole("dialog", { name: /AA 1234 BB/ });
+      await openRepairCard(page, fixture.trackingCode);
+      const dialog = repairDialog(page, fixture);
       await expect(dialog).toBeVisible({ timeout: 15_000 });
       await dialog.getByRole("button", { name: "Mark as Picked Up" }).click();
       await expect(dialog.getByRole("button", { name: "Undo Pickup" })).toBeVisible({ timeout: 10_000 });
 
-      // Undo
       await dialog.getByRole("button", { name: "Undo Pickup" }).click();
-
-      // "Mark as Picked Up" must reappear
       await expect(dialog.getByRole("button", { name: "Mark as Picked Up" })).toBeVisible({ timeout: 10_000 });
 
       await dialog.getByRole("button", { name: "Cancel" }).click();
       await expect(dialog).toBeHidden();
 
-      // Card is back in the Completed column
       const board = page.getByLabel("Repairs kanban board");
       const completedCol = board.locator(".kanban-col").filter({ hasText: "Completed" });
       await expect(
-        completedCol.locator(".kanban-card").filter({ hasText: `#${repair.tracking_code}` }),
+        completedCol.locator(".kanban-card").filter({ hasText: `#${fixture.trackingCode}` }),
       ).toBeVisible({ timeout: 15_000 });
     },
   );
@@ -249,20 +156,17 @@ test.describe("Staff repairs — picked up status @desktop", () => {
     async ({ page }) => {
       await e2eBehaviors("staff", "repairs · picked up · findable via search");
       const repairs = new StaffRepairsPage(page);
-      const repair = await createIsolatedCompletedRepair(page, "search picked up");
+      const fixture = await createFixture(page);
 
       await repairs.gotoRepairsSection();
       await repairs.expectRepairsKanbanVisible();
-      const readyCounter = readyToPickupCounter(page);
-      const initialCount = await readReadyToPickupCount(page);
+      await readReadyToPickupCount(page);
 
-      // Mark as picked up and close
-      await openRepairCard(page, repair.tracking_code);
-      const dialog = page.getByRole("dialog", { name: /AA 1234 BB/ });
+      await openRepairCard(page, fixture.trackingCode);
+      const dialog = repairDialog(page, fixture);
       await expect(dialog).toBeVisible({ timeout: 15_000 });
       await dialog.getByRole("button", { name: "Mark as Picked Up" }).click();
       await expect(dialog.getByRole("button", { name: "Undo Pickup" })).toBeVisible({ timeout: 10_000 });
-      await expect(readyCounter).toHaveText(String(initialCount - 1), { timeout: 10_000 });
       await dialog.getByRole("button", { name: "Cancel" }).click();
       await expect(dialog).toBeHidden();
 
@@ -270,14 +174,14 @@ test.describe("Staff repairs — picked up status @desktop", () => {
       // but remain searchable in the mobile repairs list data model.
       await page.setViewportSize({ width: 390, height: 844 });
       const searchInput = page.locator(".staff-mobile-taskbar .staff-mobile-search input");
-      await searchInput.fill(repair.tracking_code);
+      await searchInput.fill(fixture.trackingCode);
 
       const mobileList = page.getByLabel("Mobile repairs list");
       const pickedUpCard = mobileList.locator(".repair-mobile-card").filter({
-        hasText: repair.tracking_code,
+        hasText: fixture.trackingCode,
       });
       await expect(pickedUpCard).toHaveCount(1);
-      await expect(pickedUpCard).toContainText(repair.tracking_code);
+      await expect(pickedUpCard).toContainText(fixture.trackingCode);
     },
   );
 });
