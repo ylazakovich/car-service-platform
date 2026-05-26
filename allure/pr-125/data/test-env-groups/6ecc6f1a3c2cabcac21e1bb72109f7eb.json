@@ -1,1 +1,1 @@
-{"id":"6ecc6f1a3c2cabcac21e1bb72109f7eb","fullName":"staff-repair-master-validation.spec.ts:118:3","name":"Drag unassigned card to In Progress column opens modal with master error highlighted","status":"failed","testResultsByEnv":{"e2e":"147682d97bca30ba4360c8669baa308f"}}
+{"id":"6ecc6f1a3c2cabcac21e1bb72109f7eb","fullName":"staff-repair-master-validation.spec.ts:103:3","name":"Drag unassigned card to In Progress column opens modal with master error highlighted","status":"passed","testResultsByEnv":{"e2e":"660893de3fda20b9d85565edf4aac3a0"}}

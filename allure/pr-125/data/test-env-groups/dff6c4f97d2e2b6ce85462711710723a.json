@@ -1,1 +1,1 @@
-{"id":"dff6c4f97d2e2b6ce85462711710723a","fullName":"repair-make-act-updates-vehicle-panel.spec.ts:23:3","name":"act total appears in Vehicle detail panel immediately after Make Act","status":"broken","testResultsByEnv":{"e2e":"f6aa3bfa14dd65a4e9135f9e9ddccaa8"}}
+{"id":"dff6c4f97d2e2b6ce85462711710723a","fullName":"repair-make-act-updates-vehicle-panel.spec.ts:34:3","name":"act total appears in Vehicle detail panel immediately after Make Act","status":"passed","testResultsByEnv":{"e2e":"666512d3f939e2d9f58dc11af4f13c81"}}
