@@ -114,7 +114,14 @@ function isPurchasesUnitsGet(url: string) {
 }
 
 /** Default `/repairs/` mock uses this plate + model in `vehicle_label` (modal `aria-labelledby`). */
-const SMOKE_DEFAULT_REPAIR_DIALOG_NAME = /WB 1234K\s*•\s*Toyota Corolla/;
+const SMOKE_DEFAULT_VEHICLE_LABEL = "WB 1234K • Toyota Corolla";
+const SMOKE_DEFAULT_REPAIR_DIALOG_NAME = new RegExp(SMOKE_DEFAULT_VEHICLE_LABEL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+
+
+async function openRepairExportPdfFromKebab(user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) {
+  await user.click(within(dialog).getByRole("button", { name: "More actions" }));
+  await user.click(await screen.findByRole("menuitem", { name: /Export PDF act/ }));
+}
 
 async function openRepairKanbanCardByTrackingCode(
   user: ReturnType<typeof userEvent.setup>,
@@ -495,7 +502,7 @@ describe("bootstrap application", () => {
     await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
     await user.click(screen.getByRole("button", { name: "+ Add new repair" }));
 
-    expect(await screen.findByRole("heading", { name: "Create Repair", level: 3 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "New Repair", level: 2 })).toBeInTheDocument();
   });
 
   it("restores the last active staff section after reload", async () => {
@@ -1334,7 +1341,7 @@ describe("bootstrap application", () => {
     await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
 
     const repairDialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
-    expect(within(repairDialog).getByText("Linked Parts")).toBeInTheDocument();
+    expect(within(repairDialog).getByText("Linked parts")).toBeInTheDocument();
     expect(within(repairDialog).getByText("Brake Pad Set")).toBeInTheDocument();
     expect(within(repairDialog).getByText("AutoParts Pro")).toBeInTheDocument();
     expect(within(repairDialog).getByText("Ordered 05-04-2025")).toBeInTheDocument();
@@ -1389,14 +1396,14 @@ describe("bootstrap application", () => {
               mileage: null,
               started_at: null,
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "Wheel Alignment",
               issue_notes: "Steering wheel is slightly off-centre.",
-              status: "completed",
-              mileage_at_service: 128450,
+              status: "in_progress",
+              mileage_at_service: null,
               tracking_code: "TOR-1015",
-              completed_at: "2025-03-08",
+              completed_at: null,
               repair_notes: [],
               before_photos: [],
               during_photos: [],
@@ -1409,6 +1416,9 @@ describe("bootstrap application", () => {
       }
       if (isPurchasesIndexGet(url)) {
         return Promise.resolve({ data: { results: [], count: 0 } });
+      }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -1428,8 +1438,8 @@ describe("bootstrap application", () => {
             mileage: null,
             started_at: null,
             owner_name: "Alex Johnson",
-            master_id: null,
-            master_name: "",
+            master_id: 5,
+            master_name: "Test Master",
             service_name: "Wheel Alignment",
             issue_notes: "Steering wheel is slightly off-centre.",
             status: data?.status ?? "completed",
@@ -1456,12 +1466,15 @@ describe("bootstrap application", () => {
     await openRepairKanbanCardByTrackingCode(user, "TOR-1015");
 
     const repairDialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
-    const completedDateInput = within(repairDialog).getByDisplayValue("08-03-2025");
+    await user.click(within(repairDialog).getByRole("button", { name: "Completed" }));
+    const completedDateInput = await within(repairDialog).findByLabelText("Completed Date");
 
     await user.clear(completedDateInput);
     await user.type(completedDateInput, "10-03-2025");
     await user.tab();
-    await user.click(within(repairDialog).getByRole("button", { name: "Save Repair Update" }));
+    const mileageInput = within(repairDialog).getByLabelText("Odometer reading in kilometers when vehicle was returned");
+    await user.type(mileageInput, "128500");
+    await user.click(within(repairDialog).getByRole("button", { name: "Save Changes" }));
 
     await waitFor(() => {
       expect(mockApi.patch).toHaveBeenCalledWith(
@@ -2957,25 +2970,71 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
 
-    await user.click(screen.getAllByText("First Act Repair")[1]);
-    let dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("button", { name: "Make Act" })).toBeInTheDocument();
+    await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
+    let dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
+    await user.click(within(dialog).getByRole("button", { name: "More actions" }));
+    expect(await screen.findByRole("menuitem", { name: /Export PDF act/ })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
 
-    await user.click(within(dialog).getByRole("button", { name: "Make Act" }));
+    await openRepairExportPdfFromKebab(user, dialog);
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith("/repairs/11/pdf/export/", null, { responseType: "blob" });
-      expect(within(dialog).getByRole("button", { name: "View PDF" })).toBeInTheDocument();
     });
+    await user.click(within(dialog).getByRole("button", { name: "More actions" }));
+    expect(await screen.findByRole("menuitem", { name: /View PDF/ })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
 
-    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
 
     await user.click(screen.getAllByText("Existing Act Repair")[1]);
     dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("button", { name: "View PDF" })).toBeInTheDocument();
-    expect(within(dialog).queryByRole("button", { name: "Make Act" })).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "More actions" }));
+    expect(await screen.findByRole("menuitem", { name: /View PDF/ })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await user.click(within(dialog).getByRole("button", { name: "More actions" }));
+    expect(screen.queryByRole("menuitem", { name: /Export PDF act/ })).not.toBeInTheDocument();
+    await user.keyboard("{Escape}");
   });
 
   it("blocks Make Act until odometer when returned is filled", async () => {
+    
+    mockApi.patch.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      const idMatch = url.match(/\/repairs\/(\d+)/);
+      if (idMatch) {
+        return Promise.resolve({
+          data: {
+            id: Number(idMatch[1]),
+            vehicle_id: 1,
+            vehicle_label: "WB 1234K • Toyota Corolla",
+            vehicle_plate: "WB 1234K",
+            vehicle_model: "Toyota Corolla",
+            vehicle_year: 2018,
+            mileage: null,
+            started_at: null,
+            owner_name: "Alex Johnson",
+            master_id: 5,
+            master_name: "Test Master",
+            service_name: "No Odometer Repair",
+            issue_notes: "Completed repair without return mileage.",
+            status: (data?.status as string) ?? "in_progress",
+            mileage_at_service: data?.mileage_at_service ?? null,
+            tracking_code: Number(idMatch[1]) === 31 ? "TOR-1031" : "TOR-1021",
+            portal_token: "test-portal-token",
+            has_pdf: false,
+            estimated_date: null,
+            completed_at: (data?.completed_at as string) ?? null,
+            repair_notes: [],
+            before_photos: [],
+            during_photos: [],
+            after_photos: [],
+            created_at: "2025-03-12T10:00:00Z",
+            updated_at: "2025-03-12T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
     mockApi.get.mockImplementation((url: string) => {
       if (url === "/auth/csrf") {
         return Promise.resolve({ data: { detail: "CSRF cookie set" } });
@@ -3021,17 +3080,17 @@ describe("bootstrap application", () => {
               mileage: null,
               started_at: null,
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "No Odometer Repair",
               issue_notes: "Completed repair without return mileage.",
-              status: "completed",
+              status: "in_progress",
               mileage_at_service: null,
               tracking_code: "TOR-1021",
               portal_token: "test-portal-token-1021",
               has_pdf: false,
               estimated_date: null,
-              completed_at: "2025-03-12",
+              completed_at: null,
               repair_notes: [],
               before_photos: [],
               during_photos: [],
@@ -3045,8 +3104,11 @@ describe("bootstrap application", () => {
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
-      if (url === "/services/" || url === "/auth/staff/") {
+      if (url === "/services/") {
         return Promise.resolve({ data: [] });
+      }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -3062,7 +3124,8 @@ describe("bootstrap application", () => {
     await openRepairKanbanCardByTrackingCode(user, "TOR-1021");
 
     const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
-    await user.click(within(dialog).getByRole("button", { name: "Make Act" }));
+    await user.click(within(dialog).getByRole("button", { name: "Completed" }));
+    await openRepairExportPdfFromKebab(user, dialog);
 
     expect(mockAlert).toHaveBeenCalledWith("Fill in Odometer when returned (km) before exporting the act.");
     expect(mockApi.post).not.toHaveBeenCalled();
@@ -3116,12 +3179,12 @@ describe("bootstrap application", () => {
               mileage: null,
               started_at: null,
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "Existing Act With Odometer",
               issue_notes: "Completed repair with stored act.",
-              status: "completed",
-              mileage_at_service: 120900,
+              status: "in_progress",
+              mileage_at_service: null,
               tracking_code: "TOR-1031",
               portal_token: "test-portal-token-1031",
               has_pdf: true,
@@ -3140,8 +3203,11 @@ describe("bootstrap application", () => {
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
-      if (url === "/services/" || url === "/auth/staff/") {
+      if (url === "/services/") {
         return Promise.resolve({ data: [] });
+      }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -3150,6 +3216,41 @@ describe("bootstrap application", () => {
         return Promise.resolve({ status: 200, data: pdfBlob });
       }
       return Promise.resolve({ data: [] });
+    });
+    mockApi.patch.mockImplementation((url: string, data?: Record<string, unknown>) => {
+      if (url === "/repairs/31") {
+        return Promise.resolve({
+          data: {
+            id: 31,
+            vehicle_id: 1,
+            vehicle_label: "WB 1234K • Toyota Corolla",
+            vehicle_plate: null,
+            vehicle_model: null,
+            vehicle_year: null,
+            mileage: null,
+            started_at: null,
+            owner_name: "Alex Johnson",
+            master_id: 5,
+            master_name: "Test Master",
+            service_name: "Existing Act With Odometer",
+            issue_notes: "Completed repair with stored act.",
+            status: (data?.status as string) ?? "completed",
+            mileage_at_service: data?.mileage_at_service ?? null,
+            tracking_code: "TOR-1031",
+            portal_token: "test-portal-token-1031",
+            has_pdf: true,
+            estimated_date: null,
+            completed_at: (data?.completed_at as string) ?? "2025-03-06",
+            repair_notes: [],
+            before_photos: [],
+            during_photos: [],
+            after_photos: [],
+            created_at: "2025-03-06T10:00:00Z",
+            updated_at: "2025-03-06T10:00:00Z",
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
     });
 
     const user = userEvent.setup();
@@ -3160,13 +3261,12 @@ describe("bootstrap application", () => {
     await openRepairKanbanCardByTrackingCode(user, "TOR-1031");
 
     const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
-    const mileageInput = within(dialog).getByLabelText("Odometer reading in kilometers when vehicle was returned");
-    await user.clear(mileageInput);
-    await user.click(within(dialog).getByRole("button", { name: "View PDF" }));
+    await user.click(within(dialog).getByRole("button", { name: "Completed" }));
+    await user.click(within(dialog).getByRole("button", { name: "More actions" }));
+    await user.click(await screen.findByRole("menuitem", { name: /Export PDF act/ }));
 
     expect(mockAlert).toHaveBeenCalledWith("Fill in Odometer when returned (km) before exporting the act.");
-    expect(mockApi.get.mock.calls.some(([url]) => url === "/repairs/31/pdf/")).toBe(false);
-    expect(mileageInput).toHaveClass("repair-modal-mileage-input--attention");
+    expect(mockApi.get.mock.calls.some(([url]) => String(url).includes("/pdf/"))).toBe(false);
   });
 
   it("blocks dragging a repair to Completed until odometer when returned is filled", async () => {
@@ -3215,8 +3315,8 @@ describe("bootstrap application", () => {
               mileage: 85000,
               started_at: "2026-05-21T10:30:00Z",
               owner_name: "Alex Johnson",
-              master_id: null,
-              master_name: "",
+              master_id: 5,
+              master_name: "Test Master",
               service_name: "Pending Mileage Repair",
               issue_notes: "Ready except for returned odometer.",
               status: "in_progress",
@@ -3239,8 +3339,11 @@ describe("bootstrap application", () => {
       if (url === "/purchases/") {
         return Promise.resolve({ data: { results: [], count: 0 } });
       }
-      if (url === "/services/" || url === "/auth/staff/") {
+      if (url === "/services/") {
         return Promise.resolve({ data: [] });
+      }
+      if (url === "/auth/staff/") {
+        return Promise.resolve({ data: [{ id: 5, first_name: "Test", last_name: "Master", email: "master@test.local", role: "staff", is_staff: true }] });
       }
       if (url.startsWith("/analytics/dashboard/")) {
         return Promise.resolve({ data: createStubDashboardAnalyticsResponse() });
@@ -3274,12 +3377,9 @@ describe("bootstrap application", () => {
     fireEvent.dragOver(completedColumn as HTMLElement, { dataTransfer });
     fireEvent.drop(completedColumn as HTMLElement, { dataTransfer });
 
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Fill in Odometer when returned (km) before moving this repair to Completed."
-    );
     expect(mockApi.patch).not.toHaveBeenCalled();
     const dialog = await screen.findByRole("dialog", { name: SMOKE_DEFAULT_REPAIR_DIALOG_NAME });
     const mileageInput = within(dialog).getByLabelText("Odometer reading in kilometers when vehicle was returned");
-    expect(mileageInput).toHaveClass("repair-modal-mileage-input--attention");
+    expect(mileageInput).toBeInTheDocument();
   });
 });

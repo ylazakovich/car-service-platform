@@ -24,6 +24,12 @@ function getRepairPhotoCount(repair: RepairEntry) {
   return repair.before_photos.length + repair.during_photos.length + repair.after_photos.length;
 }
 
+/**
+ * Determine the user-facing next-action prompt for a repair based on its current status.
+ *
+ * @param repair - The repair entry whose status and fields are used to select the prompt
+ * @returns A short user-facing instruction string describing the next action for the given repair
+ */
 function getRepairNextAction(repair: RepairEntry) {
   switch (repair.status) {
     case "new":
@@ -36,11 +42,21 @@ function getRepairNextAction(repair: RepairEntry) {
       return repair.mileage_at_service == null
         ? "Add odometer (km) when the vehicle was returned"
         : "Review the summary and share tracking when needed";
+    case "picked_up":
+      return "Vehicle collected — repair is closed";
     default:
       return "Open the repair card";
   }
 }
 
+/**
+ * Render a mobile-optimized repairs list with status filters and per-repair cards.
+ *
+ * Renders a tab-style status filter strip and a list of repair cards (or an empty state)
+ * showing key metadata, parts summary, next actions, and controls to open a repair or copy its tracking code.
+ *
+ * @returns A JSX element containing the mobile repairs list UI
+ */
 export function StaffRepairsMobileList({
   repairs,
   activeFilter,
@@ -69,8 +85,9 @@ export function StaffRepairsMobileList({
           <strong>{repairs.length}</strong>
         </button>
 
-        {REPAIR_KANBAN_COLUMNS.map(({ status }) => {
+        {([...REPAIR_KANBAN_COLUMNS, { status: "picked_up" as RepairStatus, label: "Picked Up" }]).map(({ status }) => {
           const count = repairs.filter((repair) => repair.status === status).length;
+          if (count === 0 && status === "picked_up") return null;
           return (
             <button
               key={status}

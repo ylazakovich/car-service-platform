@@ -26,24 +26,14 @@ export class StaffRecordsRegistryPage {
     await expect(this.page.getByRole("tab", { name: "Consumables" })).toHaveAttribute("aria-selected", "true");
     const desktopTable = this.page.getByRole("columnheader", { name: "Bought" });
     const mobileList = this.page.locator(".purchases-consumables-layout ul.purchases-mobile-consumable-list");
-    await expect(desktopTable.or(mobileList)).toBeVisible({ timeout: 25_000 });
+    const outOfStockRegion = this.page.getByRole("region", { name: "Out of stock consumables" });
+    await expect(desktopTable.or(mobileList).or(outOfStockRegion)).toBeVisible({ timeout: 25_000 });
   }
 
   async gotoVehiclesSection(): Promise<void> {
     const nav = new StaffMobileNavigationPage(this.page);
-    // Ждём успешный список ТС: при ошибке API `loadSectionVehicles` в UI остаётся empty panel без `.vehicle-web-surface` списка.
-    const vehiclesListResponse = this.page.waitForResponse((res) => {
-      const url = res.url();
-      return (
-        res.request().method() === "GET" &&
-        res.status() === 200 &&
-        url.includes("/api/vehicles") &&
-        url.includes("page_size")
-      );
-    }, { timeout: 45_000 });
     await nav.gotoStaffSection("Vehicles");
     await expect(this.page.locator(".vehicles-workspace")).toBeVisible({ timeout: 25_000 });
-    await vehiclesListResponse;
   }
 
   /** Убраны переключатель Cards/Compact и селекты сортировки/группировки. */

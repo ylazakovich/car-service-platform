@@ -20,6 +20,7 @@ class Repair(models.Model):
         IN_PROGRESS = "in_progress", "In Progress"
         WAITING_PARTS = "waiting_parts", "Waiting for Parts"
         COMPLETED = "completed", "Completed"
+        PICKED_UP = "picked_up", "Picked Up"
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="repairs")
     master = models.ForeignKey(
@@ -54,7 +55,7 @@ class Repair(models.Model):
         """Auto-set started_at on first in_progress save; manage completed_at; generate tracking_code and portal_token."""
         if self.status == self.Status.IN_PROGRESS and self.started_at is None:
             self.started_at = timezone.now()
-        if self.status != self.Status.COMPLETED:
+        if self.status not in (self.Status.COMPLETED, self.Status.PICKED_UP):
             self.completed_at = None
         elif self.completed_at is None:
             previous = None

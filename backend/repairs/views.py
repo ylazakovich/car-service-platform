@@ -75,6 +75,17 @@ class RepairDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return build_repair_queryset()
 
+    def perform_destroy(self, instance):
+        """Delete generated repair artifacts before deleting the repair itself.
+
+        Django's `on_delete=CASCADE` is ORM-level behavior, not a database
+        `ON DELETE CASCADE` constraint. Deleting via the detail API must remain
+        safe for repairs that already have exported PDF documents/snapshots.
+        """
+        RepairFinancialSnapshot.objects.filter(repair=instance).delete()
+        RepairDocument.objects.filter(repair=instance).delete()
+        instance.delete()
+
 
 class RepairNoteCreateView(APIView):
     def post(self, request, repair_pk):
@@ -110,13 +121,21 @@ class RepairPdfView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
+        """
+        Return the latest exported PDF file for the specified repair as a downloadable attachment.
+        
+        Looks up the Repair by `pk` (404 if not found). If the repair is not in status COMPLETED or PICKED_UP, returns a 400 response with a descriptive `detail` message. If no exported PDF exists for the repair, returns a 404 response with instructions to create one. Otherwise returns an HttpResponse containing the PDF bytes with `Content-Disposition` set to an attachment filename.
+        
+        Returns:
+            An HttpResponse with the repair PDF bytes and attachment headers on success; a DRF Response with status 400 when the repair status is not eligible; a DRF Response with status 404 when no exported PDF exists (or when the repair is not found).
+        """
         repair = generics.get_object_or_404(
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,
         )
-        if repair.status != Repair.Status.COMPLETED:
+        if repair.status not in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP):
             return Response(
-                {"detail": "PDF is only available for completed repairs."},
+                {"detail": "PDF is only available for completed or picked up repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         from .pdf_export import get_latest_repair_document
@@ -146,13 +165,24 @@ class RepairPdfExportView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
+        """
+        Generate and return a PDF export (act) for the specified repair as a file attachment.
+        
+        Validates that the repair's status is Completed or Picked Up and that the odometer at return is set; on success returns an HttpResponse with PDF bytes and a Content-Disposition attachment filename. On validation failure returns a Response with a 400 status and a JSON `detail` message.
+        
+        Parameters:
+            pk (int): Primary key of the repair to export.
+        
+        Returns:
+            HttpResponse: PDF file bytes served with `Content-Type: application/pdf` and `Content-Disposition` set to an attachment filename, or a DRF `Response` with a 400 status and an error `detail`.
+        """
         repair = generics.get_object_or_404(
             Repair.objects.select_related("vehicle", "vehicle__customer", "master"),
             pk=pk,
         )
-        if repair.status != Repair.Status.COMPLETED:
+        if repair.status not in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP):
             return Response(
-                {"detail": "PDF export is only available for completed repairs."},
+                {"detail": "PDF export is only available for completed or picked up repairs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if repair.mileage_at_service is None:

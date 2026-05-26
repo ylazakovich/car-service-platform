@@ -171,19 +171,6 @@ jobs:
           # Fork PRs: token is read-only — GHA cache backend needs actions: write
           github-actions-cache: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'true' || 'false' }}
 
-      - name: Load demo data for E2E
-        run: |
-          set -euo pipefail
-          set -a
-          # compose-up copies .env from .env.example
-          [ -f .env ] && source .env
-          set +a
-          docker compose exec -T db psql \
-            -v ON_ERROR_STOP=1 \
-            -U "${POSTGRES_USER:-car_service_platform}" \
-            -d "${POSTGRES_DB:-car_service_platform}" \
-            < scripts/demo/demo_data.sql
-
       - name: Run Playwright
         env:
           DOCKER_STATS_INTERVAL: "5"

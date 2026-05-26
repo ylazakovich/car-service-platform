@@ -39,6 +39,10 @@ scripts/mcp/local.overrides.json
 /entities.json
 
 # Editor / OS (optional local noise)
+
+# Playwright MCP and design handoff artifacts
+.playwright-mcp/
+/design_handoff/
 .idea/
 *.swp
 *.swo

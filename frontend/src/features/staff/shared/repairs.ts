@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { randomUuid } from "../../../lib/randomUuid";
 
-export type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed";
+export type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed" | "picked_up";
 
 export type RepairStatusFilter = "all" | RepairStatus;
 
@@ -83,8 +83,14 @@ export const REPAIR_STATUS_LABELS: Record<RepairStatus, string> = {
   in_progress: "In Progress",
   waiting_parts: "Waiting for Parts",
   completed: "Completed",
+  picked_up: "Picked Up",
 };
 
+/**
+ * Get the human-readable label for a repair status.
+ *
+ * @returns The human-readable label for the given repair status.
+ */
 export function repairStatusLabel(status: RepairStatus): string {
   return REPAIR_STATUS_LABELS[status];
 }
@@ -122,9 +128,15 @@ export function formatRepairServicesSummary(repair: RepairEntry): string {
   return `${lines[0].name} +${lines.length - 1}`;
 }
 
+/**
+ * Builds the date rows displayed on a repair card.
+ *
+ * @param repair - The repair record used to generate the date rows
+ * @returns An array with the `"Created {date}"` row and, if the repair's status is `completed` or `picked_up` and `completed_at` is present, a second `"Completed {date}"` row
+ */
 export function formatRepairCardDateRow(repair: RepairEntry) {
   const createdLabel = `Created ${formatRepairDisplayDate(repair.created_at)}`;
-  if (repair.status !== "completed" || !repair.completed_at) {
+  if ((repair.status !== "completed" && repair.status !== "picked_up") || !repair.completed_at) {
     return [createdLabel];
   }
 
