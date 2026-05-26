@@ -1,1 +1,0 @@
-{"timestamp": "2026-05-26 19:17:33,314", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/repairs/1/notes/1", "request": "<WSGIRequest: DELETE '/api/repairs/1/notes/1'>", "status_code": 403}
