@@ -75,6 +75,7 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
       const reg = new StaffRecordsRegistryPage(page);
       await reg.gotoVehiclesSection();
       await reg.expectVehiclesRegistryChrome();
+      await reg.vehicleSearchInput("desktop").fill(fixture.vehiclePlate);
 
       await expect(page.locator(".vehicle-web-surface .purchases-compact-list")).toBeVisible({
         timeout: 45_000,
@@ -100,6 +101,7 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
       await openStaffApp(page);
       const reg = new StaffRecordsRegistryPage(page);
       await reg.gotoVehiclesSection();
+      await reg.vehicleSearchInput("desktop").fill(fixture.vehiclePlate);
 
       const row = reg.vehicleRowByPlate(fixture.vehiclePlate, "desktop");
       await expect(row).toBeVisible({ timeout: 45_000 });
@@ -129,6 +131,7 @@ test.describe("Vehicles registry — mobile compact list @mobile-only", () => {
       await openStaffApp(page);
       const reg = new StaffRecordsRegistryPage(page);
       await reg.gotoVehiclesSection();
+      await reg.vehicleSearchInput("mobile").fill(fixture.vehiclePlate);
 
       await expect(page.locator(".vehicles-mobile-surface .vehicles-mobile-compact-list")).toBeVisible({
         timeout: 45_000,
