@@ -1,1 +1,1 @@
-{"id":"9f05bab939fd06f9ae5a93e5a6e5e9f8","fullName":"staff-purchases-vehicles-registry.spec.ts:155:3","name":"admin reaches Purchases and sees compact list on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"45596c5a958c7033075311e88859c339"}}
+{"id":"9f05bab939fd06f9ae5a93e5a6e5e9f8","fullName":"staff-purchases-vehicles-registry.spec.ts:158:3","name":"admin reaches Purchases and sees compact list on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"36ecb3d9ba910a19a9040b3493fb2852"}}

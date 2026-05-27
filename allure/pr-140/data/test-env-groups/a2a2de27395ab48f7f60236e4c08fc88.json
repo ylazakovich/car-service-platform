@@ -1,1 +1,1 @@
-{"id":"a2a2de27395ab48f7f60236e4c08fc88","fullName":"staff-repair-intake-create.spec.ts:54:3","name":"mobile: New Repair → intake → card on board","status":"skipped","testResultsByEnv":{"e2e":"db7a55a8ec29cc8bbc4dceb5ee85b285"}}
+{"id":"a2a2de27395ab48f7f60236e4c08fc88","fullName":"staff-repair-intake-create.spec.ts:54:3","name":"mobile: New Repair → intake → card on board","status":"passed","testResultsByEnv":{"e2e":"1604d4b4efb8fcd530a434372b28a69b"}}
