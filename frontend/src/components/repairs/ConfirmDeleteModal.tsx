@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { RepairIcon } from "./repairIcons";
 
 type ConfirmDeleteModalProps = {
@@ -30,6 +31,20 @@ export function ConfirmDeleteModal({
   onCancel,
   onConfirm,
 }: ConfirmDeleteModalProps) {
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || busy) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      onCancel();
+    }
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [busy, onCancel]);
+
   return (
     <div className="modal-overlay repair-modal-overlay" role="presentation" onClick={onCancel}>
       <div

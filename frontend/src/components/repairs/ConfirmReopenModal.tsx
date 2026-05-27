@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { formatRepairDisplayDate } from "../../features/staff/shared/repairs";
 import { RepairIcon } from "./repairIcons";
 
@@ -29,6 +30,20 @@ export function ConfirmReopenModal({
   onCancel,
   onConfirm,
 }: ConfirmReopenModalProps) {
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || busy) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      onCancel();
+    }
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [busy, onCancel]);
+
   return (
     <div className="modal-overlay repair-modal-overlay" role="presentation" onClick={onCancel}>
       <div

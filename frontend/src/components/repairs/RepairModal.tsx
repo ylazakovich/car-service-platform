@@ -34,8 +34,8 @@ type RepairModalShellProps = {
  *
  * The component displays a titled modal with an optional status autotag or metadata, shows a validation banner when
  * there are field errors, and renders action controls via the footer. It also wires keyboard shortcuts while the
- * modal is focused: `Cmd/Ctrl+Enter` triggers submission when available and not locked/saving; `Escape` invokes
- * `onEscape` if provided, otherwise `onClose`.
+ * modal is open: `Cmd/Ctrl+Enter` triggers submission when available and not locked/saving when the event comes
+ * from inside the dialog; `Escape` invokes `onEscape` if provided, otherwise `onClose`.
  *
  * @param mode - Either `"create"` or `"edit"`, determines footer action availability
  * @param title - Visible modal title
@@ -87,6 +87,15 @@ export function RepairModalShell({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (onEscape) {
+          onEscape();
+        } else {
+          onClose();
+        }
+        return;
+      }
       if (!modalRef.current?.contains(event.target as Node)) {
         return;
       }
@@ -94,16 +103,9 @@ export function RepairModalShell({
         event.preventDefault();
         onSubmit();
       }
-      if (event.key === "Escape") {
-        if (onEscape) {
-          onEscape();
-        } else {
-          onClose();
-        }
-      }
     }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose, onEscape, onSubmit, locked, saving]);
 
   function handleFormSubmit(event: FormEvent) {
