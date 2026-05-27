@@ -34,11 +34,13 @@ test.describe("Staff repairs — modal Escape close @desktop", () => {
     test(`repair card dialog closes with Escape in ${status}`, async ({ page }) => {
       await e2eBehaviors("staff", `repairs · modal · Escape closes repair card (${status})`);
 
-      await openAdminApp(page);
-      const fixture = await createEscapeTestRepair(page, status);
-      await openAdminApp(page);
+      let fixture: IsolatedRepairFixture | null = null;
 
       try {
+        await openAdminApp(page);
+        fixture = await createEscapeTestRepair(page, status);
+        await openAdminApp(page);
+
         const repairs = new StaffRepairsPage(page);
         await repairs.gotoRepairsSection();
         await repairs.expectRepairsKanbanVisible();
@@ -54,7 +56,9 @@ test.describe("Staff repairs — modal Escape close @desktop", () => {
         await expect(dialog).toBeHidden({ timeout: 15_000 });
         await expect(card).toBeVisible({ timeout: 15_000 });
       } finally {
-        await cleanupIsolatedRepair(page, fixture);
+        if (fixture) {
+          await cleanupIsolatedRepair(page, fixture);
+        }
       }
     });
   }
