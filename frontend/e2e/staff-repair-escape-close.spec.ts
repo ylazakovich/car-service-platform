@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
-import { openStaffApp } from "./fixtures/auth";
+import { AUTH_STATE_ADMIN, openAdminApp } from "./fixtures/auth";
 import { cleanupIsolatedRepair, createIsolatedRepair, type IsolatedRepairFixture } from "./fixtures/repairFactory";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
@@ -28,14 +28,15 @@ async function createEscapeTestRepair(
 
 test.describe("Staff repairs — modal Escape close @desktop", () => {
   test.describe.configure({ mode: "serial" });
+  test.use({ storageState: AUTH_STATE_ADMIN });
 
   for (const status of ESCAPE_STATUSES) {
     test(`repair card dialog closes with Escape in ${status}`, async ({ page }) => {
       await e2eBehaviors("staff", `repairs · modal · Escape closes repair card (${status})`);
 
-      await openStaffApp(page);
+      await openAdminApp(page);
       const fixture = await createEscapeTestRepair(page, status);
-      await openStaffApp(page);
+      await openAdminApp(page);
 
       try {
         const repairs = new StaffRepairsPage(page);
