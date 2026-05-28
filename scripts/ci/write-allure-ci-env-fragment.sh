@@ -23,7 +23,7 @@ write_kv() {
 write_kv_nonempty() {
   local key="$1"
   local val="${2:-}"
-  [[ -n "${val}" ]] || return
+  [[ -n "${val}" ]] || return 0
   write_kv "${key}" "${val}"
 }
 
