@@ -1066,6 +1066,19 @@ input[type="date"].inventory-stock-input {
   gap: var(--s4);
 }
 
+.purchases-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.purchases-skeleton-row {
+  height: 48px;
+  border-radius: 6px;
+  background: var(--surface-mid);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
 .purchases-empty-panel {
   display: grid;
   gap: var(--s3);

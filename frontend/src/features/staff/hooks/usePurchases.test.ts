@@ -1,6 +1,45 @@
-import { describe, expect, it } from "vitest";
-import { mapApiPurchaseToPurchaseEntry, type PurchaseEntry } from "./usePurchases";
-import type { PurchaseItem } from "../../../api/purchases";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { mapApiPurchaseToPurchaseEntry, usePurchases, type PurchaseEntry } from "./usePurchases";
+import { fetchPurchases, fetchSuppliers, fetchUnitsOfMeasure } from "../../../api/purchases";
+import type { PurchaseItem, PurchasePage } from "../../../api/purchases";
+
+vi.mock("../../../api/purchases", async () => {
+  const actual = await vi.importActual<typeof import("../../../api/purchases")>("../../../api/purchases");
+  return {
+    ...actual,
+    fetchPurchases: vi.fn(),
+    fetchSuppliers: vi.fn(),
+    fetchUnitsOfMeasure: vi.fn(),
+  };
+});
+
+const fetchPurchasesMock = vi.mocked(fetchPurchases);
+const fetchSuppliersMock = vi.mocked(fetchSuppliers);
+const fetchUnitsOfMeasureMock = vi.mocked(fetchUnitsOfMeasure);
+
+function emptyPurchasePage(): PurchasePage {
+  return {
+    count: 0,
+    next: null,
+    previous: null,
+    results: [],
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
 
 function purchase(overrides: Partial<PurchaseItem> = {}): PurchaseItem {
   return {
@@ -34,6 +73,46 @@ function purchase(overrides: Partial<PurchaseItem> = {}): PurchaseItem {
     ...overrides,
   };
 }
+
+describe("usePurchases", () => {
+  it("keeps warehouse purchases in initial loading state until the first fetch settles", async () => {
+    fetchSuppliersMock.mockResolvedValue([]);
+    fetchUnitsOfMeasureMock.mockResolvedValue([]);
+    const warehouseFetch = deferred<PurchasePage>();
+    fetchPurchasesMock.mockReturnValueOnce(warehouseFetch.promise);
+
+    const { result } = renderHook(() => usePurchases([]));
+
+    expect(result.current.isPurchasesLoading).toBe(true);
+    expect(result.current.purchases).toEqual([]);
+
+    await act(async () => {
+      warehouseFetch.resolve(emptyPurchasePage());
+      await warehouseFetch.promise;
+    });
+
+    await waitFor(() => expect(result.current.isPurchasesLoading).toBe(false));
+  });
+
+  it("keeps consumables in loading state while their first enabled fetch is in flight", async () => {
+    fetchSuppliersMock.mockResolvedValue([]);
+    fetchUnitsOfMeasureMock.mockResolvedValue([]);
+    fetchPurchasesMock.mockResolvedValueOnce(emptyPurchasePage());
+    const consumablesFetch = deferred<PurchasePage>();
+    fetchPurchasesMock.mockReturnValueOnce(consumablesFetch.promise);
+
+    const { result } = renderHook(() => usePurchases([], { enableConsumablesFetch: true }));
+
+    expect(result.current.isConsumablesLoading).toBe(true);
+
+    await act(async () => {
+      consumablesFetch.resolve(emptyPurchasePage());
+      await consumablesFetch.promise;
+    });
+
+    await waitFor(() => expect(result.current.isConsumablesLoading).toBe(false));
+  });
+});
 
 describe("mapApiPurchaseToPurchaseEntry", () => {
   it("maps API purchase fields into the UI entry shape", () => {
