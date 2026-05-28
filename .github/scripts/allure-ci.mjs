@@ -512,6 +512,29 @@ function cmdPyramidCheck(resultsDir, outputJson) {
   );
 }
 
+function formatCountScaledPyramidDiagram(layers) {
+  const byId = Object.fromEntries(layers.map((L) => [L.id, L]));
+  const rows = ["ui_e2e", "api", "unit"]
+    .map((id) => byId[id])
+    .filter(Boolean);
+  const maxVisualWidth = 28;
+  const maxTotal = Math.max(...rows.map((L) => L.stats.total), 1);
+  const legendWidth = Math.max(...layers.map((L) => L.label.length));
+  const countWidth = Math.max(5, ...layers.map((L) => String(L.stats.total).length));
+  const diagramIndent = 6;
+
+  const lines = [];
+  for (const layer of rows) {
+    const visualWidth = Math.max(1, Math.round((maxVisualWidth * layer.stats.total) / maxTotal));
+    const leftPad = Math.floor((maxVisualWidth - visualWidth) / 2);
+    const blocks = `${" ".repeat(leftPad)}${"█".repeat(visualWidth)}`;
+    lines.push(
+      `${layer.label.padEnd(legendWidth)} ${String(layer.stats.total).padStart(countWidth)}${" ".repeat(diagramIndent)}${blocks}`,
+    );
+  }
+  return lines;
+}
+
 function replaceReadmePyramidTable(readmePath, tableMd) {
   const start = "<!-- CSP_PYRAMID_TABLE_START -->";
   const end = "<!-- CSP_PYRAMID_TABLE_END -->";
@@ -625,12 +648,7 @@ function cmdPyramid(resultsDir, outputMd, outputJson, readmePath) {
     }
     md.push("");
     md.push("```text");
-    const maxW = 24;
-    const blocks = layers.map((L) => {
-      const w = Math.max(1, Math.round((maxW * L.stats.total) / pyramidTotal));
-      return `${L.label.padEnd(14)} ${"█".repeat(w)} (${L.stats.total})`;
-    });
-    md.push(...blocks);
+    md.push(...formatCountScaledPyramidDiagram(layers));
     md.push("```");
   }
   md.push("");
