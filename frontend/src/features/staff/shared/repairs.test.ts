@@ -87,9 +87,9 @@ describe("repair shared presentation helpers", () => {
     ["uses service_name fallback when there are no structured lines", repair({ service_name: "Legacy text", service_lines: [] }), "Legacy text"],
     ["uses dash when fallback service_name is blank", repair({ service_name: "   ", service_lines: [] }), "—"],
     ["ignores blank structured lines and uses fallback", repair({ service_name: "Fallback", service_lines: [{ id: null, name: "   ", catalog_service_id: null, sort_order: 1 }] }), "Fallback"],
-    ["returns a single structured service name", repair({ service_lines: [{ id: 1, name: "Oil", catalog_service_id: null, sort_order: 1 }] }), "Oil"],
-    ["summarizes two structured services", repair({ service_lines: [{ id: 1, name: "Oil", catalog_service_id: null, sort_order: 1 }, { id: 2, name: "Brakes", catalog_service_id: null, sort_order: 2 }] }), "Oil +1"],
-    ["summarizes three structured services", repair({ service_lines: [{ id: 1, name: "Oil", catalog_service_id: null, sort_order: 1 }, { id: 2, name: "Brakes", catalog_service_id: null, sort_order: 2 }, { id: 3, name: "Tires", catalog_service_id: null, sort_order: 3 }] }), "Oil +2"],
+    ["returns a single structured service name", repair({ service_lines: [{ id: "1", name: "Oil", catalog_service_id: null, sort_order: 1 }] }), "Oil"],
+    ["summarizes two structured services", repair({ service_lines: [{ id: "1", name: "Oil", catalog_service_id: null, sort_order: 1 }, { id: "2", name: "Brakes", catalog_service_id: null, sort_order: 2 }] }), "Oil +1"],
+    ["summarizes three structured services", repair({ service_lines: [{ id: "1", name: "Oil", catalog_service_id: null, sort_order: 1 }, { id: "2", name: "Brakes", catalog_service_id: null, sort_order: 2 }, { id: "3", name: "Tires", catalog_service_id: null, sort_order: 3 }] }), "Oil +2"],
   ])('formatRepairServicesSummary %s', (_name, input, expected) => {
     expect(formatRepairServicesSummary(input)).toBe(expected);
   });
