@@ -1,1 +1,1 @@
-{"id":"6e28dc28d133900ec3e5a9e1bc4fe52a","fullName":"staff-purchases-vehicles-registry.spec.ts:43:3","name":"clicking a purchase row opens detail dialog","status":"failed","testResultsByEnv":{"e2e":"2967f5764a70705af82f3e1bdda90a21"}}
+{"id":"6e28dc28d133900ec3e5a9e1bc4fe52a","fullName":"staff-purchases-vehicles-registry.spec.ts:43:3","name":"clicking a purchase row opens detail dialog","status":"passed","testResultsByEnv":{"e2e":"a9f90528f3925b80ae7e31214d34c64f"}}
