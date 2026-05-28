@@ -54,6 +54,37 @@
 - **Создавать** `.agents/runs/<YYYYMMDD-HHMMSS>-<task-slug>/` **только если** пользователь явно просит об этом в промпте (например: «создай RUN_DIR», «зафиксируй артефакты в runs», «artifacts in .agents/runs», «полный отчёт в run-папке», «веди артефакты роли в .agents/runs»).
 - Если пользователь указал **существующую** run-папку для дописывания — использовать её по инструкции из промпта.
 
+## GitHub PR / MR Naming Convention
+
+This repository uses Release Please, so every agent-created Pull Request / Merge Request title must be a valid Conventional Commit. GitHub squash merges use the PR title as the default squash commit title, and Release Please only creates release PRs from user-facing conventional commits.
+
+Required format:
+
+```text
+type(scope): short imperative summary
+```
+
+Allowed `type` values: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `ci`, `chore`, `build`, `style`, `revert`.
+
+Rules for agents:
+
+1. Before opening a PR/MR, choose the release impact first:
+   - user-facing bug fix -> `fix(scope): ...`
+   - user-facing feature -> `feat(scope): ...`
+   - performance improvement -> `perf(scope): ...`
+   - non-release docs/tests/CI/chore -> `docs: ...`, `test: ...`, `ci: ...`, `chore: ...`
+2. Use a lowercase kebab-ish scope when useful: `repairs`, `vehicles`, `purchases`, `dashboard`, `e2e`, `release`, `agents`.
+3. Do **not** create PR/MR titles like `Repairs: close modals on Escape`, `Add desktop Escape repair modal E2E`, or `Merge pull request ...`; rewrite them to conventional titles before opening or merging.
+4. If GitHub shows a squash commit title before merge, ensure it still matches this convention.
+5. If the change should create a release note, avoid `chore`, `docs`, and `test`; use `fix`, `feat`, or `perf` instead.
+
+Examples:
+
+- `fix(repairs): close modals on Escape`
+- `feat(purchases): add supplier order draft flow`
+- `test(e2e): stabilize vehicle registry search`
+- `ci(release): validate PR titles`
+
 ## Режимы
 
 - `mode: plan` — агент строит или уточняет план, код не меняет.
