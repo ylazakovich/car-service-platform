@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/ylazakovich/car-service-platform/compare/v1.0.0...v1.0.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* **repairs:** close modals on Escape ([d448442](https://github.com/ylazakovich/car-service-platform/commit/d448442ef10c5a07ccf46959047d1e9e96c92b3e))
+
 ## 1.0.0 (2026-05-27)
 
 
