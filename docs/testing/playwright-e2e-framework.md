@@ -40,12 +40,12 @@
 
 ## 4) Сиды и состояние PDF
 
-Проблема: демо-SQL задаёт ремонты и закупки, но **не гарантирует** наличие `RepairDocument` / версии PDF для конкретного TOR. Тесты «два View PDF без лишнего POST» зависят от начального состояния БД после загрузки демо.
+Решение для детерминизма PDF E2E:
 
-**Целевое решение (выбрать одно и зафиксировать в коде):**
-
-- **Вариант A:** расширить `scripts/demo/demo_data.sql` (или отдельный SQL-фрагмент для E2E) — вставить `repair_documents` для сценария «повторное открытие».
-- **Вариант B:** два явных ремонта в демо: один без PDF, второй с уже выгруженным PDF.
+- `scripts/demo/demo_data.sql` оставляет `TOR-1001` как completed repair **без** `RepairDocument`; сценарии Make Act / first export продолжают проверять создание первого документа.
+- После загрузки SQL CI и `scripts/db/load-demo.sh` запускают `python manage.py seed_e2e_pdf_documents`, который создаёт реальный `RepairDocument` + `RepairFinancialSnapshot` + PDF-файл для `TOR-2001`.
+- `frontend/e2e/e2e-seed.ts` разделяет эти фикстуры: `E2E_DEMO_REPAIR_TRACKING_CODE` для no-PDF flow и `E2E_DEMO_REPAIR_WITH_PDF_TRACKING_CODE` для “View PDF without extra POST”.
+- E2E не должен полагаться на POST `/pdf/export/` как неявную подготовку к тесту “View PDF”: наличие PDF задаёт management command seed-fragment.
 
 ## 5) CI: жёсткие ворота
 

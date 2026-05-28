@@ -36,6 +36,8 @@ docker compose exec -T db psql \
   -d "${POSTGRES_DB:-car_service_platform}" \
   < "${DEMO_FILE}"
 
+docker compose exec -T backend python manage.py seed_e2e_pdf_documents
+
 echo ""
 echo "Demo data loaded. The database now contains:"
 echo "  2 users   (admin@autoservice.local / staff@autoservice.local)"
@@ -44,5 +46,6 @@ echo "  10 customers"
 echo "  16 vehicles"
 echo "  ~50 repairs across all statuses (new / in_progress / waiting_parts / completed)"
 echo "  ~30 purchases linked to repairs"
+echo "  1 pre-exported repair PDF fixture for E2E (TOR-2001)"
 echo "  10 suppliers"
 echo "  March 2026 moneyflow showcase data for the dashboard chart"

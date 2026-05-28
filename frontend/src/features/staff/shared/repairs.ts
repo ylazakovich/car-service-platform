@@ -150,8 +150,9 @@ export function masterTint(masterId: string | number | null | undefined): CSSPro
 }
 
 export function initials(name: string | null | undefined): string {
-  if (!name) return "?";
-  return name
+  const trimmed = name?.trim();
+  if (!trimmed) return "?";
+  return trimmed
     .split(/\s+/)
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? "")
