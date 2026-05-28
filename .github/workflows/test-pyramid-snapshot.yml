@@ -36,6 +36,11 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: main
+          persist-credentials: false
+
+      - id: checked_out_revision
+        name: Capture checked-out SHA
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/setup-node
 
@@ -150,7 +155,7 @@ jobs:
           DOCKER_STATS_INTERVAL: "5"
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
-          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_SHA: ${{ steps.checked_out_revision.outputs.sha }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
           GITHUB_REF: ${{ github.ref }}
         run: bash scripts/ci/e2e-docker-stats-summarize.sh
@@ -174,7 +179,7 @@ jobs:
           ALLURE_VARIABLES_JSON: ${{ github.workspace }}/artifacts/allure-variables.json
           ALLURE_MERGED_CI_ENV: ${{ github.workspace }}/artifacts/_merged_ci_env.properties
           REPO_ROOT: ${{ github.workspace }}
-          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_SHA: ${{ steps.checked_out_revision.outputs.sha }}
           GITHUB_REF_NAME: main
           ALLURE_GITHUB_WORKFLOW: ${{ github.workflow }}
           ALLURE_SOURCE_RUN_ID: ${{ github.run_id }}
@@ -183,7 +188,7 @@ jobs:
       - name: Export test pyramid snapshot
         env:
           PYRAMID_SOURCE_RUN_ID: ${{ github.run_id }}
-          PYRAMID_HEAD_SHA: ${{ github.sha }}
+          PYRAMID_HEAD_SHA: ${{ steps.checked_out_revision.outputs.sha }}
         run: |
           node .github/scripts/allure-ci.mjs pyramid \
             --results artifacts/allure-results \
@@ -211,6 +216,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           paths=(
             README.md
             docs/testing/pyramid-snapshot.md
