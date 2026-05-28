@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { openStaffApp } from "./fixtures/auth";
 import { cleanupE2eData, createE2eCustomerWithVehicle } from "./fixtures/e2eDataFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 /**
@@ -16,7 +16,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
 
   test("workspace menu switches Vehicles and Repairs; header title matches section", async ({ page }) => {
     await e2eBehaviors("staff", "mobile · workspace menu · section header");
-    const nav = new StaffMobileNavigationPage(page);
+    const nav = new StaffNavigationPage(page);
     await nav.waitForStaffNavigationChrome();
     await nav.expectMobileWorkspaceMenuToggle();
 
@@ -32,7 +32,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
 
   test("workspace menu lists only staff sections, then closes on backdrop", async ({ page }) => {
     await e2eBehaviors("staff", "mobile · workspace menu · backdrop");
-    const nav = new StaffMobileNavigationPage(page);
+    const nav = new StaffNavigationPage(page);
     await nav.waitForStaffNavigationChrome();
     await nav.expectMobileWorkspaceMenuToggle();
 
@@ -48,7 +48,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
 
   test("Add New Repair from workspace menu opens create dialog", async ({ page }) => {
     await e2eBehaviors("staff", "mobile · Add New Repair · modal");
-    const nav = new StaffMobileNavigationPage(page);
+    const nav = new StaffNavigationPage(page);
     await nav.waitForStaffNavigationChrome();
     await nav.expectMobileWorkspaceMenuToggle();
 
@@ -63,7 +63,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
 
   test("mobile vehicles list opens detail with Open Repairs affordance", async ({ page }) => {
     await e2eBehaviors("staff", "mobile · vehicles list · detail");
-    const nav = new StaffMobileNavigationPage(page);
+    const nav = new StaffNavigationPage(page);
     const fixture = await createE2eCustomerWithVehicle(page, "mobile-nav-vehicle");
     try {
       await openStaffApp(page);
@@ -88,7 +88,7 @@ test.describe("Staff mobile shell and navigation @mobile-only", () => {
 
   test("Jump to top FAB scrolls up and focuses workspace menu toggle", async ({ page }) => {
     await e2eBehaviors("staff", "mobile · scroll · FAB");
-    const nav = new StaffMobileNavigationPage(page);
+    const nav = new StaffNavigationPage(page);
     const repairs = new StaffRepairsPage(page);
     await repairs.gotoRepairsSection();
     await repairs.expectRepairsKanbanVisible();

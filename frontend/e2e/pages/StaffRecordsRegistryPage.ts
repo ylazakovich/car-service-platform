@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./StaffNavigationPage";
 
 /**
  * Табличные реестры Purchases / Vehicles (без карточек и клиентской сортировки).
@@ -12,7 +12,7 @@ export class StaffRecordsRegistryPage {
   }
 
   async gotoPurchasesSection(): Promise<void> {
-    const nav = new StaffMobileNavigationPage(this.page);
+    const nav = new StaffNavigationPage(this.page);
     await nav.gotoStaffSection("Purchases");
     await expect(this.page.getByRole("heading", { name: "Purchases", level: 2 })).toBeVisible({
       timeout: 25_000,
@@ -40,7 +40,7 @@ export class StaffRecordsRegistryPage {
   }
 
   async gotoVehiclesSection(): Promise<void> {
-    const nav = new StaffMobileNavigationPage(this.page);
+    const nav = new StaffNavigationPage(this.page);
     await nav.gotoStaffSection("Vehicles");
     await expect(this.page.locator(".vehicles-workspace")).toBeVisible({ timeout: 25_000 });
   }

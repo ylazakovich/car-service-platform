@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./StaffNavigationPage";
 
 export type RegistersWorkspaceTab = "Units of measure" | "Services" | "Customers";
 
@@ -14,7 +14,7 @@ export class StaffRegistersPage {
   }
 
   async gotoRegistersSection(): Promise<void> {
-    const nav = new StaffMobileNavigationPage(this.page);
+    const nav = new StaffNavigationPage(this.page);
     await nav.gotoStaffSection("Registers");
     await expect(this.page.locator(".reference-workspace")).toBeVisible({ timeout: 25_000 });
 

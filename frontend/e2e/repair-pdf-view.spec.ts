@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { openStaffApp } from "./fixtures/auth";
 import { cleanupIsolatedRepair, createIsolatedRepair, type IsolatedRepairFixture } from "./fixtures/repairFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 async function waitForPdfExportPost<T>(page: Page, action: () => Promise<T>): Promise<T> {
@@ -93,7 +93,7 @@ test.describe("Repair PDF: view without new export @mobile-only", () => {
 
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
-    await new StaffMobileNavigationPage(page).expectMobileWorkspaceMenuToggle();
+    await new StaffNavigationPage(page).expectMobileWorkspaceMenuToggle();
     fixture = await createIsolatedRepair(page, {
       markerPrefix: "pdf-mobile-e2e",
       status: "completed",
@@ -102,7 +102,7 @@ test.describe("Repair PDF: view without new export @mobile-only", () => {
     });
     await page.reload();
     await openStaffApp(page);
-    await new StaffMobileNavigationPage(page).expectMobileWorkspaceMenuToggle();
+    await new StaffNavigationPage(page).expectMobileWorkspaceMenuToggle();
   });
 
   test.afterEach(async ({ page }) => {

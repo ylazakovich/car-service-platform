@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { e2eBehaviors } from "./allure-helpers";
 import { AUTH_STATE_ADMIN, openAdminApp } from "./fixtures/auth";
 import { cleanupE2eData } from "./fixtures/e2eDataFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,7 +40,7 @@ test.describe("Purchase invoice OCR import @desktop", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
   });
 
   test("imports the sample PDF into a multi-line warehouse invoice", async ({ page }) => {

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { AUTH_STATE_ADMIN, openAdminApp } from "./fixtures/auth";
 import { cleanupE2eData, createE2ePurchase, createE2eUnit } from "./fixtures/e2eDataFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 
 /** Out-of-stock consumables create their own inventory snapshot; CI does not load demo data. */
@@ -12,7 +12,7 @@ test.describe("Consumables out of stock @desktop", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
     await expect(page.getByRole("button", { name: "Users" })).toBeVisible({ timeout: 30_000 });
   });
 
@@ -60,7 +60,7 @@ test.describe("Consumables out of stock @mobile-only", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
   });
 
   test("admin expands Out of stock on narrow viewport", async ({ page }) => {

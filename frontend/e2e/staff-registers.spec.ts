@@ -7,7 +7,7 @@ import {
   createE2eService,
   createE2eUnit,
 } from "./fixtures/e2eDataFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRegistersPage } from "./pages/StaffRegistersPage";
 
 /** Registers create their own reference rows; CI does not load demo data. */
@@ -17,7 +17,7 @@ test.describe("Registers workspace @desktop", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
     await expect(page.getByRole("button", { name: "Registers" })).toBeVisible({ timeout: 30_000 });
   });
 
@@ -107,7 +107,7 @@ test.describe("Registers workspace @mobile-only", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
   });
 
   test("admin reaches Registers tabs and Services catalog on narrow viewport", async ({ page }) => {

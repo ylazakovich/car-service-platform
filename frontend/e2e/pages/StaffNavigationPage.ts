@@ -1,10 +1,10 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
- * Мобильный staff-shell (≤820px): шапка, drawer «Sections and account», переключатель Vehicles | Repairs.
- * Дублирует прежнюю логику навигации из StaffRepairsPage — общий вход для E2E по мобильному chrome.
+ * Staff workspace navigation helper for responsive E2E flows.
+ * Handles the narrow workspace menu, task switcher, and wide sidebar without exposing viewport-specific page object names.
  */
-export class StaffMobileNavigationPage {
+export class StaffNavigationPage {
   readonly page: Page;
 
   constructor(page: Page) {

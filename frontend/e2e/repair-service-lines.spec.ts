@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { AUTH_STATE_ADMIN, openAdminApp, openStaffApp } from "./fixtures/auth";
 import { cleanupIsolatedRepair, createIsolatedRepair, type IsolatedRepairFixture } from "./fixtures/repairFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
 const SERVICE_LINE_1 = "Oil change + filter replacement";
@@ -56,10 +56,10 @@ test.describe("Repair service lines — Kanban summary @mobile-only", () => {
 
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
-    await new StaffMobileNavigationPage(page).expectMobileWorkspaceMenuToggle();
+    await new StaffNavigationPage(page).expectMobileWorkspaceMenuToggle();
     fixture = await createMultiServiceRepair(page);
     await openStaffApp(page);
-    await new StaffMobileNavigationPage(page).expectMobileWorkspaceMenuToggle();
+    await new StaffNavigationPage(page).expectMobileWorkspaceMenuToggle();
   });
 
   test.afterEach(async ({ page }) => {
@@ -115,10 +115,10 @@ test.describe("Repair service lines — modal editor @mobile-only", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
     fixture = await createMultiServiceRepair(page, "new");
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
   });
 
   test.afterEach(async ({ page }) => {
