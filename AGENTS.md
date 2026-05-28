@@ -72,7 +72,7 @@ Rules for agents:
    - user-facing bug fix -> `fix(scope): ...`
    - user-facing feature -> `feat(scope): ...`
    - performance improvement -> `perf(scope): ...`
-   - non-release docs/tests/CI/chore -> `docs: ...`, `test: ...`, `ci: ...`, `chore: ...`
+   - non-release docs/tests/CI/chore -> `docs(scope): ...`, `test(scope): ...`, `ci(scope): ...`, `chore(scope): ...`
 2. Use a lowercase kebab-ish scope when useful: `repairs`, `vehicles`, `purchases`, `dashboard`, `e2e`, `release`, `agents`.
 3. Do **not** create PR/MR titles like `Repairs: close modals on Escape`, `Add desktop Escape repair modal E2E`, or `Merge pull request ...`; rewrite them to conventional titles before opening or merging.
 4. If GitHub shows a squash commit title before merge, ensure it still matches this convention.

@@ -23,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          pattern='^(feat|fix|perf|refactor|docs|test|ci|chore|build|style|revert)(\([a-z0-9][a-z0-9.-]*\))?!?: .+'
+          pattern='^(feat|fix|perf|refactor|docs|test|ci|chore|build|style|revert)\([a-z0-9][a-z0-9.-]*\)!?: .+'
 
           if [[ "$PR_TITLE" =~ $pattern ]]; then
             echo "PR title is conventional: $PR_TITLE"
