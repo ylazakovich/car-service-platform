@@ -247,8 +247,17 @@ jobs:
           This PR is intentionally separate from feature/fix PRs so reporting never mutates PR branches or masks a failed PR Pipeline status.
           BODY
 
-          if gh pr view "$SNAPSHOT_BRANCH" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh pr edit "$SNAPSHOT_BRANCH" \
+          open_pr_number="$(
+            gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --head "$SNAPSHOT_BRANCH" \
+              --state open \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [[ -n "$open_pr_number" ]]; then
+            gh pr edit "$open_pr_number" \
               --repo "$GITHUB_REPOSITORY" \
               --title "chore(ci): refresh test pyramid snapshot" \
               --body-file "$body_file"
