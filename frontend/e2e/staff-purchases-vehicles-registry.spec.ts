@@ -8,7 +8,7 @@ import {
   createE2eUnit,
 } from "./fixtures/e2eDataFactory";
 import { cleanupIsolatedRepair, createIsolatedRepair } from "./fixtures/repairFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 
 /** Purchases / Vehicles registries create their own data; CI does not load demo data. */
@@ -18,7 +18,7 @@ test.describe("Purchases registry — table-only chrome @desktop", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
     await expect(page.getByRole("button", { name: "Users" })).toBeVisible({ timeout: 30_000 });
   });
 
@@ -154,7 +154,7 @@ test.describe("Purchases registry — mobile table @mobile-only", () => {
 
   test.beforeEach(async ({ page }) => {
     await openAdminApp(page);
-    await new StaffMobileNavigationPage(page).waitForStaffNavigationChrome();
+    await new StaffNavigationPage(page).waitForStaffNavigationChrome();
   });
 
   test("admin reaches Purchases and sees compact list on narrow viewport", async ({ page }) => {

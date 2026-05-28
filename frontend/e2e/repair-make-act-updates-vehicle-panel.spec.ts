@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { openStaffApp } from "./fixtures/auth";
 import { cleanupIsolatedRepair, createIsolatedRepair, type IsolatedRepairFixture } from "./fixtures/repairFactory";
-import { StaffMobileNavigationPage } from "./pages/StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./pages/StaffNavigationPage";
 import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
 
@@ -60,7 +60,7 @@ test.describe("Make Act → Vehicle panel shows act total without reload @deskto
       .click();
 
     // Step 2: go to Vehicles, open detail panel for this test-owned vehicle — WITHOUT page reload.
-    await new StaffMobileNavigationPage(page).gotoStaffSection("Vehicles");
+    await new StaffNavigationPage(page).gotoStaffSection("Vehicles");
     await expect(page.locator(".vehicles-workspace")).toBeVisible({ timeout: 25_000 });
 
     const vehicleRow = registry.vehicleRowByPlate(fixture.vehiclePlate, "desktop");

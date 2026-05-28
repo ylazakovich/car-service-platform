@@ -121,8 +121,13 @@ def extract_text_from_file(file) -> str:
         except ImportError as exc:
             raise RuntimeError("PDF support is not installed.") from exc
 
-        reader = PdfReader(io.BytesIO(raw))
-        text_layer = _extract_pdf_text_layer(reader)
+        try:
+            reader = PdfReader(io.BytesIO(raw))
+            text_layer = _extract_pdf_text_layer(reader)
+        except (ValueError, RuntimeError):
+            raise
+        except Exception as exc:
+            raise ValueError("Could not read the PDF file — it may be corrupt or not a valid PDF.") from exc
         if len(text_layer) >= MIN_PDF_TEXT_CHARS_FOR_SKIP_OCR:
             return text_layer
         ocr_text = _ocr_pdf_bytes(raw)

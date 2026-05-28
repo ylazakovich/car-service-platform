@@ -5,7 +5,7 @@ import {
   E2E_DEMO_REPAIR_VEHICLE_PLATE,
   E2E_DEMO_SERVICE_NAME_IN_CATALOG,
 } from "../e2e-seed";
-import { StaffMobileNavigationPage } from "./StaffMobileNavigationPage";
+import { StaffNavigationPage } from "./StaffNavigationPage";
 
 const SHOW_MORE_COMPLETED = /^Show \d+ more$/;
 
@@ -48,7 +48,7 @@ export class StaffRepairsPage {
    * Сначала poll до появления любой навигации (гидрация), затем клик по приоритету как раньше в helpers/repair-board.
    */
   async gotoRepairsSection(): Promise<void> {
-    await new StaffMobileNavigationPage(this.page).gotoStaffSection("Repairs");
+    await new StaffNavigationPage(this.page).gotoStaffSection("Repairs");
   }
 
   async repairKanbanCardByTrackingCode(trackingCode: string): Promise<Locator> {
