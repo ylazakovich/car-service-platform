@@ -83,8 +83,11 @@ test.describe("Purchase invoice OCR import @desktop", () => {
       const saveResponse = await saveResponsePromise;
       expect(saveResponse.ok()).toBeTruthy();
       const saved = (await saveResponse.json()) as Array<{ id: number; supplier?: { id?: number }; part_name: string }>;
+      expect(Array.isArray(saved)).toBeTruthy();
+      expect(saved).toHaveLength(3);
+      expect(saved.every((row) => Number.isInteger(row.id))).toBeTruthy();
       createdPurchaseIds.push(...saved.map((row) => row.id));
-      createdSupplierId = saved[0]?.supplier?.id;
+      createdSupplierId = saved.find((row) => Number.isInteger(row.supplier?.id))?.supplier?.id;
 
       await expect(dialog).toHaveCount(0, { timeout: 15_000 });
       await expect(reg.purchaseRowByPartSnippet("Łożysko koła przód SKF")).toBeVisible({ timeout: 20_000 });
