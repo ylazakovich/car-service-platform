@@ -1,16 +1,9 @@
 /**
  * Stable E2E fixture from `scripts/demo/demo_data.sql`:
- * completed repair TOR-1001 — AA 1234 BB • Toyota Camry, intentionally starts without a PDF.
+ * completed repair TOR-1001 — AA 1234 BB • Toyota Camry, service below (unique among that plate’s completed jobs in demo).
  * CI loads this file after compose-up (`.github/workflows/pr.yml`). Locally: `bash scripts/db/load-demo.sh`.
  */
 export const E2E_DEMO_REPAIR_TRACKING_CODE = "TOR-1001";
-
-/**
- * Dedicated completed repair seeded with an initial `RepairDocument` by
- * `python manage.py seed_e2e_pdf_documents` so View PDF can be tested without
- * causing a POST export.
- */
-export const E2E_DEMO_REPAIR_WITH_PDF_TRACKING_CODE = "TOR-2001";
 
 /** Substring of API `vehicle_label` for this repair (`{plate} • {make} {model}`) — stable in modal title. */
 export const E2E_DEMO_REPAIR_VEHICLE_PLATE = "AA 1234 BB";
@@ -32,8 +25,8 @@ export const E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY = "Oil change + filter repl
 export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Castrol EDGE";
 
 /**
- * `python manage.py seed_e2e_pdf_documents` creates an initial PDF for `E2E_DEMO_REPAIR_WITH_PDF_TRACKING_CODE` only.
- * Vehicles registry shows `.vehicles-compact-row--needs-act` for any vehicle with a completed repair without a PDF.
+ * Fresh demo DB has no `repair_documents` rows → completed repairs have `has_pdf: false`.
+ * Vehicles registry shows `.vehicles-compact-row--needs-act` for any vehicle with such a repair.
  */
 export const E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE = E2E_DEMO_REPAIR_VEHICLE_PLATE;
 
