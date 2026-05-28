@@ -53,13 +53,13 @@ The built-in **Testing pyramid** and **Durations by layer** widgets in [Allure R
 | Middle | `api` | `integration` (Allure’s name for the middle slice) |
 | Top | `end-to-end` | `e2e` |
 
-So the HTML report widgets and the exported `pyramid-snapshot.*` / quality gates (which use `epic`) describe the **same** three-tier pyramid with aligned counts.
+So the HTML report widgets and the exported `latest/` snapshot / quality gates (which use `epic`) describe the **same** three-tier pyramid with aligned counts.
 
 ## What “aligned with the pyramid” means here
 
 1. **Growth**: when adding coverage, prefer **unit → integration (pytest `epic: api`) → E2E** in that order unless the risk is explicitly UI-only (accessibility, layout, cross-page flows).
 2. **Ratios are advisory**, not hard gates: teams and products differ. We document **soft targets** below so planning and reviews have a shared vocabulary; CI does not fail PRs solely on pyramid shape.
-3. **Source of truth for counts**: merged Allure `*-result.json` from successful runs on `main`. PRs expose the current run as artifacts/Pages/comment only; the generated `pyramid-snapshot.{md,json}` and README table are updated by the scheduled/manual **Test Pyramid Snapshot Refresh** workflow through a separate rolling PR.
+3. **Source of truth for counts**: merged Allure `*-result.json` from successful runs on `main`. PRs expose the current run as artifacts/Pages/comment only; the latest accepted `main` snapshot is updated under `docs/testing/latest/` by the scheduled/manual **Test Pyramid Snapshot Refresh** workflow through a separate rolling PR.
 
 ## Soft targets (planning, not CI gates)
 
@@ -77,8 +77,8 @@ The **Test Report** workflow runs `allure-ci.mjs pyramid-check` on merged PR All
 
 - **Violations** surface as GitHub **Annotations** (`::warning::`) and in the **Job summary** for the Test Report job.
 - The workflow **always exits successfully** for this step (`exit 0`); it does **not** fail the run or block merge.
-- Machine-readable output: [`pyramid-quality-gates.json`](./pyramid-quality-gates.json) (`warnings[]`, empty `blockingFailures[]` today; strict mode is reserved for the future if the team opts in).
-- Human-readable table: same rules are duplicated in [`pyramid-snapshot.md`](./pyramid-snapshot.md) under **Quality gates (non-blocking, advisory)**.
+- Machine-readable output: [`latest/pyramid-quality-gates.json`](./latest/pyramid-quality-gates.json) (`warnings[]`, empty `blockingFailures[]` today; strict mode is reserved for the future if the team opts in).
+- Human-readable table: same rules are duplicated in [`latest/README.md`](./latest/README.md) under **Quality gates (non-blocking, advisory)**.
 
 Checked rules today (aligned with soft targets above):
 
@@ -95,25 +95,24 @@ From the repo root, with a merged Allure results directory (e.g. after CI downlo
 ```bash
 node .github/scripts/allure-ci.mjs pyramid \
   --results path/to/allure-results \
-  --output docs/testing/pyramid-snapshot.md \
-  --json docs/testing/pyramid-snapshot.json \
-  --readme README.md
+  --output docs/testing/latest/README.md \
+  --json docs/testing/latest/pyramid-snapshot.json
 ```
 
-Omit `--readme` if you do not want to touch the root README.
+Pass `--readme README.md` only for one-off local experiments; the scheduled/manual snapshot workflow intentionally leaves the root README stable and updates only generated files under `docs/testing/latest/`.
 
 Quality gates only (warnings + JSON, optional CI-style annotations if `GITHUB_STEP_SUMMARY` is set):
 
 ```bash
 node .github/scripts/allure-ci.mjs pyramid-check \
   --results path/to/allure-results \
-  --json docs/testing/pyramid-quality-gates.json
+  --json docs/testing/latest/pyramid-quality-gates.json
 ```
 
-## FAQ — README / `main` snapshot looks stale
+## FAQ — generated snapshot on `main` looks stale
 
 1. PR reporting is intentionally read-only for PR branches: **Test Report** publishes artifacts/Pages/comment and mirrors the source PR Pipeline conclusion, but it does **not** commit generated docs back to the PR head.
-2. `main` snapshots are refreshed by **Test Pyramid Snapshot Refresh** (`schedule` + `workflow_dispatch`). It runs the test suite on `main`, regenerates `README.md`, `docs/testing/pyramid-snapshot.{md,json}`, and `docs/testing/pyramid-quality-gates.json`, then opens/updates the rolling `chore/test-pyramid-snapshot` PR only when those files changed.
+2. `main` snapshots are refreshed by **Test Pyramid Snapshot Refresh** (`schedule` + `workflow_dispatch`). It runs the test suite on `main`, regenerates `docs/testing/latest/README.md`, `docs/testing/latest/pyramid-snapshot.json`, and `docs/testing/latest/pyramid-quality-gates.json`, then opens/updates the rolling `chore/test-pyramid-snapshot` PR only when those files changed. The root README intentionally stays a stable navigation page and only links to the accepted latest snapshot.
 3. **Fix now:** run **Test Pyramid Snapshot Refresh** manually from GitHub Actions, or refresh locally from merged `allure-results` using the command above and open a small PR.
 
 ## Related docs

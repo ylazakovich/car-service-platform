@@ -192,12 +192,11 @@ jobs:
         run: |
           node .github/scripts/allure-ci.mjs pyramid \
             --results artifacts/allure-results \
-            --output docs/testing/pyramid-snapshot.md \
-            --json docs/testing/pyramid-snapshot.json \
-            --readme README.md
+            --output docs/testing/latest/README.md \
+            --json docs/testing/latest/pyramid-snapshot.json
           node .github/scripts/allure-ci.mjs pyramid-check \
             --results artifacts/allure-results \
-            --json docs/testing/pyramid-quality-gates.json
+            --json docs/testing/latest/pyramid-quality-gates.json
 
       - name: Upload generated snapshot artifact
         if: always()
@@ -205,10 +204,9 @@ jobs:
         with:
           name: pyramid-snapshot
           path: |
-            docs/testing/pyramid-snapshot.md
-            docs/testing/pyramid-snapshot.json
-            docs/testing/pyramid-quality-gates.json
-            README.md
+            docs/testing/latest/README.md
+            docs/testing/latest/pyramid-snapshot.json
+            docs/testing/latest/pyramid-quality-gates.json
           retention-days: 30
 
       - name: Create or update rolling snapshot PR
@@ -218,10 +216,9 @@ jobs:
           set -euo pipefail
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           paths=(
-            README.md
-            docs/testing/pyramid-snapshot.md
-            docs/testing/pyramid-snapshot.json
-            docs/testing/pyramid-quality-gates.json
+            docs/testing/latest/README.md
+            docs/testing/latest/pyramid-snapshot.json
+            docs/testing/latest/pyramid-quality-gates.json
           )
 
           if git diff --quiet -- "${paths[@]}"; then

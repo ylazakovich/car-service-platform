@@ -217,7 +217,7 @@ design-system project).
 - [ ] `T-ALL-002` Behaviors tree parity with `allure.config.mjs` groupBy + epic/feature/story table in plan
 - [ ] `T-ALL-003` Playwright trace attachments + CI `retain-on-failure` policy; optional HTML report in Actions
 - [ ] `T-ALL-004` Merge Playwright into unified Allure report with Vitest/pytest
-- [x] `T-ALL-005` Test pyramid policy + Allure-derived `pyramid-snapshot.{md,json}` + README table (`docs/testing/test-pyramid.md`, Test Report artifacts/comments, scheduled Test Pyramid Snapshot Refresh rolling PR)
+- [x] `T-ALL-005` Test pyramid policy + Allure-derived latest snapshot under `docs/testing/latest/` (`docs/testing/test-pyramid.md`, Test Report artifacts/comments, scheduled Test Pyramid Snapshot Refresh rolling PR)
 
 ---
 

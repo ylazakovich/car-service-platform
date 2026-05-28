@@ -13,20 +13,11 @@ Bootstrap for an autoservice operations platform: Django + DRF backend, React + 
 | Technical stack & architecture | [`docs/spec/TECH_STACK.md`](docs/spec/TECH_STACK.md) |
 | Agent workflow (roles, scope, routing) | [`AGENTS.md`](AGENTS.md) |
 | Optional: IDE agents — MCP / verify / bootstrap | [`docs/dev/agent-session-bootstrap.md`](docs/dev/agent-session-bootstrap.md) |
-| **Test pyramid** (unit → API → UI/E2E) + machine snapshot | [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md) · [`docs/testing/pyramid-snapshot.md`](docs/testing/pyramid-snapshot.md) |
+| **Test pyramid** (unit → API → UI/E2E) + latest main snapshot | [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md) · [`docs/testing/latest/README.md`](docs/testing/latest/README.md) |
 
-### Test pyramid (live counts from Allure)
+### Test pyramid
 
-Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md). Full breakdown + advisory text: [`docs/testing/pyramid-snapshot.md`](docs/testing/pyramid-snapshot.md). JSON for tooling: [`docs/testing/pyramid-snapshot.json`](docs/testing/pyramid-snapshot.json). **Updates:** PRs publish report artifacts/comments only; the scheduled/manual **Test Pyramid Snapshot Refresh** workflow updates this table and snapshot files through a separate rolling PR from `main`. **Advisory quality gates:** `pyramid-check` stays warnings-only (see `docs/testing/test-pyramid.md` § Quality gates).
-
-<!-- CSP_PYRAMID_TABLE_START -->
-| Layer | `epic` / `layer` | Cases |
-| :--- | :--- | ---: |
-| Unit (base) | `unit` | **74** |
-| Integration (middle) | `api` / `integration` | **163** |
-| UI / E2E (top) | `end-to-end` / `ui` | **56** |
-| **Σ pyramid layers** | | **293** |
-<!-- CSP_PYRAMID_TABLE_END -->
+Policy and soft targets: [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md). Latest accepted `main` snapshot lives in [`docs/testing/latest/`](docs/testing/latest/): human-readable [`README.md`](docs/testing/latest/README.md), machine-readable [`pyramid-snapshot.json`](docs/testing/latest/pyramid-snapshot.json), and advisory [`pyramid-quality-gates.json`](docs/testing/latest/pyramid-quality-gates.json). PRs publish report artifacts/comments only; the scheduled/manual **Test Pyramid Snapshot Refresh** workflow updates `docs/testing/latest/` through a separate rolling PR from `main`.
 
 Quick start (details in the runbook):
 
