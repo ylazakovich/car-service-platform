@@ -59,7 +59,7 @@ export class StaffRecordsRegistryPage {
 
   vehicleSearchInput(surface: "desktop" | "mobile" = "desktop"): Locator {
     if (surface === "mobile") {
-      return this.page.locator(".staff-mobile-taskbar .staff-mobile-search input[placeholder='Search vehicles…']");
+      return this.page.locator(".staff-mobile-taskbar .staff-mobile-search input[type='search']");
     }
     return this.page.locator(".vehicles-top-actions input[placeholder='Search vehicles…']");
   }
