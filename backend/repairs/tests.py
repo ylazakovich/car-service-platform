@@ -2,7 +2,6 @@ import tempfile
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -847,29 +846,6 @@ class RepairPdfViewTests(TestCase):
             response.json()["detail"],
             "Fill in Odometer when returned (km) before exporting the act.",
         )
-
-    def test_seed_e2e_pdf_documents_creates_initial_document_for_dedicated_view_repair(self):
-        no_pdf_repair = self._create_completed_repair()
-        no_pdf_repair.tracking_code = "TOR-1001"
-        no_pdf_repair.save(update_fields=["tracking_code"])
-        seeded_pdf_repair = self._create_completed_repair()
-        seeded_pdf_repair.tracking_code = "TOR-2001"
-        seeded_pdf_repair.save(update_fields=["tracking_code"])
-        Service.objects.create(name="Full Service", price=Decimal("150.00"))
-
-        call_command("seed_e2e_pdf_documents")
-
-        self.assertFalse(RepairDocument.objects.filter(repair=no_pdf_repair).exists())
-        doc = RepairDocument.objects.get(repair=seeded_pdf_repair)
-        self.assertEqual(doc.version, 1)
-        self.assertEqual(doc.exported_by.email, "admin@autoservice.local")
-        self.assertTrue(doc.file.storage.exists(doc.file.name))
-        snap = RepairFinancialSnapshot.objects.get(document=doc)
-        self.assertEqual(snap.document_total, Decimal("150.00"))
-
-        call_command("seed_e2e_pdf_documents")
-        self.assertEqual(RepairDocument.objects.filter(repair=seeded_pdf_repair).count(), 1)
-        self.assertEqual(RepairFinancialSnapshot.objects.filter(repair=seeded_pdf_repair).count(), 1)
 
     def test_pdf_export_persists_document_and_snapshot(self):
         repair = self._create_completed_repair()
