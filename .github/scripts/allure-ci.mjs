@@ -639,7 +639,14 @@ function cmdPyramid(resultsDir, outputMd, outputJson, readmePath) {
   md.push(...pyramidAdvisoryNotes(unitShare, e2eShare, pyramidTotal));
   md.push("");
   md.push(formatQualityGatesMarkdownSection(gates, m));
-  md.push("Canonical policy: [`docs/testing/test-pyramid.md`](./test-pyramid.md).");
+  const policyHref = path
+    .relative(
+      path.resolve(path.dirname(outputMd)),
+      path.resolve("docs/testing/test-pyramid.md"),
+    )
+    .split(path.sep)
+    .join("/");
+  md.push(`Canonical policy: [\`docs/testing/test-pyramid.md\`](${policyHref}).`);
 
   fs.mkdirSync(path.dirname(outputMd), { recursive: true });
   fs.writeFileSync(outputMd, md.join("\n"), "utf8");
