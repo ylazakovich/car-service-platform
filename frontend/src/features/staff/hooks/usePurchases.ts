@@ -266,12 +266,14 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
   const [purchaseCount, setPurchaseCount] = useState(0);
   const [purchaseHasMore, setPurchaseHasMore] = useState(false);
   const [purchaseLoadingMore, setPurchaseLoadingMore] = useState(false);
+  const [isPurchasesLoading, setIsPurchasesLoading] = useState(true);
   const [consumablePurchases, setConsumablePurchases] = useState<PurchaseEntry[]>([]);
   const [consumableSearch, setConsumableSearch] = useState("");
   const [consumablePage, setConsumablePage] = useState(1);
   const [consumableCount, setConsumableCount] = useState(0);
   const [consumableHasMore, setConsumableHasMore] = useState(false);
   const [consumableLoadingMore, setConsumableLoadingMore] = useState(false);
+  const [isConsumablesLoading, setIsConsumablesLoading] = useState(true);
   const [consumableInventoryDrafts, setConsumableInventoryDrafts] = useState<Record<number, ConsumableInventoryDraft>>({});
   const [purchaseForm, setPurchaseForm] = useState<PurchaseFormState>(() => emptyPurchaseForm(""));
   const [purchaseError, setPurchaseError] = useState("");
@@ -362,6 +364,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     let ignore = false;
 
     setPurchasePage(1);
+    setIsPurchasesLoading(true);
     fetchPurchases({
       q: deferredPurchaseSearch,
       page: 1,
@@ -375,8 +378,13 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         setPurchases(result.results.map(mapApiPurchaseToPurchaseEntry));
         setPurchaseCount(result.count);
         setPurchaseHasMore(result.next !== null);
+        setIsPurchasesLoading(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!ignore) {
+          setIsPurchasesLoading(false);
+        }
+      });
 
     return () => {
       ignore = true;
@@ -390,6 +398,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     let ignore = false;
 
     setConsumablePage(1);
+    setIsConsumablesLoading(true);
     fetchPurchases({
       q: deferredConsumableSearch,
       page: 1,
@@ -405,8 +414,13 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
         syncConsumableDrafts(entries, true);
         setConsumableCount(result.count);
         setConsumableHasMore(result.next !== null);
+        setIsConsumablesLoading(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!ignore) {
+          setIsConsumablesLoading(false);
+        }
+      });
 
     return () => {
       ignore = true;
@@ -1128,6 +1142,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     purchaseCount,
     purchaseHasMore,
     purchaseLoadingMore,
+    isPurchasesLoading,
     loadMorePurchases,
     purchaseForm,
     setPurchaseForm,
@@ -1158,6 +1173,7 @@ export function usePurchases(vehicles: Vehicle[], options: UsePurchasesOptions =
     consumableCount,
     consumableHasMore,
     consumableLoadingMore,
+    isConsumablesLoading,
     loadMoreConsumables,
     openPurchaseDetailModal,
     closePurchaseDetailModal,

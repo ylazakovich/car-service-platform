@@ -1227,7 +1227,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   const [serviceBoardDateRange, setServiceBoardDateRange] = useState<DashboardDateRange>({ start_date: "", end_date: "" });
   const [apiServices, setApiServices] = useState<ServiceItem[]>([]);
   const [dashboardAnalytics, setDashboardAnalytics] = useState<DashboardAnalyticsResponse | null>(null);
-  const [dashboardAnalyticsLoading, setDashboardAnalyticsLoading] = useState(false);
+  const [dashboardAnalyticsLoading, setDashboardAnalyticsLoading] = useState(true);
   const [dashboardAnalyticsError, setDashboardAnalyticsError] = useState("");
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
@@ -1301,6 +1301,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     consumableCount,
     consumableHasMore,
     consumableLoadingMore,
+    isConsumablesLoading,
     loadMoreConsumables,
     openPurchaseDetailModal,
     closePurchaseDetailModal,
@@ -1319,6 +1320,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     purchaseCount,
     purchaseHasMore,
     purchaseLoadingMore,
+    isPurchasesLoading,
     loadMorePurchases,
     createSupplierSuggestions,
     modalSupplierSuggestions,
@@ -3271,17 +3273,19 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </label>
               </div>
             ) : null}
-            {dashboardAnalyticsLoading ? (
-              <p className="workspace-note" aria-live="polite">
-                Loading analytics…
-              </p>
-            ) : null}
             {dashboardAnalyticsError && !dashboardAnalyticsLoading ? (
               <p className="workspace-note" role="alert">
                 {dashboardAnalyticsError}
               </p>
             ) : null}
-            {activeDashboardTab === "moneyflow" ? (
+            {activeDashboardTab === "moneyflow" && (
+              dashboardAnalyticsLoading ? (
+                <div className="metric-grid dashboard-metric-grid dashboard-metric-grid-triple" aria-live="polite">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="metric-card metric-card-skeleton" aria-hidden="true" />
+                  ))}
+                </div>
+              ) : (
               <div className="workspace-stack">
                 <section
                   className="dashboard-report-section dashboard-report-section-plan"
@@ -3515,7 +3519,8 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </section>
                 ) : null}
               </div>
-            ) : null}
+              )
+            )}
 
             {activeDashboardTab === "warehouse" ? (
               <div className="workspace-stack">
@@ -5005,7 +5010,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
         <div className="dashboard-folder-panel purchases-folder-panel">
           {activePurchasesTab === "warehouse" ? (
             <div className="purchases-list-outer">
-              {emptyWarehouse ? (
+              {isPurchasesLoading ? (
+                <div className="purchases-skeleton" aria-live="polite">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="purchases-skeleton-row" aria-hidden="true" />
+                  ))}
+                </div>
+              ) : emptyWarehouse ? (
                 <div className="purchases-empty-panel">
                   <p className="workspace-note">
                     {purchaseSearch.trim() ? "No warehouse lines match your search." : "No warehouse lines yet."}
@@ -5151,7 +5162,13 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
           {activePurchasesTab === "consumables" ? (
             <div className="purchases-list-outer">
-              {emptyConsumables ? (
+              {isConsumablesLoading ? (
+                <div className="purchases-skeleton" aria-live="polite">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="purchases-skeleton-row" aria-hidden="true" />
+                  ))}
+                </div>
+              ) : emptyConsumables ? (
                 <div className="purchases-empty-panel">
                   <p className="workspace-note">
                     {consumableSearch.trim() ? "No consumables match your search." : "No shop consumables yet."}
