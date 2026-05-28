@@ -1,1 +1,1 @@
-{"id":"5c34d0ff6bfcd7f5a204d28f9d4951c1","fullName":"repairs.tests.RepairApiTests#test_regenerate_portal_token_staff_forbidden","name":"test_regenerate_portal_token_staff_forbidden","status":"passed","testResultsByEnv":{"backend":"30c6a8f54f6fcc329daa0adbde5f4e58"}}
+{"id":"5c34d0ff6bfcd7f5a204d28f9d4951c1","fullName":"repairs.tests.RepairApiTests#test_regenerate_portal_token_staff_forbidden","name":"test_regenerate_portal_token_staff_forbidden","status":"passed","testResultsByEnv":{"backend":"982fc6edb049591cf79b842b8e9f7081"}}
