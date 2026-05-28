@@ -22,9 +22,9 @@ _Head SHA: `e52667e`_
 | UI / E2E (top) | 19.1% |
 
 ```text
-Unit (base)    ██████ (74)
-Integration (middle) █████████████ (163)
-UI / E2E (top) █████ (56)
+UI / E2E (top)          56               ██████████
+Integration (middle)   163      ████████████████████████████
+Unit (base)             74             █████████████
 ```
 
 ## Advisory (planning only)
