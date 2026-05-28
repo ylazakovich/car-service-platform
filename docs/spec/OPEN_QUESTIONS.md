@@ -39,7 +39,7 @@ Items here block **spec completeness** or **safe implementation**. Agents must s
 
 ## Not closed in your message (gaps)
 
-21. **Priority order among NOW epics** — You did not restack Figma vs M3 functional gaps vs E2E hardening; default remains order in `TASKS.md` until you say otherwise.
+21. **Priority order among NOW epics** — You did not restack M3 functional gaps vs E2E hardening vs design-system/product polish; default remains order in `TASKS.md` until you say otherwise.
 22. **Definition of “validation passed” for agents** — CI green on PR only vs mandatory local Playwright subset for UI tasks (recommend: document per-epic in `TASKS.md` notes column — optional follow-up).
 23. **Portal / client-facing scope** — Portal exists; English-only and branding for client portal not fully enumerated in old plans.
 

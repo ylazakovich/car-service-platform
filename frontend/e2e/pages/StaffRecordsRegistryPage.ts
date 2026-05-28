@@ -24,10 +24,19 @@ export class StaffRecordsRegistryPage {
     await this.gotoPurchasesSection();
     await this.page.getByRole("tab", { name: "Consumables" }).click();
     await expect(this.page.getByRole("tab", { name: "Consumables" })).toHaveAttribute("aria-selected", "true");
-    const desktopTable = this.page.getByRole("columnheader", { name: "Bought" });
-    const mobileList = this.page.locator(".purchases-consumables-layout ul.purchases-mobile-consumable-list");
-    const outOfStockRegion = this.page.getByRole("region", { name: "Out of stock consumables" });
-    await expect(desktopTable.or(mobileList).or(outOfStockRegion)).toBeVisible({ timeout: 25_000 });
+    const surfaces = [
+      this.page.getByRole("columnheader", { name: "Bought" }),
+      this.page.locator(".purchases-consumables-layout ul.purchases-mobile-consumable-list"),
+      this.page.getByRole("region", { name: "Out of stock consumables" }),
+    ];
+    await expect.poll(async () => {
+      for (const surface of surfaces) {
+        if ((await surface.count()) > 0 && (await surface.first().isVisible())) {
+          return true;
+        }
+      }
+      return false;
+    }, { timeout: 25_000 }).toBe(true);
   }
 
   async gotoVehiclesSection(): Promise<void> {
