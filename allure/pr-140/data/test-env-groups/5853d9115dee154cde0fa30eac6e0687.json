@@ -1,1 +1,1 @@
-{"id":"5853d9115dee154cde0fa30eac6e0687","fullName":"staff-purchases-vehicles-registry.spec.ts:123:3","name":"mobile uses single-line rows and act indicator for test-owned plate","status":"broken","testResultsByEnv":{"e2e":"c8d925b40af3ef1ecb4c0891ff9b0ca1"}}
+{"id":"5853d9115dee154cde0fa30eac6e0687","fullName":"staff-purchases-vehicles-registry.spec.ts:123:3","name":"mobile uses single-line rows and act indicator for test-owned plate","status":"passed","testResultsByEnv":{"e2e":"2925eac3bc7a8f7ef27c1ad6f4a10dc7"}}
