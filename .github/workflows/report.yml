@@ -204,8 +204,7 @@ jobs:
           node .github/scripts/allure-ci.mjs pyramid \
             --results artifacts/allure-results \
             --output docs/testing/pyramid-snapshot.md \
-            --json docs/testing/pyramid-snapshot.json \
-            --readme README.md
+            --json docs/testing/pyramid-snapshot.json
 
       - name: Quality gates — test pyramid (advisory warnings only)
         if: steps.allure.outputs.present == 'true'
