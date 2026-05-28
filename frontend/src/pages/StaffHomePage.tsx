@@ -5551,21 +5551,21 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
         {selectedPurchase ? (
           <div
-            className="modal-overlay purchase-detail-overlay"
-            role="presentation"
+            className="modal-overlay repair-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="purchase-modal-title"
             onClick={closePurchaseDetailModal}
           >
-            <section
-              className="modal-card modal-card-large purchase-detail-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="purchase-modal-title"
+            <div
+              className="modal modal--lg"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="panel-header">
-                <div>
-                  <p className="eyebrow">Purchase Details</p>
-                  <h3 id="purchase-modal-title">{selectedPurchase.part_name}</h3>
+              <div className="modal-header">
+                <p className="modal-header__eyebrow">Purchases</p>
+                <h2 className="modal-header__title" id="purchase-modal-title">{selectedPurchase.part_name}</h2>
+                <div className="modal-header__actions">
+                  <button type="button" className="icon-btn" aria-label="Close" onClick={closePurchaseDetailModal}>×</button>
                 </div>
               </div>
 
@@ -5599,8 +5599,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 />
               </div>
 
-              <div className="purchase-detail-modal-scroll">
-              <div className="customer-detail-stack purchase-modal-stack">
+              <div className="modal-body">
                 {purchaseDetailModalTab === "order" ? (
                 <div className="detail-card">
                   <strong>Purchase Info</strong>
@@ -5880,48 +5879,55 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 {purchaseModalError ? <p className="form-error">{purchaseModalError}</p> : null}
 
               </div>
-              </div>
 
-                <div className="form-actions purchase-modal-actions repair-modal-footer-bar">
-                  <button type="button" className="button" onClick={handlePurchaseModalSave}>
-                    Save Purchase
-                  </button>
-                  <button type="button" className="button button-secondary" onClick={closePurchaseDetailModal}>
-                    Cancel
-                  </button>
-                  <button type="button" className="button button-danger" onClick={() => void handlePurchaseDelete()}>
-                    Delete Purchase
-                  </button>
-                </div>
-            </section>
+              <div className="modal-footer modal-footer--split">
+                <button type="button" className="button" onClick={handlePurchaseModalSave}>
+                  Save Purchase
+                </button>
+                <button type="button" className="button button-secondary" onClick={closePurchaseDetailModal}>
+                  Cancel
+                </button>
+                <button type="button" className="button button-danger" onClick={() => void handlePurchaseDelete()}>
+                  Delete Purchase
+                </button>
+              </div>
+            </div>
           </div>
         ) : null}
 
         {isPurchaseCreateModalOpen && purchaseCreateMode ? (
-          <div className="modal-overlay" role="presentation" onClick={closePurchaseCreateModal}>
-            <section
-              className="modal-card modal-card-large purchase-form-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="purchase-create-modal-title"
+          <div
+            className="modal-overlay repair-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="purchase-create-modal-title"
+            onClick={closePurchaseCreateModal}
+          >
+            <div
+              className="modal modal--lg"
               onClick={(event) => event.stopPropagation()}
-              onDragOver={(event) => {
-                if ([...event.dataTransfer.types].includes("Files")) {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "copy";
-                }
-              }}
             >
-              <div className="panel-header">
-                <div>
-                  <p className="eyebrow">New invoice</p>
-                  <h3 id="purchase-create-modal-title">
-                    {purchaseCreateMode === "warehouse" ? "Warehouse purchase" : "Shop consumables"}
-                  </h3>
+              <div className="modal-header">
+                <p className="modal-header__eyebrow">New Invoice</p>
+                <h2 className="modal-header__title" id="purchase-create-modal-title">
+                  {purchaseCreateMode === "warehouse" ? "Warehouse purchase" : "Shop consumables"}
+                </h2>
+                <div className="modal-header__actions">
+                  <button type="button" className="icon-btn" aria-label="Close" onClick={closePurchaseCreateModal}>×</button>
                 </div>
               </div>
 
-              <form className="stack-form purchase-form-stack" onSubmit={handlePurchaseSubmit}>
+              <form
+                className="modal-form"
+                onSubmit={handlePurchaseSubmit}
+                onDragOver={(event) => {
+                  if ([...event.dataTransfer.types].includes("Files")) {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "copy";
+                  }
+                }}
+              >
+                <div className="modal-body">
                 <div className="purchase-modal-delivery-strip purchase-modal-delivery-strip--create">
                   <PurchaseDeliveryStatusCard
                     delivered={purchaseForm.delivered}
@@ -5930,7 +5936,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     }
                   />
                 </div>
-                <div className="purchase-form-modal-scroll">
                   <PurchaseInvoiceImportBlock
                     onApplyParsed={applyPurchaseLineImport}
                     linkInvoiceFileAfterScan={attachPurchaseCreateInvoiceFile}
@@ -6297,7 +6302,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
                 </div>
 
-                <div className="form-actions purchase-modal-actions repair-modal-footer-bar">
+                <div className="modal-footer modal-footer--split">
                   <button type="submit" className="button" disabled={isSavingPurchase}>
                     {isSavingPurchase
                       ? "Saving…"
@@ -6318,7 +6323,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   </button>
                 </div>
               </form>
-            </section>
+            </div>
           </div>
         ) : null}
 
