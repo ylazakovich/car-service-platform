@@ -4190,22 +4190,23 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
   function renderVehicleFormModal() {
     if (!isVehicleFormOpen) return null;
     return (
-      <div className="modal-overlay" role="presentation" onClick={closeVehicleFormModal}>
-        <section
-          className="modal-card modal-card-large vehicle-form-modal"
-          role="dialog"
-          aria-modal="true"
+      <div className="modal-overlay repair-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="vehicle-form-modal-title" onClick={closeVehicleFormModal}>
+        <div
+          className="modal modal--lg"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Vehicle Intake</p>
-              <h3>{editingVehicleId ? "Edit Vehicle" : "Register Vehicle"}</h3>
+          <div className="modal-header">
+            <div className="modal-header__titles">
+              <p className="modal-header__eyebrow">Vehicle Intake</p>
+              <h2 className="modal-header__title" id="vehicle-form-modal-title">{editingVehicleId ? "Edit Vehicle" : "Register Vehicle"}</h2>
+            </div>
+            <div className="modal-header__actions">
+              <button type="button" className="icon-btn" aria-label="Close" onClick={closeVehicleFormModal}>×</button>
             </div>
           </div>
 
-          <form className="stack-form vehicle-form-stack" onSubmit={handleVehicleSubmit}>
-            <div className="vehicle-form-modal-scroll">
+          <form className="modal-form" onSubmit={handleVehicleSubmit}>
+            <div className="modal-body">
 
             <div className="inline-owner-block vehicle-form-section">
               <div className="vehicle-form-section-header">
@@ -4445,16 +4446,18 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
             </div>
 
-            <div className="form-actions vehicle-modal-actions repair-modal-footer-bar staff-modal-footer-bar--center">
-              <button type="submit" className="button" disabled={isSavingVehicle || customers.length === 0}>
-                {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
-              </button>
-              <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
-                Cancel
-              </button>
+            <div className="modal-footer modal-footer--right">
+              <div className="modal-footer__primary-cluster">
+                <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="button" disabled={isSavingVehicle || customers.length === 0}>
+                  {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
+                </button>
+              </div>
             </div>
           </form>
-        </section>
+        </div>
       </div>
     );
   }
