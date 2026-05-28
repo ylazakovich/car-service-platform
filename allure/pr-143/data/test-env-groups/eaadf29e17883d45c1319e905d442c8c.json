@@ -1,1 +1,1 @@
-{"id":"eaadf29e17883d45c1319e905d442c8c","fullName":"staff-registers.spec.ts:146:3","name":"admin Registers tabs do not include Invoice lines on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"df63aceea8f6404fac9b1197239c3701"}}
+{"id":"eaadf29e17883d45c1319e905d442c8c","fullName":"staff-registers.spec.ts:146:3","name":"admin Registers tabs do not include Invoice lines on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"ed2e6b6f7d4744f4dc615b80d837a29a"}}

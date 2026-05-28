@@ -1,1 +1,1 @@
-{"id":"fba41a8767cbee969236c58a82ab83e6","fullName":"customers.tests.CustomerApiTests#test_authentication_is_required","name":"test_authentication_is_required","status":"passed","testResultsByEnv":{"backend":"5852ed7256f1e3c6b0f998cc773d0d0d"}}
+{"id":"fba41a8767cbee969236c58a82ab83e6","fullName":"customers.tests.CustomerApiTests#test_authentication_is_required","name":"test_authentication_is_required","status":"passed","testResultsByEnv":{"backend":"5ec2e3c68c07811b7fab7e582bd144af"}}
