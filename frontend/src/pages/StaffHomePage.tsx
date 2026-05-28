@@ -5881,15 +5881,17 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               </div>
 
               <div className="modal-footer modal-footer--split">
-                <button type="button" className="button" onClick={handlePurchaseModalSave}>
-                  Save Purchase
-                </button>
-                <button type="button" className="button button-secondary" onClick={closePurchaseDetailModal}>
-                  Cancel
-                </button>
                 <button type="button" className="button button-danger" onClick={() => void handlePurchaseDelete()}>
                   Delete Purchase
                 </button>
+                <div className="modal-footer__primary-cluster">
+                  <button type="button" className="button button-secondary" onClick={closePurchaseDetailModal}>
+                    Cancel
+                  </button>
+                  <button type="button" className="button" onClick={handlePurchaseModalSave}>
+                    Save Purchase
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -6302,25 +6304,27 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
                 </div>
 
-                <div className="modal-footer modal-footer--split">
-                  <button type="submit" className="button" disabled={isSavingPurchase}>
-                    {isSavingPurchase
-                      ? "Saving…"
-                      : purchaseLineRows.length > 1
-                        ? `Save invoice (${purchaseLineRows.length} lines)`
-                        : "Save line"}
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => void handlePurchaseOrderDownload()}
-                    disabled={isDownloadingPurchaseOrder}
-                  >
-                    {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
-                  </button>
-                  <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
-                    Cancel
-                  </button>
+                <div className="modal-footer modal-footer--right">
+                  <div className="modal-footer__primary-cluster">
+                    <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => void handlePurchaseOrderDownload()}
+                      disabled={isDownloadingPurchaseOrder}
+                    >
+                      {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
+                    </button>
+                    <button type="submit" className="button" disabled={isSavingPurchase}>
+                      {isSavingPurchase
+                        ? "Saving…"
+                        : purchaseLineRows.length > 1
+                          ? `Save invoice (${purchaseLineRows.length} lines)`
+                          : "Save line"}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
