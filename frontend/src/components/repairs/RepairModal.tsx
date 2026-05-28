@@ -30,29 +30,30 @@ type RepairModalShellProps = {
 };
 
 /**
- * Render a repairs modal dialog shell with header, optional meta/status, form body, validation banner, and footer.
+ * Render the repairs modal dialog shell containing header, form body, validation banner, and footer.
  *
- * The component displays a titled modal with an optional status autotag or metadata, shows a validation banner when
- * there are field errors, and renders action controls via the footer. It also wires keyboard shortcuts while the
- * modal is focused: `Cmd/Ctrl+Enter` triggers submission when available and not locked/saving; `Escape` invokes
- * `onEscape` if provided, otherwise `onClose`.
+ * Renders a titled, accessible dialog with optional status or meta in the header, a form body that shows a
+ * validation banner when field errors are present, and a footer with action controls based on `mode`, `locked`,
+ * and `footerLayout`. While mounted, global keyboard handlers invoke `onEscape` (or `onClose` if `onEscape` is absent)
+ * for Escape, and invoke `onSubmit` for Cmd/Ctrl+Enter only when the key event originates from inside the dialog
+ * and when `locked` and `saving` are both false.
  *
- * @param mode - Either `"create"` or `"edit"`, determines footer action availability
+ * @param mode - "create" or "edit"; controls which footer actions are available
  * @param title - Visible modal title
- * @param meta - Optional metadata node shown in the header when `showStatusAutotag` is false
- * @param mobile - Whether to render mobile-optimized modal styles
- * @param locked - When true, disables editing actions and switches footer to locked-only actions
+ * @param meta - Optional header metadata node displayed when `showStatusAutotag` is false
+ * @param mobile - If true, applies mobile-specific modal styling
+ * @param locked - If true, disables editing actions and enables locked-only footer actions
  * @param errors - Field error object used to compute and display the validation banner
- * @param saving - Whether a save operation is in progress; disables submit controls and shows saving state
- * @param kebab - Optional actions node rendered in the header actions area
- * @param footerLayout - Footer layout mode, `"right"` or `"split"`
+ * @param saving - If true, disables submit controls and shows saving state in the footer
+ * @param kebab - Optional header actions node (kebab menu)
+ * @param footerLayout - "right" or "split" layout for footer arrangement
  * @param showStatusAutotag - When true, shows the status autotag in the header instead of `meta`
  * @param primaryLabel - Label for the primary submit button
- * @param savingLabel - Label to show on the primary button while saving
+ * @param savingLabel - Label for the primary button while `saving` is true
  * @param onClose - Called to close the modal (also used for the Cancel action)
- * @param onEscape - Optional handler invoked on `Escape` key; if absent `onClose` is used
+ * @param onEscape - Optional handler invoked on Escape; if absent `onClose` is used
  * @param onSubmit - Optional submit handler invoked from the form or Cmd/Ctrl+Enter
- * @param onDelete - Optional destructive delete handler shown in edit mode when not locked
+ * @param onDelete - Optional destructive delete handler (edit mode, unlocked)
  * @param onReopen - Optional handler to reopen a locked repair
  * @param onPickUp - Optional handler to mark a repair as picked up (locked-only action)
  * @param onUndoPickUp - Optional handler to undo a pickup (locked-only action)
@@ -86,7 +87,25 @@ export function RepairModalShell({
   const modalRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    /**
+     * Handle global keyboard shortcuts for the modal.
+     *
+     * Pressing Escape prevents default and closes the modal by calling `onEscape()` if provided, otherwise `onClose()`. This Escape handling runs regardless of where the event originated.
+     *
+     * When the event originates from inside the modal, pressing Cmd/Ctrl + Enter prevents default and invokes `onSubmit()` only if `onSubmit` exists and the modal is not `locked` and not `saving`.
+     *
+     * @param event - The keyboard event received from the window keydown listener
+     */
     function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (onEscape) {
+          onEscape();
+        } else {
+          onClose();
+        }
+        return;
+      }
       if (!modalRef.current?.contains(event.target as Node)) {
         return;
       }
@@ -94,18 +113,18 @@ export function RepairModalShell({
         event.preventDefault();
         onSubmit();
       }
-      if (event.key === "Escape") {
-        if (onEscape) {
-          onEscape();
-        } else {
-          onClose();
-        }
-      }
     }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose, onEscape, onSubmit, locked, saving]);
 
+  /**
+   * Handle the form's submit event: prevent the browser's default submission and call the configured `onSubmit` callback when submission is allowed.
+   *
+   * Submission is invoked only when `onSubmit` exists and neither `locked` nor `saving` are true.
+   *
+   * @param event - The form submit event
+   */
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
     if (!onSubmit || locked || saving) {

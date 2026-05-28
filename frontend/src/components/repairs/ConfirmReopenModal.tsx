@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { formatRepairDisplayDate } from "../../features/staff/shared/repairs";
 import { RepairIcon } from "./repairIcons";
 
@@ -11,14 +12,17 @@ type ConfirmReopenModalProps = {
 };
 
 /**
- * Modal dialog prompting the user to reopen a completed repair.
+ * Render a confirmation modal prompting the user to reopen a completed repair.
+ *
+ * The modal shows the repair ID, vehicle label, and completion timestamp; when `busy` is true,
+ * action buttons are disabled and the Escape key will not cancel the modal.
  *
  * @param trackingCode - Repair tracking identifier displayed as "ID"
  * @param vehicleLabel - Human-readable vehicle label displayed as "Vehicle"
- * @param completedAt - Completion timestamp; when falsy the component shows "—" for Completed
- * @param busy - When true, disables both Cancel and Reopen action buttons
- * @param onCancel - Invoked when the overlay or Cancel button is clicked
- * @param onConfirm - Invoked when the Reopen repair button is clicked
+ * @param completedAt - Completion timestamp; shows "—" when falsy
+ * @param busy - When true, disables action buttons and prevents Escape-key cancellation
+ * @param onCancel - Called when the overlay or Cancel button is clicked (or when Escape is pressed and not `busy`)
+ * @param onConfirm - Called when the "Reopen repair" button is clicked
  * @returns The React element for the confirmation modal
  */
 export function ConfirmReopenModal({
@@ -29,6 +33,25 @@ export function ConfirmReopenModal({
   onCancel,
   onConfirm,
 }: ConfirmReopenModalProps) {
+  useEffect(() => {
+    /**
+     * Handle Escape key presses to cancel the modal when it is not busy.
+     *
+     * @param event - The KeyboardEvent from the keydown listener; if the key is `"Escape"` and the modal is not busy, this prevents default behavior, stops immediate propagation, and invokes `onCancel`.
+     */
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || busy) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      onCancel();
+    }
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [busy, onCancel]);
+
   return (
     <div className="modal-overlay repair-modal-overlay" role="presentation" onClick={onCancel}>
       <div

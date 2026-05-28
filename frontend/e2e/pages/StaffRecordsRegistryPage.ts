@@ -57,6 +57,13 @@ export class StaffRecordsRegistryPage {
     await expect(this.page.getByLabel("Group list")).toHaveCount(0);
   }
 
+  vehicleSearchInput(surface: "desktop" | "mobile" = "desktop"): Locator {
+    if (surface === "mobile") {
+      return this.page.locator(".staff-mobile-taskbar .staff-mobile-search input[type='search']");
+    }
+    return this.page.locator(".vehicles-top-actions input[placeholder='Search vehicles…']");
+  }
+
   purchaseRowByPartSnippet(partSnippet: string | RegExp): Locator {
     const desktopRow = this.page
       .locator(".purchases-workspace .purchases-registry-table .purchases-compact-row")
