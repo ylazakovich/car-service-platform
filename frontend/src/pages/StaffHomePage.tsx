@@ -4288,12 +4288,12 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     />
                   </label>
                   {inlineCustomerError ? <p className="form-error">{inlineCustomerError}</p> : null}
-                  <div className="form-actions inline-owner-actions">
-                    <button type="button" className="button" disabled={isSavingInlineCustomer} onClick={() => void handleInlineCustomerSave()}>
-                      {isSavingInlineCustomer ? "Creating…" : "Create & Select"}
-                    </button>
+                  <div className="modal-footer__primary-cluster" style={{ justifyContent: "flex-end" }}>
                     <button type="button" className="button button-secondary" onClick={() => setIsInlineCustomerOpen(false)}>
                       Cancel
+                    </button>
+                    <button type="button" className="button" disabled={isSavingInlineCustomer} onClick={() => void handleInlineCustomerSave()}>
+                      {isSavingInlineCustomer ? "Creating…" : "Create & Select"}
                     </button>
                   </div>
                 </div>
