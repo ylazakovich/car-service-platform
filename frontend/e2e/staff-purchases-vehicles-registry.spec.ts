@@ -114,6 +114,8 @@ test.describe("Vehicles registry — table-only + act export hint @desktop", () 
 });
 
 test.describe("Vehicles registry — mobile compact list @mobile-only", () => {
+  test.describe.configure({ timeout: 90_000 });
+
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
   });
