@@ -67,7 +67,7 @@ Canonical index of **`scripts/`** and related operational assets. Day-to-day com
 
 ## `scripts/ci/`
 
-Shell helpers for GitHub Actions: Allure metadata (`write-allure-environment.sh`, `write-allure-ci-env-fragment.sh`, `merge-allure-result-dirs.sh`), junit step summary, E2E docker stats sampler/summarize. **Workflow-local** Node for PR badges and pyramid export: `.github/scripts/allure-ci.mjs` — `badges`, `pr-body`, `pyramid` (writes `docs/testing/pyramid-snapshot.{md,json}`, optional `--readme README.md`), `pyramid-check` (advisory gates: `::warning::` + job summary + `docs/testing/pyramid-quality-gates.json`, **exit 0 always**; see `docs/testing/test-pyramid.md`).
+Shell helpers for GitHub Actions: Allure metadata (`write-allure-environment.sh`, `write-allure-ci-env-fragment.sh`, `merge-allure-result-dirs.sh`), junit step summary, E2E docker stats sampler/summarize. **Workflow-local** Node for PR badges and pyramid export: `.github/scripts/allure-ci.mjs` — `badges`, `pr-body`, `pyramid` (writes `docs/testing/pyramid-snapshot.{md,json}`, optional `--readme README.md`; committed only by scheduled/manual **Test Pyramid Snapshot Refresh** rolling PR), `pyramid-check` (advisory gates: `::warning::` + job summary + `docs/testing/pyramid-quality-gates.json`).
 
 ## `scripts/agents/`
 

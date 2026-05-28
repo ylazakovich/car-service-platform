@@ -59,7 +59,7 @@ So the HTML report widgets and the exported `pyramid-snapshot.*` / quality gates
 
 1. **Growth**: when adding coverage, prefer **unit → integration (pytest `epic: api`) → E2E** in that order unless the risk is explicitly UI-only (accessibility, layout, cross-page flows).
 2. **Ratios are advisory**, not hard gates: teams and products differ. We document **soft targets** below so planning and reviews have a shared vocabulary; CI does not fail PRs solely on pyramid shape.
-3. **Source of truth for counts**: merged Allure `*-result.json` from the PR Pipeline (same tree as the HTML report). A machine-readable snapshot is written to [`pyramid-snapshot.json`](./pyramid-snapshot.json) and a human summary to [`pyramid-snapshot.md`](./pyramid-snapshot.md) by the **Test Report** workflow after each successful PR Pipeline (same-repo branches only; fork PRs skip the git push).
+3. **Source of truth for counts**: merged Allure `*-result.json` from successful runs on `main`. PRs expose the current run as artifacts/Pages/comment only; the generated `pyramid-snapshot.{md,json}` and README table are updated by the scheduled/manual **Test Pyramid Snapshot Refresh** workflow through a separate rolling PR.
 
 ## Soft targets (planning, not CI gates)
 
@@ -73,7 +73,7 @@ These are **orientation** numbers (similar in spirit to Mike Cohn’s pyramid) a
 
 ## Quality gates (advisory, non-blocking)
 
-The **Test Report** workflow runs `allure-ci.mjs pyramid-check` on merged Allure results. This is a **quality signal**, not a merge gate:
+The **Test Report** workflow runs `allure-ci.mjs pyramid-check` on merged PR Allure results. The scheduled/manual **Test Pyramid Snapshot Refresh** workflow runs the same check before opening/updating the rolling snapshot PR. This is a **quality signal**, not a merge gate:
 
 - **Violations** surface as GitHub **Annotations** (`::warning::`) and in the **Job summary** for the Test Report job.
 - The workflow **always exits successfully** for this step (`exit 0`); it does **not** fail the run or block merge.
@@ -110,11 +110,11 @@ node .github/scripts/allure-ci.mjs pyramid-check \
   --json docs/testing/pyramid-quality-gates.json
 ```
 
-## FAQ — README / `main` still shows `0` cases
+## FAQ — README / `main` snapshot looks stale
 
-1. **Test Report** runs on `workflow_run` after workflow **«PR Pipeline»** finishes. **PR Pipeline** is wired to **`pull_request`** → `main`, not to **`push`** → `main`. Merging to `main` triggers **Main Pipeline** (build/compose), which does **not** upload merged Allure — so **no new pyramid refresh** runs for that merge event alone.
-2. The **«Commit pyramid snapshot»** step pushes to **`head_branch`** (the PR branch). If you merged **before** that commit landed, or the push failed (`continue-on-error`), `main` can keep the placeholder zeros until the next successful cycle on a same-repo PR (and merge of the bot commit).
-3. **Fix now:** run locally from merged `allure-results` (e.g. downloaded from CI) — see [How to refresh snapshots locally](#how-to-refresh-snapshots-locally) — and open a small PR with updated files, or wait for the next green PR on `main` *via PR* (not doc-only: `paths-ignore` skips PR Pipeline for `docs/**`-only PRs).
+1. PR reporting is intentionally read-only for PR branches: **Test Report** publishes artifacts/Pages/comment and mirrors the source PR Pipeline conclusion, but it does **not** commit generated docs back to the PR head.
+2. `main` snapshots are refreshed by **Test Pyramid Snapshot Refresh** (`schedule` + `workflow_dispatch`). It runs the test suite on `main`, regenerates `README.md`, `docs/testing/pyramid-snapshot.{md,json}`, and `docs/testing/pyramid-quality-gates.json`, then opens/updates the rolling `chore/test-pyramid-snapshot` PR only when those files changed.
+3. **Fix now:** run **Test Pyramid Snapshot Refresh** manually from GitHub Actions, or refresh locally from merged `allure-results` using the command above and open a small PR.
 
 ## Related docs
 

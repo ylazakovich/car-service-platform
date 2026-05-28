@@ -1,0 +1,259 @@
+name: Test Pyramid Snapshot Refresh
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Keep generated test pyramid docs in main fresh without mutating PR branches.
+    - cron: "0 3 * * *"
+
+concurrency:
+  group: test-pyramid-snapshot-refresh
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write # upload-artifact + GHA BuildKit cache
+
+env:
+  SNAPSHOT_BRANCH: chore/test-pyramid-snapshot
+  PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+  E2E_ADMIN_EMAIL: admin@autoservice.local
+  E2E_ADMIN_PASSWORD: admin12345
+  E2E_STAFF_EMAIL: staff@autoservice.local
+  E2E_STAFF_PASSWORD: staff12345
+
+jobs:
+  refresh:
+    name: Refresh test pyramid snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings_test
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: ./.github/actions/setup-python
+        with:
+          requirements: requirements-test.txt
+
+      - name: Install OCR (Tesseract + Poppler for CI)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            poppler-utils \
+            tesseract-ocr \
+            tesseract-ocr-eng \
+            tesseract-ocr-pol
+
+      - name: Frontend build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: |
+          mkdir -p allure-results test-results
+          npx vitest run
+
+      - name: Allure CI env fragment (frontend)
+        if: always()
+        run: bash ../scripts/ci/write-allure-ci-env-fragment.sh Frontend allure-results
+        working-directory: frontend
+
+      - name: Stash frontend Allure results
+        if: always()
+        run: |
+          mkdir -p artifacts/allure-results-frontend
+          cp -a frontend/allure-results/. artifacts/allure-results-frontend/ 2>/dev/null || true
+          rm -rf frontend/allure-results
+
+      - name: Backend migrations check
+        working-directory: backend
+        env:
+          DJANGO_SECRET_KEY: ci-test-secret-key
+        run: python manage.py makemigrations --check --dry-run --settings=config.settings_test
+
+      - name: Backend tests
+        working-directory: backend
+        env:
+          DJANGO_SECRET_KEY: ci-test-secret-key
+          TEST_OUTPUT_DIR: test-results
+        run: |
+          mkdir -p allure-results test-results
+          pytest --alluredir=allure-results --junitxml=test-results/junit.xml -v
+
+      - name: Allure CI env fragment (backend)
+        if: always()
+        run: bash ../scripts/ci/write-allure-ci-env-fragment.sh Backend allure-results
+        working-directory: backend
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - uses: ./.github/actions/compose-up
+        with:
+          env-profile: json-info
+          wait-for-frontend: "true"
+          wait-for-api-health: "true"
+          api-health-url: "http://127.0.0.1:4173/api/health"
+          github-actions-cache: "true"
+
+      - name: Run Playwright
+        env:
+          DOCKER_STATS_INTERVAL: "5"
+          DOCKER_STATS_LOG: ${{ github.workspace }}/docker-metrics/samples.tsv
+        run: |
+          set -euo pipefail
+          mkdir -p docker-metrics frontend/allure-results frontend/test-results
+          bash scripts/ci/e2e-docker-stats-sampler.sh &
+          SAMPLER_PID=$!
+          cleanup() {
+            kill "$SAMPLER_PID" 2>/dev/null || true
+            wait "$SAMPLER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT INT TERM
+          ( cd frontend && npx playwright test )
+          cleanup
+          trap - EXIT INT TERM
+
+      - name: Allure CI env fragment (E2E)
+        if: always()
+        run: bash scripts/ci/write-allure-ci-env-fragment.sh E2E frontend/allure-results
+
+      - name: Stash E2E Allure results
+        if: always()
+        run: |
+          mkdir -p artifacts/allure-results-e2e
+          cp -a frontend/allure-results/. artifacts/allure-results-e2e/ 2>/dev/null || true
+
+      - name: Docker container resource summary (E2E window)
+        if: always()
+        env:
+          DOCKER_METRICS_DIR: ${{ github.workspace }}/docker-metrics
+          DOCKER_STATS_LOG: ${{ github.workspace }}/docker-metrics/samples.tsv
+          DOCKER_STATS_INTERVAL: "5"
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_REF: ${{ github.ref }}
+        run: bash scripts/ci/e2e-docker-stats-summarize.sh
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
+
+      - name: Merge Allure results
+        run: |
+          bash scripts/ci/merge-allure-result-dirs.sh \
+            "${{ github.workspace }}/artifacts/allure-results" \
+            "${{ github.workspace }}/artifacts/_merged_ci_env.properties" \
+            "${{ github.workspace }}/artifacts/allure-results-frontend" \
+            "${{ github.workspace }}/backend/allure-results" \
+            "${{ github.workspace }}/artifacts/allure-results-e2e"
+
+      - name: Write Allure environment.properties
+        env:
+          ALLURE_RESULTS_DIR: ${{ github.workspace }}/artifacts/allure-results
+          ALLURE_VARIABLES_JSON: ${{ github.workspace }}/artifacts/allure-variables.json
+          ALLURE_MERGED_CI_ENV: ${{ github.workspace }}/artifacts/_merged_ci_env.properties
+          REPO_ROOT: ${{ github.workspace }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: main
+          ALLURE_GITHUB_WORKFLOW: ${{ github.workflow }}
+          ALLURE_SOURCE_RUN_ID: ${{ github.run_id }}
+        run: bash scripts/ci/write-allure-environment.sh
+
+      - name: Export test pyramid snapshot
+        env:
+          PYRAMID_SOURCE_RUN_ID: ${{ github.run_id }}
+          PYRAMID_HEAD_SHA: ${{ github.sha }}
+        run: |
+          node .github/scripts/allure-ci.mjs pyramid \
+            --results artifacts/allure-results \
+            --output docs/testing/pyramid-snapshot.md \
+            --json docs/testing/pyramid-snapshot.json \
+            --readme README.md
+          node .github/scripts/allure-ci.mjs pyramid-check \
+            --results artifacts/allure-results \
+            --json docs/testing/pyramid-quality-gates.json
+
+      - name: Upload generated snapshot artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pyramid-snapshot
+          path: |
+            docs/testing/pyramid-snapshot.md
+            docs/testing/pyramid-snapshot.json
+            docs/testing/pyramid-quality-gates.json
+            README.md
+          retention-days: 30
+
+      - name: Create or update rolling snapshot PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          paths=(
+            README.md
+            docs/testing/pyramid-snapshot.md
+            docs/testing/pyramid-snapshot.json
+            docs/testing/pyramid-quality-gates.json
+          )
+
+          if git diff --quiet -- "${paths[@]}"; then
+            echo "No test pyramid snapshot changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$SNAPSHOT_BRANCH"
+          git add "${paths[@]}"
+          git commit -m "chore(ci): refresh test pyramid snapshot"
+
+          remote_ref_file="$(mktemp)"
+          if git ls-remote --exit-code --heads origin "$SNAPSHOT_BRANCH" > "$remote_ref_file"; then
+            expected_sha="$(cut -f1 "$remote_ref_file")"
+            git push --force-with-lease="refs/heads/$SNAPSHOT_BRANCH:$expected_sha" origin "HEAD:$SNAPSHOT_BRANCH"
+          else
+            git push origin "HEAD:$SNAPSHOT_BRANCH"
+          fi
+
+          body_file="$(mktemp)"
+          cat > "$body_file" <<'BODY'
+          Automated refresh of the generated test pyramid snapshot from the latest successful scheduled/manual run on `main`.
+
+          This PR is intentionally separate from feature/fix PRs so reporting never mutates PR branches or masks a failed PR Pipeline status.
+          BODY
+
+          if gh pr view "$SNAPSHOT_BRANCH" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh pr edit "$SNAPSHOT_BRANCH" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "chore(ci): refresh test pyramid snapshot" \
+              --body-file "$body_file"
+          else
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head "$SNAPSHOT_BRANCH" \
+              --title "chore(ci): refresh test pyramid snapshot" \
+              --body-file "$body_file"
+          fi
