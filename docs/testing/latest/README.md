@@ -1,8 +1,8 @@
 # Test pyramid snapshot
 
-_Generated: `2026-05-28T08:56:51.651Z`_
-_Source workflow run id: `26564856803`_
-_Head SHA: `ce8da77`_
+_Generated: `2026-05-28T10:11:29.783Z`_
+_Source workflow run id: `26568324123`_
+_Head SHA: `3b49ae3`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
@@ -22,9 +22,9 @@ _Head SHA: `ce8da77`_
 | UI / E2E (top) | 20.0% |
 
 ```text
-Unit (base)    ██████ (77)
-Integration (middle) █████████████ (163)
-UI / E2E (top) █████ (60)
+UI / E2E (top)          60               ██████████
+Integration (middle)   163      ████████████████████████████
+Unit (base)             77             █████████████
 ```
 
 ## Advisory (planning only)
