@@ -5562,32 +5562,33 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               onClick={(event) => event.stopPropagation()}
             >
               <div className="modal-header">
-                <p className="modal-header__eyebrow">Purchases</p>
-                <h2 className="modal-header__title" id="purchase-modal-title">{selectedPurchase.part_name}</h2>
+                <div className="modal-header__titles">
+                  <p className="modal-header__eyebrow">Purchases</p>
+                  <h2 className="modal-header__title" id="purchase-modal-title">{selectedPurchase.part_name}</h2>
+                  <div className="modal-header__meta" role="tablist" aria-label="Purchase detail sections">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={purchaseDetailModalTab === "order"}
+                      className={purchaseDetailModalTab === "order" ? "subnav-tab subnav-tab-active" : "subnav-tab"}
+                      onClick={() => setPurchaseDetailModalTab("order")}
+                    >
+                      Order
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={purchaseDetailModalTab === "invoice"}
+                      className={purchaseDetailModalTab === "invoice" ? "subnav-tab subnav-tab-active" : "subnav-tab"}
+                      onClick={() => setPurchaseDetailModalTab("invoice")}
+                    >
+                      Invoice
+                    </button>
+                  </div>
+                </div>
                 <div className="modal-header__actions">
                   <button type="button" className="icon-btn" aria-label="Close" onClick={closePurchaseDetailModal}>×</button>
                 </div>
-              </div>
-
-              <div className="purchase-modal-tabs subnav-tabs" role="tablist" aria-label="Purchase detail sections">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={purchaseDetailModalTab === "order"}
-                  className={purchaseDetailModalTab === "order" ? "subnav-tab subnav-tab-active" : "subnav-tab"}
-                  onClick={() => setPurchaseDetailModalTab("order")}
-                >
-                  Order
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={purchaseDetailModalTab === "invoice"}
-                  className={purchaseDetailModalTab === "invoice" ? "subnav-tab subnav-tab-active" : "subnav-tab"}
-                  onClick={() => setPurchaseDetailModalTab("invoice")}
-                >
-                  Invoice
-                </button>
               </div>
 
               <div className="purchase-modal-delivery-strip purchase-modal-delivery-strip--detail">
