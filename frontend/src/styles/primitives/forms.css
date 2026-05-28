@@ -21,9 +21,11 @@
 
 .login-form input,
 .stack-form input,
+.modal-form input,
 textarea,
 select,
 .stack-form select,
+.modal-form select,
 .search-field input,
 .form-grid input {
   border: 1px solid var(--border);
@@ -37,9 +39,11 @@ select,
 
 .login-form input:hover,
 .stack-form input:hover,
+.modal-form input:hover,
 textarea:hover,
 select:hover,
 .stack-form select:hover,
+.modal-form select:hover,
 .search-field input:hover,
 .form-grid input:hover {
   border-color: var(--border-strong);
@@ -47,9 +51,11 @@ select:hover,
 
 .login-form input:focus,
 .stack-form input:focus,
+.modal-form input:focus,
 textarea:focus,
 select:focus,
 .stack-form select:focus,
+.modal-form select:focus,
 .search-field input:focus,
 .form-grid input:focus {
   outline: none;

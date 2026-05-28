@@ -52,7 +52,7 @@ test.describe("Purchases registry — table-only chrome @desktop", () => {
 
       const dialog = page.getByRole("dialog", { name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") });
       await expect(dialog).toBeVisible({ timeout: 15_000 });
-      await expect(dialog.getByRole("heading", { level: 3, name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeVisible({
+      await expect(dialog.getByRole("heading", { level: 2, name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeVisible({
         timeout: 10_000,
       });
     } finally {
@@ -186,7 +186,7 @@ test.describe("Purchases registry — mobile table @mobile-only", () => {
 
       const dialog = page.getByRole("dialog", { name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") });
       await expect(dialog).toBeVisible({ timeout: 15_000 });
-      await expect(dialog.getByRole("heading", { level: 3, name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeVisible({
+      await expect(dialog.getByRole("heading", { level: 2, name: new RegExp(purchase.partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeVisible({
         timeout: 10_000,
       });
     } finally {
