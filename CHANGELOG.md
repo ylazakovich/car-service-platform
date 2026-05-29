@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.2.0](https://github.com/ylazakovich/car-service-platform/compare/v1.1.0...v1.2.0) (2026-05-29)
+
+
+### Features
+
+* add visual hint and tooltip to disabled create buttons ([fcd41cb](https://github.com/ylazakovich/car-service-platform/commit/fcd41cbbba6e48ccc4f16b351bf4a8cfc625c2e5))
+* disable create buttons on purchases and repairs until required fields are filled ([371a41a](https://github.com/ylazakovich/car-service-platform/commit/371a41a351a49cf0988af872e7b5115f44610c13))
+* disable vehicle create/update button until required fields are filled ([ca9149f](https://github.com/ylazakovich/car-service-platform/commit/ca9149ff2eaaf1e8b9633dd58d4344eb915bc934))
+* **repairs:** disable create buttons until required fields are filled ([4eebacf](https://github.com/ylazakovich/car-service-platform/commit/4eebacffcfec9318705e9c639ba6aa7e610bbbc0))
+* replace footer hint text with required-field chips ([04ddbcf](https://github.com/ylazakovich/car-service-platform/commit/04ddbcf412b2f0bcb8382045654046a3fa3fb839))
+
+
+### Bug Fixes
+
+* align vehicles mobile top-actions layout with purchases ([0ab72a6](https://github.com/ylazakovich/car-service-platform/commit/0ab72a670fb0f70efee1a9ff191a5c7b7c16efd9))
+* apply CodeRabbit suggestions — close submit bypass and purchase gate ([5da49f8](https://github.com/ylazakovich/car-service-platform/commit/5da49f86a41cc8a0eeb04d358074b064cfc92922))
+* apply modal--mobile to vehicles and purchases on narrow screens ([53736ac](https://github.com/ylazakovich/car-service-platform/commit/53736ac9c9f45817c4fb2d5733267e1a49f5f733))
+* chips above buttons on mobile for vehicles and purchases ([57c0b6e](https://github.com/ylazakovich/car-service-platform/commit/57c0b6e0eacd34cb25ef5f8653b06832f8919de6))
+* chips left, buttons right on desktop; chips above buttons on mobile ([c572727](https://github.com/ylazakovich/car-service-platform/commit/c5727271bd4590ffe815781b0e08ff9b997875b7))
+* compact Today Summary sidebar widget on 14-inch laptops ([730ea92](https://github.com/ylazakovich/car-service-platform/commit/730ea92e985816abfb5e1e7067f12cdafc26241d))
+* **e2e:** force-click Add Vehicle on mobile to bypass search overlay ([1b8a170](https://github.com/ylazakovich/car-service-platform/commit/1b8a170a855c03840fa513609f864935155181c3))
+* **e2e:** seed customer via API in vehicle disabled-state tests ([0f0754b](https://github.com/ylazakovich/car-service-platform/commit/0f0754bd758a46a4380890edadb2bee59dcdb7ba))
+* **e2e:** stabilize create-button-disabled-state tests ([0fdcbf1](https://github.com/ylazakovich/car-service-platform/commit/0fdcbf126e93921f3ad87da3c557fda280766240))
+* force column-reverse on stacked footer inside modal--mobile ([73e7aeb](https://github.com/ylazakovich/car-service-platform/commit/73e7aeb7de2b8e140e6677e41a5c255db0efc12d))
+* keep buttons right-aligned on desktop in stacked footer ([29dca98](https://github.com/ylazakovich/car-service-platform/commit/29dca98d0426f523dcf26cb6cc00afb398ca2427))
+* move required-field chips below buttons in modal footer ([4a6b422](https://github.com/ylazakovich/car-service-platform/commit/4a6b422f5ffb47211d60f628da1c06f843c5d586))
+* **repairs:** dim picked-up cards in completed view ([42fda66](https://github.com/ylazakovich/car-service-platform/commit/42fda66c0ce5f4af4ddba8a71f9089a314073685))
+* **repairs:** dim picked-up cards in completed view ([1703701](https://github.com/ylazakovich/car-service-platform/commit/1703701288bea6dd969982ec8aa0263700299a9a))
+* restore stretch alignment for stacked footer on mobile ([9a0e733](https://github.com/ylazakovich/car-service-platform/commit/9a0e7336fffca03beb9e76214904c85be2344796))
+
 ## [1.1.0](https://github.com/ylazakovich/car-service-platform/compare/v1.0.2...v1.1.0) (2026-05-29)
 
 
