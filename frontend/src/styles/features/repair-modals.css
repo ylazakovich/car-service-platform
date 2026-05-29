@@ -437,8 +437,8 @@
 .modal-footer--right    { justify-content: flex-end; }
 .modal-footer--split    { justify-content: space-between; }
 .modal-footer--center   { justify-content: center; }
-.modal-footer--stacked  { flex-direction: column; align-items: stretch; gap: 10px; }
-.modal-footer--stacked .modal-footer__primary-cluster { justify-content: flex-end; }
+.modal-footer--stacked  { flex-direction: column; align-items: flex-end; gap: 10px; }
+.modal-footer--stacked .modal-footer__required-chips { align-self: flex-start; }
 .modal-footer__primary-cluster { display: flex; align-items: center; gap: 8px; }
 .modal-footer__hint {
   font-size: 0.74rem; color: var(--text-soft);
