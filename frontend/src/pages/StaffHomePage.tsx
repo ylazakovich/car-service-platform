@@ -6338,7 +6338,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     >
                       {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
                     </button>
-                    <button type="submit" className="button" disabled={isSavingPurchase}>
+                    <button
+                      type="submit"
+                      className="button"
+                      disabled={isSavingPurchase || !(
+                        !!purchaseForm.order_date &&
+                        purchaseForm.supplier_name.trim().length > 0 &&
+                        purchaseLineRows.some(row => row.part_name.trim().length > 0)
+                      )}
+                    >
                       {isSavingPurchase
                         ? "Saving…"
                         : purchaseLineRows.length > 1

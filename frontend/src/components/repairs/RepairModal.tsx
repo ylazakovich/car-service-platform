@@ -14,6 +14,7 @@ type RepairModalShellProps = {
   locked?: boolean;
   errors?: RepairFieldErrors;
   saving?: boolean;
+  isSubmitDisabled?: boolean;
   kebab?: ReactNode;
   footerLayout: RepairModalFooterLayout;
   showStatusAutotag?: boolean;
@@ -68,6 +69,7 @@ export function RepairModalShell({
   locked,
   errors,
   saving,
+  isSubmitDisabled,
   kebab,
   footerLayout,
   showStatusAutotag,
@@ -190,6 +192,7 @@ export function RepairModalShell({
             layout={footerLayout}
             locked={locked}
             saving={saving}
+            isSubmitDisabled={isSubmitDisabled}
             primaryLabel={primaryLabel}
             savingLabel={savingLabel}
             onCancel={onClose}
@@ -210,6 +213,7 @@ type RepairModalFooterProps = {
   layout: RepairModalFooterLayout;
   locked?: boolean;
   saving?: boolean;
+  isSubmitDisabled?: boolean;
   primaryLabel: string;
   savingLabel: string;
   onCancel: () => void;
@@ -244,6 +248,7 @@ function RepairModalFooter({
   layout,
   locked,
   saving,
+  isSubmitDisabled,
   primaryLabel,
   savingLabel,
   onCancel,
@@ -255,7 +260,7 @@ function RepairModalFooter({
 }: RepairModalFooterProps) {
   const primary =
     locked || !onSubmit ? null : (
-      <button type="submit" className="button" data-saving={saving ? "true" : undefined} disabled={saving}>
+      <button type="submit" className="button" data-saving={saving ? "true" : undefined} disabled={saving || isSubmitDisabled}>
         {saving ? <span className="button__spinner" aria-hidden /> : null}
         {saving ? savingLabel : primaryLabel}
       </button>
