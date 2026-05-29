@@ -1,1 +1,1 @@
-{"id":"6ac210382b767e1dfa7153911701a39c","fullName":"users.tests.InviteApiTests#test_accept_invite_short_password","name":"test_accept_invite_short_password","status":"passed","testResultsByEnv":{"backend":"4dc6e03cd6e4242aa748d12721e16c46"}}
+{"id":"6ac210382b767e1dfa7153911701a39c","fullName":"users.tests.InviteApiTests#test_accept_invite_short_password","name":"test_accept_invite_short_password","status":"passed","testResultsByEnv":{"backend":"122db0ae3e2ad6b4cd014a663a3d427f"}}
