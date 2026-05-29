@@ -92,7 +92,7 @@ After renaming update `CORS_ALLOWED_ORIGINS` and `FRONTEND_URL` on the **backend
 ### 7. Attach Volume (media files)
 
 Backend service → Volumes → Add Volume → mount path: `/data/media`.
-Persists uploaded PDFs and images across redeploys (~$0.25/GB/month).
+Persists uploaded PDFs/documents across redeploys (~$0.25/GB/month).
 
 ### 8. Link Railway CLI locally
 

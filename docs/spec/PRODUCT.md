@@ -21,7 +21,7 @@ Core capabilities:
 - Django REST backend + React frontend; Docker-based dev; CI with backend tests + frontend unit + Playwright E2E.
 - CRUD for core entities; role model `admin` / `staff` with API scoping.
 - M3 slice delivered: `RepairDocument` + `RepairFinancialSnapshot`, PDF persist, dashboard read-only aggregates, Registers (admin) functional + E2E, bulk purchases, shop consumables flag excluded from completion PDF/snapshot.
-- **Not done:** many M3 acceptance themes (calendar, staff PII-safe vehicle registry, QuickFocus inline create, admin revoke, MoneyFlow purchase summary relocation, No invoice / No vehicles dashboard tab, EN-only sweep, CMR parity, etc.) — see `TASKS.md`.
+- **Not done:** many M3 acceptance themes (staff PII-safe vehicle registry, QuickFocus inline create, admin revoke, MoneyFlow purchase summary relocation, No invoice / No vehicles dashboard tab, EN-only sweep, CMR parity, etc.) — see `TASKS.md`.
 
 ## 3. MVP scope (themes)
 
@@ -30,18 +30,18 @@ Core capabilities:
 3. **Analytics** — dashboard from snapshots + live preview rules per [`DOMAIN_RULES.md`](./DOMAIN_RULES.md).
 4. **QuickFocus / VPR** — inline `Vehicle` and `Customer` creation without leaving flow, same validation as registry screens.
 5. **Admin user management** — revoke/delete/deactivate staff with explicit model decision.
-6. **Service board** — large operational calendar from “today”, status visualization + legend.
+6. **Service board / TodaySummary** — compact operational view of what is happening now; no separate calendar scope.
 7. **MoneyFlow defaults** — each visit: `StartDate = today - 30d`, `EndDate = today` (rolling, not sticky).
 8. **Staff access** — global vehicle + repair visibility; **no** customer PII in API/UI.
 9. **English-only** product UI and public API validation copy (engineering docs follow same rule).
-10. **CMR alignment** — service price on sync; CMR-created services visible in Django admin; no photo upload in CMR.
+10. **CMR alignment** — service price on sync; CMR-created services visible in Django admin.
 11. **Dashboard cohesion** — master drill-down / navigation between MoneyFlow and ServiceBoard (UX TBD).
 12. **Purchases depth** — OCR / PO / supplier registry UI (beyond bulk lines baseline).
 
 ## 4. Active milestone
 
 **M3 — PDF-backed reporting and analyst dashboard** (in progress).  
-**M4** — deferred media (S3/MinIO), extended reporting, deeper invoicing — see `TASKS.md` LATER and OPEN_QUESTIONS.
+**M4** — document storage hardening, extended reporting, deeper invoicing — see `TASKS.md` LATER and OPEN_QUESTIONS.
 
 ## 5. Companion track: E2E / CI reliability
 
@@ -58,7 +58,7 @@ High-signal items:
 - Historical “as-of version” UX: specified or explicitly deferred.
 - QuickFocus inline vehicle + customer.
 - Admin staff offboarding flow decided and implemented.
-- Service board calendar + legend.
+- TodaySummary / ServiceBoard operational status remains the “what is happening now” surface; separate calendar scope is cancelled.
 - MoneyFlow default range behavior + tests.
 - Staff vehicle-only model without PII leakage.
 - MoneyFlow purchase summary (buy/sale/margin) + dashboard “No invoice / No vehicles” operational tab.
@@ -68,6 +68,7 @@ High-signal items:
 
 - Do not use PDF as the only store for analytics numbers; normalized snapshots in DB are mandatory.
 - Do not build “historical truth” from mutable repair rows alone post-export.
+- Do not add repair/CMR photo upload or repair photo storage; the customer rejected the photo workflow.
 - No full ERP scope (warehouse, complex payments) without a separate decision.
 
 ## 8. Source-of-truth map

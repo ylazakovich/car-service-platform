@@ -29,11 +29,11 @@
 ### Infrastructure
 - `Docker Compose` для local/dev/prod bootstrap
 - `Nginx` перед frontend
-- S3-compatible object storage для фото и документов
+- S3-compatible object storage для completion documents / exports
 
 ### Deferred Infrastructure
 Подключать только когда появится реальная потребность:
-- `Redis` для background jobs, rate limiting, notifications, image processing
+- `Redis` для background jobs, rate limiting, notifications
 - `Celery` или `Django Q` для фоновых задач
 
 ## 2) Architecture Shape
@@ -53,7 +53,7 @@
 - PostgreSQL как единственный source of truth
 
 4. `media/documents`
-- object storage для фотографий и актов
+- object storage для актов и других generated documents
 
 ## 3) Access Model
 
@@ -77,7 +77,6 @@
 - клиенты
 - автомобили
 - ремонты
-- фото
 - работы
 - запчасти
 - поставщики
@@ -87,7 +86,7 @@
 Для клиентов:
 - просмотр статуса ремонта по `tracking code`
 - просмотр ограниченного набора данных по конкретному ремонту
-- просмотр фото и итоговых документов, если это разрешено продуктовым правилом
+- просмотр итоговых документов, если это разрешено продуктовым правилом
 - без отдельного клиентского аккаунта и без общего кабинета клиента
 
 ## 4) Authentication Strategy
@@ -146,13 +145,6 @@
 
 ## 7) Risks You Probably Did Not Plan Yet
 
-### Photo Storage
-- размеры файлов
-- mobile upload UX
-- открытие камеры с телефона как основной staff-сценарий
-- EXIF/privacy cleanup
-- retention rules
-
 ### Client Access Security
 - защита кодов доступа
 - срок жизни ссылки
@@ -166,7 +158,7 @@
 
 ### Mobile Usage
 - мастер, скорее всего, будет работать с телефона
-- это влияет на формы, фото upload и layout staff app
+- это влияет на формы и layout staff app
 
 ### Documents
 - нужно заранее решить, хранится ли акт как snapshot
@@ -187,8 +179,8 @@
 
 - `session auth` vs `JWT in HttpOnly cookies` для staff
 - `track/<code>` vs `track/<signed-token>` для client access
-- `MinIO locally + S3 in prod` или сразу единый storage strategy
-- нужен ли `Celery` уже в M1 для фото и документов, или можно отложить
+- `MinIO locally + S3 in prod` или сразу единый document storage strategy
+- нужен ли `Celery` уже в M1 для документов, или можно отложить
 
 ## 10) Source Of Truth
 
