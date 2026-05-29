@@ -1,30 +1,8 @@
 # Task backlog (spec) — stable IDs
 
-Use **`T-<AREA>-<nnn>`** when asking for a batch: e.g. “implement `T-CAL-*`”.
+Use **`T-<AREA>-<nnn>`** when asking for a batch.
 
 Update checkboxes in the **same change set** as the implementation unless the user directs otherwise.
-
----
-
-## NOW — Figma (client-facing mockup)
-
-- [x] `T-FIG-001` Design System: 20 Auto Layout components + radii
-- [x] `T-FIG-002` Design System: 15 color styles (Bg/*, Text/*, semantic)
-- [x] `T-FIG-003` Design System: 6 text styles
-- [x] `T-FIG-004` Extra components: Chip/Tracking, Chip/Date, Badge/Parts, Card/Registry
-- [x] `T-FIG-005` Desktop: Nav items (9 Active+Inactive)
-- [x] `T-FIG-006` Desktop: Status chips, tracking chips, parts badges, registry/metric/user cards
-- [x] `T-FIG-007` Desktop: Inputs Default/Compact, Buttons Primary variants
-- [ ] `T-FIG-008` Desktop: Sidebar buttons — finish remaining 7 pairs (parent IDs: 5:309, 5:678, 5:967, 5:1074)
-- [ ] `T-FIG-009` Desktop: UOM inline buttons ×13 (5:1006, 5:1029–5:1070 in 5:966)
-- [ ] `T-FIG-010` Desktop: Vehicles screen buttons ×2 (5:1107 → Primary/Small, 5:1113 → Secondary)
-- [ ] `T-FIG-011` Mobile (393px): Bottom nav using Nav components
-- [ ] `T-FIG-012` Mobile: Single-column kanban/metric/registry cards
-- [ ] `T-FIG-013` Mobile: Sidebar → hamburger/drawer
-- [ ] `T-FIG-014` Apply Color/Bg/* and Color/Text/* to fills/strokes
-- [ ] `T-FIG-015` Share: view-only or comment-only Figma link for clients
-- [ ] `T-FIG-016` Figma Annotations on key screens
-- [ ] `T-FIG-017` Group frames by flow: Dashboard → Kanban → Registry → UOM Admin
 
 ---
 
@@ -68,14 +46,6 @@ Update checkboxes in the **same change set** as the implementation unless the us
 - [ ] `T-USR-001` Admin Users UI: close access for `staff` (offboarding)
 - [ ] `T-USR-002` Decide and implement revocation model: delete vs deactivate vs both + related data rules
 - [ ] `T-USR-003` Backend + UI confirmation guards (prevent wrong user deletion)
-
----
-
-## NOW — Dashboard: Service Board calendar
-
-- [ ] `T-CAL-001` Replace/enhance Service Board with large calendar operational view anchored on “today”
-- [ ] `T-CAL-002` Visual language + legend for `in_progress`, `waiting_parts`, `new`, `completed`, …
-- [ ] `T-CAL-003` Domain rule: which dates anchor repair on calendar (created vs planned span vs completed)
 
 ---
 
@@ -123,7 +93,6 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 - [ ] `T-CMR-001` API contract: CMR service create/update always sends price; map to `Service.price` (or line-item model)
 - [ ] `T-CMR-002` Ensure CMR-created services appear in Django admin same registry as web `Service` (no shadow tables)
-- [ ] `T-CMR-003` Remove photo upload from CMR client paths (UI + API calls)
 
 ---
 
@@ -195,7 +164,6 @@ design-system project).
 - [ ] `T-NXT-009` E2E: MoneyFlow purchase summary + No invoice/No vehicles tab + consumables asserts as needed
 - [ ] `T-NXT-010` E2E: QuickFocus `search vehicle → create vehicle → create customer → create repair`
 - [ ] `T-NXT-011` E2E + tests: admin user revocation flow
-- [ ] `T-NXT-012` E2E: service board calendar (today, waiting parts, legend, period switch)
 - [ ] `T-NXT-013` Tests: moneyflow default range behaviors
 - [ ] `T-NXT-014` Tests/E2E: staff access model (all vehicles, no PII)
 
@@ -203,11 +171,9 @@ design-system project).
 
 ## LATER
 
-- [ ] `T-LAT-001` Durable photo storage for repair UI (MinIO vs S3-compatible)
 - [ ] `T-LAT-002` Observability, auditing, runbooks for documents/analytics
 - [ ] `T-LAT-003` Payments, discounts, tax, inventory, notifications — if roadmap accepts
 - [ ] `T-LAT-004` Backfill PDF/snapshot for old completed repairs if product requires history
-- [ ] `T-LAT-005` CodeQL: remove `exclude js/xss-through-dom`; use `fetch → blob → createObjectURL` for repair images (break taint chain)
 
 ---
 
@@ -230,3 +196,22 @@ design-system project).
 ## Cross-cutting: SDD hygiene
 
 - [ ] `T-SDD-001` Team convention: who marks `TASKS.md` done and when (PR vs release train) — document in `SDD_WORKFLOW.md` once decided
+
+---
+
+## Cancelled / removed from active plan
+
+Product decision: customer rejected repair/CMR photo workflows. Do not enqueue or implement photo upload/storage tasks unless the product decision changes.
+
+- [x] ~~`T-CMR-003` Remove photo upload from CMR client paths (UI + API calls)~~ — cancelled; no photo upload workflow remains in scope.
+- [x] ~~`T-LAT-001` Durable photo storage for repair UI (MinIO vs S3-compatible)~~ — cancelled; repair photo storage is out of roadmap.
+- [x] ~~`T-LAT-005` CodeQL: remove `exclude js/xss-through-dom`; use `fetch → blob → createObjectURL` for repair images (break taint chain)~~ — cancelled together with repair images/photo upload scope.
+
+Product decision: client-facing design mockup work is no longer part of this backlog; design/prototyping is handled outside this SDD plan.
+
+- [x] ~~`T-FIG-001` … `T-FIG-017` Client-facing design mockup task group~~ — cancelled; removed from active plan.
+
+Product decision: Service Board calendar is no longer needed because `TodaySummary` covers the operational “what is happening now” view.
+
+- [x] ~~`T-CAL-001` … `T-CAL-003` Dashboard: Service Board calendar task group~~ — cancelled; removed from active plan.
+- [x] ~~`T-NXT-012` E2E: service board calendar (today, waiting parts, legend, period switch)~~ — cancelled together with the calendar scope.

@@ -8,7 +8,7 @@ Items here block **spec completeness** or **safe implementation**. Agents must s
 2. **“Other costs” modeling** — Separate entity vs generic line items vs extending purchases/services only?
 3. **QuickFocus UI strategy** — Dedicated mini-wizard vs reuse existing customer/vehicle modals only?
 4. **Staff offboarding** — Hard delete vs deactivate vs both; what happens to `Customer.assigned_to`, repairs, audit trail?
-5. **Service board calendar** — Time scale (month / 2 weeks / rolling); mapping repairs to days (created vs planned span vs completed); visualization (markers vs spans vs lanes).
+5. ~~**Service board calendar** — Time scale (month / 2 weeks / rolling); mapping repairs to days (created vs planned span vs completed); visualization (markers vs spans vs lanes).~~ Resolved: separate calendar scope cancelled; TodaySummary covers the needed operational view.
 6. **MoneyFlow date picker** — After first paint with default `today-30`→`today`, may the user change dates freely? Any “reset to default” control?
 7. **Staff + customers** — Hide Customers tab entirely vs anonymized read-only?
 8. **Staff API shape** — Separate serializer/viewset vs role-aware masking on existing vehicle payloads?
@@ -16,12 +16,12 @@ Items here block **spec completeness** or **safe implementation**. Agents must s
 10. **Client payments** — In scope for MVP or explicitly later?
 11. **Parts inventory** — Stock/inventory layer or stays purchase-line-only?
 12. **Maintenance reminders** — Notifications / scheduled comms in roadmap?
-13. **OCR pipeline** — In-house vs vendor; allowed inputs (photo vs PDF); retention of raw scans.
+13. **OCR pipeline** — In-house vs vendor; allowed inputs (PDF/scans); retention of raw scans.
 14. **Shop consumables evolution** — Flag-only baseline done; any future separate entity?
 
 ## Technical / platform
 
-15. **Media + PDF storage** — MinIO self-hosted vs cloud S3-compatible for `RepairDocument` and future photos (M4).
+15. **PDF/document storage** — MinIO self-hosted vs cloud S3-compatible for `RepairDocument` and future generated documents (M4).
 16. **Historical dashboard “as-of”** — Exact UX for picking snapshot version vs date range (partially implemented range only).
 17. **Supplier / monthly reports** — Single aggregation code path vs risk of drift between reports.
 18. **Invoice header entity** — Stay flat `Purchase` vs introduce header+lines for reporting/versioning.
