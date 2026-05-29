@@ -1,1 +1,0 @@
-{"timestamp": "2026-05-29 12:44:32,275", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Not Found: /api/portal/R-VaCtNfmVOo_SKPmm3tNV4_4Gw/", "request": "<WSGIRequest: GET '/api/portal/R-VaCtNfmVOo_SKPmm3tNV4_4Gw/'>", "status_code": 404}
