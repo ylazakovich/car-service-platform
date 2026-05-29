@@ -421,6 +421,7 @@
 .modal--mobile .modal-footer { flex-direction: column-reverse; align-items: stretch; }
 .modal--mobile .modal-footer__primary-cluster { display: flex; gap: 8px; }
 .modal--mobile .modal-footer__primary-cluster > * { flex: 1; justify-content: center; }
+.modal--mobile .modal-footer--stacked .modal-footer__primary-cluster { justify-content: stretch; }
 .modal--mobile .modal-footer__hint { display: none; }
 .modal--mobile .meta-list { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
 .modal--mobile .meta-list dt { margin-top: 8px; }
