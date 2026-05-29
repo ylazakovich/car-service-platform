@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import * as Sentry from "@sentry/react";
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
@@ -9,9 +8,7 @@ if (SENTRY_DSN) {
     environment: import.meta.env.VITE_SENTRY_ENVIRONMENT ?? "production",
     release: import.meta.env.VITE_APP_VERSION,
     integrations: [
-      Sentry.reactRouterV7BrowserTracingIntegration({
-        useEffect,
-      }),
+      Sentry.browserTracingIntegration(),
       Sentry.replayIntegration({
         maskAllText: true,
         blockAllMedia: true,
