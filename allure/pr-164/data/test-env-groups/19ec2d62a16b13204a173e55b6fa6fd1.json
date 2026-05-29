@@ -1,0 +1,1 @@
+{"id":"19ec2d62a16b13204a173e55b6fa6fd1","fullName":"purchases.tests.PurchaseApiTests#test_create_purchase_rejects_fractional_quantity_for_pcs","name":"test_create_purchase_rejects_fractional_quantity_for_pcs","status":"passed","testResultsByEnv":{"backend":"e6a9504f69cf2f5f5ea6e7f20b0012c6"}}

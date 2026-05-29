@@ -1,0 +1,1 @@
+{"id":"1bed1463f594c542cf9e5115181200d9","fullName":"car-service-platform-frontend:src/api/services.test.ts#services API client createService preserves null price for non-priced catalog rows","name":"createService preserves null price for non-priced catalog rows","status":"passed","testResultsByEnv":{"frontend":"4971cceb7e79e0e31820e74b439e0ae5"}}
