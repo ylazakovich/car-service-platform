@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.0.2](https://github.com/ylazakovich/car-service-platform/compare/v1.0.1...v1.0.2) (2026-05-28)
+
+
+### Bug Fixes
+
+* **ci:** detect open snapshot PRs only ([3b49ae3](https://github.com/ylazakovich/car-service-platform/commit/3b49ae38f28bcc1bc01b3bed9ec7b46a349039a6))
+* **ci:** detect open snapshot PRs only ([67c520b](https://github.com/ylazakovich/car-service-platform/commit/67c520b0630bbbc191095e1f20cb29d7063cc685))
+* **ci:** remove demo data seeding from PR checks ([af43b6c](https://github.com/ylazakovich/car-service-platform/commit/af43b6cad40c7bdd04ada0195a16270693df6fcb))
+* **ci:** render test pyramid with scaled diagram ([1131567](https://github.com/ylazakovich/car-service-platform/commit/1131567c05a22d87dd953cbea4b19487b452d6fc))
+* **ci:** render test pyramid with scaled diagram ([6fc97fa](https://github.com/ylazakovich/car-service-platform/commit/6fc97fa4856d2e0900406a27ddaca6d891ac9a17))
+* **ci:** stop report workflow from updating README pyramid ([9f0b794](https://github.com/ylazakovich/car-service-platform/commit/9f0b79460306360784f76c985e5ee336710148df))
+* **ci:** stop report workflow from updating README pyramid ([728157c](https://github.com/ylazakovich/car-service-platform/commit/728157ce826cc0847c897d287b1a86cb8bcf1743))
+* **dashboard:** prevent initial loading flashes ([553424f](https://github.com/ylazakovich/car-service-platform/commit/553424fd17693820e631ea6d403fd863a3d7944c))
+* **dashboard:** prevent initial loading flashes ([a307676](https://github.com/ylazakovich/car-service-platform/commit/a307676b0b2e400f711f911d3b4227b3132db8d6))
+* **e2e:** restore repair helpers and avoid strict locator union ([a170524](https://github.com/ylazakovich/car-service-platform/commit/a17052496e5532d9fdc69b44e3d2c2ff11975466))
+* **frontend:** satisfy repair helper test types ([cb3edc1](https://github.com/ylazakovich/car-service-platform/commit/cb3edc1a4e49fe4a7c6b8a799ace5b89a37cf03e))
+* **ocr:** catch pypdf PdfStreamError as 400 instead of 500 ([596e601](https://github.com/ylazakovich/car-service-platform/commit/596e601ac1b25631e6e87581cb6e64e2f1057e76))
+* **purchases:** align purchase modals to design-system modal style ([ae8f359](https://github.com/ylazakovich/car-service-platform/commit/ae8f3590c72155d7de15055dfce864b4b8a2da60))
+* **purchases:** align purchase modals to design-system modal style ([f86ae92](https://github.com/ylazakovich/car-service-platform/commit/f86ae92671540a68d150d728596e3d1b7ec705ea))
+* **purchases:** fix modal footer button layout to match repairs pattern ([0fa4aab](https://github.com/ylazakovich/car-service-platform/commit/0fa4aab346913e7fcb781f6734a9e3943312c719))
+* **purchases:** move Order/Invoice tabs into modal-header__meta ([61c84bc](https://github.com/ylazakovich/car-service-platform/commit/61c84bc2ac063c6b78c05bd6644978133ba117bc))
+* **vehicles:** align vehicle form modal to design-system modal style ([c799a7a](https://github.com/ylazakovich/car-service-platform/commit/c799a7ad34a8d9261373592056d8e21a68011aef))
+* **vehicles:** fix input styles and inline customer button alignment in modal-form ([acaaef1](https://github.com/ylazakovich/car-service-platform/commit/acaaef1208be14937c1a588517f88ce231417224))
+
 ## [1.0.1](https://github.com/ylazakovich/car-service-platform/compare/v1.0.0...v1.0.1) (2026-05-28)
 
 
