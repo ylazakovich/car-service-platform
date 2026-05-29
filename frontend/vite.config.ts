@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from "@vitejs/plugin-react";
 import type { ProxyOptions } from "vite";
 import { defineConfig } from "vitest/config";
@@ -63,7 +64,19 @@ const _lanExtras = lanServerExtras();
 
 export default defineConfig({
   envDir: path.resolve(__dirname, ".."),
-  plugins: [react()],
+  build: {
+    sourcemap: true,
+  },
+  plugins: [
+    react(),
+    sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: !process.env.SENTRY_AUTH_TOKEN,
+      disable: !process.env.SENTRY_AUTH_TOKEN,
+    }),
+  ],
   server: {
     host: true,
     port: internalVitePort,

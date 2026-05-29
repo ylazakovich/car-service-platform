@@ -228,6 +228,28 @@ LOGGING = {
     },
 }
 
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+if SENTRY_DSN:
+    import logging as _logging
+
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+            LoggingIntegration(
+                level=_logging.INFO,
+                event_level=_logging.ERROR,
+            ),
+        ],
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "development" if DEBUG else "production"),
+        send_default_pii=False,
+        traces_sample_rate=0.1,
+    )
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", str(60 * 60 * 24 * 30)))

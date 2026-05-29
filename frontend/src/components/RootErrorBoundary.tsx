@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 type Props = { children: ReactNode };
@@ -13,6 +14,9 @@ export class RootErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error("RootErrorBoundary:", error, info.componentStack);
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info.componentStack } },
+    });
   }
 
   render(): ReactNode {

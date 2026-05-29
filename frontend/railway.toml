@@ -1,6 +1,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
+buildArgs = { VITE_SENTRY_DSN = "${{VITE_SENTRY_DSN}}", VITE_SENTRY_ENVIRONMENT = "${{VITE_SENTRY_ENVIRONMENT}}", VITE_APP_VERSION = "${{RAILWAY_GIT_TAG}}" }
 
 [deploy]
 healthcheckPath = "/"

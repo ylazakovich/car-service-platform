@@ -8,6 +8,8 @@ if ! command -v railway &>/dev/null; then
   exit 1
 fi
 
+bash "${ROOT_DIR}/scripts/deploy/sentry-release.sh"
+
 DEPLOY_BACKEND=true
 DEPLOY_FRONTEND=true
 
