@@ -419,7 +419,7 @@
 }
 .modal--mobile .status-switcher--row .status-switcher__arrow { display: none; }
 .modal--mobile .modal-footer { flex-direction: column-reverse; align-items: stretch; }
-.modal--mobile .modal-footer--stacked { align-items: stretch; }
+.modal--mobile .modal-footer--stacked { flex-direction: column-reverse; align-items: stretch; }
 .modal--mobile .modal-footer--stacked .modal-footer__required-chips { align-self: auto; }
 .modal--mobile .modal-footer__primary-cluster { display: flex; gap: 8px; }
 .modal--mobile .modal-footer__primary-cluster > * { flex: 1; justify-content: center; }
