@@ -43,6 +43,8 @@ services:
       - frontend_node_modules:/app/node_modules
     environment:
       # Vite runs on :5173 in-container; browser uses FRONTEND_DEV_PORT on the host — align HMR WebSocket with the mapped port.
+      VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+      VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-local}
       VITE_DEV_PUBLISHED_PORT: ${FRONTEND_DEV_PORT:-4173}
       VITE_DEV_PROXY_TARGET: http://backend:8000
       # Silent staff login in the browser (Vite dev only). Set VITE_DEV_AUTO_LOGIN=false to use the login form.

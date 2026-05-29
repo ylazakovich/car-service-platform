@@ -1,6 +1,12 @@
 import threading
 import uuid
 
+try:
+    import sentry_sdk
+    _SENTRY_AVAILABLE = True
+except ImportError:
+    _SENTRY_AVAILABLE = False
+
 _local = threading.local()
 
 
@@ -21,6 +27,8 @@ class RequestIdMiddleware:
     def __call__(self, request):
         _local.req_id = uuid.uuid4().hex[:8]
         request.req_id = _local.req_id
+        if _SENTRY_AVAILABLE:
+            sentry_sdk.set_tag("request_id", request.req_id)
         response = self.get_response(request)
         response["X-Request-ID"] = request.req_id
         _local.req_id = None
