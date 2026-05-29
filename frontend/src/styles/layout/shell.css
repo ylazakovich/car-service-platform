@@ -155,8 +155,8 @@
   background:
     radial-gradient(circle at top left, rgba(205, 216, 58, 0.05), transparent 50%),
     var(--surface-mid);
-  padding: var(--s4);
-  display: grid; gap: var(--s3);
+  padding: var(--s3);
+  display: grid; gap: var(--s2);
 }
 @media (max-width: 720px) {
   .sidebar-summary { display: none; }
@@ -179,11 +179,11 @@
   70%  { box-shadow: 0 0 0 6px rgba(78,201,148,0); }
   100% { box-shadow: 0 0 0 0 rgba(78,201,148,0); }
 }
-.sidebar-summary__stats { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.sidebar-summary__stats { list-style: none; padding: 0; margin: 0; display: grid; gap: 1px; }
 .sidebar-summary__stats li {
   display: grid; grid-template-columns: 8px 1fr auto;
   align-items: center; gap: var(--s3);
-  padding: 0.55rem 0;
+  padding: 0.35rem 0;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
@@ -196,20 +196,20 @@
 .sidebar-summary__stats span { font-size: 0.82rem; color: var(--text-mid); line-height: 1; }
 .sidebar-summary__stats strong {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 1.25rem; font-weight: 700;
+  font-size: 1rem; font-weight: 700;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .sidebar-summary__stats strong.is-alert { color: var(--danger); }
 .sidebar-summary__cta {
-  margin-top: var(--s1);
+  margin-top: 0;
   background: transparent;
   border: 1px solid var(--border-strong);
   border-radius: 10px;
   color: var(--text-mid);
-  padding: 0.55rem;
-  font-size: 0.8rem; font-weight: 600;
+  padding: 0.4rem;
+  font-size: 0.78rem; font-weight: 600;
   cursor: pointer;
   transition: border-color 0.14s, color 0.14s, background 0.14s;
 }

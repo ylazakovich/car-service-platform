@@ -11,6 +11,7 @@ import {
 import { PdfPreviewModal } from "../components/PdfPreviewModal";
 import { RepairCreateModal } from "../components/repairs/RepairCreateModal";
 import { RepairEditModal } from "../components/repairs/RepairEditModal";
+import { RequiredChips } from "../components/repairs/RepairModal";
 import { FieldRow, SectionHead } from "../components/repairs/FieldRow";
 import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
 import {
@@ -4197,7 +4198,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     return (
       <div className="modal-overlay repair-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="vehicle-form-modal-title" onClick={closeVehicleFormModal}>
         <div
-          className="modal modal--lg"
+          className={`modal${compactStaffNarrowLayout ? " modal--mobile" : " modal--lg"}`}
           onClick={(event) => event.stopPropagation()}
         >
           <div className="modal-header">
@@ -4451,16 +4452,27 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
             </div>
 
-            <div className="modal-footer modal-footer--right">
-              <div className="modal-footer__primary-cluster">
-                <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
-                  Cancel
-                </button>
-                <button type="submit" className="button" disabled={isSavingVehicle || customers.length === 0}>
-                  {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const vehicleMissingFields = [
+                ...(!vehicleForm.customer_id ? ["Owner"] : []),
+                ...(!vehicleForm.license_plate.trim() ? ["License plate"] : []),
+                ...(!vehicleForm.make.trim() ? ["Make"] : []),
+                ...(!vehicleForm.model.trim() ? ["Model"] : []),
+              ];
+              return (
+                <div className={`modal-footer${vehicleMissingFields.length > 0 ? " modal-footer--stacked" : " modal-footer--right"}`}>
+                  <RequiredChips fields={vehicleMissingFields} />
+                  <div className="modal-footer__primary-cluster">
+                    <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="button" disabled={isSavingVehicle || vehicleMissingFields.length > 0}>
+                      {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </form>
         </div>
       </div>
@@ -5927,7 +5939,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             onClick={closePurchaseCreateModal}
           >
             <div
-              className="modal modal--lg"
+              className={`modal${compactStaffNarrowLayout ? " modal--mobile" : " modal--lg"}`}
               onClick={(event) => event.stopPropagation()}
             >
               <div className="modal-header">
@@ -6325,28 +6337,42 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
                 </div>
 
-                <div className="modal-footer modal-footer--right">
-                  <div className="modal-footer__primary-cluster">
-                    <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() => void handlePurchaseOrderDownload()}
-                      disabled={isDownloadingPurchaseOrder}
-                    >
-                      {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
-                    </button>
-                    <button type="submit" className="button" disabled={isSavingPurchase}>
-                      {isSavingPurchase
-                        ? "Saving…"
-                        : purchaseLineRows.length > 1
-                          ? `Save invoice (${purchaseLineRows.length} lines)`
-                          : "Save line"}
-                    </button>
-                  </div>
-                </div>
+                {(() => {
+                  const purchaseMissingFields = [
+                    ...(!purchaseForm.supplier_name.trim() ? ["Supplier"] : []),
+                    ...(!purchaseLineRows.some(row => row.part_name.trim().length > 0) ? ["Part name"] : []),
+                  ];
+                  const canSavePurchase = purchaseMissingFields.length === 0;
+                  return (
+                    <div className={`modal-footer${purchaseMissingFields.length > 0 ? " modal-footer--stacked" : " modal-footer--right"}`}>
+                      <RequiredChips fields={purchaseMissingFields} />
+                      <div className="modal-footer__primary-cluster">
+                        <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          onClick={() => void handlePurchaseOrderDownload()}
+                          disabled={isDownloadingPurchaseOrder}
+                        >
+                          {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
+                        </button>
+                        <button
+                          type="submit"
+                          className="button"
+                          disabled={isSavingPurchase || !canSavePurchase}
+                        >
+                          {isSavingPurchase
+                            ? "Saving…"
+                            : purchaseLineRows.length > 1
+                              ? `Save invoice (${purchaseLineRows.length} lines)`
+                              : "Save line"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </form>
             </div>
           </div>

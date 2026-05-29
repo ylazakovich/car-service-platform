@@ -6,6 +6,20 @@ import { countRepairFieldErrors, type RepairFieldErrors } from "./repairValidati
 
 export type RepairModalFooterLayout = "right" | "split";
 
+export function RequiredChips({ fields }: { fields: string[] }) {
+  if (fields.length === 0) return null;
+  return (
+    <div className="modal-footer__required-chips">
+      {fields.map((field) => (
+        <span key={field} className="modal-footer__required-chip">
+          <span className="modal-footer__required-chip__dot" aria-hidden />
+          {field}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 type RepairModalShellProps = {
   mode: "create" | "edit";
   title: string;
@@ -14,6 +28,8 @@ type RepairModalShellProps = {
   locked?: boolean;
   errors?: RepairFieldErrors;
   saving?: boolean;
+  isSubmitDisabled?: boolean;
+  missingFields?: string[];
   kebab?: ReactNode;
   footerLayout: RepairModalFooterLayout;
   showStatusAutotag?: boolean;
@@ -68,6 +84,8 @@ export function RepairModalShell({
   locked,
   errors,
   saving,
+  isSubmitDisabled,
+  missingFields,
   kebab,
   footerLayout,
   showStatusAutotag,
@@ -109,14 +127,14 @@ export function RepairModalShell({
       if (!modalRef.current?.contains(event.target as Node)) {
         return;
       }
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && onSubmit && !locked && !saving) {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && onSubmit && !locked && !saving && !isSubmitDisabled) {
         event.preventDefault();
         onSubmit();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, onEscape, onSubmit, locked, saving]);
+  }, [onClose, onEscape, onSubmit, locked, saving, isSubmitDisabled]);
 
   /**
    * Handle the form's submit event: prevent the browser's default submission and call the configured `onSubmit` callback when submission is allowed.
@@ -127,7 +145,7 @@ export function RepairModalShell({
    */
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!onSubmit || locked || saving) {
+    if (!onSubmit || locked || saving || isSubmitDisabled) {
       return;
     }
     onSubmit();
@@ -190,6 +208,8 @@ export function RepairModalShell({
             layout={footerLayout}
             locked={locked}
             saving={saving}
+            isSubmitDisabled={isSubmitDisabled}
+            missingFields={missingFields}
             primaryLabel={primaryLabel}
             savingLabel={savingLabel}
             onCancel={onClose}
@@ -210,6 +230,8 @@ type RepairModalFooterProps = {
   layout: RepairModalFooterLayout;
   locked?: boolean;
   saving?: boolean;
+  isSubmitDisabled?: boolean;
+  missingFields?: string[];
   primaryLabel: string;
   savingLabel: string;
   onCancel: () => void;
@@ -244,6 +266,8 @@ function RepairModalFooter({
   layout,
   locked,
   saving,
+  isSubmitDisabled,
+  missingFields,
   primaryLabel,
   savingLabel,
   onCancel,
@@ -255,7 +279,12 @@ function RepairModalFooter({
 }: RepairModalFooterProps) {
   const primary =
     locked || !onSubmit ? null : (
-      <button type="submit" className="button" data-saving={saving ? "true" : undefined} disabled={saving}>
+      <button
+        type="submit"
+        className="button"
+        data-saving={saving ? "true" : undefined}
+        disabled={saving || isSubmitDisabled}
+      >
         {saving ? <span className="button__spinner" aria-hidden /> : null}
         {saving ? savingLabel : primaryLabel}
       </button>
@@ -301,38 +330,71 @@ function RepairModalFooter({
       </button>
     ) : null;
 
-  const hint = !locked ? (
-    <span className="modal-footer__hint">
-      <kbd>⌘</kbd>
-      <kbd>↵</kbd> to save
-    </span>
+  const chips = !locked && isSubmitDisabled && missingFields && missingFields.length > 0
+    ? <RequiredChips fields={missingFields} />
+    : null;
+
+  const kbdHint = !locked && !isSubmitDisabled ? (
+    <span className="modal-footer__hint"><kbd>⌘</kbd><kbd>↵</kbd> to save</span>
   ) : null;
 
   if (layout === "split") {
     return (
-      <div className="modal-footer modal-footer--split">
-        <div>{destructive ?? (locked ? <span /> : hint)}</div>
-        <div className="modal-footer__primary-cluster">
-          {cancel}
-          {undoPickUp}
-          {reopen}
-          {pickUp}
-          {primary}
-        </div>
+      <div className={`modal-footer${chips ? " modal-footer--stacked" : " modal-footer--split"}`}>
+        {chips ? (
+          <>
+            {chips}
+            <div className="modal-footer__primary-cluster">
+              {destructive}
+              {cancel}
+              {undoPickUp}
+              {reopen}
+              {pickUp}
+              {primary}
+            </div>
+          </>
+        ) : (
+          <>
+            <div>{destructive ?? (locked ? <span /> : kbdHint)}</div>
+            <div className="modal-footer__primary-cluster">
+              {cancel}
+              {undoPickUp}
+              {reopen}
+              {pickUp}
+              {primary}
+            </div>
+          </>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="modal-footer modal-footer--right">
-      {destructive ? <div style={{ marginRight: "auto" }}>{destructive}</div> : !locked ? hint : null}
-      <div className="modal-footer__primary-cluster">
-        {cancel}
-        {undoPickUp}
-        {reopen}
-        {pickUp}
-        {primary}
-      </div>
+    <div className={`modal-footer${chips ? " modal-footer--stacked" : " modal-footer--right"}`}>
+      {chips ? (
+        <>
+          {chips}
+          <div className="modal-footer__primary-cluster">
+            {destructive && <div style={{ marginRight: "auto" }}>{destructive}</div>}
+            {cancel}
+            {undoPickUp}
+            {reopen}
+            {pickUp}
+            {primary}
+          </div>
+        </>
+      ) : (
+        <>
+          {destructive ? <div style={{ marginRight: "auto" }}>{destructive}</div> : !locked ? kbdHint : null}
+          <div className="modal-footer__primary-cluster">
+            {cancel}
+            {undoPickUp}
+            {reopen}
+            {pickUp}
+            {primary}
+          </div>
+        </>
+      )}
     </div>
   );
 }

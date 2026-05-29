@@ -89,6 +89,11 @@ export function RepairCreateModal({
 
   const pickerMode = getVehiclePickerMode(form.vehicle_id, form.vehicle_query);
   const ownerName = selectedVehicle?.customer.full_name ?? "";
+  const canSubmit = !!form.vehicle_id && form.service_lines.some((line) => line.name.trim().length > 0);
+  const missingFields = [
+    ...(!form.vehicle_id ? ["Vehicle"] : []),
+    ...(!form.service_lines.some((line) => line.name.trim().length > 0) ? ["Service line"] : []),
+  ];
 
   if (!open) {
     return null;
@@ -124,6 +129,8 @@ export function RepairCreateModal({
       footerLayout="right"
       showStatusAutotag
       saving={saving}
+      isSubmitDisabled={!canSubmit}
+      missingFields={missingFields}
       errors={errors}
       primaryLabel="Create Repair"
       savingLabel="Creating…"
