@@ -267,36 +267,41 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
 
   test("Create Vehicle button is disabled until all required fields are filled", async ({ page }) => {
     await e2eBehaviors("staff", "vehicles · create button · disabled until required fields filled");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoVehiclesSection();
+    let fixture: Awaited<ReturnType<typeof createE2eCustomerWithVehicle>> | null = null;
+    try {
+      fixture = await createE2eCustomerWithVehicle(page, "veh-disabled");
+      await openStaffApp(page);
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoVehiclesSection();
 
-    const createBtn = page.getByRole("button", { name: "Create Vehicle" }).or(
-      page.getByRole("button", { name: "+ Add vehicle" })
-    );
-    await createBtn.first().click();
+      const createBtn = page.getByRole("button", { name: "Create Vehicle" }).or(
+        page.getByRole("button", { name: "+ Add vehicle" })
+      );
+      await createBtn.first().click();
 
-    const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
+      const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
+      await expect(dialog).toBeVisible({ timeout: 15_000 });
 
-    const submitBtn = dialog.getByRole("button", { name: "Create Vehicle" });
-    await expect(submitBtn).toBeDisabled();
+      const submitBtn = dialog.getByRole("button", { name: "Create Vehicle" });
+      await expect(submitBtn).toBeDisabled();
 
-    await dialog.locator("input[placeholder='e.g. KR 2048A']").fill("TEST 001");
-    await dialog.locator("input[placeholder='e.g. Toyota']").fill("Toyota");
-    await dialog.locator("input[placeholder='e.g. Yaris']").fill("Yaris");
-    await expect(submitBtn).toBeDisabled();
+      await dialog.locator("input[placeholder='e.g. KR 2048A']").fill("TEST 001");
+      await dialog.locator("input[placeholder='e.g. Toyota']").fill("Toyota");
+      await dialog.locator("input[placeholder='e.g. Yaris']").fill("Yaris");
+      await expect(submitBtn).toBeDisabled();
 
-    const ownerSelect = dialog.locator(".inline-owner-select select");
-    await expect(ownerSelect.locator("option[value]:not([value=''])")).toHaveCount(1, { timeout: 10_000 }).catch(() => {});
-    const firstOptionValue = await ownerSelect.evaluate((sel: HTMLSelectElement) => {
-      const opt = Array.from(sel.options).find((o) => o.value !== "");
-      return opt?.value ?? "";
-    });
-    if (!firstOptionValue) throw new Error("No non-empty owner option found in select");
-    await ownerSelect.selectOption(firstOptionValue);
-    await expect(submitBtn).toBeEnabled();
+      const ownerSelect = dialog.locator(".inline-owner-select select");
+      await expect(ownerSelect.locator(`option[value="${fixture.customerId}"]`)).toBeAttached({ timeout: 10_000 });
+      await ownerSelect.selectOption(String(fixture.customerId));
+      await expect(submitBtn).toBeEnabled();
 
-    await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+      await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+    } finally {
+      await cleanupE2eData(page, {
+        vehicleIds: fixture ? [fixture.vehicleId] : [],
+        customerIds: fixture ? [fixture.customerId] : [],
+      });
+    }
   });
 
   test("required-field chips appear and disappear as fields are filled", async ({ page }) => {
@@ -334,38 +339,43 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
 
   test("clearing a field re-disables the button and restores its chip", async ({ page }) => {
     await e2eBehaviors("staff", "vehicles · create button · re-disabled after clearing make");
-    const reg = new StaffRecordsRegistryPage(page);
-    await reg.gotoVehiclesSection();
+    let fixture: Awaited<ReturnType<typeof createE2eCustomerWithVehicle>> | null = null;
+    try {
+      fixture = await createE2eCustomerWithVehicle(page, "veh-clear");
+      await openStaffApp(page);
+      const reg = new StaffRecordsRegistryPage(page);
+      await reg.gotoVehiclesSection();
 
-    const createBtn = page.getByRole("button", { name: "Create Vehicle" }).or(
-      page.getByRole("button", { name: "+ Add vehicle" })
-    );
-    await createBtn.first().click();
+      const createBtn = page.getByRole("button", { name: "Create Vehicle" }).or(
+        page.getByRole("button", { name: "+ Add vehicle" })
+      );
+      await createBtn.first().click();
 
-    const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
+      const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
+      await expect(dialog).toBeVisible({ timeout: 15_000 });
 
-    const submitBtn = dialog.getByRole("button", { name: "Create Vehicle" });
-    const makeInput = dialog.locator("input[placeholder='e.g. Toyota']");
+      const submitBtn = dialog.getByRole("button", { name: "Create Vehicle" });
+      const makeInput = dialog.locator("input[placeholder='e.g. Toyota']");
 
-    await dialog.locator("input[placeholder='e.g. KR 2048A']").fill("TEST 001");
-    await makeInput.fill("Toyota");
-    await dialog.locator("input[placeholder='e.g. Yaris']").fill("Yaris");
-    const ownerSelect = dialog.locator(".inline-owner-select select");
-    await expect(ownerSelect.locator("option[value]:not([value=''])")).toHaveCount(1, { timeout: 10_000 }).catch(() => {});
-    const firstOptionValue = await ownerSelect.evaluate((sel: HTMLSelectElement) => {
-      const opt = Array.from(sel.options).find((o) => o.value !== "");
-      return opt?.value ?? "";
-    });
-    if (!firstOptionValue) throw new Error("No non-empty owner option found in select");
-    await ownerSelect.selectOption(firstOptionValue);
-    await expect(submitBtn).toBeEnabled();
+      await dialog.locator("input[placeholder='e.g. KR 2048A']").fill("TEST 001");
+      await makeInput.fill("Toyota");
+      await dialog.locator("input[placeholder='e.g. Yaris']").fill("Yaris");
+      const ownerSelect = dialog.locator(".inline-owner-select select");
+      await expect(ownerSelect.locator(`option[value="${fixture.customerId}"]`)).toBeAttached({ timeout: 10_000 });
+      await ownerSelect.selectOption(String(fixture.customerId));
+      await expect(submitBtn).toBeEnabled();
 
-    await makeInput.clear();
-    await expect(submitBtn).toBeDisabled();
-    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Make" })).toBeVisible();
+      await makeInput.clear();
+      await expect(submitBtn).toBeDisabled();
+      await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Make" })).toBeVisible();
 
-    await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+      await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+    } finally {
+      await cleanupE2eData(page, {
+        vehicleIds: fixture ? [fixture.vehicleId] : [],
+        customerIds: fixture ? [fixture.customerId] : [],
+      });
+    }
   });
 });
 
