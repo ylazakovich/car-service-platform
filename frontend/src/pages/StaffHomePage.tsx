@@ -4456,7 +4456,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
                   Cancel
                 </button>
-                <button type="submit" className="button" disabled={isSavingVehicle || customers.length === 0}>
+                <button type="submit" className="button" disabled={isSavingVehicle || !vehicleForm.customer_id || !vehicleForm.license_plate.trim() || !vehicleForm.make.trim() || !vehicleForm.model.trim()}>
                   {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
                 </button>
               </div>
