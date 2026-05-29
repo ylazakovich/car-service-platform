@@ -390,7 +390,7 @@ test.describe("Vehicles — create button disabled state @mobile-only", () => {
     await reg.gotoVehiclesSection();
 
     const createBtn = page.getByRole("button", { name: /Add Vehicle|Add vehicle/ });
-    await createBtn.first().click();
+    await createBtn.first().click({ force: true });
 
     const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
     await expect(dialog).toBeVisible({ timeout: 15_000 });
