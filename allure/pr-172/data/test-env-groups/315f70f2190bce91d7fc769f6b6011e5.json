@@ -1,1 +1,1 @@
-{"id":"315f70f2190bce91d7fc769f6b6011e5","fullName":"users.tests.AuthApiTests#test_login_me_and_logout_flow","name":"test_login_me_and_logout_flow","status":"passed","testResultsByEnv":{"backend":"6bce095a1ec45f96f4b7922572217f60"}}
+{"id":"315f70f2190bce91d7fc769f6b6011e5","fullName":"users.tests.AuthApiTests#test_login_me_and_logout_flow","name":"test_login_me_and_logout_flow","status":"passed","testResultsByEnv":{"backend":"de63d4d99f236a52970825a80f443514"}}

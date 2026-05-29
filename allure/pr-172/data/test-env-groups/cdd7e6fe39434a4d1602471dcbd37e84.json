@@ -1,1 +1,1 @@
-{"id":"cdd7e6fe39434a4d1602471dcbd37e84","fullName":"staff-registers.spec.ts:113:3","name":"admin reaches Registers tabs and Services catalog on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"3e377aaf80f4266fa73fb2d6819c31f5"}}
+{"id":"cdd7e6fe39434a4d1602471dcbd37e84","fullName":"staff-registers.spec.ts:113:3","name":"admin reaches Registers tabs and Services catalog on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"32358abdab0f06a93640389375ac6a8f"}}
