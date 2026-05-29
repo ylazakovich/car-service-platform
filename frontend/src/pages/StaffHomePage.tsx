@@ -6342,7 +6342,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                     ...(!purchaseForm.supplier_name.trim() ? ["Supplier"] : []),
                     ...(!purchaseLineRows.some(row => row.part_name.trim().length > 0) ? ["Part name"] : []),
                   ];
-                  const canSavePurchase = !!purchaseForm.order_date && purchaseMissingFields.length === 0;
+                  const canSavePurchase = purchaseMissingFields.length === 0;
                   return (
                     <div className={`modal-footer${purchaseMissingFields.length > 0 ? " modal-footer--stacked" : " modal-footer--right"}`}>
                       <RequiredChips fields={purchaseMissingFields} />

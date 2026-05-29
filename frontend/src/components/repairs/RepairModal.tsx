@@ -127,14 +127,14 @@ export function RepairModalShell({
       if (!modalRef.current?.contains(event.target as Node)) {
         return;
       }
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && onSubmit && !locked && !saving) {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && onSubmit && !locked && !saving && !isSubmitDisabled) {
         event.preventDefault();
         onSubmit();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, onEscape, onSubmit, locked, saving]);
+  }, [onClose, onEscape, onSubmit, locked, saving, isSubmitDisabled]);
 
   /**
    * Handle the form's submit event: prevent the browser's default submission and call the configured `onSubmit` callback when submission is allowed.
@@ -145,7 +145,7 @@ export function RepairModalShell({
    */
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!onSubmit || locked || saving) {
+    if (!onSubmit || locked || saving || isSubmitDisabled) {
       return;
     }
     onSubmit();

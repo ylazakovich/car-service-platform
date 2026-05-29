@@ -132,10 +132,9 @@ test.describe("Purchases — create button disabled state @desktop", () => {
 
     await page.getByRole("button", { name: "+ Add part line" }).click();
 
-    const submitBtn = page.getByRole("button", { name: /Save/ });
-    await expect(submitBtn).toBeDisabled();
-
     const dialog = page.locator("[aria-labelledby='purchase-create-modal-title']");
+    const submitBtn = dialog.getByRole("button", { name: /Save/ });
+    await expect(submitBtn).toBeDisabled();
     await dialog.locator("input[placeholder='Supplier name']").fill("Test Supplier");
     await expect(submitBtn).toBeDisabled();
 
@@ -256,6 +255,7 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
       const opt = Array.from(sel.options).find((o) => o.value !== "");
       return opt?.value ?? "";
     });
+    if (!firstOptionValue) throw new Error("No non-empty owner option found in select");
     await ownerSelect.selectOption(firstOptionValue);
     await expect(submitBtn).toBeEnabled();
 
@@ -319,6 +319,7 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
       const opt = Array.from(sel.options).find((o) => o.value !== "");
       return opt?.value ?? "";
     });
+    if (!firstOptionValue) throw new Error("No non-empty owner option found in select");
     await ownerSelect.selectOption(firstOptionValue);
     await expect(submitBtn).toBeEnabled();
 
