@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.0](https://github.com/ylazakovich/car-service-platform/compare/v1.0.2...v1.1.0) (2026-05-29)
+
+
+### Features
+
+* integrate Sentry error monitoring for frontend and backend ([c619d2c](https://github.com/ylazakovich/car-service-platform/commit/c619d2c2e5a04a5d1b3a7bda553d4e05078230b8))
+* **monitoring:** integrate Sentry error monitoring ([bd7f2c1](https://github.com/ylazakovich/car-service-platform/commit/bd7f2c193126b64918b37da634f67936cbc5f1d8))
+
+
+### Bug Fixes
+
+* **deps:** update @sentry/react to v10 ([#169](https://github.com/ylazakovich/car-service-platform/issues/169)) ([fa2cf6b](https://github.com/ylazakovich/car-service-platform/commit/fa2cf6bcb5da1519154f4136f553ef7038da4c35))
+* **monitoring:** address CodeRabbit review suggestions ([3b22361](https://github.com/ylazakovich/car-service-platform/commit/3b22361bb5779ce2cf8c21e72e451b2c2cd21ca5))
+* **monitoring:** replace reactRouterV7BrowserTracingIntegration with browserTracingIntegration ([d3688b0](https://github.com/ylazakovich/car-service-platform/commit/d3688b099e6b05147e87f7f686c6b11468cc0643))
+
 ## [1.0.2](https://github.com/ylazakovich/car-service-platform/compare/v1.0.1...v1.0.2) (2026-05-28)
 
 
