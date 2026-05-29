@@ -1034,15 +1034,9 @@
   }
 
   .vehicles-workspace .vehicles-top-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: var(--s2);
-  }
-
-  .vehicles-workspace .vehicles-top-actions .kanban-search {
-    flex: 1 1 100%;
-    min-width: 0;
   }
 
   .vehicles-workspace .vehicles-top-actions .kanban-search input {
@@ -1051,8 +1045,7 @@
   }
 
   .vehicles-workspace .vehicles-top-actions .button {
-    flex: 1 1 auto;
-    min-width: 0;
+    width: 100%;
     justify-content: center;
     font-size: 0.82rem;
     padding: 0.52rem 0.75rem;
