@@ -6,6 +6,20 @@ import { countRepairFieldErrors, type RepairFieldErrors } from "./repairValidati
 
 export type RepairModalFooterLayout = "right" | "split";
 
+export function RequiredChips({ fields }: { fields: string[] }) {
+  if (fields.length === 0) return null;
+  return (
+    <div className="modal-footer__required-chips">
+      {fields.map((field) => (
+        <span key={field} className="modal-footer__required-chip">
+          <span className="modal-footer__required-chip__dot" aria-hidden />
+          {field}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 type RepairModalShellProps = {
   mode: "create" | "edit";
   title: string;
@@ -15,7 +29,7 @@ type RepairModalShellProps = {
   errors?: RepairFieldErrors;
   saving?: boolean;
   isSubmitDisabled?: boolean;
-  submitDisabledHint?: string;
+  missingFields?: string[];
   kebab?: ReactNode;
   footerLayout: RepairModalFooterLayout;
   showStatusAutotag?: boolean;
@@ -71,7 +85,7 @@ export function RepairModalShell({
   errors,
   saving,
   isSubmitDisabled,
-  submitDisabledHint,
+  missingFields,
   kebab,
   footerLayout,
   showStatusAutotag,
@@ -195,7 +209,7 @@ export function RepairModalShell({
             locked={locked}
             saving={saving}
             isSubmitDisabled={isSubmitDisabled}
-            submitDisabledHint={submitDisabledHint}
+            missingFields={missingFields}
             primaryLabel={primaryLabel}
             savingLabel={savingLabel}
             onCancel={onClose}
@@ -217,7 +231,7 @@ type RepairModalFooterProps = {
   locked?: boolean;
   saving?: boolean;
   isSubmitDisabled?: boolean;
-  submitDisabledHint?: string;
+  missingFields?: string[];
   primaryLabel: string;
   savingLabel: string;
   onCancel: () => void;
@@ -253,7 +267,7 @@ function RepairModalFooter({
   locked,
   saving,
   isSubmitDisabled,
-  submitDisabledHint,
+  missingFields,
   primaryLabel,
   savingLabel,
   onCancel,
@@ -270,7 +284,6 @@ function RepairModalFooter({
         className="button"
         data-saving={saving ? "true" : undefined}
         disabled={saving || isSubmitDisabled}
-        title={isSubmitDisabled && submitDisabledHint ? submitDisabledHint : undefined}
       >
         {saving ? <span className="button__spinner" aria-hidden /> : null}
         {saving ? savingLabel : primaryLabel}
@@ -317,18 +330,20 @@ function RepairModalFooter({
       </button>
     ) : null;
 
-  const hint = !locked ? (
-    <span className="modal-footer__hint">
-      {isSubmitDisabled && submitDisabledHint
-        ? submitDisabledHint
-        : <><kbd>⌘</kbd><kbd>↵</kbd> to save</>}
-    </span>
+  const chips = !locked && isSubmitDisabled && missingFields && missingFields.length > 0
+    ? <RequiredChips fields={missingFields} />
+    : null;
+
+  const kbdHint = !locked && !isSubmitDisabled ? (
+    <span className="modal-footer__hint"><kbd>⌘</kbd><kbd>↵</kbd> to save</span>
   ) : null;
+
+  const leftSlot = chips ?? kbdHint;
 
   if (layout === "split") {
     return (
       <div className="modal-footer modal-footer--split">
-        <div>{destructive ?? (locked ? <span /> : hint)}</div>
+        <div>{destructive ?? (locked ? <span /> : leftSlot)}</div>
         <div className="modal-footer__primary-cluster">
           {cancel}
           {undoPickUp}
@@ -342,7 +357,7 @@ function RepairModalFooter({
 
   return (
     <div className="modal-footer modal-footer--right">
-      {destructive ? <div style={{ marginRight: "auto" }}>{destructive}</div> : !locked ? hint : null}
+      {destructive ? <div style={{ marginRight: "auto" }}>{destructive}</div> : !locked ? leftSlot : null}
       <div className="modal-footer__primary-cluster">
         {cancel}
         {undoPickUp}

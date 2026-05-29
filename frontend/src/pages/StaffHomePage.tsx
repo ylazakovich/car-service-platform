@@ -11,6 +11,7 @@ import {
 import { PdfPreviewModal } from "../components/PdfPreviewModal";
 import { RepairCreateModal } from "../components/repairs/RepairCreateModal";
 import { RepairEditModal } from "../components/repairs/RepairEditModal";
+import { RequiredChips } from "../components/repairs/RepairModal";
 import { FieldRow, SectionHead } from "../components/repairs/FieldRow";
 import { createInvite, fetchUsers, resetInvite, updateUserName, type InviteResponse, type UserItem } from "../api/users";
 import {
@@ -4452,20 +4453,22 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
             </div>
 
             {(() => {
-              const vehicleMissing = !vehicleForm.customer_id || !vehicleForm.license_plate.trim() || !vehicleForm.make.trim() || !vehicleForm.model.trim();
-              const vehicleHint = vehicleMissing
-                ? (!vehicleForm.customer_id ? "Select an owner" : !vehicleForm.license_plate.trim() ? "Enter a license plate" : !vehicleForm.make.trim() ? "Enter a make" : "Enter a model")
-                : null;
+              const vehicleMissingFields = [
+                ...(!vehicleForm.customer_id ? ["Owner"] : []),
+                ...(!vehicleForm.license_plate.trim() ? ["License plate"] : []),
+                ...(!vehicleForm.make.trim() ? ["Make"] : []),
+                ...(!vehicleForm.model.trim() ? ["Model"] : []),
+              ];
               return (
                 <div className="modal-footer modal-footer--split">
                   <div>
-                    {vehicleHint ? <span className="modal-footer__hint">{vehicleHint}</span> : null}
+                    <RequiredChips fields={vehicleMissingFields} />
                   </div>
                   <div className="modal-footer__primary-cluster">
                     <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
                       Cancel
                     </button>
-                    <button type="submit" className="button" disabled={isSavingVehicle || vehicleMissing} title={vehicleHint ?? undefined}>
+                    <button type="submit" className="button" disabled={isSavingVehicle || vehicleMissingFields.length > 0}>
                       {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
                     </button>
                   </div>
@@ -6337,14 +6340,15 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                 </div>
 
                 {(() => {
-                  const canSavePurchase = !!purchaseForm.order_date && purchaseForm.supplier_name.trim().length > 0 && purchaseLineRows.some(row => row.part_name.trim().length > 0);
-                  const purchaseHint = !canSavePurchase
-                    ? (!purchaseForm.supplier_name.trim() ? "Enter a supplier name" : "Enter a part name in at least one line")
-                    : null;
+                  const purchaseMissingFields = [
+                    ...(!purchaseForm.supplier_name.trim() ? ["Supplier"] : []),
+                    ...(!purchaseLineRows.some(row => row.part_name.trim().length > 0) ? ["Part name"] : []),
+                  ];
+                  const canSavePurchase = !!purchaseForm.order_date && purchaseMissingFields.length === 0;
                   return (
                     <div className="modal-footer modal-footer--split">
                       <div>
-                        {purchaseHint ? <span className="modal-footer__hint">{purchaseHint}</span> : null}
+                        <RequiredChips fields={purchaseMissingFields} />
                       </div>
                       <div className="modal-footer__primary-cluster">
                         <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
@@ -6361,7 +6365,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                         <button
                           type="submit"
                           className="button"
-                          title={purchaseHint ?? undefined}
                           disabled={isSavingPurchase || !canSavePurchase}
                         >
                           {isSavingPurchase

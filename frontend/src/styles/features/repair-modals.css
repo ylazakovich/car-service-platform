@@ -583,6 +583,21 @@
 }
 .status-autotag__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
+.modal-footer__required-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.modal-footer__required-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid rgba(240, 168, 74, 0.30);
+  background: rgba(240, 168, 74, 0.10);
+  color: var(--warning);
+  border-radius: var(--r-pill);
+  font-size: 0.70rem; font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.modal-footer__required-chip__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
 /* Side-panel summary */
 .summary-card {
   display: flex; flex-direction: column; gap: 8px;
