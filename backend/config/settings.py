@@ -245,7 +245,7 @@ if SENTRY_DSN:
                 event_level=_logging.ERROR,
             ),
         ],
-        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "development" if DEBUG else "production"),
         send_default_pii=False,
         traces_sample_rate=0.1,
     )

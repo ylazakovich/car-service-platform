@@ -17,11 +17,11 @@ set +a
 : "${SENTRY_ORG:?Error: SENTRY_ORG is not set in .env}"
 : "${SENTRY_PROJECT:?Error: SENTRY_PROJECT is not set in .env}"
 
-VERSION=$(git describe --tags --exact-match 2>/dev/null || git tag --sort=-version:refname | head -1)
+VERSION="$(git describe --tags --exact-match 2>/dev/null || true)"
 
 if [[ -z "${VERSION}" ]]; then
-  echo "Error: no git tag found. Create a tag first: git tag v1.0.0" >&2
-  exit 1
+  echo "No tag on HEAD — skipping Sentry release." >&2
+  exit 0
 fi
 
 echo "Creating Sentry release: ${VERSION}"
@@ -31,9 +31,11 @@ if ! command -v sentry-cli &>/dev/null; then
   exit 1
 fi
 
-sentry-cli releases new "${VERSION}" \
-  --org "${SENTRY_ORG}" \
-  --project "${SENTRY_PROJECT}"
+if ! sentry-cli releases info "${VERSION}" --org "${SENTRY_ORG}" >/dev/null 2>&1; then
+  sentry-cli releases new "${VERSION}" \
+    --org "${SENTRY_ORG}" \
+    --project "${SENTRY_PROJECT}"
+fi
 
 sentry-cli releases set-commits "${VERSION}" \
   --org "${SENTRY_ORG}" \
@@ -46,7 +48,7 @@ sentry-cli releases finalize "${VERSION}" \
 
 sentry-cli releases deploys "${VERSION}" new \
   --org "${SENTRY_ORG}" \
-  --env production
+  --env "${SENTRY_ENVIRONMENT:-production}"
 
 echo ""
 echo "Sentry release ${VERSION} created and deployed."
