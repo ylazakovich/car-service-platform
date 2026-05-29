@@ -338,33 +338,64 @@ function RepairModalFooter({
     <span className="modal-footer__hint"><kbd>⌘</kbd><kbd>↵</kbd> to save</span>
   ) : null;
 
-  const leftSlot = chips ?? kbdHint;
-
   if (layout === "split") {
     return (
-      <div className="modal-footer modal-footer--split">
-        <div>{destructive ?? (locked ? <span /> : leftSlot)}</div>
-        <div className="modal-footer__primary-cluster">
-          {cancel}
-          {undoPickUp}
-          {reopen}
-          {pickUp}
-          {primary}
-        </div>
+      <div className={`modal-footer${chips ? " modal-footer--stacked" : " modal-footer--split"}`}>
+        {chips ? (
+          <>
+            <div className="modal-footer__primary-cluster">
+              {destructive}
+              <div style={{ flex: 1 }} />
+              {cancel}
+              {undoPickUp}
+              {reopen}
+              {pickUp}
+              {primary}
+            </div>
+            {chips}
+          </>
+        ) : (
+          <>
+            <div>{destructive ?? (locked ? <span /> : kbdHint)}</div>
+            <div className="modal-footer__primary-cluster">
+              {cancel}
+              {undoPickUp}
+              {reopen}
+              {pickUp}
+              {primary}
+            </div>
+          </>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="modal-footer modal-footer--right">
-      {destructive ? <div style={{ marginRight: "auto" }}>{destructive}</div> : !locked ? leftSlot : null}
-      <div className="modal-footer__primary-cluster">
-        {cancel}
-        {undoPickUp}
-        {reopen}
-        {pickUp}
-        {primary}
-      </div>
+    <div className={`modal-footer${chips ? " modal-footer--stacked" : " modal-footer--right"}`}>
+      {chips ? (
+        <>
+          <div className="modal-footer__primary-cluster">
+            {destructive && <div style={{ marginRight: "auto" }}>{destructive}</div>}
+            {cancel}
+            {undoPickUp}
+            {reopen}
+            {pickUp}
+            {primary}
+          </div>
+          {chips}
+        </>
+      ) : (
+        <>
+          {destructive ? <div style={{ marginRight: "auto" }}>{destructive}</div> : !locked ? kbdHint : null}
+          <div className="modal-footer__primary-cluster">
+            {cancel}
+            {undoPickUp}
+            {reopen}
+            {pickUp}
+            {primary}
+          </div>
+        </>
+      )}
     </div>
   );
 }
