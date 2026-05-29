@@ -1,30 +1,30 @@
 # Test pyramid snapshot
 
-_Generated: `2026-05-29T06:46:45.317Z`_
-_Source workflow run id: `26622496412`_
-_Head SHA: `a7114d4`_
+_Generated: `2026-05-29T15:08:32.566Z`_
+_Source workflow run id: `26644937821`_
+_Head SHA: `42fda66`_
 
 ## Counts by layer (`epic` / Allure `layer`)
 
 | Layer | `epic` / `layer` | Cases | Passed | Failed | Broken | Skipped |
 | --- | --- | --: | --: | --: | --: | --: |
-| Unit (base) | `unit` | **227** | 227 | 0 | 0 | 0 |
+| Unit (base) | `unit` | **230** | 230 | 0 | 0 | 0 |
 | Integration (middle) | `api` / `integration` | **163** | 163 | 0 | 0 | 0 |
-| UI / E2E (top) | `end-to-end` / `ui` | **64** | 64 | 0 | 0 | 0 |
-| **Σ pyramid layers** | | **454** | | | | |
+| UI / E2E (top) | `end-to-end` / `ui` | **79** | 79 | 0 | 0 | 0 |
+| **Σ pyramid layers** | | **472** | | | | |
 
 ## Shares (pyramid layers only)
 
 | Layer | Share of Σ layers |
 | --- | ---: |
-| Unit (base) | 50.0% |
-| Integration (middle) | 35.9% |
-| UI / E2E (top) | 14.1% |
+| Unit (base) | 48.7% |
+| Integration (middle) | 34.5% |
+| UI / E2E (top) | 16.7% |
 
 ```text
-UI / E2E (top)          64                ████████
+UI / E2E (top)          79               ██████████
 Integration (middle)   163          ████████████████████
-Unit (base)            227      ████████████████████████████
+Unit (base)            230      ████████████████████████████
 ```
 
 ## Advisory (planning only)
@@ -37,8 +37,8 @@ These checks **never fail the workflow**; they surface in GitHub **Annotations**
 
 | Gate id | Status | Detail |
 | --- | --- | --- |
-| PYRAMID_UNIT_SHARE_LOW | ✓ ok | unit ≥ 45% of Σ layers (actual 50.0%) |
-| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 14.1%) |
+| PYRAMID_UNIT_SHARE_LOW | ✓ ok | unit ≥ 45% of Σ layers (actual 48.7%) |
+| PYRAMID_E2E_SHARE_HIGH | ✓ ok | UI/E2E ≤ 28% of Σ layers (actual 16.7%) |
 | PYRAMID_UNKNOWN_EPIC | ✓ ok | other epic count: 0 |
 
 _Blocking failures: none (reserved for a future strict mode)._

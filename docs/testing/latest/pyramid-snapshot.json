@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-29T06:46:45.317Z",
+  "generatedAt": "2026-05-29T15:08:32.566Z",
   "source": {
-    "workflowRunId": "26622496412",
-    "headSha": "a7114d405efcba656bcb83b7ab74959ef576fa7b"
+    "workflowRunId": "26644937821",
+    "headSha": "42fda66c0ce5f4af4ddba8a71f9089a314073685"
   },
   "pyramidLayerTotals": {
-    "unit": 227,
+    "unit": 230,
     "api": 163,
-    "ui_e2e": 64
+    "ui_e2e": 79
   },
-  "pyramidTotal": 454,
+  "pyramidTotal": 472,
   "otherEpicTotal": 0,
-  "allureGrandTotal": 454,
+  "allureGrandTotal": 472,
   "shares": {
-    "unit": 0.5,
-    "api": 0.3590308370044053,
-    "ui_e2e": 0.14096916299559473
+    "unit": 0.4872881355932203,
+    "api": 0.3453389830508475,
+    "ui_e2e": 0.1673728813559322
   },
   "advisory": {
     "unitShareMin": 0.45,
