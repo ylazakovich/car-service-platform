@@ -7,6 +7,8 @@ import { E2E_DEMO_REPAIR_VEHICLE_PLATE } from "./e2e-seed";
 
 // regression: create buttons must stay disabled until minimum required fields are filled
 
+// ─── REPAIRS ────────────────────────────────────────────────────────────────
+
 test.describe("Repairs — create button disabled state @desktop", () => {
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
@@ -33,7 +35,88 @@ test.describe("Repairs — create button disabled state @desktop", () => {
 
     await page.getByRole("dialog", { name: /New Repair/ }).getByRole("button", { name: "Cancel" }).click();
   });
+
+  test("required-field chips appear and disappear as fields are filled", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · required chips · appear and disappear");
+    const repairs = new StaffRepairsPage(page);
+
+    await repairs.gotoRepairsSection();
+    await repairs.expectRepairsKanbanVisible();
+    await repairs.openNewRepairCreateModal();
+
+    const dialog = page.getByRole("dialog", { name: /New Repair/ });
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Vehicle" })).toBeVisible();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
+
+    await page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);
+    const escapedPlate = E2E_DEMO_REPAIR_VEHICLE_PLATE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    await page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) }).click();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Vehicle" })).toBeHidden();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
+
+    await page.getByRole("textbox", { name: /Line 1/ }).fill("Oil change");
+    await expect(dialog.locator(".modal-footer__required-chip")).toHaveCount(0);
+
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+  });
+
+  test("clearing service line re-disables the button", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · create button · re-disabled after clearing service line");
+    const repairs = new StaffRepairsPage(page);
+
+    await repairs.gotoRepairsSection();
+    await repairs.expectRepairsKanbanVisible();
+    await repairs.openNewRepairCreateModal();
+
+    const dialog = page.getByRole("dialog", { name: /New Repair/ });
+    const submitBtn = page.getByRole("button", { name: "Create Repair" });
+
+    await page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);
+    const escapedPlate = E2E_DEMO_REPAIR_VEHICLE_PLATE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    await page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) }).click();
+    const line1 = page.getByRole("textbox", { name: /Line 1/ });
+    await line1.fill("Oil change");
+    await expect(submitBtn).toBeEnabled();
+
+    await line1.clear();
+    await expect(submitBtn).toBeDisabled();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+  });
 });
+
+test.describe("Repairs — create button disabled state (mobile)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openStaffApp(page);
+  });
+
+  test("chips render above stretched buttons on mobile", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · create button · chips above buttons on mobile");
+    const repairs = new StaffRepairsPage(page);
+
+    await repairs.gotoRepairsSection();
+    await repairs.expectRepairsKanbanVisible();
+    await repairs.openNewRepairCreateModal();
+
+    const dialog = page.getByRole("dialog", { name: /New Repair/ });
+    const chips = dialog.locator(".modal-footer__required-chips");
+    const submitBtn = dialog.getByRole("button", { name: "Create Repair" });
+
+    await expect(chips).toBeVisible();
+    await expect(submitBtn).toBeDisabled();
+
+    const chipsBox = await chips.boundingBox();
+    const btnBox = await submitBtn.boundingBox();
+    expect(chipsBox).not.toBeNull();
+    expect(btnBox).not.toBeNull();
+    expect(chipsBox!.y).toBeLessThan(btnBox!.y);
+
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+  });
+});
+
+// ─── PURCHASES ──────────────────────────────────────────────────────────────
 
 test.describe("Purchases — create button disabled state @desktop", () => {
   test.use({ storageState: AUTH_STATE_ADMIN });
@@ -57,13 +140,90 @@ test.describe("Purchases — create button disabled state @desktop", () => {
     await expect(submitBtn).toBeDisabled();
 
     await dialog.locator(".purchase-invoice-line-toggle").first().click();
-
     await dialog.locator("input[placeholder='Part name or SKU']").fill("Brake pads");
     await expect(submitBtn).toBeEnabled();
 
     await dialog.getByRole("button", { name: "Close" }).click();
   });
+
+  test("required-field chips appear and disappear as fields are filled", async ({ page }) => {
+    await e2eBehaviors("admin", "purchases · required chips · appear and disappear");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoPurchasesSection();
+
+    await page.getByRole("button", { name: "+ Add part line" }).click();
+
+    const dialog = page.locator("[aria-labelledby='purchase-create-modal-title']");
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Supplier" })).toBeVisible();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Part name" })).toBeVisible();
+
+    await dialog.locator("input[placeholder='Supplier name']").fill("Test Supplier");
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Supplier" })).toBeHidden();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Part name" })).toBeVisible();
+
+    await dialog.locator(".purchase-invoice-line-toggle").first().click();
+    await dialog.locator("input[placeholder='Part name or SKU']").fill("Brake pads");
+    await expect(dialog.locator(".modal-footer__required-chip")).toHaveCount(0);
+
+    await dialog.getByRole("button", { name: "Close" }).click();
+  });
+
+  test("clearing supplier name re-disables the button", async ({ page }) => {
+    await e2eBehaviors("admin", "purchases · create button · re-disabled after clearing supplier");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoPurchasesSection();
+
+    await page.getByRole("button", { name: "+ Add part line" }).click();
+
+    const dialog = page.locator("[aria-labelledby='purchase-create-modal-title']");
+    const submitBtn = page.getByRole("button", { name: /Save/ });
+    const supplierInput = dialog.locator("input[placeholder='Supplier name']");
+
+    await supplierInput.fill("Test Supplier");
+    await dialog.locator(".purchase-invoice-line-toggle").first().click();
+    await dialog.locator("input[placeholder='Part name or SKU']").fill("Brake pads");
+    await expect(submitBtn).toBeEnabled();
+
+    await supplierInput.clear();
+    await expect(submitBtn).toBeDisabled();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Supplier" })).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Close" }).click();
+  });
 });
+
+test.describe("Purchases — create button disabled state (mobile)", () => {
+  test.use({ storageState: AUTH_STATE_ADMIN });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/app");
+  });
+
+  test("chips render above stretched buttons on mobile", async ({ page }) => {
+    await e2eBehaviors("admin", "purchases · create button · chips above buttons on mobile");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoPurchasesSection();
+
+    await page.getByRole("button", { name: /Add part line|Add consumable/ }).first().click();
+
+    const dialog = page.locator("[aria-labelledby='purchase-create-modal-title']");
+    const chips = dialog.locator(".modal-footer__required-chips");
+    const submitBtn = dialog.getByRole("button", { name: /Save/ });
+
+    await expect(chips).toBeVisible();
+    await expect(submitBtn).toBeDisabled();
+
+    const chipsBox = await chips.boundingBox();
+    const btnBox = await submitBtn.boundingBox();
+    expect(chipsBox).not.toBeNull();
+    expect(btnBox).not.toBeNull();
+    expect(chipsBox!.y).toBeLessThan(btnBox!.y);
+
+    await dialog.getByRole("button", { name: "Close" }).click();
+  });
+});
+
+// ─── VEHICLES ───────────────────────────────────────────────────────────────
 
 test.describe("Vehicles — create button disabled state @desktop", () => {
   test.beforeEach(async ({ page }) => {
@@ -98,6 +258,105 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
     });
     await ownerSelect.selectOption(firstOptionValue);
     await expect(submitBtn).toBeEnabled();
+
+    await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+  });
+
+  test("required-field chips appear and disappear as fields are filled", async ({ page }) => {
+    await e2eBehaviors("staff", "vehicles · required chips · appear and disappear");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoVehiclesSection();
+
+    const createBtn = page.getByRole("button", { name: "Create Vehicle" }).or(
+      page.getByRole("button", { name: "+ Add vehicle" })
+    );
+    await createBtn.first().click();
+
+    const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Owner" })).toBeVisible();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "License plate" })).toBeVisible();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Make" })).toBeVisible();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Model" })).toBeVisible();
+
+    await dialog.locator("input[placeholder='e.g. KR 2048A']").fill("TEST 001");
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "License plate" })).toBeHidden();
+
+    await dialog.locator("input[placeholder='e.g. Toyota']").fill("Toyota");
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Make" })).toBeHidden();
+
+    await dialog.locator("input[placeholder='e.g. Yaris']").fill("Yaris");
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Model" })).toBeHidden();
+
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Owner" })).toBeVisible();
+    await expect(dialog.locator(".modal-footer__required-chip")).toHaveCount(1);
+
+    await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+  });
+
+  test("clearing a field re-disables the button and restores its chip", async ({ page }) => {
+    await e2eBehaviors("staff", "vehicles · create button · re-disabled after clearing make");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoVehiclesSection();
+
+    const createBtn = page.getByRole("button", { name: "Create Vehicle" }).or(
+      page.getByRole("button", { name: "+ Add vehicle" })
+    );
+    await createBtn.first().click();
+
+    const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+
+    const submitBtn = dialog.getByRole("button", { name: "Create Vehicle" });
+    const makeInput = dialog.locator("input[placeholder='e.g. Toyota']");
+
+    await dialog.locator("input[placeholder='e.g. KR 2048A']").fill("TEST 001");
+    await makeInput.fill("Toyota");
+    await dialog.locator("input[placeholder='e.g. Yaris']").fill("Yaris");
+    const ownerSelect = dialog.locator(".inline-owner-select select");
+    const firstOptionValue = await ownerSelect.evaluate((sel: HTMLSelectElement) => {
+      const opt = Array.from(sel.options).find((o) => o.value !== "");
+      return opt?.value ?? "";
+    });
+    await ownerSelect.selectOption(firstOptionValue);
+    await expect(submitBtn).toBeEnabled();
+
+    await makeInput.clear();
+    await expect(submitBtn).toBeDisabled();
+    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Make" })).toBeVisible();
+
+    await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+  });
+});
+
+test.describe("Vehicles — create button disabled state (mobile)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openStaffApp(page);
+  });
+
+  test("chips render above stretched buttons on mobile", async ({ page }) => {
+    await e2eBehaviors("staff", "vehicles · create button · chips above buttons on mobile");
+    const reg = new StaffRecordsRegistryPage(page);
+    await reg.gotoVehiclesSection();
+
+    const createBtn = page.getByRole("button", { name: /Add Vehicle|Add vehicle/ });
+    await createBtn.first().click();
+
+    const dialog = page.getByRole("dialog").filter({ hasText: "Register Vehicle" });
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+
+    const chips = dialog.locator(".modal-footer__required-chips");
+    const submitBtn = dialog.getByRole("button", { name: "Create Vehicle" });
+
+    await expect(chips).toBeVisible();
+    await expect(submitBtn).toBeDisabled();
+
+    const chipsBox = await chips.boundingBox();
+    const btnBox = await submitBtn.boundingBox();
+    expect(chipsBox).not.toBeNull();
+    expect(btnBox).not.toBeNull();
+    expect(chipsBox!.y).toBeLessThan(btnBox!.y);
 
     await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
   });
