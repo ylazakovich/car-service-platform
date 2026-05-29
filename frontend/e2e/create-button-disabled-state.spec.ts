@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { AUTH_STATE_ADMIN, openStaffApp } from "./fixtures/auth";
+import { cleanupE2eData, createE2eCustomerWithVehicle } from "./fixtures/e2eDataFactory";
 import { StaffRecordsRegistryPage } from "./pages/StaffRecordsRegistryPage";
 import { StaffRepairsPage } from "./pages/StaffRepairsPage";
-import { E2E_DEMO_REPAIR_VEHICLE_PLATE } from "./e2e-seed";
 
 // regression: create buttons must stay disabled until minimum required fields are filled
 
@@ -17,76 +17,112 @@ test.describe("Repairs — create button disabled state @desktop", () => {
   test("Create Repair button is disabled until vehicle and service line are filled", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · create button · disabled until required fields filled");
     const repairs = new StaffRepairsPage(page);
+    let fixture: Awaited<ReturnType<typeof createE2eCustomerWithVehicle>> | null = null;
 
-    await repairs.gotoRepairsSection();
-    await repairs.expectRepairsKanbanVisible();
-    await repairs.openNewRepairCreateModal();
+    try {
+      fixture = await createE2eCustomerWithVehicle(page, "create-btn-disabled");
+      await openStaffApp(page);
+      await repairs.gotoRepairsSection();
+      await repairs.expectRepairsKanbanVisible();
+      await repairs.openNewRepairCreateModal();
 
-    const submitBtn = page.getByRole("button", { name: "Create Repair" });
-    await expect(submitBtn).toBeDisabled();
+      const submitBtn = page.getByRole("button", { name: "Create Repair" });
+      await expect(submitBtn).toBeDisabled();
 
-    await page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);
-    const escapedPlate = E2E_DEMO_REPAIR_VEHICLE_PLATE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    await page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) }).click();
-    await expect(submitBtn).toBeDisabled();
+      await page.getByLabel("Search vehicle for repair").fill(fixture.vehiclePlate);
+      const escapedPlate = fixture.vehiclePlate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const vehicleOption = page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) });
+      await expect(vehicleOption).toBeVisible({ timeout: 10_000 });
+      await vehicleOption.click();
+      await expect(submitBtn).toBeDisabled();
 
-    await page.getByRole("textbox", { name: /Line 1/ }).fill("Oil change");
-    await expect(submitBtn).toBeEnabled();
+      await page.getByRole("textbox", { name: /Line 1/ }).fill("Oil change");
+      await expect(submitBtn).toBeEnabled();
 
-    await page.getByRole("dialog", { name: /New Repair/ }).getByRole("button", { name: "Cancel" }).click();
+      await page.getByRole("dialog", { name: /New Repair/ }).getByRole("button", { name: "Cancel" }).click();
+    } finally {
+      await cleanupE2eData(page, {
+        vehicleIds: fixture ? [fixture.vehicleId] : [],
+        customerIds: fixture ? [fixture.customerId] : [],
+      });
+    }
   });
 
   test("required-field chips appear and disappear as fields are filled", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · required chips · appear and disappear");
     const repairs = new StaffRepairsPage(page);
+    let fixture: Awaited<ReturnType<typeof createE2eCustomerWithVehicle>> | null = null;
 
-    await repairs.gotoRepairsSection();
-    await repairs.expectRepairsKanbanVisible();
-    await repairs.openNewRepairCreateModal();
+    try {
+      fixture = await createE2eCustomerWithVehicle(page, "create-btn-disabled");
+      await openStaffApp(page);
+      await repairs.gotoRepairsSection();
+      await repairs.expectRepairsKanbanVisible();
+      await repairs.openNewRepairCreateModal();
 
-    const dialog = page.getByRole("dialog", { name: /New Repair/ });
-    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Vehicle" })).toBeVisible();
-    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
+      const dialog = page.getByRole("dialog", { name: /New Repair/ });
+      await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Vehicle" })).toBeVisible();
+      await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
 
-    await page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);
-    const escapedPlate = E2E_DEMO_REPAIR_VEHICLE_PLATE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    await page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) }).click();
-    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Vehicle" })).toBeHidden();
-    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
+      await page.getByLabel("Search vehicle for repair").fill(fixture.vehiclePlate);
+      const escapedPlate = fixture.vehiclePlate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const vehicleOption = page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) });
+      await expect(vehicleOption).toBeVisible({ timeout: 10_000 });
+      await vehicleOption.click();
+      await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Vehicle" })).toBeHidden();
+      await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
 
-    await page.getByRole("textbox", { name: /Line 1/ }).fill("Oil change");
-    await expect(dialog.locator(".modal-footer__required-chip")).toHaveCount(0);
+      await page.getByRole("textbox", { name: /Line 1/ }).fill("Oil change");
+      await expect(dialog.locator(".modal-footer__required-chip")).toHaveCount(0);
 
-    await dialog.getByRole("button", { name: "Cancel" }).click();
+      await dialog.getByRole("button", { name: "Cancel" }).click();
+    } finally {
+      await cleanupE2eData(page, {
+        vehicleIds: fixture ? [fixture.vehicleId] : [],
+        customerIds: fixture ? [fixture.customerId] : [],
+      });
+    }
   });
 
   test("clearing service line re-disables the button", async ({ page }) => {
     await e2eBehaviors("staff", "repairs · create button · re-disabled after clearing service line");
     const repairs = new StaffRepairsPage(page);
+    let fixture: Awaited<ReturnType<typeof createE2eCustomerWithVehicle>> | null = null;
 
-    await repairs.gotoRepairsSection();
-    await repairs.expectRepairsKanbanVisible();
-    await repairs.openNewRepairCreateModal();
+    try {
+      fixture = await createE2eCustomerWithVehicle(page, "create-btn-disabled");
+      await openStaffApp(page);
+      await repairs.gotoRepairsSection();
+      await repairs.expectRepairsKanbanVisible();
+      await repairs.openNewRepairCreateModal();
 
-    const dialog = page.getByRole("dialog", { name: /New Repair/ });
-    const submitBtn = page.getByRole("button", { name: "Create Repair" });
+      const dialog = page.getByRole("dialog", { name: /New Repair/ });
+      const submitBtn = page.getByRole("button", { name: "Create Repair" });
 
-    await page.getByLabel("Search vehicle for repair").fill(E2E_DEMO_REPAIR_VEHICLE_PLATE);
-    const escapedPlate = E2E_DEMO_REPAIR_VEHICLE_PLATE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    await page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) }).click();
-    const line1 = page.getByRole("textbox", { name: /Line 1/ });
-    await line1.fill("Oil change");
-    await expect(submitBtn).toBeEnabled();
+      await page.getByLabel("Search vehicle for repair").fill(fixture.vehiclePlate);
+      const escapedPlate = fixture.vehiclePlate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const vehicleOption = page.getByRole("option", { name: new RegExp(`${escapedPlate}\\s*•`) });
+      await expect(vehicleOption).toBeVisible({ timeout: 10_000 });
+      await vehicleOption.click();
+      const line1 = page.getByRole("textbox", { name: /Line 1/ });
+      await line1.fill("Oil change");
+      await expect(submitBtn).toBeEnabled();
 
-    await line1.clear();
-    await expect(submitBtn).toBeDisabled();
-    await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
+      await line1.clear();
+      await expect(submitBtn).toBeDisabled();
+      await expect(dialog.locator(".modal-footer__required-chip").filter({ hasText: "Service line" })).toBeVisible();
 
-    await dialog.getByRole("button", { name: "Cancel" }).click();
+      await dialog.getByRole("button", { name: "Cancel" }).click();
+    } finally {
+      await cleanupE2eData(page, {
+        vehicleIds: fixture ? [fixture.vehicleId] : [],
+        customerIds: fixture ? [fixture.customerId] : [],
+      });
+    }
   });
 });
 
-test.describe("Repairs — create button disabled state (mobile)", () => {
+test.describe("Repairs — create button disabled state @mobile-only", () => {
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
   });
@@ -191,7 +227,7 @@ test.describe("Purchases — create button disabled state @desktop", () => {
   });
 });
 
-test.describe("Purchases — create button disabled state (mobile)", () => {
+test.describe("Purchases — create button disabled state @mobile-only", () => {
   test.use({ storageState: AUTH_STATE_ADMIN });
 
   test.beforeEach(async ({ page }) => {
@@ -251,6 +287,7 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
     await expect(submitBtn).toBeDisabled();
 
     const ownerSelect = dialog.locator(".inline-owner-select select");
+    await expect(ownerSelect.locator("option[value]:not([value=''])")).toHaveCount(1, { timeout: 10_000 }).catch(() => {});
     const firstOptionValue = await ownerSelect.evaluate((sel: HTMLSelectElement) => {
       const opt = Array.from(sel.options).find((o) => o.value !== "");
       return opt?.value ?? "";
@@ -315,6 +352,7 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
     await makeInput.fill("Toyota");
     await dialog.locator("input[placeholder='e.g. Yaris']").fill("Yaris");
     const ownerSelect = dialog.locator(".inline-owner-select select");
+    await expect(ownerSelect.locator("option[value]:not([value=''])")).toHaveCount(1, { timeout: 10_000 }).catch(() => {});
     const firstOptionValue = await ownerSelect.evaluate((sel: HTMLSelectElement) => {
       const opt = Array.from(sel.options).find((o) => o.value !== "");
       return opt?.value ?? "";
@@ -331,7 +369,7 @@ test.describe("Vehicles — create button disabled state @desktop", () => {
   });
 });
 
-test.describe("Vehicles — create button disabled state (mobile)", () => {
+test.describe("Vehicles — create button disabled state @mobile-only", () => {
   test.beforeEach(async ({ page }) => {
     await openStaffApp(page);
   });
