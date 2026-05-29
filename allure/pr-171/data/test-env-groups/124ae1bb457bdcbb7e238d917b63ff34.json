@@ -1,1 +1,1 @@
-{"id":"124ae1bb457bdcbb7e238d917b63ff34","fullName":"repair-service-lines.spec.ts:69:3","name":"completed test-owned card shows multi-service summary (+N) on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"4d2180ef74c07665aee0bf5210e4a0d8"}}
+{"id":"124ae1bb457bdcbb7e238d917b63ff34","fullName":"repair-service-lines.spec.ts:69:3","name":"completed test-owned card shows multi-service summary (+N) on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"5dd27e5fd658b0bd6007d312604a4535"}}

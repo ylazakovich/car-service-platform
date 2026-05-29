@@ -1,1 +1,1 @@
-{"id":"17fb21bfeda23e7fd89303c0bcdef4c8","fullName":"repair-service-lines.spec.ts:128:3","name":"admin sees Services editor with test-owned lines and Add service on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"cc38b6dc2329682c8758befa0cee4fdb"}}
+{"id":"17fb21bfeda23e7fd89303c0bcdef4c8","fullName":"repair-service-lines.spec.ts:128:3","name":"admin sees Services editor with test-owned lines and Add service on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"70180ff26de3ad040e9eb976830a5b17"}}
