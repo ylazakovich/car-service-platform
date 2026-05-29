@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",
-    "@sentry/react": "^8",
+    "@sentry/react": "^10.0.0",
     "axios": "^1.13.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
