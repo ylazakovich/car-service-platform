@@ -45,12 +45,14 @@ import { StaffRepairsMobileList } from "../features/staff/mobile/StaffRepairsMob
 import { StaffVehicleMobileDetail } from "../features/staff/mobile/StaffVehicleMobileDetail";
 import { StaffVehiclesMobileList } from "../features/staff/mobile/StaffVehiclesMobileList";
 import {
+  DEFAULT_REPAIR_DATE_FILTER,
   formatRepairServicesSummary,
   getLastRecordedOdometerFromRepairs,
   getRepairStatusClass,
   parseVehicleProfileMileageKm,
   REPAIR_KANBAN_COLUMNS,
   REPAIR_STATUS_LABELS,
+  type RepairDateFilter,
   type RepairEntry,
   type RepairPartsSummary,
   type RepairStatus,
@@ -2419,7 +2421,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
     [vehicleSearch, vehicles]
   );
 
-  const [repairDateFilter, setRepairDateFilter] = useState<"7d" | "30d" | "90d" | "all">("all");
+  const [repairDateFilter, setRepairDateFilter] = useState<RepairDateFilter>(DEFAULT_REPAIR_DATE_FILTER);
 
   const visibleRepairs = useMemo(() => {
     const cutoffDays: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };

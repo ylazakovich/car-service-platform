@@ -52,6 +52,25 @@ function repairDialog(page: Page, fixture: IsolatedRepairFixture) {
   return page.getByRole("dialog", { name });
 }
 
+function completedColumn(page: Page) {
+  return page.getByLabel("Repairs kanban board").locator(".kanban-col").filter({ hasText: "Completed" }).first();
+}
+
+async function expectDefaultDateFilterIs30Days(page: Page) {
+  const filter = page.locator(".kanban-date-filter").first();
+  await expect(filter.locator(".kanban-date-chip", { hasText: "30 days" })).toHaveClass(/active/);
+  await expect(filter.locator(".kanban-date-chip", { hasText: "All time" })).not.toHaveClass(/active/);
+}
+
+async function expectPickedUpCardDimmedInCompletedColumn(page: Page, trackingCode: string) {
+  const card = completedColumn(page).locator(".kanban-card").filter({ hasText: `#${trackingCode}` }).first();
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await expect(card).toHaveClass(/kanban-card--picked-up/);
+  await expect
+    .poll(async () => Number(await card.evaluate((element) => window.getComputedStyle(element).opacity)))
+    .toBeLessThan(0.8);
+}
+
 test.describe("Staff repairs — picked up status @desktop", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -83,10 +102,10 @@ test.describe("Staff repairs — picked up status @desktop", () => {
   }
 
   test(
-    // regression: picked_up status missing — counter never decreases
-    "Mark as Picked Up removes repair from kanban and decreases Ready to pickup counter",
+    // regression: picked_up cards should stay visible but look inactive instead of disappearing
+    "Mark as Picked Up keeps repair in Completed as a dimmed card after Ready to pickup count updates",
     async ({ page }) => {
-      await e2eBehaviors("staff", "repairs · picked up · mark + counter decrease");
+      await e2eBehaviors("staff", "repairs · picked up · desktop completed dimmed card");
       const repairs = new StaffRepairsPage(page);
       const fixture = await createFixture(page);
 
@@ -113,10 +132,19 @@ test.describe("Staff repairs — picked up status @desktop", () => {
       await dialog.getByRole("button", { name: "Cancel" }).click();
       await expect(dialog).toBeHidden();
 
-      const board = page.getByLabel("Repairs kanban board");
-      await expect(board.locator(".kanban-card").filter({ hasText: `#${fixture.trackingCode}` })).toBeHidden();
+      await expectPickedUpCardDimmedInCompletedColumn(page, fixture.trackingCode);
     },
   );
+
+  test("Repairs board defaults to the 30 days date filter", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · date filter · default 30 days desktop");
+    const repairs = new StaffRepairsPage(page);
+
+    await repairs.gotoRepairsSection();
+    await repairs.expectRepairsKanbanVisible();
+
+    await expectDefaultDateFilterIs30Days(page);
+  });
 
   test(
     // regression: no way to undo picked_up after closing modal
@@ -151,10 +179,10 @@ test.describe("Staff repairs — picked up status @desktop", () => {
   );
 
   test(
-    // regression: picked_up card inaccessible after modal closed
-    "Picked up repair is findable via search",
+    // regression: picked_up remains searchable while staying visible in Completed
+    "Picked up repair remains findable via search in the Completed column",
     async ({ page }) => {
-      await e2eBehaviors("staff", "repairs · picked up · findable via search");
+      await e2eBehaviors("staff", "repairs · picked up · desktop searchable completed card");
       const repairs = new StaffRepairsPage(page);
       const fixture = await createFixture(page);
 
@@ -170,18 +198,70 @@ test.describe("Staff repairs — picked up status @desktop", () => {
       await dialog.getByRole("button", { name: "Cancel" }).click();
       await expect(dialog).toBeHidden();
 
-      // Search by tracking code — picked_up repairs are hidden from desktop kanban columns,
-      // but remain searchable in the mobile repairs list data model.
-      await page.setViewportSize({ width: 390, height: 844 });
-      const searchInput = page.locator(".staff-mobile-taskbar .staff-mobile-search input");
+      const searchInput = page.getByPlaceholder("Search repairs…");
       await searchInput.fill(fixture.trackingCode);
 
-      const mobileList = page.getByLabel("Mobile repairs list");
-      const pickedUpCard = mobileList.locator(".repair-mobile-card").filter({
-        hasText: fixture.trackingCode,
-      });
-      await expect(pickedUpCard).toHaveCount(1);
-      await expect(pickedUpCard).toContainText(fixture.trackingCode);
+      await expectPickedUpCardDimmedInCompletedColumn(page, fixture.trackingCode);
     },
   );
+});
+
+test.describe("Staff repairs — picked up status @mobile-only", () => {
+  test.describe.configure({ mode: "serial" });
+
+  let createdFixtures: IsolatedRepairFixture[] = [];
+
+  test.beforeEach(async ({ page }) => {
+    createdFixtures = [];
+    await openStaffApp(page);
+  });
+
+  test.afterEach(async ({ page }) => {
+    for (const fixture of createdFixtures.reverse()) {
+      await cleanupIsolatedRepair(page, fixture);
+    }
+  });
+
+  async function createFixture(page: Page) {
+    const fixture = await createIsolatedRepair(page, {
+      markerPrefix: "picked-up-mobile-e2e",
+      status: "completed",
+      assignMaster: true,
+      serviceName: "Picked up mobile isolation service",
+      vehicleModel: "Pickup Mobile Isolation",
+    });
+    createdFixtures.push(fixture);
+    await page.reload();
+    await openStaffApp(page);
+    return fixture;
+  }
+
+  test("Repairs board defaults to the 30 days date filter", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · date filter · default 30 days mobile");
+    const repairs = new StaffRepairsPage(page);
+
+    await repairs.gotoRepairsSection();
+    await repairs.expectRepairsKanbanVisible();
+
+    await expectDefaultDateFilterIs30Days(page);
+  });
+
+  test("Mark as Picked Up keeps repair in Completed as a dimmed card", async ({ page }) => {
+    await e2eBehaviors("staff", "repairs · picked up · mobile completed dimmed card");
+    const repairs = new StaffRepairsPage(page);
+    const fixture = await createFixture(page);
+
+    await repairs.gotoRepairsSection();
+    await repairs.expectRepairsKanbanVisible();
+
+    await openRepairCard(page, fixture.trackingCode);
+    const dialog = repairDialog(page, fixture);
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await dialog.getByRole("button", { name: "Mark as Picked Up" }).click();
+    await expect(dialog.getByRole("button", { name: "Undo Pickup" })).toBeVisible({ timeout: 10_000 });
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toBeHidden();
+
+    await expectPickedUpCardDimmedInCompletedColumn(page, fixture.trackingCode);
+  });
 });

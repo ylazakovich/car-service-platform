@@ -7,7 +7,6 @@ import {
   REPAIR_STATUS_LABELS,
   type RepairEntry,
   type RepairPartsSummary,
-  type RepairStatus,
   type RepairStatusFilter,
 } from "../shared/repairs";
 
@@ -66,7 +65,9 @@ export function StaffRepairsMobileList({
   repairPartSummaries,
 }: StaffRepairsMobileListProps) {
   const filteredRepairs =
-    activeFilter === "all" ? repairs : repairs.filter((repair) => repair.status === activeFilter);
+    activeFilter === "all"
+      ? repairs
+      : repairs.filter((repair) => repair.status === activeFilter || (activeFilter === "completed" && repair.status === "picked_up"));
 
   return (
     <div className="repairs-mobile-surface" aria-label="Mobile repairs list">
@@ -85,9 +86,8 @@ export function StaffRepairsMobileList({
           <strong>{repairs.length}</strong>
         </button>
 
-        {([...REPAIR_KANBAN_COLUMNS, { status: "picked_up" as RepairStatus, label: "Picked Up" }]).map(({ status }) => {
-          const count = repairs.filter((repair) => repair.status === status).length;
-          if (count === 0 && status === "picked_up") return null;
+        {REPAIR_KANBAN_COLUMNS.map(({ status }) => {
+          const count = repairs.filter((repair) => repair.status === status || (status === "completed" && repair.status === "picked_up")).length;
           return (
             <button
               key={status}
@@ -115,7 +115,10 @@ export function StaffRepairsMobileList({
             (() => {
               const partsSummary = repairPartSummaries[repair.tracking_code];
               return (
-                <article key={repair.id} className="repair-mobile-card">
+                <article
+                  key={repair.id}
+                  className={`repair-mobile-card${repair.status === "picked_up" ? " repair-mobile-card--picked-up" : ""}`}
+                >
                   <button type="button" className="repair-mobile-open" onClick={() => onOpenRepair(repair)}>
                     <div className="repair-mobile-card-top">
                       <span className={getRepairStatusClass(repair.status)}>{REPAIR_STATUS_LABELS[repair.status]}</span>

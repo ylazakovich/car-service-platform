@@ -407,6 +407,8 @@ test.describe("Vehicles — create button disabled state @mobile-only", () => {
     expect(btnBox).not.toBeNull();
     expect(chipsBox!.y).toBeLessThan(btnBox!.y);
 
-    await dialog.getByRole("button", { name: /Close|Cancel/ }).first().click();
+    // The mobile close affordance can be overlapped by the sticky modal header; Escape uses the dialog's supported dismissal path.
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
   });
 });

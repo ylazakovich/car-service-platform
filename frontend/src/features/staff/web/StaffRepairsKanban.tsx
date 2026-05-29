@@ -60,7 +60,7 @@ export function StaffRepairsKanban({
       <div className="kanban-board">
         {REPAIR_KANBAN_COLUMNS.map(({ status, label }) => {
           const columnRepairs = repairs
-            .filter((repair) => repair.status === status)
+            .filter((repair) => repair.status === status || (status === "completed" && repair.status === "picked_up"))
             .sort((a, b) => {
               if (a.position != null && b.position != null) return a.position - b.position;
               if (a.position != null) return -1;
@@ -100,7 +100,7 @@ export function StaffRepairsKanban({
                 {displayedRepairs.map((repair) => (
                   <article
                     key={repair.id}
-                    className={`kanban-card ${draggingRepairId === repair.id ? "kanban-card-dragging" : ""} ${dragOverCardId === repair.id && draggingRepairId !== repair.id ? "kanban-card-drop-target" : ""}`}
+                    className={`kanban-card${repair.status === "picked_up" ? " kanban-card--picked-up" : ""}${draggingRepairId === repair.id ? " kanban-card-dragging" : ""}${dragOverCardId === repair.id && draggingRepairId !== repair.id ? " kanban-card-drop-target" : ""}`}
                     draggable
                     onDragStart={(event) => onCardDragStart(repair.id, event)}
                     onDragEnd={onCardDragEnd}

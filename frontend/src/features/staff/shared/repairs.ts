@@ -4,6 +4,9 @@ import { randomUuid } from "../../../lib/randomUuid";
 export type RepairStatus = "new" | "in_progress" | "waiting_parts" | "completed" | "picked_up";
 
 export type RepairStatusFilter = "all" | RepairStatus;
+export type RepairDateFilter = "7d" | "30d" | "90d" | "all";
+
+export const DEFAULT_REPAIR_DATE_FILTER: RepairDateFilter = "30d";
 
 export type RepairNote = {
   id: string;
