@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-28T11:04:54.105Z",
+  "generatedAt": "2026-05-29T06:46:45.364Z",
   "advisoryOnly": true,
   "exitCodePolicy": "always_zero",
   "gates": {
@@ -13,10 +13,10 @@
     }
   },
   "metrics": {
-    "pyramidTotal": 448,
-    "unitShare": 0.5022321428571429,
-    "apiShare": 0.3638392857142857,
-    "e2eShare": 0.13392857142857142,
+    "pyramidTotal": 454,
+    "unitShare": 0.5,
+    "apiShare": 0.3590308370044053,
+    "e2eShare": 0.14096916299559473,
     "otherEpicTotal": 0
   }
 }
