@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_REPAIR_DATE_FILTER,
   formatRepairCardDateRow,
   formatRepairDisplayDate,
   formatRepairServicesSummary,
@@ -50,6 +51,10 @@ function repair(overrides: Partial<RepairEntry> = {}): RepairEntry {
 }
 
 describe("repair shared presentation helpers", () => {
+  it("defaults the repairs board date filter to the last 30 days", () => {
+    expect(DEFAULT_REPAIR_DATE_FILTER).toBe("30d");
+  });
+
   it.each([
     ["new", "New"],
     ["in_progress", "In Progress"],

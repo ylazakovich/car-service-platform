@@ -454,6 +454,21 @@
   gap: var(--s3);
 }
 
+.repair-mobile-card--picked-up {
+  opacity: 0.45;
+  filter: saturate(0.55);
+}
+
+.repair-mobile-card--picked-up:focus-within {
+  opacity: 0.65;
+}
+
+.repair-mobile-card--picked-up .repair-mobile-main p,
+.repair-mobile-card--picked-up .repair-mobile-meta,
+.repair-mobile-card--picked-up .repair-mobile-next-action {
+  color: var(--text-dim);
+}
+
 .repair-mobile-open {
   border: 0;
   background: transparent;
@@ -1546,6 +1561,33 @@
   border-color: var(--border-strong);
   background: var(--surface-mid);
   transform: translateY(-1px);
+}
+
+.kanban-card--picked-up {
+  opacity: 0.45;
+  filter: saturate(0.55);
+}
+
+.kanban-card--picked-up:not(.kanban-card-dragging):hover {
+  opacity: 0.62;
+}
+
+.kanban-card--picked-up .repair-status-chip {
+  opacity: 0.8;
+}
+
+.kanban-card--picked-up .kanban-card-plate,
+.kanban-card--picked-up .kanban-card-service,
+.kanban-card--picked-up .kanban-card-model,
+.kanban-card--picked-up .kanban-card-issue,
+.kanban-card--picked-up .kanban-card-meta,
+.kanban-card--picked-up .kanban-card-footer {
+  color: var(--text-soft);
+}
+
+.kanban-card--picked-up .tracking-chip,
+.kanban-card--picked-up .kanban-card-avatar {
+  opacity: 0.75;
 }
 
 .kanban-card-top {

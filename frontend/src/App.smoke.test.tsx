@@ -128,7 +128,11 @@ async function openRepairKanbanCardByTrackingCode(
   trackingCode: string
 ): Promise<void> {
   const board = await screen.findByLabelText("Repairs kanban board");
-  const chip = within(board).getByText(`#${trackingCode}`);
+  let chip = within(board).queryByText(`#${trackingCode}`);
+  if (!chip) {
+    await user.click(screen.getByRole("button", { name: "All time" }));
+    chip = await within(board).findByText(`#${trackingCode}`);
+  }
   const card = chip.closest("article");
   if (!card || !(card instanceof HTMLElement)) {
     throw new Error(`Kanban card for ${trackingCode} not found`);
@@ -1336,6 +1340,7 @@ describe("bootstrap application", () => {
 
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
+    await user.click(screen.getByRole("button", { name: "All time" }));
     expect((await screen.findAllByText("1 linked part")).length).toBeGreaterThan(0);
 
     await openRepairKanbanCardByTrackingCode(user, "TOR-1011");
@@ -2142,6 +2147,7 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
     expect((await screen.findAllByText("Recent Oil Change")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Old Brake Job").length).toBeGreaterThan(0);
@@ -2218,6 +2224,7 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByRole("heading", { name: "Kanban Board", level: 2 });
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
     const kanban = await screen.findByLabelText("Repairs kanban board");
 
@@ -2338,8 +2345,9 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
-    expect(screen.getByText("#TOR-1011")).toBeInTheDocument();
+    expect(await screen.findByText("#TOR-1011")).toBeInTheDocument();
   });
 
   it("kanban card shows vehicle_plate when present", async () => {
@@ -3358,7 +3366,8 @@ describe("bootstrap application", () => {
     await user.click(screen.getByRole("button", { name: "Repairs" }));
 
     const board = await screen.findByLabelText("Repairs kanban board");
-    const card = screen.getByText("#TOR-1022").closest("article");
+    await user.click(screen.getByRole("button", { name: "All time" }));
+    const card = (await screen.findByText("#TOR-1022")).closest("article");
     const completedColumn = within(board).getByText("Completed").closest(".kanban-col");
     expect(card).not.toBeNull();
     expect(completedColumn).not.toBeNull();
