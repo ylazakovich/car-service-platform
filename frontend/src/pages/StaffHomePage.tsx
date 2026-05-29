@@ -4451,16 +4451,27 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
 
             </div>
 
-            <div className="modal-footer modal-footer--right">
-              <div className="modal-footer__primary-cluster">
-                <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
-                  Cancel
-                </button>
-                <button type="submit" className="button" disabled={isSavingVehicle || !vehicleForm.customer_id || !vehicleForm.license_plate.trim() || !vehicleForm.make.trim() || !vehicleForm.model.trim()}>
-                  {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const vehicleMissing = !vehicleForm.customer_id || !vehicleForm.license_plate.trim() || !vehicleForm.make.trim() || !vehicleForm.model.trim();
+              const vehicleHint = vehicleMissing
+                ? (!vehicleForm.customer_id ? "Select an owner" : !vehicleForm.license_plate.trim() ? "Enter a license plate" : !vehicleForm.make.trim() ? "Enter a make" : "Enter a model")
+                : null;
+              return (
+                <div className="modal-footer modal-footer--split">
+                  <div>
+                    {vehicleHint ? <span className="modal-footer__hint">{vehicleHint}</span> : null}
+                  </div>
+                  <div className="modal-footer__primary-cluster">
+                    <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="button" disabled={isSavingVehicle || vehicleMissing} title={vehicleHint ?? undefined}>
+                      {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </form>
         </div>
       </div>
@@ -6325,36 +6336,44 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   {purchaseError ? <p className="form-error">{purchaseError}</p> : null}
                 </div>
 
-                <div className="modal-footer modal-footer--right">
-                  <div className="modal-footer__primary-cluster">
-                    <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() => void handlePurchaseOrderDownload()}
-                      disabled={isDownloadingPurchaseOrder}
-                    >
-                      {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
-                    </button>
-                    <button
-                      type="submit"
-                      className="button"
-                      disabled={isSavingPurchase || !(
-                        !!purchaseForm.order_date &&
-                        purchaseForm.supplier_name.trim().length > 0 &&
-                        purchaseLineRows.some(row => row.part_name.trim().length > 0)
-                      )}
-                    >
-                      {isSavingPurchase
-                        ? "Saving…"
-                        : purchaseLineRows.length > 1
-                          ? `Save invoice (${purchaseLineRows.length} lines)`
-                          : "Save line"}
-                    </button>
-                  </div>
-                </div>
+                {(() => {
+                  const canSavePurchase = !!purchaseForm.order_date && purchaseForm.supplier_name.trim().length > 0 && purchaseLineRows.some(row => row.part_name.trim().length > 0);
+                  const purchaseHint = !canSavePurchase
+                    ? (!purchaseForm.supplier_name.trim() ? "Enter a supplier name" : "Enter a part name in at least one line")
+                    : null;
+                  return (
+                    <div className="modal-footer modal-footer--split">
+                      <div>
+                        {purchaseHint ? <span className="modal-footer__hint">{purchaseHint}</span> : null}
+                      </div>
+                      <div className="modal-footer__primary-cluster">
+                        <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          onClick={() => void handlePurchaseOrderDownload()}
+                          disabled={isDownloadingPurchaseOrder}
+                        >
+                          {isDownloadingPurchaseOrder ? "Preparing PO…" : "Download PO"}
+                        </button>
+                        <button
+                          type="submit"
+                          className="button"
+                          title={purchaseHint ?? undefined}
+                          disabled={isSavingPurchase || !canSavePurchase}
+                        >
+                          {isSavingPurchase
+                            ? "Saving…"
+                            : purchaseLineRows.length > 1
+                              ? `Save invoice (${purchaseLineRows.length} lines)`
+                              : "Save line"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </form>
             </div>
           </div>

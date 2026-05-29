@@ -90,6 +90,11 @@ export function RepairCreateModal({
   const pickerMode = getVehiclePickerMode(form.vehicle_id, form.vehicle_query);
   const ownerName = selectedVehicle?.customer.full_name ?? "";
   const canSubmit = !!form.vehicle_id && form.service_lines.some((line) => line.name.trim().length > 0);
+  const submitDisabledHint = canSubmit
+    ? undefined
+    : !form.vehicle_id
+      ? "Select a vehicle to continue"
+      : "Add at least one service line";
 
   if (!open) {
     return null;
@@ -126,6 +131,7 @@ export function RepairCreateModal({
       showStatusAutotag
       saving={saving}
       isSubmitDisabled={!canSubmit}
+      submitDisabledHint={submitDisabledHint}
       errors={errors}
       primaryLabel="Create Repair"
       savingLabel="Creating…"

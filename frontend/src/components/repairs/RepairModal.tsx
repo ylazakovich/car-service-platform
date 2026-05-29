@@ -15,6 +15,7 @@ type RepairModalShellProps = {
   errors?: RepairFieldErrors;
   saving?: boolean;
   isSubmitDisabled?: boolean;
+  submitDisabledHint?: string;
   kebab?: ReactNode;
   footerLayout: RepairModalFooterLayout;
   showStatusAutotag?: boolean;
@@ -70,6 +71,7 @@ export function RepairModalShell({
   errors,
   saving,
   isSubmitDisabled,
+  submitDisabledHint,
   kebab,
   footerLayout,
   showStatusAutotag,
@@ -193,6 +195,7 @@ export function RepairModalShell({
             locked={locked}
             saving={saving}
             isSubmitDisabled={isSubmitDisabled}
+            submitDisabledHint={submitDisabledHint}
             primaryLabel={primaryLabel}
             savingLabel={savingLabel}
             onCancel={onClose}
@@ -214,6 +217,7 @@ type RepairModalFooterProps = {
   locked?: boolean;
   saving?: boolean;
   isSubmitDisabled?: boolean;
+  submitDisabledHint?: string;
   primaryLabel: string;
   savingLabel: string;
   onCancel: () => void;
@@ -249,6 +253,7 @@ function RepairModalFooter({
   locked,
   saving,
   isSubmitDisabled,
+  submitDisabledHint,
   primaryLabel,
   savingLabel,
   onCancel,
@@ -260,7 +265,13 @@ function RepairModalFooter({
 }: RepairModalFooterProps) {
   const primary =
     locked || !onSubmit ? null : (
-      <button type="submit" className="button" data-saving={saving ? "true" : undefined} disabled={saving || isSubmitDisabled}>
+      <button
+        type="submit"
+        className="button"
+        data-saving={saving ? "true" : undefined}
+        disabled={saving || isSubmitDisabled}
+        title={isSubmitDisabled && submitDisabledHint ? submitDisabledHint : undefined}
+      >
         {saving ? <span className="button__spinner" aria-hidden /> : null}
         {saving ? savingLabel : primaryLabel}
       </button>
@@ -308,8 +319,9 @@ function RepairModalFooter({
 
   const hint = !locked ? (
     <span className="modal-footer__hint">
-      <kbd>⌘</kbd>
-      <kbd>↵</kbd> to save
+      {isSubmitDisabled && submitDisabledHint
+        ? submitDisabledHint
+        : <><kbd>⌘</kbd><kbd>↵</kbd> to save</>}
     </span>
   ) : null;
 
