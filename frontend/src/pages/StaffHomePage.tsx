@@ -4461,6 +4461,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
               ];
               return (
                 <div className={`modal-footer${vehicleMissingFields.length > 0 ? " modal-footer--stacked" : " modal-footer--right"}`}>
+                  <RequiredChips fields={vehicleMissingFields} />
                   <div className="modal-footer__primary-cluster">
                     <button type="button" className="button button-secondary" onClick={closeVehicleFormModal}>
                       Cancel
@@ -4469,7 +4470,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                       {isSavingVehicle ? "Saving..." : editingVehicleId ? "Update Vehicle" : "Create Vehicle"}
                     </button>
                   </div>
-                  <RequiredChips fields={vehicleMissingFields} />
                 </div>
               );
             })()}
@@ -6345,6 +6345,7 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                   const canSavePurchase = !!purchaseForm.order_date && purchaseMissingFields.length === 0;
                   return (
                     <div className={`modal-footer${purchaseMissingFields.length > 0 ? " modal-footer--stacked" : " modal-footer--right"}`}>
+                      <RequiredChips fields={purchaseMissingFields} />
                       <div className="modal-footer__primary-cluster">
                         <button type="button" className="button button-secondary" onClick={closePurchaseCreateModal}>
                           Cancel
@@ -6369,7 +6370,6 @@ export function StaffHomePage({ activeSection, onSelectSection, openRepairCompos
                               : "Save line"}
                         </button>
                       </div>
-                      <RequiredChips fields={purchaseMissingFields} />
                     </div>
                   );
                 })()}

@@ -343,16 +343,15 @@ function RepairModalFooter({
       <div className={`modal-footer${chips ? " modal-footer--stacked" : " modal-footer--split"}`}>
         {chips ? (
           <>
+            {chips}
             <div className="modal-footer__primary-cluster">
               {destructive}
-              <div style={{ flex: 1 }} />
               {cancel}
               {undoPickUp}
               {reopen}
               {pickUp}
               {primary}
             </div>
-            {chips}
           </>
         ) : (
           <>
@@ -374,6 +373,7 @@ function RepairModalFooter({
     <div className={`modal-footer${chips ? " modal-footer--stacked" : " modal-footer--right"}`}>
       {chips ? (
         <>
+          {chips}
           <div className="modal-footer__primary-cluster">
             {destructive && <div style={{ marginRight: "auto" }}>{destructive}</div>}
             {cancel}
@@ -382,7 +382,6 @@ function RepairModalFooter({
             {pickUp}
             {primary}
           </div>
-          {chips}
         </>
       ) : (
         <>
