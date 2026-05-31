@@ -60,9 +60,9 @@ DATAFAKER_DEMO_SEED=123 DATAFAKER_DEMO_COUNT=10 bash scripts/db/load-datafaker-d
 ```
 
 - Interactive confirmation (`yes` required).
-- Runs the Java CLI in `tools/datafaker-generator/` to emit a deterministic JSON scenario.
+- Runs the Java CLI in `tools/datafaker-generator/` inside Docker Compose by default; use `DATAFAKER_DEMO_GENERATOR=host` to run a host `gradle` instead.
 - Imports it with `python manage.py import_datafaker_demo ... --replace` inside the backend container.
-- Requires host JDK 17+ and Gradle 8+; Django runtime does not depend on Java.
+- Default Docker mode does not require host Java/Gradle; the first run builds/pulls the Gradle JDK 17 generator image and reuses the `datafaker_gradle_cache` volume.
 - The same seed/count/profile recreates a connected customer → vehicle → repair → purchase dataset.
 
 **Regenerate demo invoice PDF (optional, for `docs/samples/sample-invoice-pl-01-demo.pdf`)**

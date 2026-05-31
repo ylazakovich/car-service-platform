@@ -65,5 +65,15 @@ services:
       retries: 5
       start_period: 45s
 
+  datafaker-generator:
+    profiles: ["tools"]
+    build:
+      context: ./tools/datafaker-generator
+    working_dir: /workspace/tools/datafaker-generator
+    volumes:
+      - .:/workspace
+      - datafaker_gradle_cache:/home/gradle/.gradle
+
 volumes:
   frontend_node_modules:
+  datafaker_gradle_cache:
