@@ -66,6 +66,7 @@ DATAFAKER_DEMO_SEED=123 DATAFAKER_DEMO_PROFILE=demo DATAFAKER_DEMO_COUNT=10 bash
 - The same seed/count/profile recreates a connected customer → vehicle → repair → purchase dataset.
 - Profiles: `small` (5 customers), `e2e` (10), `demo` (20 default; script override is 10), `showcase` (40), `stress` (200). Explicit `DATAFAKER_DEMO_COUNT` overrides the profile default.
 - Generated data includes admin/staff users, customers, vehicles, stable plates, repairs across `new`, `in_progress`, `waiting_parts`, `completed`, `picked_up`, services, suppliers, service lines, and purchases.
+- Import also prepares acts for every generated `completed`/`picked_up` repair via the same PDF export/snapshot path as `Make Act`, so analytics dashboards have fresh document totals right after loading demo data.
 
 **Regenerate demo invoice PDF (optional, for `docs/samples/sample-invoice-pl-01-demo.pdf`)**
 

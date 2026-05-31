@@ -43,7 +43,7 @@ Profile defaults:
 - `showcase`: 40 customers and deeper repair history.
 - `stress`: 200 customers for heavier local/performance checks.
 
-Generated entities include admin/staff users, customers, vehicles, stable license plates, repairs across `new`, `in_progress`, `waiting_parts`, `completed`, and `picked_up`, suppliers, services, repair service lines, and linked purchases.
+Generated entities include admin/staff users, customers, vehicles, stable license plates, repairs across `new`, `in_progress`, `waiting_parts`, `completed`, and `picked_up`, suppliers, services, repair service lines, and linked purchases. During Django import, repairs in `completed` or `picked_up` are also exported through the same act/PDF path as the staff `Make Act` button, creating `RepairDocument` and `RepairFinancialSnapshot` rows so analytics are populated immediately after a fresh demo load.
 
 ## Generate JSON with Docker
 

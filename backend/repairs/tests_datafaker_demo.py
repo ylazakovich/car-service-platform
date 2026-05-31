@@ -10,7 +10,7 @@ from django.test import SimpleTestCase, TestCase
 from customers.models import Customer
 from purchases.models import Purchase, Supplier, UnitOfMeasure
 from repairs.datafaker_demo import parse_decimal, parse_demo_payload, with_marker
-from repairs.models import Repair
+from repairs.models import Repair, RepairDocument, RepairFinancialSnapshot
 from services.models import Service
 from vehicles.models import Vehicle
 
@@ -170,6 +170,52 @@ class ImportDatafakerDemoCommandTests(TestCase):
 
         customer = Customer.objects.get(phone="+48 500 100 200")
         self.assertEqual(customer.assigned_to.email, "staff@autoservice.local")
+
+    def test_import_prepares_acts_for_completed_and_picked_up_repairs(self):
+        payload = self._payload()
+        payload["repairs"][0]["completed_at"] = "2026-04-15"
+        payload["repairs"].append(
+            {
+                "key": "repair-002",
+                "tracking_code": "DFR-002",
+                "vehicle_key": "vehicle-001",
+                "master_email": "staff@autoservice.local",
+                "service_name": "Oil service",
+                "service_line_keys": ["oil-service"],
+                "status": "picked_up",
+                "mileage_at_service": 123456,
+                "completed_at": "2026-04-16",
+            }
+        )
+        payload["purchases"].append(
+            {
+                "key": "purchase-002-1",
+                "supplier_key": "supplier-1",
+                "vehicle_key": "vehicle-001",
+                "repair_key": "repair-002",
+                "part_name": "Air filter",
+                "quantity": "2",
+                "purchase_price": "30.00",
+                "sale_price": "45.00",
+                "order_date": "2026-04-11",
+            }
+        )
+        path = self._write_payload(payload)
+
+        call_command("import_datafaker_demo", str(path), replace=True)
+
+        eligible_repairs = Repair.objects.filter(status__in=[Repair.Status.COMPLETED, Repair.Status.PICKED_UP])
+        self.assertEqual(eligible_repairs.count(), 2)
+        self.assertEqual(RepairDocument.objects.filter(repair__in=eligible_repairs).count(), 2)
+        self.assertEqual(RepairFinancialSnapshot.objects.filter(repair__in=eligible_repairs).count(), 2)
+        for repair in eligible_repairs:
+            document = RepairDocument.objects.get(repair=repair)
+            self.assertEqual(document.version, 1)
+            self.assertEqual(document.exported_by.email, "staff@autoservice.local")
+            self.assertEqual(document.original_filename, f"act_{repair.tracking_code}.pdf")
+            snapshot = RepairFinancialSnapshot.objects.get(repair=repair)
+            self.assertEqual(snapshot.document, document)
+            self.assertGreater(snapshot.document_total, 0)
 
     def test_replace_legacy_sql_demo_removes_old_fixture_rows_before_import(self):
         User = get_user_model()

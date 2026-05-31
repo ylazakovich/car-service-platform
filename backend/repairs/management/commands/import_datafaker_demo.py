@@ -9,6 +9,7 @@ from vehicles.models import Vehicle
 
 from repairs.datafaker_demo import load_demo_payload, parse_decimal, with_marker
 from repairs.models import Repair, RepairServiceLine
+from repairs.pdf_export import export_repair_pdf_and_snapshot
 
 
 class Command(BaseCommand):
@@ -75,12 +76,14 @@ class Command(BaseCommand):
         vehicles_by_key = self._create_vehicles(payload.vehicles, customers_by_key, marker)
         repairs_by_key = self._create_repairs(payload.repairs, vehicles_by_key, services_by_key, users_by_email, marker)
         self._create_purchases(payload.purchases, suppliers_by_key, vehicles_by_key, repairs_by_key)
+        prepared_acts = self._prepare_completed_repair_acts(repairs_by_key, users_by_email)
 
         self.stdout.write(
             self.style.SUCCESS(
                 "Imported Datafaker demo dataset "
                 f"{marker}: {len(customers_by_key)} customers, {len(vehicles_by_key)} vehicles, "
-                f"{len(repairs_by_key)} repairs, {len(payload.purchases)} purchases."
+                f"{len(repairs_by_key)} repairs, {len(payload.purchases)} purchases, "
+                f"{prepared_acts} prepared acts."
             )
         )
 
@@ -242,3 +245,15 @@ class Command(BaseCommand):
                 delivered=bool(row.get("delivered", False)),
                 is_shop_consumable=bool(row.get("is_shop_consumable", False)),
             )
+
+    def _prepare_completed_repair_acts(self, repairs_by_key, users_by_email) -> int:
+        exporter = users_by_email.get("staff@autoservice.local") or next(iter(users_by_email.values()), None)
+        if exporter is None:
+            return 0
+
+        prepared = 0
+        for repair in repairs_by_key.values():
+            if repair.status in (Repair.Status.COMPLETED, Repair.Status.PICKED_UP):
+                export_repair_pdf_and_snapshot(repair, exporter)
+                prepared += 1
+        return prepared
