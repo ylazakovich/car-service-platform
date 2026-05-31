@@ -3,11 +3,13 @@
   "extends": [
     "github>ylazakovich/renovate-config//presets/python/default",
     "github>ylazakovich/renovate-config//presets/npm/default",
+    "github>ylazakovich/renovate-config//presets/gradle/default",
     "github>ylazakovich/renovate-config//presets/docker/default",
     "github>ylazakovich/renovate-config//presets/github-actions/default"
   ],
   "enabledManagers": [
     "gradle",
+    "gradle-wrapper",
     "pip_requirements",
     "npm",
     "docker-compose",
