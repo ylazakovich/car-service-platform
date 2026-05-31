@@ -1,0 +1,1 @@
+{"id":"6ec2e62f1a19d89feddb4f5a441662ec","fullName":"car-service-platform-frontend:src/api/users.test.ts#users API client createInvite sends empty names by default so the backend owns display fallback","name":"createInvite sends empty names by default so the backend owns display fallback","status":"passed","testResultsByEnv":{"frontend":"7ce300072071c9d8622490aeee4a5e7d"}}
