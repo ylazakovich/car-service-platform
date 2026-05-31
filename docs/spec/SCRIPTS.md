@@ -7,7 +7,7 @@ Canonical index of **`scripts/`** and related operational assets. Day-to-day com
 | Path | Role |
 |------|------|
 | **`scripts/compose/`** | Docker Compose lifecycle: dev stack, prod-like stack, LAN publish, logs. |
-| **`scripts/db/`** | Postgres backup/restore, demo SQL load, `seed_staff` helper. |
+| **`scripts/db/`** | Postgres backup/restore, demo SQL load, Datafaker demo generation/import, `seed_staff` helper. |
 | **`scripts/media/`** | Tarball backup/restore of Django `MEDIA_ROOT` in the backend volume. |
 | **`scripts/demo/`** | Versioned **demo SQL** (`demo_data.sql`) loaded by `scripts/db/load-demo.sh` and CI before Playwright. |
 | **`scripts/mcp/`** | MCP JSON profiles + `install-user.mjs` (Cursor/Claude merge). Not product runtime — see `docs/dev/`. |
@@ -34,6 +34,7 @@ Canonical index of **`scripts/`** and related operational assets. Day-to-day com
 | `db-backup.sh` | `pg_dump` from running `db` service into `backups/`. |
 | `db-restore.sh` | Restore from a backup artifact (see script usage). |
 | `load-demo.sh` | Interactive load of `scripts/demo/demo_data.sql` into Postgres. |
+| `load-datafaker-demo.sh` | Interactive Java Datafaker JSON generation + Django `import_datafaker_demo --replace` import into the backend container. |
 | `load-demo-staff.sh` | Runs `seed_staff` in backend container (expects stack up). |
 
 ## `scripts/media/`

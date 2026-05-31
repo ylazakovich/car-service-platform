@@ -53,6 +53,18 @@ bash scripts/db/load-demo.sh
 - Pipes `scripts/demo/demo_data.sql` into Postgres via `docker compose exec -T db psql`.
 - Useful for dashboard charts, registers, and E2E-aligned fixtures (see script output for counts).
 
+**Generate fresh Datafaker demo data (optional)**
+
+```bash
+DATAFAKER_DEMO_SEED=123 DATAFAKER_DEMO_COUNT=10 bash scripts/db/load-datafaker-demo.sh
+```
+
+- Interactive confirmation (`yes` required).
+- Runs the Java CLI in `tools/datafaker-generator/` to emit a deterministic JSON scenario.
+- Imports it with `python manage.py import_datafaker_demo ... --replace` inside the backend container.
+- Requires host JDK 17+ and Gradle 8+; Django runtime does not depend on Java.
+- The same seed/count/profile recreates a connected customer → vehicle → repair → purchase dataset.
+
 **Regenerate demo invoice PDF (optional, for `docs/samples/sample-invoice-pl-01-demo.pdf`)**
 
 ```bash
