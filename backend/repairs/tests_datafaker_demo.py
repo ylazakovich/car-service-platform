@@ -17,6 +17,17 @@ from vehicles.models import Vehicle
 
 class DatafakerDemoPayloadTests(SimpleTestCase):
     def _payload(self):
+        """
+        Return a complete, hardcoded "datafaker-demo" payload dictionary used for tests.
+        
+        The payload contains sections used by the demo importer: `metadata`, `users`, `services`,
+        `suppliers`, `customers`, `vehicles`, `repairs`, and `purchases`. Values are seeded for a
+        deterministic small demo scenario and include the marker "datafaker-demo:small:123".
+        The returned structure mirrors the expected input shape for parse_demo_payload/import tests.
+        
+        Returns:
+            dict: The demo payload dictionary.
+        """
         return {
             "metadata": {
                 "generator": "datafaker",
@@ -129,9 +140,24 @@ class DatafakerDemoPayloadTests(SimpleTestCase):
 
 class ImportDatafakerDemoCommandTests(TestCase):
     def _payload(self):
+        """
+        Return the canonical demo payload used by import tests.
+        
+        Returns:
+            dict: A connected "datafaker-demo" payload dictionary containing sections like `metadata`, `users`, `services`, `suppliers`, `customers`, `vehicles`, `repairs`, and `purchases`.
+        """
         return DatafakerDemoPayloadTests()._payload()
 
     def _write_payload(self, payload):
+        """
+        Write the given payload as JSON to a temporary file and schedule the temporary directory for cleanup.
+        
+        Parameters:
+            payload (dict): The payload to serialize to JSON and write to disk.
+        
+        Returns:
+            pathlib.Path: Path to the created JSON file (named "datafaker-demo.json") inside a temporary directory.
+        """
         tmpdir = TemporaryDirectory()
         path = Path(tmpdir.name) / "datafaker-demo.json"
         path.write_text(json.dumps(payload), encoding="utf-8")
@@ -172,6 +198,11 @@ class ImportDatafakerDemoCommandTests(TestCase):
         self.assertEqual(customer.assigned_to.email, "staff@autoservice.local")
 
     def test_replace_legacy_sql_demo_removes_old_fixture_rows_before_import(self):
+        """
+        Verifies that legacy SQL fixture rows are removed when importing the datafaker demo with legacy replacement enabled.
+        
+        Creates legacy records (user, customer, vehicle, repair, purchase), runs the import command with replace=True and replace_legacy_sql_demo=True, and asserts that legacy customer, vehicle, repair, and purchase rows are deleted and that the new demo repair and customer rows have been created.
+        """
         User = get_user_model()
         legacy_staff = User.objects.create_user(email="legacy@autoservice.local", password="x", role="staff")
         legacy_customer = Customer.objects.create(
