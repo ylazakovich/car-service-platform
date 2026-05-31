@@ -43,15 +43,30 @@ bash scripts/compose/stop.sh
 
 - Runs `docker compose down --remove-orphans` with the same dev `COMPOSE_FILE` merge as `start.sh`.
 
-**Load demo SQL (optional)**
+**Load generated demo data (optional)**
 
 ```bash
 bash scripts/db/load-demo.sh
 ```
 
 - Interactive confirmation (`yes` required).
-- Pipes `scripts/demo/demo_data.sql` into Postgres via `docker compose exec -T db psql`.
-- Useful for dashboard charts, registers, and E2E-aligned fixtures (see script output for counts).
+- Compatibility wrapper for the Datafaker pipeline below.
+- Removes rows from the former SQL fixture before importing generated data.
+
+**Generate fresh Datafaker demo data directly (optional)**
+
+```bash
+DATAFAKER_DEMO_SEED=123 DATAFAKER_DEMO_PROFILE=demo DATAFAKER_DEMO_COUNT=10 bash scripts/db/load-datafaker-demo.sh
+```
+
+- Interactive confirmation (`yes` required).
+- Runs the Java CLI in `tools/datafaker-generator/` inside Docker Compose by default; use `DATAFAKER_DEMO_GENERATOR=host` to run a host Java CLI instead.
+- Imports it with `python manage.py import_datafaker_demo ... --replace --replace-legacy-sql-demo` inside the backend container.
+- Default Docker mode does not require host Java/Gradle; the image builds the CLI with the Gradle Wrapper in a JDK stage and runs it in a JRE-only runtime stage.
+- The same seed/count/profile recreates a connected customer → vehicle → repair → purchase dataset.
+- Profiles: `small` (5 customers), `e2e` (10), `demo` (20 default; script override is 10), `showcase` (40), `stress` (200). Explicit `DATAFAKER_DEMO_COUNT` overrides the profile default.
+- Generated data includes admin/staff users, customers, vehicles, stable plates, repairs across `new`, `in_progress`, `waiting_parts`, `completed`, `picked_up`, services, suppliers, service lines, and purchases.
+- Import also prepares acts for every generated `completed`/`picked_up` repair via the same PDF export/snapshot path as `Make Act`, so analytics dashboards have fresh document totals right after loading demo data.
 
 **Regenerate demo invoice PDF (optional, for `docs/samples/sample-invoice-pl-01-demo.pdf`)**
 
@@ -78,7 +93,7 @@ docker compose cp backend:/tmp/sample-invoice-pl-01-demo.pdf docs/samples/sample
 - Admin: `admin@autoservice.local` / `admin12345`
 - Staff (when seeded): `staff@autoservice.local` / `staff12345`
 
-Client portal example URL shape (see demo data for real tokens): `http://localhost:4173/portal/<token>`.
+Client portal example URL shape (see generated demo data for real tokens): `http://localhost:4173/portal/<token>`.
 
 ---
 

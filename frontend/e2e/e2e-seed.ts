@@ -1,28 +1,28 @@
 /**
- * Stable E2E fixture from `scripts/demo/demo_data.sql`:
- * completed repair TOR-1001 — AA 1234 BB • Toyota Camry, service below (unique among that plate’s completed jobs in demo).
- * CI loads this file after compose-up (`.github/workflows/pr.yml`). Locally: `bash scripts/db/load-demo.sh`.
+ * Shared demo fixture values for the default Datafaker seed/profile.
+ * Prefer isolated API fixtures for new E2E tests; these values are legacy shared defaults.
+ * Locally load with `bash scripts/db/load-datafaker-demo.sh` or `bash scripts/db/load-demo.sh`.
  */
-export const E2E_DEMO_REPAIR_TRACKING_CODE = "TOR-1001";
+export const E2E_DEMO_REPAIR_TRACKING_CODE = "DFR-004";
 
 /** Substring of API `vehicle_label` for this repair (`{plate} • {make} {model}`) — stable in modal title. */
-export const E2E_DEMO_REPAIR_VEHICLE_PLATE = "AA 1234 BB";
+export const E2E_DEMO_REPAIR_VEHICLE_PLATE = "DF 10003";
 
 /**
  * Repair Update modal `aria-labelledby` → accessible name of `role="dialog"` (matches `get_vehicle_label` on backend).
  * Prefer this over `filter({ hasText: plate })` to avoid matching multiple dialogs / non-dialog nodes.
  */
-export const E2E_DEMO_REPAIR_DIALOG_NAME = /AA 1234 BB\s*•\s*Toyota Camry/;
+export const E2E_DEMO_REPAIR_DIALOG_NAME = /DF 10003\s*•\s*Volvo Focus/;
 
-export const E2E_DEMO_REPAIR_SERVICE_NAME = "Oil change + filter replacement";
+export const E2E_DEMO_REPAIR_SERVICE_NAME = "Suspension diagnostics";
 
-/** Kanban / list summary when demo repair has multiple `repair_service_lines` (first line + count). */
-export const E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY = "Oil change + filter replacement +1";
+/** Kanban / list summary for the default Datafaker completed repair. */
+export const E2E_DEMO_REPAIR_KANBAN_SERVICES_SUMMARY = "Suspension diagnostics";
 
 /**
- * `purchases.part_name` fragment from `scripts/demo/demo_data.sql` (vehicle `E2E_DEMO_REPAIR_VEHICLE_PLATE`, repair TOR-1001).
+ * `purchases.part_name` fragment from the generated Datafaker payload (vehicle `E2E_DEMO_REPAIR_VEHICLE_PLATE`, repair `E2E_DEMO_REPAIR_TRACKING_CODE`).
  */
-export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Castrol EDGE";
+export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Battery 70Ah";
 
 /**
  * Fresh demo DB has no `repair_documents` rows → completed repairs have `has_pdf: false`.
@@ -30,8 +30,8 @@ export const E2E_DEMO_PURCHASE_PART_SUBSTRING = "Castrol EDGE";
  */
 export const E2E_DEMO_VEHICLE_NEEDS_ACT_PLATE = E2E_DEMO_REPAIR_VEHICLE_PLATE;
 
-/** `scripts/demo/demo_data.sql` — stable service name in catalog (Registers → Services). */
+/** Generated Datafaker service name in catalog (Registers → Services). */
 export const E2E_DEMO_SERVICE_NAME_IN_CATALOG = "AC service";
 
-/** Demo customer with ≥1 vehicle (Registers → Customers with vehicles). */
-export const E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME = "Oleksandr Kovalenko";
+/** Demo customer with ≥1 vehicle. */
+export const E2E_DEMO_CUSTOMER_WITH_VEHICLES_NAME = "Kermit Cassin";

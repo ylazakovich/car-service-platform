@@ -105,6 +105,8 @@ const SMOKE_UNITS_OF_MEASURE_LIST = [
   { id: 2, code: "L", name: "Liters", is_active: true, sort_order: 20 },
 ];
 
+const FIXED_SMOKE_TIMESTAMP = "2026-05-21T10:30:00.000Z";
+
 function isPurchasesIndexGet(url: string) {
   return url.split("?")[0] === "/purchases/";
 }
@@ -2390,8 +2392,8 @@ describe("bootstrap application", () => {
               before_photos: [],
               during_photos: [],
               after_photos: [],
-              created_at: "2026-05-01T08:00:00Z",
-              updated_at: "2026-05-01T08:00:00Z",
+              created_at: FIXED_SMOKE_TIMESTAMP,
+              updated_at: FIXED_SMOKE_TIMESTAMP,
             },
           ],
         });
@@ -2455,8 +2457,8 @@ describe("bootstrap application", () => {
               before_photos: [],
               during_photos: [],
               after_photos: [],
-              created_at: "2026-05-01T08:00:00Z",
-              updated_at: "2026-05-01T08:00:00Z",
+              created_at: FIXED_SMOKE_TIMESTAMP,
+              updated_at: FIXED_SMOKE_TIMESTAMP,
             },
           ],
         });
@@ -2520,8 +2522,8 @@ describe("bootstrap application", () => {
               before_photos: [],
               during_photos: [],
               after_photos: [],
-              created_at: "2026-05-01T08:00:00Z",
-              updated_at: "2026-05-01T08:00:00Z",
+              created_at: FIXED_SMOKE_TIMESTAMP,
+              updated_at: FIXED_SMOKE_TIMESTAMP,
             },
           ],
         });
@@ -2593,8 +2595,8 @@ describe("bootstrap application", () => {
               before_photos: [],
               during_photos: [],
               after_photos: [],
-              created_at: "2026-05-01T09:00:00Z",
-              updated_at: "2026-05-01T09:00:00Z",
+              created_at: FIXED_SMOKE_TIMESTAMP,
+              updated_at: FIXED_SMOKE_TIMESTAMP,
             },
           ],
         });
@@ -2662,8 +2664,8 @@ describe("bootstrap application", () => {
               before_photos: [],
               during_photos: [],
               after_photos: [],
-              created_at: "2026-05-01T08:00:00Z",
-              updated_at: "2026-05-01T08:00:00Z",
+              created_at: FIXED_SMOKE_TIMESTAMP,
+              updated_at: FIXED_SMOKE_TIMESTAMP,
             },
           ],
         });

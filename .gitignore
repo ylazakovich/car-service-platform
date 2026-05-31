@@ -6,6 +6,7 @@
 # Root-level JS tooling (frontend uses frontend/.gitignore for its node_modules)
 node_modules/
 backups/
+local-dumps/
 tmp/
 .claude/
 
