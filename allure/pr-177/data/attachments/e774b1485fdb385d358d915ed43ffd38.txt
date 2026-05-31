@@ -1,1 +1,0 @@
-{"timestamp": "2026-05-31 08:38:07,791", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Not Found: /api/portal/this-token-does-not-exist/", "request": "<WSGIRequest: GET '/api/portal/this-token-does-not-exist/'>", "status_code": 404}
