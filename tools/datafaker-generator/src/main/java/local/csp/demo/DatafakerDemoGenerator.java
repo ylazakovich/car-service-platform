@@ -44,6 +44,16 @@ public final class DatafakerDemoGenerator {
     );
     private static final List<String> STATUSES = List.of("new", "in_progress", "waiting_parts", "completed", "picked_up");
 
+    /**
+     * Entry point that generates a deterministic demo CSP dataset and outputs it as pretty-printed JSON.
+     *
+     * The program parses CLI options to configure generation (seed, locale, count, profile, output),
+     * builds metadata plus lists of users, services, suppliers, customers, vehicles, repairs and purchases,
+     * and writes the resulting JSON to stdout when `--output=-` or to the specified file path.
+     *
+     * @param args command-line arguments; supported options include `--seed`, `--locale`, `--count`, `--profile`, `--output`
+     * @throws IOException if writing the output file fails
+     */
     public static void main(String[] args) throws IOException {
         Config config = Config.parse(args);
         ProfileSpec profile = ProfileSpec.forName(config.profile);
@@ -162,10 +172,31 @@ public final class DatafakerDemoGenerator {
         }
     }
 
+    /**
+     * Map an integer index into a repeat count within the inclusive range 1..max.
+     *
+     * @param index an integer (may be negative or >max) whose value is wrapped into the target range
+     * @param max the upper bound of the range; must be >= 1
+     * @return a value between 1 and {@code max} inclusive
+     */
     private static int spreadCount(int index, int max) {
         return 1 + Math.floorMod(index, max);
     }
 
+    /**
+     * Builds the metadata map for the generated dataset.
+     *
+     * @param config configuration whose seed, locale, count, and profile values are recorded
+     * @return an ordered map containing:
+     *         - "generator": fixed value "datafaker"
+     *         - "schema_version": integer schema version (1)
+     *         - "seed": the configured seed
+     *         - "locale": the configured locale
+     *         - "count": the resolved item count
+     *         - "profile": the selected profile name
+     *         - "generated_at": generation timestamp as an ISO-8601 UTC string
+     *         - "marker": a generated marker string for this run
+     */
     private static Map<String, Object> metadata(Config config) {
         return mapOf(
                 "generator", "datafaker",
@@ -179,6 +210,11 @@ public final class DatafakerDemoGenerator {
         );
     }
 
+    /**
+     * Produces a fixed list of demo user records for inclusion in the generated payload.
+     *
+     * @return a list containing two maps (admin and staff) with keys: `email`, `first_name`, `last_name`, `role`, `is_staff`, and `password`
+     */
     private static List<Map<String, Object>> users() {
         return List.of(
                 mapOf(
@@ -200,6 +236,14 @@ public final class DatafakerDemoGenerator {
         );
     }
 
+    /**
+     * Builds the list of available service records used in the generated payload.
+     *
+     * Each map represents a service and contains the keys "key", "name", "description",
+     * "price", and "is_active".
+     *
+     * @return a list of service record maps with keys "key", "name", "description", "price", and "is_active"
+     */
     private static List<Map<String, Object>> services() {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (String name : SERVICE_NAMES) {
@@ -221,6 +265,17 @@ public final class DatafakerDemoGenerator {
         return rows;
     }
 
+    /**
+     * Builds a list of supplier records with deterministic fake data.
+     *
+     * Each supplier is an ordered map containing the keys:
+     * `key`, `name`, `nip`, `phone`, `email`, `registered_address`, and `notes`.
+     *
+     * @param faker a configured Faker instance used to generate locale-aware text fields
+     * @param random a Random instance used to produce numeric values deterministically
+     * @param supplierCount the number of supplier records to generate (produces keys `supplier-1` ... `supplier-N`)
+     * @return a list of supplier maps populated with generated data
+     */
     private static List<Map<String, Object>> suppliers(Faker faker, Random random, int supplierCount) {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (int i = 1; i <= supplierCount; i++) {
@@ -237,14 +292,33 @@ public final class DatafakerDemoGenerator {
         return rows;
     }
 
+    /**
+     * Constructs the canonical marker used in generated payload metadata.
+     *
+     * @param config source of the profile name and seed used to build the marker
+     * @return the marker string in the format "datafaker-demo:<profile>:<seed>"
+     */
     private static String marker(Config config) {
         return "datafaker-demo:" + config.profile + ":" + config.seed;
     }
 
+    /**
+     * Converts a service display name into a lowercase, hyphen-separated key suitable for identifiers.
+     *
+     * @param serviceName the human-readable service name to convert
+     * @return a slug containing only lowercase letters and digits separated by single hyphens, with no leading or trailing hyphens
+     */
     private static String serviceKeyFor(String serviceName) {
         return serviceName.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
     }
 
+    /**
+     * Produces the list of service-line key slugs for a given repair.
+     *
+     * @param repairNumber    the 1-based repair index used to deterministically select services
+     * @param maxServiceLines the maximum number of service lines allowed for the repair
+     * @return a list of service key strings (slug form) for each service line in the repair
+     */
     private static List<String> serviceLineKeys(int repairNumber, int maxServiceLines) {
         int lineCount = spreadCount(repairNumber - 1, maxServiceLines);
         List<String> keys = new ArrayList<>();
@@ -255,14 +329,34 @@ public final class DatafakerDemoGenerator {
         return keys;
     }
 
+    /**
+     * Generate a license plate string for a given sequence number.
+     *
+     * @param sequence the sequence number used to compute the numeric portion of the plate (typically non-negative)
+     * @return a string in the form {@code "DF " + fiveDigitNumber}, where the numeric portion is {@code 10000 + sequence} zero-padded to five digits (e.g. {@code "DF 10001"})
+     */
     private static String licensePlate(int sequence) {
         return "DF " + String.format("%05d", 10000 + sequence);
     }
 
+    /**
+     * Produces a monetary amount combining the given whole units with a random cents component.
+     *
+     * @param whole  the whole currency units
+     * @param random source of randomness used to generate cents (0–99)
+     * @return a BigDecimal equal to whole plus a random cents value (0 through 0.99), scaled to two decimal places
+     */
     private static BigDecimal money(int whole, Random random) {
         return BigDecimal.valueOf(whole * 100L + random.nextInt(100), 2);
     }
 
+    /**
+     * Builds an insertion-ordered map from alternating key/value arguments, omitting entries whose value is null.
+     *
+     * @param args alternating key, value pairs; keys are converted to strings via {@code String.valueOf}
+     * @return an insertion-ordered {@code Map<String,Object>} containing each provided key mapped to its non-null value
+     * @throws ArrayIndexOutOfBoundsException if an odd number of arguments is supplied
+     */
     private static Map<String, Object> mapOf(Object... args) {
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < args.length; i += 2) {
@@ -281,6 +375,13 @@ public final class DatafakerDemoGenerator {
             int maxPurchasesPerRepair,
             int supplierCount
     ) {
+        /**
+         * Lookup the ProfileSpec for a named generation profile.
+         *
+         * @param profile the profile name; one of "small", "e2e", "demo", "showcase", or "stress"
+         * @return the ProfileSpec configured for the given profile name
+         * @throws IllegalArgumentException if {@code profile} is not one of the supported names
+         */
         static ProfileSpec forName(String profile) {
             return switch (profile) {
                 case "small" -> new ProfileSpec(5, 1, 1, 1, 2, 3);
@@ -294,6 +395,21 @@ public final class DatafakerDemoGenerator {
     }
 
     private record Config(long seed, String locale, int count, String profile, String output) {
+        /**
+         * Parse command-line arguments for the datafaker-demo generator and produce a populated {@link Config}.
+         *
+         * <p>Accepts either a direct options form or a leading invocation of
+         * "generate datafaker-demo" (those two tokens are removed before parsing).
+         * Supported options (either "--opt=value" or "--opt value") are:
+         * --seed, --locale, --count, --profile, --output, and --help / -h.
+         *
+         * @param args the raw command-line arguments
+         * @return a {@link Config} instance with resolved values (defaults: seed=123, locale="en-US",
+         *         profile="small", output="build/datafaker-demo.json", and count resolved from the profile if not provided)
+         * @throws IllegalArgumentException if the command prefix is incorrect, an unknown option is provided,
+         *         or the resolved count is less than 1
+         * @implNote Invoking --help or -h prints usage and exits the JVM via {@code System.exit(0)}.
+         */
         static Config parse(String[] args) {
             if (args.length >= 2 && args[0].equals("generate") && args[1].equals("datafaker-demo")) {
                 args = java.util.Arrays.copyOfRange(args, 2, args.length);
@@ -346,6 +462,16 @@ public final class DatafakerDemoGenerator {
             return new Config(seed, locale, resolvedCount, profile, output);
         }
 
+        /**
+         * Return the provided inline value if non-null; otherwise return the positional argument at the given index.
+         *
+         * @param inlineValue an inline option value (e.g., the part after `--opt=`) or null if not provided
+         * @param args        the original argument array
+         * @param index       the index of the next positional argument to use when `inlineValue` is null
+         * @param option      the option name used in the error message when a value is missing
+         * @return            the resolved option value
+         * @throws IllegalArgumentException if `inlineValue` is null and `index` is outside the bounds of `args`
+         */
         private static String valueOrNext(String inlineValue, String[] args, int index, String option) {
             if (inlineValue != null) {
                 return inlineValue;
@@ -356,6 +482,11 @@ public final class DatafakerDemoGenerator {
             return args[index];
         }
 
+        /**
+         * Prints command-line usage examples and the available profiles, then terminates the JVM with exit status 0.
+         *
+         * <p>Outputs brief usage lines and a profile summary to standard output before exiting.
+         */
         private static void printHelpAndExit() {
             System.out.println("Usage: csp-demo-data generate datafaker-demo --seed 123 --locale en-US --count 20 --profile demo --output tmp/datafaker-demo.json");
             System.out.println("       csp-demo-data --seed 123 --locale en-US --profile showcase --output tmp/datafaker-showcase.json");

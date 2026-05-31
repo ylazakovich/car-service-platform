@@ -48,6 +48,17 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser):
+        """
+        Register command-line arguments required by the import_datafaker_demo management command.
+        
+        Adds:
+        - `json_path`: positional path to the Datafaker-generated JSON file.
+        - `--replace`: optional flag to delete existing rows tagged with the dataset marker before import.
+        - `--replace-legacy-sql-demo`: optional flag to delete rows originating from the legacy demo SQL fixture before import.
+        
+        Parameters:
+            parser (argparse.ArgumentParser): The argument parser to which these options are added.
+        """
         parser.add_argument("json_path", help="Path to JSON emitted by tools/datafaker-generator")
         parser.add_argument(
             "--replace",
@@ -62,6 +73,24 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        """
+        Import a Datafaker demo JSON payload into the database, optionally removing prior demo data.
+        
+        Parameters:
+            *args: Positional arguments passed by Django's management command infrastructure (ignored).
+            **options (dict): Command-line options; recognized keys:
+                json_path (str): Path to the Datafaker JSON file to load.
+                replace (bool): If true, delete existing records tagged with the payload marker before importing.
+                replace_legacy_sql_demo (bool): If true, delete rows originating from the legacy SQL demo fixture before importing.
+        
+        Description:
+            Loads the demo payload, optionally purges legacy or marker-tagged demo records, and then upserts/creates
+            users, services, suppliers, customers, vehicles, repairs (including service lines), and purchases,
+            wiring relationships according to keys in the payload. Writes a success message summarizing counts.
+        
+        Side effects:
+            Performs database inserts, updates, and deletions.
+        """
         payload = load_demo_payload(options["json_path"])
         marker = payload.marker
         if options["replace_legacy_sql_demo"]:
@@ -88,6 +117,14 @@ class Command(BaseCommand):
         )
 
     def _delete_marker(self, marker: str) -> None:
+        """
+        Remove database records that were tagged with the dataset marker.
+        
+        Deletes Repair rows whose `issue_notes` contain `"[{marker}]"`, Purchase rows whose `invoice_name` starts with `"DATAFAKER-DEMO-"`, and Vehicle, Customer, Supplier, and Service rows whose relevant text fields contain the marker. Purchases are removed before associated repairs to avoid foreign-key/order conflicts.
+        
+        Parameters:
+            marker (str): Marker string used to identify demo records (the function matches `"[{marker}]"` in text fields).
+        """
         repairs = Repair.objects.filter(issue_notes__contains=f"[{marker}]")
         Purchase.objects.filter(invoice_name__startswith="DATAFAKER-DEMO-").delete()
         repairs.delete()
@@ -97,6 +134,11 @@ class Command(BaseCommand):
         Service.objects.filter(description__contains=f"[{marker}]").delete()
 
     def _delete_legacy_sql_demo(self) -> None:
+        """
+        Remove rows that originate from the legacy SQL demo fixture using hardcoded legacy identifiers.
+        
+        Deletes Purchase rows linked to legacy vehicle IDs or legacy repair tracking codes, deletes the corresponding Repair and Vehicle rows identified by the legacy license plates, and deletes Customer rows whose phone matches the legacy demo phone patterns.
+        """
         legacy_vehicle_ids = Vehicle.objects.filter(license_plate__in=self.LEGACY_DEMO_VEHICLE_PLATES).values_list("id", flat=True)
         legacy_repair_ids = Repair.objects.filter(vehicle_id__in=legacy_vehicle_ids).values_list("id", flat=True)
         legacy_tracking_codes = Repair.objects.filter(id__in=legacy_repair_ids).values_list("tracking_code", flat=True)
@@ -107,6 +149,17 @@ class Command(BaseCommand):
         Customer.objects.filter(phone__in=self.LEGACY_DEMO_CUSTOMER_PHONES).delete()
 
     def _upsert_users(self, rows):
+        """
+        Upserts user accounts from an iterable of row dictionaries keyed by email.
+        
+        Each row must contain an "email" and may include "first_name", "last_name", "role", "is_staff", and "password". If a user with the given email does not exist it is created with the provided fields; if it exists, the provided name/role/is_staff values are applied. If a password is provided for a newly created user, it will be set.
+        
+        Parameters:
+            rows (Iterable[dict]): Iterable of dicts representing users. Required key: "email". Optional keys: "first_name", "last_name", "role", "is_staff", "password".
+        
+        Returns:
+            dict: Mapping from email string to the corresponding User instance.
+        """
         User = get_user_model()
         users = {}
         for row in rows:
@@ -129,6 +182,16 @@ class Command(BaseCommand):
         return users
 
     def _upsert_services(self, rows, marker: str):
+        """
+        Upserts Service records from payload rows and returns a mapping of created or updated Service instances by row key.
+        
+        Parameters:
+            rows (Iterable[dict]): Iterable of row dictionaries; each row must contain at least "name" and "key" and may include "description", "price", and "is_active".
+            marker (str): Marker string appended into text fields to identify imported demo data.
+        
+        Returns:
+            dict: Mapping from each row["key"] to the corresponding Service instance.
+        """
         services = {}
         for row in rows:
             service, _ = Service.objects.update_or_create(
@@ -143,6 +206,17 @@ class Command(BaseCommand):
         return services
 
     def _upsert_suppliers(self, rows, marker: str):
+        """
+        Upserts supplier records from payload rows and returns a mapping of payload keys to Supplier instances.
+        
+        Parameters:
+            rows (Iterable[dict]): Iterable of supplier payload objects. Each row must contain "name" and "key";
+                may include "nip", "phone", "email", "registered_address", and "notes".
+            marker (str): Marker string to append to supplier notes via with_marker.
+        
+        Returns:
+            dict: Mapping from each row["key"] to the created or updated Supplier instance.
+        """
         suppliers = {}
         for row in rows:
             supplier, _ = Supplier.objects.update_or_create(
@@ -159,6 +233,17 @@ class Command(BaseCommand):
         return suppliers
 
     def _create_customers(self, rows, marker: str, users_by_email):
+        """
+        Create Customer records from payload rows, assigning a default staff assignee when available.
+        
+        Parameters:
+        	rows (Iterable[dict]): Iterable of payload rows where each row contains at least "key" and "full_name"; optional fields include "phone", "email", and "notes".
+        	marker (str): Marker string appended to customer notes via with_marker.
+        	users_by_email (Mapping[str, User]): Mapping of user email to User; used to select a default assignee. Prefers "staff@autoservice.local", otherwise the first user whose `role` attribute equals "staff".
+        
+        Returns:
+        	dict: Mapping from each row's "key" to the created Customer instance.
+        """
         customers = {}
         default_assignee = users_by_email.get("staff@autoservice.local")
         if default_assignee is None:
@@ -175,6 +260,19 @@ class Command(BaseCommand):
         return customers
 
     def _create_vehicles(self, rows, customers_by_key, marker: str):
+        """
+        Create Vehicle records from payload rows and return them keyed by each row's `key`.
+        
+        Each created Vehicle is associated with the Customer from `customers_by_key` and has its textual `notes` tagged with `marker`.
+        
+        Parameters:
+            rows (Iterable[dict]): Iterable of mapping objects containing vehicle data (expected keys include "key", "customer_key", "license_plate", "make", "model" and optional vehicle fields such as "year", "vin", "color", "mileage", "last_service_date", "added_date", "notes").
+            customers_by_key (dict): Mapping of customer keys to Customer model instances used to set each vehicle's `customer`.
+            marker (str): String marker appended to the vehicle `notes` to indicate the import dataset.
+        
+        Returns:
+            dict: Mapping from each input row's `key` to the created Vehicle instance.
+        """
         vehicles = {}
         for row in rows:
             vehicle = Vehicle.objects.create(
@@ -194,6 +292,19 @@ class Command(BaseCommand):
         return vehicles
 
     def _create_repairs(self, rows, vehicles_by_key, services_by_key, users_by_email, marker: str):
+        """
+        Create Repair records from payload rows and associated RepairServiceLine entries, returning a mapping of payload keys to created Repair instances.
+        
+        Parameters:
+            rows (iterable): Iterable of payload dictionaries describing repairs. Each row must include "key", "vehicle_key", and "service_name"; optional fields include "master_email", "tracking_code", "issue_notes", "status", "mileage_at_service", "estimated_date", "completed_at", and "service_line_keys".
+            vehicles_by_key (dict): Mapping from vehicle payload keys to Vehicle model instances used for the Repair.vehicle field.
+            services_by_key (dict): Mapping from service payload keys to Service model instances used to populate RepairServiceLine entries.
+            users_by_email (dict): Mapping from user email to User model instances; used to resolve the repair master via the row's "master_email".
+            marker (str): Dataset marker string appended to textual fields via with_marker for traceability.
+        
+        Returns:
+            dict: Mapping from each row's "key" to the created Repair instance.
+        """
         repairs = {}
         for row in rows:
             repair = Repair.objects.create(
@@ -220,6 +331,18 @@ class Command(BaseCommand):
         return repairs
 
     def _create_purchases(self, rows, suppliers_by_key, vehicles_by_key, repairs_by_key):
+        """
+        Create Purchase records from payload rows and persist them to the database.
+        
+        Ensures a unit-of-measure with code "pcs" exists (creates it if missing), then for each input row creates a Purchase linked to the supplier, optional vehicle, and optional repair. Numeric fields (quantity, current_stock_quantity, purchase_price, sale_price) are parsed with parse_decimal; missing current_stock_quantity is stored as None. If a repair is provided via repairs_by_key, its tracking_code is stored on the purchase; otherwise repair_code is an empty string.
+        
+        Parameters:
+            rows (Iterable[dict]): Iterable of purchase payload dictionaries.
+            suppliers_by_key (dict): Mapping of supplier keys to Supplier instances.
+            vehicles_by_key (dict): Mapping of vehicle keys to Vehicle instances.
+            repairs_by_key (dict): Mapping of repair keys to Repair instances.
+        
+        """
         units = {unit.code: unit for unit in UnitOfMeasure.objects.all()}
         if "pcs" not in units:
             units["pcs"], _ = UnitOfMeasure.objects.get_or_create(code="pcs", defaults={"name": "Pieces", "sort_order": 10})
