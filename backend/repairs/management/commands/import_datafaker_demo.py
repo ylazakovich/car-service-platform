@@ -126,7 +126,7 @@ class Command(BaseCommand):
             marker (str): Marker string used to identify demo records (the function matches `"[{marker}]"` in text fields).
         """
         repairs = Repair.objects.filter(issue_notes__contains=f"[{marker}]")
-        Purchase.objects.filter(invoice_name__startswith="DATAFAKER-DEMO-").delete()
+        Purchase.objects.filter(repair_code__in=repairs.values_list("tracking_code", flat=True)).delete()
         repairs.delete()
         Vehicle.objects.filter(notes__contains=f"[{marker}]").delete()
         Customer.objects.filter(notes__contains=f"[{marker}]").delete()

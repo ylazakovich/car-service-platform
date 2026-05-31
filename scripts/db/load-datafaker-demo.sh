@@ -13,12 +13,29 @@ GENERATOR="${DATAFAKER_DEMO_GENERATOR:-docker}"
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.dev.yml)
 CLI_ARGS=(generate datafaker-demo --seed "${SEED}" --locale "${LOCALE}" --count "${COUNT}" --profile "${PROFILE}" --output)
 
+require_docker_compose() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Error: docker CLI is required to generate and import Datafaker demo data." >&2
+    exit 1
+  fi
+  if ! docker compose version >/dev/null 2>&1; then
+    echo "Error: Docker Compose v2 is required to generate and import Datafaker demo data." >&2
+    exit 1
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    echo "Error: Docker daemon is not reachable. Start Docker and retry." >&2
+    exit 1
+  fi
+}
+
 if [[ ! -f .env ]]; then
   echo "Error: .env file not found." >&2
   echo "Create it from template:"
   echo "  cp .env.example .env"
   exit 1
 fi
+
+require_docker_compose
 
 read -rp "This will generate and replace Datafaker demo rows for seed ${SEED}. Continue? (yes/no) " CONFIRM
 if [[ "${CONFIRM}" != "yes" ]]; then
@@ -30,10 +47,6 @@ mkdir -p "$(dirname "${OUTPUT}")"
 
 case "${GENERATOR}" in
   docker)
-    if ! docker compose version >/dev/null 2>&1; then
-      echo "Error: Docker Compose v2 is required for DATAFAKER_DEMO_GENERATOR=docker." >&2
-      exit 1
-    fi
     if [[ "${OUTPUT}" != "${ROOT_DIR}"/* ]]; then
       echo "Error: DATAFAKER_DEMO_OUTPUT must be inside the repository when using the Docker generator." >&2
       echo "Current output: ${OUTPUT}" >&2

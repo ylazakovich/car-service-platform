@@ -15,89 +15,82 @@ from services.models import Service
 from vehicles.models import Vehicle
 
 
+def build_datafaker_demo_payload():
+    return {
+        "metadata": {
+            "generator": "datafaker",
+            "schema_version": 1,
+            "seed": 123,
+            "profile": "small",
+            "locale": "en-US",
+            "marker": "datafaker-demo:small:123",
+        },
+        "users": [
+            {
+                "email": "staff@autoservice.local",
+                "first_name": "Demo",
+                "last_name": "Staff",
+                "role": "staff",
+                "is_staff": False,
+            }
+        ],
+        "services": [
+            {
+                "key": "oil-service",
+                "name": "Oil service",
+                "price": "140.00",
+                "is_active": True,
+            }
+        ],
+        "suppliers": [
+            {"key": "supplier-1", "name": "Parts Supplier"},
+        ],
+        "customers": [
+            {
+                "key": "customer-001",
+                "full_name": "Jan Kowalski",
+                "phone": "+48 500 100 200",
+            }
+        ],
+        "vehicles": [
+            {
+                "key": "vehicle-001",
+                "customer_key": "customer-001",
+                "license_plate": "DF 12345",
+                "make": "Toyota",
+                "model": "Corolla",
+            }
+        ],
+        "repairs": [
+            {
+                "key": "repair-001",
+                "tracking_code": "DFR-001",
+                "vehicle_key": "vehicle-001",
+                "master_email": "staff@autoservice.local",
+                "service_name": "Oil service",
+                "service_line_keys": ["oil-service"],
+                "status": "completed",
+            }
+        ],
+        "purchases": [
+            {
+                "key": "purchase-001-1",
+                "supplier_key": "supplier-1",
+                "vehicle_key": "vehicle-001",
+                "repair_key": "repair-001",
+                "part_name": "Oil filter",
+                "quantity": "1",
+                "purchase_price": "25.50",
+                "sale_price": "39.90",
+                "order_date": "2026-04-10",
+            }
+        ],
+    }
+
+
 class DatafakerDemoPayloadTests(SimpleTestCase):
     def _payload(self):
-        """
-        Return a complete, hardcoded "datafaker-demo" payload dictionary used for tests.
-        
-        The payload contains sections used by the demo importer: `metadata`, `users`, `services`,
-        `suppliers`, `customers`, `vehicles`, `repairs`, and `purchases`. Values are seeded for a
-        deterministic small demo scenario and include the marker "datafaker-demo:small:123".
-        The returned structure mirrors the expected input shape for parse_demo_payload/import tests.
-        
-        Returns:
-            dict: The demo payload dictionary.
-        """
-        return {
-            "metadata": {
-                "generator": "datafaker",
-                "schema_version": 1,
-                "seed": 123,
-                "profile": "small",
-                "locale": "en-US",
-                "marker": "datafaker-demo:small:123",
-            },
-            "users": [
-                {
-                    "email": "staff@autoservice.local",
-                    "first_name": "Demo",
-                    "last_name": "Staff",
-                    "role": "staff",
-                    "is_staff": False,
-                }
-            ],
-            "services": [
-                {
-                    "key": "oil-service",
-                    "name": "Oil service",
-                    "price": "140.00",
-                    "is_active": True,
-                }
-            ],
-            "suppliers": [
-                {"key": "supplier-1", "name": "Parts Supplier"},
-            ],
-            "customers": [
-                {
-                    "key": "customer-001",
-                    "full_name": "Jan Kowalski",
-                    "phone": "+48 500 100 200",
-                }
-            ],
-            "vehicles": [
-                {
-                    "key": "vehicle-001",
-                    "customer_key": "customer-001",
-                    "license_plate": "DF 12345",
-                    "make": "Toyota",
-                    "model": "Corolla",
-                }
-            ],
-            "repairs": [
-                {
-                    "key": "repair-001",
-                    "tracking_code": "DFR-001",
-                    "vehicle_key": "vehicle-001",
-                    "master_email": "staff@autoservice.local",
-                    "service_name": "Oil service",
-                    "service_line_keys": ["oil-service"],
-                    "status": "completed",
-                }
-            ],
-            "purchases": [
-                {
-                    "key": "purchase-001-1",
-                    "supplier_key": "supplier-1",
-                    "vehicle_key": "vehicle-001",
-                    "repair_key": "repair-001",
-                    "part_name": "Oil filter",
-                    "quantity": "1",
-                    "purchase_price": "25.50",
-                    "sale_price": "39.90",
-                    "order_date": "2026-04-10",
-                }
-            ],
-        }
+        return build_datafaker_demo_payload()
 
     def test_parse_payload_accepts_connected_datafaker_scenario(self):
         payload = parse_demo_payload(self._payload())
@@ -105,6 +98,52 @@ class DatafakerDemoPayloadTests(SimpleTestCase):
         self.assertEqual(payload.marker, "datafaker-demo:small:123")
         self.assertEqual(payload.customers[0]["key"], "customer-001")
         self.assertEqual(payload.repairs[0]["service_line_keys"], ["oil-service"])
+
+    def test_parse_payload_uses_metadata_marker_fallback(self):
+        raw = self._payload()
+        raw["metadata"].pop("marker")
+
+        payload = parse_demo_payload(raw)
+
+        self.assertEqual(payload.marker, "datafaker-demo:small:123")
+        self.assertEqual(with_marker("note", payload.marker), "note [datafaker-demo:small:123]")
+
+    def test_parse_payload_rejects_non_datafaker_generator(self):
+        raw = self._payload()
+        raw["metadata"]["generator"] = "legacy-sql"
+
+        with self.assertRaisesMessage(CommandError, "metadata.generator must be 'datafaker'"):
+            parse_demo_payload(raw)
+
+    def test_parse_payload_rejects_unsupported_schema_version(self):
+        raw = self._payload()
+        raw["metadata"]["schema_version"] = 999
+
+        with self.assertRaisesMessage(CommandError, "Unsupported Datafaker schema_version"):
+            parse_demo_payload(raw)
+
+    def test_parse_payload_rejects_duplicate_entity_keys(self):
+        raw = self._payload()
+        raw["vehicles"].append({**raw["vehicles"][0]})
+
+        with self.assertRaisesMessage(CommandError, "vehicles contains duplicate key"):
+            parse_demo_payload(raw)
+
+    def test_parse_payload_rejects_missing_vehicle_required_fields(self):
+        for field in ["license_plate", "make", "model"]:
+            raw = self._payload()
+            raw["vehicles"][0].pop(field)
+
+            with self.subTest(field=field):
+                with self.assertRaisesMessage(CommandError, f"vehicles row is missing required field: {field}"):
+                    parse_demo_payload(raw)
+
+    def test_parse_payload_rejects_unknown_customer_reference(self):
+        raw = self._payload()
+        raw["vehicles"][0]["customer_key"] = "missing-customer"
+
+        with self.assertRaisesMessage(CommandError, "references unknown customer_key"):
+            parse_demo_payload(raw)
 
     def test_parse_payload_rejects_unknown_vehicle_reference(self):
         raw = self._payload()
@@ -118,6 +157,27 @@ class DatafakerDemoPayloadTests(SimpleTestCase):
         raw["repairs"][0]["service_line_keys"] = ["missing-service"]
 
         with self.assertRaisesMessage(CommandError, "references unknown service key"):
+            parse_demo_payload(raw)
+
+    def test_parse_payload_rejects_unknown_supplier_reference(self):
+        raw = self._payload()
+        raw["purchases"][0]["supplier_key"] = "missing-supplier"
+
+        with self.assertRaisesMessage(CommandError, "references unknown supplier_key"):
+            parse_demo_payload(raw)
+
+    def test_parse_payload_rejects_invalid_repair_status(self):
+        raw = self._payload()
+        raw["repairs"][0]["status"] = "archived"
+
+        with self.assertRaisesMessage(CommandError, "unsupported status"):
+            parse_demo_payload(raw)
+
+    def test_parse_payload_rejects_unknown_master_email(self):
+        raw = self._payload()
+        raw["repairs"][0]["master_email"] = "missing@autoservice.local"
+
+        with self.assertRaisesMessage(CommandError, "references unknown master_email"):
             parse_demo_payload(raw)
 
     def test_parse_payload_rejects_invalid_money(self):
@@ -140,13 +200,7 @@ class DatafakerDemoPayloadTests(SimpleTestCase):
 
 class ImportDatafakerDemoCommandTests(TestCase):
     def _payload(self):
-        """
-        Return the canonical demo payload used by import tests.
-        
-        Returns:
-            dict: A connected "datafaker-demo" payload dictionary containing sections like `metadata`, `users`, `services`, `suppliers`, `customers`, `vehicles`, `repairs`, and `purchases`.
-        """
-        return DatafakerDemoPayloadTests()._payload()
+        return build_datafaker_demo_payload()
 
     def _write_payload(self, payload):
         """
@@ -188,6 +242,48 @@ class ImportDatafakerDemoCommandTests(TestCase):
         self.assertTrue(admin.is_staff)
         self.assertTrue(admin.check_password("admin12345"))
         self.assertEqual(staff.role, "staff")
+
+    def test_replace_only_deletes_purchases_for_matching_marker(self):
+        User = get_user_model()
+        staff = User.objects.create_user(email="other-staff@autoservice.local", password="x", role="staff")
+        other_customer = Customer.objects.create(
+            full_name="Other Demo Customer",
+            phone="+48 500 999 999",
+            notes="[datafaker-demo:other:456]",
+            assigned_to=staff,
+        )
+        other_vehicle = Vehicle.objects.create(
+            customer=other_customer,
+            license_plate="DF 99999",
+            make="Skoda",
+            model="Octavia",
+            notes="[datafaker-demo:other:456]",
+        )
+        other_repair = Repair.objects.create(
+            vehicle=other_vehicle,
+            service_name="Other repair",
+            tracking_code="DFR-999",
+            issue_notes="[datafaker-demo:other:456]",
+        )
+        unit, _ = UnitOfMeasure.objects.get_or_create(code="pcs", defaults={"name": "Pieces"})
+        supplier = Supplier.objects.create(name="Other Supplier", notes="[datafaker-demo:other:456]")
+        Purchase.objects.create(
+            order_date="2026-04-10",
+            supplier=supplier,
+            vehicle=other_vehicle,
+            unit_of_measure=unit,
+            part_name="Other demo part",
+            quantity="1.00",
+            purchase_price="25.50",
+            sale_price="39.90",
+            repair_code=other_repair.tracking_code,
+            invoice_name="DATAFAKER-DEMO-456-999",
+        )
+        path = self._write_payload(self._payload())
+
+        call_command("import_datafaker_demo", str(path), replace=True)
+
+        self.assertTrue(Purchase.objects.filter(part_name="Other demo part").exists())
 
     def test_import_assigns_generated_customers_to_staff_user(self):
         path = self._write_payload(self._payload())
