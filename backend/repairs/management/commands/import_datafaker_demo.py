@@ -14,6 +14,38 @@ from repairs.models import Repair, RepairServiceLine
 class Command(BaseCommand):
     help = "Import a Java Datafaker-generated CSP demo JSON scenario."
 
+    LEGACY_DEMO_CUSTOMER_PHONES = (
+        "+380****4567",
+        "+380****5678",
+        "+380****6789",
+        "+380****2233",
+        "+380****3344",
+        "+380****4455",
+        "+380****5566",
+        "+380****6677",
+        "+380****7788",
+        "+380****8899",
+    )
+
+    LEGACY_DEMO_VEHICLE_PLATES = (
+        "AA 1234 BB",
+        "AA 9876 CC",
+        "KA 4321 EE",
+        "BH 5566 FF",
+        "BH 7788 GG",
+        "AA 2233 HH",
+        "AA 4455 KK",
+        "KA 8899 MM",
+        "BH 1122 PP",
+        "BH 3344 RR",
+        "AA 6677 SS",
+        "KA 9900 TT",
+        "KA 1357 UU",
+        "AA 2468 VV",
+        "BH 9876 WW",
+        "BH 1111 XX",
+    )
+
     def add_arguments(self, parser):
         parser.add_argument("json_path", help="Path to JSON emitted by tools/datafaker-generator")
         parser.add_argument(
@@ -21,18 +53,25 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete existing rows tagged with this dataset marker before importing.",
         )
+        parser.add_argument(
+            "--replace-legacy-sql-demo",
+            action="store_true",
+            help="Delete rows from the former scripts/demo/demo_data.sql fixture before importing.",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
         payload = load_demo_payload(options["json_path"])
         marker = payload.marker
+        if options["replace_legacy_sql_demo"]:
+            self._delete_legacy_sql_demo()
         if options["replace"]:
             self._delete_marker(marker)
 
         users_by_email = self._upsert_users(payload.users)
         services_by_key = self._upsert_services(payload.services, marker)
         suppliers_by_key = self._upsert_suppliers(payload.suppliers, marker)
-        customers_by_key = self._create_customers(payload.customers, marker)
+        customers_by_key = self._create_customers(payload.customers, marker, users_by_email)
         vehicles_by_key = self._create_vehicles(payload.vehicles, customers_by_key, marker)
         repairs_by_key = self._create_repairs(payload.repairs, vehicles_by_key, services_by_key, users_by_email, marker)
         self._create_purchases(payload.purchases, suppliers_by_key, vehicles_by_key, repairs_by_key)
@@ -53,6 +92,16 @@ class Command(BaseCommand):
         Customer.objects.filter(notes__contains=f"[{marker}]").delete()
         Supplier.objects.filter(notes__contains=f"[{marker}]").delete()
         Service.objects.filter(description__contains=f"[{marker}]").delete()
+
+    def _delete_legacy_sql_demo(self) -> None:
+        legacy_vehicle_ids = Vehicle.objects.filter(license_plate__in=self.LEGACY_DEMO_VEHICLE_PLATES).values_list("id", flat=True)
+        legacy_repair_ids = Repair.objects.filter(vehicle_id__in=legacy_vehicle_ids).values_list("id", flat=True)
+        legacy_tracking_codes = Repair.objects.filter(id__in=legacy_repair_ids).values_list("tracking_code", flat=True)
+        Purchase.objects.filter(vehicle_id__in=legacy_vehicle_ids).delete()
+        Purchase.objects.filter(repair_code__in=legacy_tracking_codes).delete()
+        Repair.objects.filter(id__in=legacy_repair_ids).delete()
+        Vehicle.objects.filter(license_plate__in=self.LEGACY_DEMO_VEHICLE_PLATES).delete()
+        Customer.objects.filter(phone__in=self.LEGACY_DEMO_CUSTOMER_PHONES).delete()
 
     def _upsert_users(self, rows):
         User = get_user_model()
@@ -106,14 +155,18 @@ class Command(BaseCommand):
             suppliers[row["key"]] = supplier
         return suppliers
 
-    def _create_customers(self, rows, marker: str):
+    def _create_customers(self, rows, marker: str, users_by_email):
         customers = {}
+        default_assignee = users_by_email.get("staff@autoservice.local")
+        if default_assignee is None:
+            default_assignee = next((user for user in users_by_email.values() if getattr(user, "role", "") == "staff"), None)
         for row in rows:
             customer = Customer.objects.create(
                 full_name=row["full_name"],
                 phone=row.get("phone", ""),
                 email=row.get("email", ""),
                 notes=with_marker(row.get("notes", ""), marker),
+                assigned_to=default_assignee,
             )
             customers[row["key"]] = customer
         return customers
@@ -143,6 +196,7 @@ class Command(BaseCommand):
             repair = Repair.objects.create(
                 vehicle=vehicles_by_key[row["vehicle_key"]],
                 master=users_by_email.get(row.get("master_email")),
+                tracking_code=row.get("tracking_code", ""),
                 service_name=row["service_name"],
                 issue_notes=with_marker(row.get("issue_notes", ""), marker),
                 status=row.get("status", Repair.Status.NEW),

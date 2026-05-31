@@ -87,14 +87,14 @@ export class StaffRepairsPage {
   }
 
   /**
-   * Карточка демо-ремонта TOR-1001 на канбане (колонка Completed может показывать только 15 карточек).
+   * Shared generated demo repair card. Prefer test-owned repairs in new specs.
    */
   async seededRepairKanbanCard(): Promise<Locator> {
     return this.repairKanbanCardByTrackingCode(E2E_DEMO_REPAIR_TRACKING_CODE);
   }
 
   /**
-   * Ждёт канбан, затем открывает демо-ремонт из `scripts/demo/demo_data.sql` (TOR-1001 в колонке Completed).
+   * Ждёт канбан, затем открывает shared generated demo repair.
    */
   async openSeededRepairCard(): Promise<void> {
     const card = await this.seededRepairKanbanCard();

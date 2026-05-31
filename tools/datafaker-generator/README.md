@@ -74,7 +74,8 @@ build/install/csp-demo-data/bin/csp-demo-data generate datafaker-demo \
 From a running backend/container or local backend environment:
 
 ```bash
-python manage.py import_datafaker_demo ../tmp/datafaker-demo.json --replace
+python manage.py import_datafaker_demo ../tmp/datafaker-demo.json --replace --replace-legacy-sql-demo
 ```
 
 `--replace` removes rows tagged with the same Datafaker marker before importing, so the generated demo dataset can be recreated safely.
+`--replace-legacy-sql-demo` also prunes rows from the former `scripts/demo/demo_data.sql` fixture before importing generated rows.

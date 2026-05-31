@@ -81,7 +81,7 @@ fi
 
 echo "Importing Datafaker demo JSON into backend container..."
 "${COMPOSE[@]}" cp "${OUTPUT}" backend:/tmp/datafaker-demo.json
-"${COMPOSE[@]}" exec -T backend python manage.py import_datafaker_demo /tmp/datafaker-demo.json --replace
+"${COMPOSE[@]}" exec -T backend python manage.py import_datafaker_demo /tmp/datafaker-demo.json --replace --replace-legacy-sql-demo
 
 echo ""
 echo "Datafaker demo data loaded from ${OUTPUT}."

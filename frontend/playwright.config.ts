@@ -51,7 +51,7 @@ const e2eWorkersCi = Math.max(
  * - setup — `e2e/auth.setup.ts` пишет `e2e/.auth/*.json` (staff по умолчанию для обоих браузеров).
  *
  * В CI — workers см. `e2eWorkersCi` (по умолчанию 5), fullyParallel=false — тесты в одном файле по порядку (меньше гонок на общих демо-строках).
- * mobile-chrome ждёт desktop-chrome, чтобы не накладываться на мутации TOR-1001 (PDF и т.п.) из desktop-сьюта.
+ * mobile-chrome ждёт desktop-chrome, чтобы не накладываться на cross-viewport мутации shared fixtures.
  */
 export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",

@@ -6,8 +6,8 @@ This folder is the **canonical spec surface** for product intent, execution back
 
 | Artifact | Purpose |
 |----------|---------|
-| [RUNBOOK.md](./RUNBOOK.md) | How to run dev (hot reload), prod-like compose, demo SQL, LAN/mobile via `scripts/compose/publish-dev-to-lan.sh`. |
-| [SCRIPTS.md](./SCRIPTS.md) | Full `scripts/` layout: compose, db, media, demo SQL, MCP, Allure, CI helpers, agents, dev tools. |
+| [RUNBOOK.md](./RUNBOOK.md) | How to run dev (hot reload), prod-like compose, generated Datafaker demo data, LAN/mobile via `scripts/compose/publish-dev-to-lan.sh`. |
+| [SCRIPTS.md](./SCRIPTS.md) | Full `scripts/` layout: compose, db, media, generated demo data, MCP, Allure, CI helpers, agents, dev tools. |
 | [DOMAIN_RULES.md](./DOMAIN_RULES.md) | Source of truth for domain entities, statuses, money, PDF/snapshot, access rules. |
 | [TECH_STACK.md](./TECH_STACK.md) | Stack, architecture shape, access surfaces, risks, non-goals. |
 | [PRODUCT.md](./PRODUCT.md) | Product goal, MVP scope, milestones, acceptance themes (strategy). |

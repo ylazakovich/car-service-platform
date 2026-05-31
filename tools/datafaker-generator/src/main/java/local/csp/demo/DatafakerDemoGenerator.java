@@ -95,6 +95,7 @@ public final class DatafakerDemoGenerator {
             String serviceName = SERVICE_NAMES.get(random.nextInt(SERVICE_NAMES.size()));
             repairs.add(mapOf(
                     "key", repairKey,
+                    "tracking_code", "DFR-" + suffix,
                     "vehicle_key", vehicleKey,
                     "master_email", "staff@autoservice.local",
                     "service_name", serviceName,
