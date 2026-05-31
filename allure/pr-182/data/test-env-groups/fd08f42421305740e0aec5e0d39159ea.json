@@ -1,0 +1,1 @@
+{"id":"fd08f42421305740e0aec5e0d39159ea","fullName":"staff-repair-picked-up-status.spec.ts:104:3","name":"Mark as Picked Up keeps repair in Completed as a dimmed card after Ready to pickup count updates","status":"passed","testResultsByEnv":{"e2e":"80506f2f74c840b3114c1654209c70e4"}}
