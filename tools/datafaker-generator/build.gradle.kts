@@ -12,6 +12,7 @@ java {
 }
 
 application {
+    applicationName = "csp-demo-data"
     mainClass.set("local.csp.demo.DatafakerDemoGenerator")
 }
 

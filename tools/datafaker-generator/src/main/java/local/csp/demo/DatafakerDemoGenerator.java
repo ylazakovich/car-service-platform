@@ -236,6 +236,11 @@ public final class DatafakerDemoGenerator {
 
     private record Config(long seed, String locale, int count, String profile, String output) {
         static Config parse(String[] args) {
+            if (args.length >= 2 && args[0].equals("generate") && args[1].equals("datafaker-demo")) {
+                args = java.util.Arrays.copyOfRange(args, 2, args.length);
+            } else if (args.length > 0 && !args[0].startsWith("-")) {
+                throw new IllegalArgumentException("Unknown command. Expected: generate datafaker-demo");
+            }
             long seed = 123L;
             String locale = "en-US";
             int count = 5;
@@ -294,7 +299,8 @@ public final class DatafakerDemoGenerator {
         }
 
         private static void printHelpAndExit() {
-            System.out.println("Usage: gradle run --args=\"--seed 123 --locale en-US --count 5 --profile small --output ../../tmp/datafaker-demo.json\"");
+            System.out.println("Usage: csp-demo-data generate datafaker-demo --seed 123 --locale en-US --count 5 --profile small --output tmp/datafaker-demo.json");
+            System.out.println("       csp-demo-data --seed 123 --locale en-US --count 5 --profile small --output tmp/datafaker-demo.json");
             System.exit(0);
         }
     }

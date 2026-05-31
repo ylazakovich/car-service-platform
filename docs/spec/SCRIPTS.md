@@ -34,7 +34,7 @@ Canonical index of **`scripts/`** and related operational assets. Day-to-day com
 | `db-backup.sh` | `pg_dump` from running `db` service into `backups/`. |
 | `db-restore.sh` | Restore from a backup artifact (see script usage). |
 | `load-demo.sh` | Interactive load of `scripts/demo/demo_data.sql` into Postgres. |
-| `load-datafaker-demo.sh` | Interactive Dockerized Java Datafaker JSON generation + Django `import_datafaker_demo --replace` import into the backend container. Set `DATAFAKER_DEMO_GENERATOR=host` to use host Gradle/JDK instead. |
+| `load-datafaker-demo.sh` | Interactive Dockerized Java Datafaker CLI generation + Django `import_datafaker_demo --replace` import into the backend container. Set `DATAFAKER_DEMO_GENERATOR=host` to use the host Java CLI built by the Gradle Wrapper. |
 | `load-demo-staff.sh` | Runs `seed_staff` in backend container (expects stack up). |
 
 ## `scripts/media/`

@@ -5,37 +5,26 @@ Small Java CLI for generating connected demo/dev seed data for `car-service-plat
 It intentionally stays outside the Django runtime:
 
 ```text
-Java Datafaker CLI -> JSON scenario -> Django import_datafaker_demo command
+Datafaker CLI -> JSON scenario -> Django import_datafaker_demo command
 ```
 
 ## Requirements
 
 Default local workflow uses Docker Compose and does not require Java or Gradle on the host.
 
-For direct host execution instead, install:
+For direct host execution instead, install JDK 17+. Gradle is bootstrapped through the committed Gradle Wrapper (`./gradlew`).
 
-- JDK 17+
-- Gradle 8+
+A generated Java CLI cannot run on a host without either Java or Docker. Use Docker mode for hosts that do not have Java installed.
 
-The repository does not commit a Gradle wrapper yet, so host mode uses a locally installed `gradle`.
-
-## Generate JSON with Docker
-
-From the repository root:
+## CLI
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml build datafaker-generator
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps \
-  datafaker-generator "--seed 123 --locale en-US --count 5 --profile small --output /workspace/tmp/datafaker-demo.json"
-```
-
-The first run pulls/builds a Gradle JDK 17 image and caches dependencies in the `datafaker_gradle_cache` volume.
-
-## Generate JSON with host Gradle
-
-```bash
-cd tools/datafaker-generator
-gradle run --args="--seed 123 --locale en-US --count 5 --profile small --output ../../tmp/datafaker-demo.json"
+csp-demo-data generate datafaker-demo \
+  --seed 123 \
+  --locale en-US \
+  --count 5 \
+  --profile small \
+  --output tmp/datafaker-demo.json
 ```
 
 Options:
@@ -45,6 +34,40 @@ Options:
 - `--count <n>`: number of customer/vehicle/repair scenarios.
 - `--profile small|demo|stress`: size hint stored in metadata and used by helper scripts.
 - `--output <path>`: output JSON path. Use `-` for stdout.
+
+## Generate JSON with Docker
+
+From the repository root:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build datafaker-generator
+HOST_UID=$(id -u) HOST_GID=$(id -g) \
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps \
+  datafaker-generator generate datafaker-demo \
+  --seed 123 \
+  --locale en-US \
+  --count 5 \
+  --profile small \
+  --output /workspace/tmp/datafaker-demo.json
+```
+
+The Docker image is multi-stage:
+
+- build stage: JDK 17 + Gradle Wrapper builds `installDist`;
+- runtime stage: JRE 17 only, running the installed `csp-demo-data` CLI.
+
+## Generate JSON with host Java
+
+```bash
+cd tools/datafaker-generator
+./gradlew --no-daemon installDist
+build/install/csp-demo-data/bin/csp-demo-data generate datafaker-demo \
+  --seed 123 \
+  --locale en-US \
+  --count 5 \
+  --profile small \
+  --output ../../tmp/datafaker-demo.json
+```
 
 ## Import into Django
 

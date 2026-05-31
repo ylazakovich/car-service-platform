@@ -69,11 +69,10 @@ services:
     profiles: ["tools"]
     build:
       context: ./tools/datafaker-generator
-    working_dir: /workspace/tools/datafaker-generator
+    working_dir: /workspace
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - .:/workspace
-      - datafaker_gradle_cache:/home/gradle/.gradle
 
 volumes:
   frontend_node_modules:
-  datafaker_gradle_cache:

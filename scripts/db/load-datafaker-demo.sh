@@ -11,7 +11,7 @@ PROFILE="${DATAFAKER_DEMO_PROFILE:-demo}"
 OUTPUT="${DATAFAKER_DEMO_OUTPUT:-${ROOT_DIR}/tmp/datafaker-demo.json}"
 GENERATOR="${DATAFAKER_DEMO_GENERATOR:-docker}"
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.dev.yml)
-GENERATOR_ARGS="--seed ${SEED} --locale ${LOCALE} --count ${COUNT} --profile ${PROFILE} --output"
+CLI_ARGS=(generate datafaker-demo --seed "${SEED}" --locale "${LOCALE}" --count "${COUNT}" --profile "${PROFILE}" --output)
 
 if [[ ! -f .env ]]; then
   echo "Error: .env file not found." >&2
@@ -46,20 +46,27 @@ case "${GENERATOR}" in
     "${COMPOSE[@]}" build datafaker-generator
 
     echo "Generating Datafaker demo JSON in Docker..."
-    "${COMPOSE[@]}" run --rm --no-deps datafaker-generator "${GENERATOR_ARGS} ${CONTAINER_OUTPUT}"
+    HOST_UID="$(id -u)" HOST_GID="$(id -g)" "${COMPOSE[@]}" run --rm --no-deps datafaker-generator "${CLI_ARGS[@]}" "${CONTAINER_OUTPUT}"
     ;;
   host)
-    if ! command -v gradle >/dev/null 2>&1; then
-      echo "Error: gradle is required for DATAFAKER_DEMO_GENERATOR=host." >&2
-      echo "Install Gradle 8+ and JDK 17+, or use the default Docker generator." >&2
-      exit 1
+    CLI_BIN="${ROOT_DIR}/tools/datafaker-generator/build/install/csp-demo-data/bin/csp-demo-data"
+    if [[ ! -x "${CLI_BIN}" ]]; then
+      if [[ -x "${ROOT_DIR}/tools/datafaker-generator/gradlew" ]] && command -v java >/dev/null 2>&1; then
+        echo "Building Datafaker CLI with Gradle Wrapper..."
+        (
+          cd tools/datafaker-generator
+          ./gradlew --no-daemon installDist
+        )
+      else
+        echo "Error: host generator requires Java 17+ to run the Gradle Wrapper and CLI." >&2
+        echo "Use the default Docker generator, or install Java and run:" >&2
+        echo "  cd tools/datafaker-generator && ./gradlew installDist" >&2
+        exit 1
+      fi
     fi
 
-    echo "Generating Datafaker demo JSON with host Gradle..."
-    (
-      cd tools/datafaker-generator
-      gradle run --args="${GENERATOR_ARGS} ${OUTPUT}"
-    )
+    echo "Generating Datafaker demo JSON with host CLI..."
+    "${CLI_BIN}" "${CLI_ARGS[@]}" "${OUTPUT}"
     ;;
   *)
     echo "Error: unsupported DATAFAKER_DEMO_GENERATOR='${GENERATOR}'. Use 'docker' or 'host'." >&2
