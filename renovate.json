@@ -7,6 +7,7 @@
     "github>ylazakovich/renovate-config//presets/github-actions/default"
   ],
   "enabledManagers": [
+    "gradle",
     "pip_requirements",
     "npm",
     "docker-compose",
