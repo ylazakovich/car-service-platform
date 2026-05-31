@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3.0](https://github.com/ylazakovich/car-service-platform/compare/v1.2.0...v1.3.0) (2026-05-31)
+
+
+### Features
+
+* **demo:** add Datafaker demo generator ([bf09c44](https://github.com/ylazakovich/car-service-platform/commit/bf09c44f4eec6d8d11ef516a1d27885936479381))
+* **demo:** dockerize Datafaker generator ([80a31b2](https://github.com/ylazakovich/car-service-platform/commit/80a31b24f53765d518a5f3a0c0e2cd5dca97c36b))
+* **demo:** enrich Datafaker demo scenarios ([2a882e3](https://github.com/ylazakovich/car-service-platform/commit/2a882e373151f503639f27209df1f1774e28d2d7))
+* **demo:** prebuild acts for generated repairs ([ffb8d51](https://github.com/ylazakovich/car-service-platform/commit/ffb8d515af6a7b5b3cf452ea3fbb13ad2d675f4e))
+* **demo:** ship Datafaker CLI image ([8b6660b](https://github.com/ylazakovich/car-service-platform/commit/8b6660bf160a6f08f28c3f0d94f9c3b0b5e39e80))
+
+
+### Bug Fixes
+
+* address coderabbit demo data feedback ([cfac102](https://github.com/ylazakovich/car-service-platform/commit/cfac10298588df9cba3057b93f86b573d022aa48))
+* **deps:** update minor and patch updates ([bd4b1ab](https://github.com/ylazakovich/car-service-platform/commit/bd4b1abfd195b93a4d2781529fa4a7337cdb80f3))
+* **deps:** update minor and patch updates ([28d51cb](https://github.com/ylazakovich/car-service-platform/commit/28d51cb192a15062e69243bcacff75c2567065c7))
+* **deps:** update org.junit.jupiter:junit-jupiter to v6 ([#184](https://github.com/ylazakovich/car-service-platform/issues/184)) ([5d9eaf3](https://github.com/ylazakovich/car-service-platform/commit/5d9eaf37af00a00458143f001940f8b1eaec5197))
+* **renovate:** enable gradle wrapper updates ([8bfb974](https://github.com/ylazakovich/car-service-platform/commit/8bfb974bfd81628845face2b1c14bd4536f38f4b))
+* **tools:** support arm64 datafaker docker build ([4bef5cc](https://github.com/ylazakovich/car-service-platform/commit/4bef5cc1ad0ddf702e66b6afe63b351ec867979d))
+
 ## [1.2.0](https://github.com/ylazakovich/car-service-platform/compare/v1.1.0...v1.2.0) (2026-05-29)
 
 
