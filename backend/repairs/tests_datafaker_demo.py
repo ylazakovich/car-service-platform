@@ -138,6 +138,31 @@ class ImportDatafakerDemoCommandTests(TestCase):
         self.addCleanup(tmpdir.cleanup)
         return path
 
+    def test_import_upserts_admin_and_staff_users(self):
+        payload = self._payload()
+        payload["users"].insert(
+            0,
+            {
+                "email": "admin@autoservice.local",
+                "first_name": "Demo",
+                "last_name": "Admin",
+                "role": "admin",
+                "is_staff": True,
+                "password": "admin12345",
+            },
+        )
+        path = self._write_payload(payload)
+
+        call_command("import_datafaker_demo", str(path), replace=True)
+
+        User = get_user_model()
+        admin = User.objects.get(email="admin@autoservice.local")
+        staff = User.objects.get(email="staff@autoservice.local")
+        self.assertEqual(admin.role, "admin")
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.check_password("admin12345"))
+        self.assertEqual(staff.role, "staff")
+
     def test_import_assigns_generated_customers_to_staff_user(self):
         path = self._write_payload(self._payload())
 

@@ -22,8 +22,8 @@ A generated Java CLI cannot run on a host without either Java or Docker. Use Doc
 csp-demo-data generate datafaker-demo \
   --seed 123 \
   --locale en-US \
-  --count 5 \
-  --profile small \
+  --count 10 \
+  --profile demo \
   --output tmp/datafaker-demo.json
 ```
 
@@ -31,9 +31,19 @@ Options:
 
 - `--seed <long>`: deterministic seed. The same seed/count/profile emits the same business dataset.
 - `--locale <tag>`: Datafaker locale, e.g. `en-US`, `pl-PL`.
-- `--count <n>`: number of customer/vehicle/repair scenarios.
-- `--profile small|demo|stress`: size hint stored in metadata and used by helper scripts.
+- `--count <n>`: number of customers to generate. Omit it to use the selected profile default.
+- `--profile small|e2e|demo|showcase|stress`: controls default size and relationship richness.
 - `--output <path>`: output JSON path. Use `-` for stdout.
+
+Profile defaults:
+
+- `small`: 5 customers, simple one-car/one-repair rows.
+- `e2e`: 10 customers with modest history for deterministic smoke fixtures.
+- `demo`: 20 customers by default; local script currently overrides to 10 for faster loads.
+- `showcase`: 40 customers and deeper repair history.
+- `stress`: 200 customers for heavier local/performance checks.
+
+Generated entities include admin/staff users, customers, vehicles, stable license plates, repairs across `new`, `in_progress`, `waiting_parts`, `completed`, and `picked_up`, suppliers, services, repair service lines, and linked purchases.
 
 ## Generate JSON with Docker
 
@@ -46,8 +56,8 @@ HOST_UID=$(id -u) HOST_GID=$(id -g) \
   datafaker-generator generate datafaker-demo \
   --seed 123 \
   --locale en-US \
-  --count 5 \
-  --profile small \
+  --count 10 \
+  --profile demo \
   --output /workspace/tmp/datafaker-demo.json
 ```
 
@@ -64,8 +74,8 @@ cd tools/datafaker-generator
 build/install/csp-demo-data/bin/csp-demo-data generate datafaker-demo \
   --seed 123 \
   --locale en-US \
-  --count 5 \
-  --profile small \
+  --count 10 \
+  --profile demo \
   --output ../../tmp/datafaker-demo.json
 ```
 
