@@ -1,1 +1,1 @@
-{"id":"813ba46ab0be33dcf295752ea4c5e70e","fullName":"django-admin-repairs.spec.ts:30:3","name":"RepairFinancialSnapshot changelist loads without error","status":"failed","testResultsByEnv":{"e2e":"67bbefce05b3a446e5a13f01e4640919"}}
+{"id":"813ba46ab0be33dcf295752ea4c5e70e","fullName":"django-admin-repairs.spec.ts:48:3","name":"RepairFinancialSnapshot changelist loads without error","status":"passed","testResultsByEnv":{"e2e":"467e13c9e2e044f3de07d3d78858465b"}}

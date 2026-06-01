@@ -1,1 +1,1 @@
-{"id":"fffe2ea572c0f6b236c58ee439eb1ee4","fullName":"django-admin-repairs.spec.ts:40:3","name":"InviteToken changelist loads without error","status":"failed","testResultsByEnv":{"e2e":"75e02e0e139ad847f8deb3508562cdc2"}}
+{"id":"fffe2ea572c0f6b236c58ee439eb1ee4","fullName":"django-admin-repairs.spec.ts:58:3","name":"InviteToken changelist loads without error","status":"passed","testResultsByEnv":{"e2e":"a9a14716955a7917151fe3039f6ca8be"}}
