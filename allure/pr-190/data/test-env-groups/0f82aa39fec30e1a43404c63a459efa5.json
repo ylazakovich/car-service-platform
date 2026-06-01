@@ -1,1 +1,1 @@
-{"id":"0f82aa39fec30e1a43404c63a459efa5","fullName":"repairs.tests.RepairApiTests#test_portal_does_not_expose_workshop_internal_id","name":"test_portal_does_not_expose_workshop_internal_id","status":"passed","testResultsByEnv":{"backend":"c0a9f548420aa719e6298fba9c138f23"}}
+{"id":"0f82aa39fec30e1a43404c63a459efa5","fullName":"repairs.tests.RepairApiTests#test_portal_does_not_expose_workshop_internal_id","name":"test_portal_does_not_expose_workshop_internal_id","status":"passed","testResultsByEnv":{"backend":"45463f87f6a938fc6d832c171699b519"}}
