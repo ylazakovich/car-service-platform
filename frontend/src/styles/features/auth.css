@@ -397,6 +397,10 @@
   border-bottom: 1px solid var(--border);
   margin-bottom: var(--s5);
 }
+.portal-shop-id .brand-mark {
+  align-self: center;
+  flex-shrink: 0;
+}
 .portal-shop-name {
   font-weight: 700;
   font-size: 0.95rem;
