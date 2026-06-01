@@ -1,1 +1,1 @@
-{"id":"e6de9b31f55fac9fb00ae00e10c80cbe","fullName":"users.tests.UserUpdateViewTests#test_update_trims_whitespace","name":"test_update_trims_whitespace","status":"passed","testResultsByEnv":{"backend":"b6cb20a903a08f91f40b00f6f8086b51"}}
+{"id":"e6de9b31f55fac9fb00ae00e10c80cbe","fullName":"users.tests.UserUpdateViewTests#test_update_trims_whitespace","name":"test_update_trims_whitespace","status":"passed","testResultsByEnv":{"backend":"c0037e40fda0a423539e8a48b257e6a5"}}

@@ -1,1 +1,1 @@
-{"id":"a2ac482898c534abcf0d006e29cd3888","fullName":"staff-purchases-vehicles-registry.spec.ts:177:3","name":"clicking a purchase row opens detail dialog on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"d16933330cc5c83ae4935da67d826d44"}}
+{"id":"a2ac482898c534abcf0d006e29cd3888","fullName":"staff-purchases-vehicles-registry.spec.ts:177:3","name":"clicking a purchase row opens detail dialog on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"35d2b90a79b07b4df263df33d4d140cf"}}
