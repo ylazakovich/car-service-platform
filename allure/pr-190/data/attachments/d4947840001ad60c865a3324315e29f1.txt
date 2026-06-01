@@ -1,0 +1,2 @@
+{"timestamp": "2026-06-01 10:36:40,875", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/repairs/1/pdf/", "request": "<WSGIRequest: GET '/api/repairs/1/pdf/'>", "status_code": 403}
+{"timestamp": "2026-06-01 10:36:40,876", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/repairs/1/pdf/export/", "request": "<WSGIRequest: POST '/api/repairs/1/pdf/export/'>", "status_code": 403}
