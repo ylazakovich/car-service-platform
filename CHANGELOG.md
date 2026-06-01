@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.4.0](https://github.com/ylazakovich/car-service-platform/compare/v1.3.0...v1.4.0) (2026-06-01)
+
+
+### Features
+
+* **portal:** client portal redesign — Phase 1 + Phase 2 ([6e38af8](https://github.com/ylazakovich/car-service-platform/commit/6e38af8913faa1599a17286ab6e08de45557f415))
+* **portal:** Phase 1 + Phase 2 client portal redesign ([d1955bb](https://github.com/ylazakovich/car-service-platform/commit/d1955bbbcc8683cf6102a495a3f66ad7f861454c))
+
+
+### Bug Fixes
+
+* address CodeRabbit review feedback ([517a1ab](https://github.com/ylazakovich/car-service-platform/commit/517a1ab8bbe9174d1c0509d4ff97e92dc2f0912b))
+* **admin:** register repairs models and InviteToken in Django admin ([73ad5d2](https://github.com/ylazakovich/car-service-platform/commit/73ad5d2937cdd22d6628c08c4fa6ccdb737f7ee9))
+* **admin:** register repairs models and InviteToken in Django admin ([b625a11](https://github.com/ylazakovich/car-service-platform/commit/b625a11cb30829d1f879365d9122dac9f458786e))
+* **admin:** stabilize Django admin CI coverage ([8f71457](https://github.com/ylazakovich/car-service-platform/commit/8f714577fd1ed8f15641a4792065057bd4a53da8))
+* **deps:** run Checkstyle 13 with JDK 21 ([710d535](https://github.com/ylazakovich/car-service-platform/commit/710d53520c9b2bc8198adf3103215500424aa66a))
+* **deps:** update checkstyle to v13 ([759248d](https://github.com/ylazakovich/car-service-platform/commit/759248d80f3e8525eb157ccf2e053f7f48c5663d))
+* **deps:** update checkstyle to v13 ([3e0cc83](https://github.com/ylazakovich/car-service-platform/commit/3e0cc8372867e4550ac5d25e60be199c8ff85b46))
+* **deps:** update minor and patch updates ([#187](https://github.com/ylazakovich/car-service-platform/issues/187)) ([3f775e1](https://github.com/ylazakovich/car-service-platform/commit/3f775e1d5e7113e10ec4b0a914e3b16d0630098b))
+* **portal:** add dark center dot to active stepper node ([864ca3a](https://github.com/ylazakovich/car-service-platform/commit/864ca3ae39bcb5dcfdd9dbe2e1b021e2a79e31a5))
+* **portal:** align brandmark and shop name in one row ([810babf](https://github.com/ylazakovich/car-service-platform/commit/810babf288cdc2ccafcc4bae9de4bbf1f2e72f9b))
+* **portal:** handle picked_up status — all steps shown as done ([0e4cd56](https://github.com/ylazakovich/car-service-platform/commit/0e4cd56b958fa6cba02dc99f9d0f9c2168009754))
+* **portal:** remove margin-bottom from brandmark inside shop-id row ([f9613e3](https://github.com/ylazakovich/car-service-platform/commit/f9613e371450b860a7c5c8066966d0ae9c98fe3a))
+* **portal:** revert picked_up from status type — default case covers it ([5517a5f](https://github.com/ylazakovich/car-service-platform/commit/5517a5ff11ba6a1547ba6a71c58b37ba6f1ff2de))
+* **portal:** vertically center brandmark alongside shop name ([1bd517b](https://github.com/ylazakovich/car-service-platform/commit/1bd517b47e75802e460ad7c0d69acd1ded525113))
+
 ## [1.3.0](https://github.com/ylazakovich/car-service-platform/compare/v1.2.0...v1.3.0) (2026-05-31)
 
 
