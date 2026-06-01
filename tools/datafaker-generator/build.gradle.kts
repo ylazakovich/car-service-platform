@@ -1,7 +1,7 @@
 plugins {
     application
     checkstyle
-    id("com.github.spotbugs") version "6.5.4"
+    id("com.github.spotbugs") version "6.5.5"
 }
 
 group = "local.csp"
@@ -14,7 +14,7 @@ java {
 }
 
 checkstyle {
-    toolVersion = "10.12.4"
+    toolVersion = "10.26.1"
     configDirectory.set(layout.projectDirectory.dir("config/checkstyle"))
 }
 
