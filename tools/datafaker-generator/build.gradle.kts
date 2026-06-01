@@ -14,7 +14,7 @@ java {
 }
 
 checkstyle {
-    toolVersion = "10.26.1"
+    toolVersion = "13.5.0"
     configDirectory.set(layout.projectDirectory.dir("config/checkstyle"))
 }
 
