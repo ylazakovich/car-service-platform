@@ -51,7 +51,7 @@ export function ClientPortalPage() {
   return (
     <div className="portal-shell">
       <div className="portal-card">
-        <BrandMark variant="auth" />
+        {!repair && <BrandMark variant="auth" />}
 
         {loading && (
           <div className="portal-loading">
@@ -86,20 +86,23 @@ export function ClientPortalPage() {
 
           return (
             <>
-              {repair.workshop && (
-                <div className="portal-shop-id">
-                  <div className="portal-shop-name">{repair.workshop.name}</div>
-                  <div className="portal-shop-sub">
-                    <span className="portal-shop-badge">
-                      <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
-                        <path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      Authorized service
-                    </span>
-                    {repair.workshop.address && <span>{repair.workshop.address}</span>}
+              <div className="portal-shop-id">
+                <BrandMark variant="auth" />
+                {repair.workshop && (
+                  <div>
+                    <div className="portal-shop-name">{repair.workshop.name}</div>
+                    <div className="portal-shop-sub">
+                      <span className="portal-shop-badge">
+                        <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                          <path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Authorized service
+                      </span>
+                      {repair.workshop.address && <span>{repair.workshop.address}</span>}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="portal-header">
                 <p className="eyebrow">Repair Tracking</p>

@@ -390,6 +390,9 @@
 
 /* Shop identity */
 .portal-shop-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding-bottom: var(--s5);
   border-bottom: 1px solid var(--border);
   margin-bottom: var(--s5);
