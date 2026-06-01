@@ -1,1 +1,1 @@
-{"id":"6a9788b620bcb9992b7913c692096224","fullName":"django-admin-repairs.spec.ts:284:3","name":"InviteToken add link is present on changelist page","status":"passed","testResultsByEnv":{"e2e":"8d2cf4991efb3afdf2966a8d56c5a13e"}}
+{"id":"6a9788b620bcb9992b7913c692096224","fullName":"django-admin-repairs.spec.ts:287:3","name":"InviteToken add link is present on changelist page","status":"passed","testResultsByEnv":{"e2e":"b820ff2fdcf546a4fe028036f925a5fe"}}

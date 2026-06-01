@@ -1,1 +1,1 @@
-{"id":"7c6f7cd435791fbb8f6f2fceddfcb8af","fullName":"django-admin-entities.spec.ts:316:3","name":"Service — create via Django admin add form","status":"passed","testResultsByEnv":{"e2e":"7733d377b3e60ff9008d72771d5dcfc8"}}
+{"id":"7c6f7cd435791fbb8f6f2fceddfcb8af","fullName":"django-admin-entities.spec.ts:322:3","name":"Service — create via Django admin add form","status":"passed","testResultsByEnv":{"e2e":"0fac0ac9c9c1d1243917e036faab3ded"}}

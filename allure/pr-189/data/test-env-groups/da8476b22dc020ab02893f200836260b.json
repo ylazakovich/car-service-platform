@@ -1,1 +1,1 @@
-{"id":"da8476b22dc020ab02893f200836260b","fullName":"django-admin-repairs.spec.ts:221:3","name":"Repair — delete via detail page delete button","status":"broken","testResultsByEnv":{"e2e":"a67ced9366697a3bcd157356146214cd"}}
+{"id":"da8476b22dc020ab02893f200836260b","fullName":"django-admin-repairs.spec.ts:221:3","name":"Repair — delete via detail page delete button","status":"failed","testResultsByEnv":{"e2e":"f1de27bdef9ea756907c74a0c9543d69"}}
