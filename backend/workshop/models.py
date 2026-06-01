@@ -1,3 +1,4 @@
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 
 
@@ -16,4 +17,11 @@ class WorkshopSettings(models.Model):
 
     @classmethod
     def get(cls):
-        return cls.objects.first()
+        settings = list(cls.objects.all()[:2])
+        if not settings:
+            return None
+        if len(settings) > 1:
+            raise ImproperlyConfigured(
+                "Multiple WorkshopSettings rows exist; consolidate them into a single row."
+            )
+        return settings[0]
