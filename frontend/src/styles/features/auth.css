@@ -262,6 +262,16 @@
   background: var(--accent);
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.portal-step.active .portal-step-dot::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0d0d11;
 }
 .portal-step.active .portal-step-label {
   color: var(--text);
