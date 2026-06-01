@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "vehicles",
     "repairs",
     "analytics",
+    "workshop",
 ]
 
 MIDDLEWARE = [

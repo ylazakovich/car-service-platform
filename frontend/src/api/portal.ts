@@ -6,6 +6,13 @@ export interface PortalVehicleInfo {
   license_plate: string;
 }
 
+export interface PortalWorkshop {
+  name: string;
+  phone: string;
+  address: string;
+  maps_url: string;
+}
+
 export interface PortalRepair {
   tracking_code: string;
   service_name: string;
@@ -17,6 +24,8 @@ export interface PortalRepair {
   mileage_at_service: number | null;
   completed_at: string | null;
   created_at: string;
+  updated_at: string;
+  workshop: PortalWorkshop | null;
 }
 
 export async function fetchPortalRepair(token: string): Promise<PortalRepair> {
