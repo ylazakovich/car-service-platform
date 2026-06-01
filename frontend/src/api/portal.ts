@@ -17,7 +17,7 @@ export interface PortalRepair {
   tracking_code: string;
   service_name: string;
   service_lines?: { name: string; catalog_service_id: number | null }[];
-  status: "new" | "in_progress" | "waiting_parts" | "completed" | "picked_up";
+  status: "new" | "in_progress" | "waiting_parts" | "completed";
   status_display: string;
   vehicle_info: PortalVehicleInfo;
   estimated_date: string | null;
