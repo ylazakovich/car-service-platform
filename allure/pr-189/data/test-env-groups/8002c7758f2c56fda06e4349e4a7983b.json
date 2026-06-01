@@ -1,1 +1,1 @@
-{"id":"8002c7758f2c56fda06e4349e4a7983b","fullName":"django-admin-entities.spec.ts:181:3","name":"Vehicle — create via Django admin add form","status":"failed","testResultsByEnv":{"e2e":"58f186dbc9b80c24f910cca74b4a976c"}}
+{"id":"8002c7758f2c56fda06e4349e4a7983b","fullName":"django-admin-entities.spec.ts:187:3","name":"Vehicle — create via Django admin add form","status":"passed","testResultsByEnv":{"e2e":"fd6c959d491860bf959ead162cdd4774"}}

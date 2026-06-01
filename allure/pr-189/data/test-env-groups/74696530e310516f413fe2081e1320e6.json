@@ -1,1 +1,1 @@
-{"id":"74696530e310516f413fe2081e1320e6","fullName":"django-admin-entities.spec.ts:342:3","name":"Service — read: name appears in changelist after creation","status":"passed","testResultsByEnv":{"e2e":"27867de1ab04d3290491fedc0563d347"}}
+{"id":"74696530e310516f413fe2081e1320e6","fullName":"django-admin-entities.spec.ts:350:3","name":"Service — read: name appears in changelist after creation","status":"passed","testResultsByEnv":{"e2e":"8d32fe9801f9323079aed5dba6a11a0c"}}
