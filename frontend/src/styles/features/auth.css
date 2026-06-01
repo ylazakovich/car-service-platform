@@ -400,6 +400,7 @@
 .portal-shop-id .brand-mark {
   align-self: center;
   flex-shrink: 0;
+  margin-bottom: 0;
 }
 .portal-shop-name {
   font-weight: 700;
