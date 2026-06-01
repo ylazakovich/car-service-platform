@@ -26,11 +26,13 @@ ADMIN_NAVIGATION_SECTIONS = (
     },
     {
         "title": "Operations",
-        "app_labels": ("services", "purchases"),
+        "app_labels": ("services", "purchases", "repairs"),
         "items": (
             {"title": "Services", "url_name": "admin:services_service_changelist"},
             {"title": "Suppliers", "url_name": "admin:purchases_supplier_changelist"},
             {"title": "Purchases", "url_name": "admin:purchases_purchase_changelist"},
+            {"title": "Repairs", "url_name": "admin:repairs_repair_changelist"},
+            {"title": "Repair Financial Snapshots", "url_name": "admin:repairs_repairfinancialsnapshot_changelist"},
         ),
     },
 )

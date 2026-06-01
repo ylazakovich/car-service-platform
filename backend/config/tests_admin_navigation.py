@@ -39,6 +39,11 @@ class AdminNavigationTests(TestCase):
                         {"title": "Services", "link": "/mocked/admin:services_service_changelist/"},
                         {"title": "Suppliers", "link": "/mocked/admin:purchases_supplier_changelist/"},
                         {"title": "Purchases", "link": "/mocked/admin:purchases_purchase_changelist/"},
+                        {"title": "Repairs", "link": "/mocked/admin:repairs_repair_changelist/"},
+                        {
+                            "title": "Repair Financial Snapshots",
+                            "link": "/mocked/admin:repairs_repairfinancialsnapshot_changelist/",
+                        },
                     ],
                 },
             ],
@@ -53,6 +58,8 @@ class AdminNavigationTests(TestCase):
                 "admin:services_service_changelist",
                 "admin:purchases_supplier_changelist",
                 "admin:purchases_purchase_changelist",
+                "admin:repairs_repair_changelist",
+                "admin:repairs_repairfinancialsnapshot_changelist",
             ],
         )
 
@@ -86,6 +93,10 @@ class AdminNavigationTests(TestCase):
                 "app_label": "purchases",
                 "models": [{"name": "Suppliers"}, {"name": "Purchases"}],
             },
+            {
+                "app_label": "repairs",
+                "models": [{"name": "Repairs"}, {"name": "Repair Financial Snapshots"}],
+            },
         ]
 
         grouped = group_admin_app_list(app_list)
@@ -106,7 +117,13 @@ class AdminNavigationTests(TestCase):
                 {
                     "name": "Operations",
                     "app_label": "operations",
-                    "models": [{"name": "Services"}, {"name": "Suppliers"}, {"name": "Purchases"}],
+                    "models": [
+                        {"name": "Services"},
+                        {"name": "Suppliers"},
+                        {"name": "Purchases"},
+                        {"name": "Repairs"},
+                        {"name": "Repair Financial Snapshots"},
+                    ],
                 },
             ],
         )

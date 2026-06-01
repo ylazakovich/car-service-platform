@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from unfold.admin import ModelAdmin
 
-from .models import User
+from .models import InviteToken, User
 
 
 @admin.register(User)
@@ -26,3 +26,12 @@ class UserAdmin(DjangoUserAdmin, ModelAdmin):
         ),
     )
     readonly_fields = ("created_at",)
+
+
+@admin.register(InviteToken)
+class InviteTokenAdmin(ModelAdmin):
+    list_display = ("user", "token", "expires_at", "created_at")
+    list_select_related = ("user",)
+    list_filter = ("expires_at", "created_at")
+    search_fields = ("user__email",)
+    readonly_fields = ("token", "created_at", "expires_at")

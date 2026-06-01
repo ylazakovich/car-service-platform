@@ -177,9 +177,21 @@ jobs:
           retention-days: 30
 
   e2e:
-    name: "End-to-end"
+    name: "End-to-end: ${{ matrix.title }}"
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: app
+            title: App
+            allure-label: E2E App
+            command: PLAYWRIGHT_E2E_SUITE=app npx playwright test
+          - id: django-admin
+            title: Django Admin
+            allure-label: E2E Django Admin
+            command: PLAYWRIGHT_E2E_SUITE=django-admin npx playwright test
     env:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       E2E_ADMIN_EMAIL: admin@autoservice.local
@@ -212,7 +224,7 @@ jobs:
           # Fork PRs: token is read-only — GHA cache backend needs actions: write
           github-actions-cache: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'true' || 'false' }}
 
-      - name: Run Playwright
+      - name: Run Playwright (${{ matrix.title }})
         env:
           DOCKER_STATS_INTERVAL: "5"
           DOCKER_STATS_LOG: ${{ github.workspace }}/docker-metrics/samples.tsv
@@ -226,11 +238,11 @@ jobs:
             wait "$SAMPLER_PID" 2>/dev/null || true
           }
           trap cleanup EXIT INT TERM
-          ( cd frontend && npx playwright test )
+          ( cd frontend && ${{ matrix.command }} )
           cleanup
           trap - EXIT INT TERM
 
-      - name: Docker container resource summary (E2E window)
+      - name: Docker container resource summary (E2E ${{ matrix.title }} window)
         if: always()
         env:
           DOCKER_METRICS_DIR: ${{ github.workspace }}/docker-metrics
@@ -248,35 +260,35 @@ jobs:
         with:
           cwd: frontend
           variant: e2e-playwright
-          title: End-to-end
+          title: "End-to-end: ${{ matrix.title }}"
 
-      - name: Allure CI env fragment (E2E)
+      - name: Allure CI env fragment (E2E ${{ matrix.title }})
         if: always()
-        run: bash scripts/ci/write-allure-ci-env-fragment.sh E2E frontend/allure-results
+        run: bash scripts/ci/write-allure-ci-env-fragment.sh "${{ matrix.allure-label }}" frontend/allure-results
 
-      - name: Upload Allure results (E2E)
+      - name: Upload Allure results (E2E ${{ matrix.title }})
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: allure-results-e2e
+          name: allure-results-e2e-${{ matrix.id }}
           path: frontend/allure-results/
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Upload Playwright HTML report
+      - name: Upload Playwright HTML report (${{ matrix.title }})
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.id }}
           path: frontend/playwright-report/
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Upload E2E JUnit (Playwright)
+      - name: Upload E2E JUnit (Playwright ${{ matrix.title }})
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: e2e-test-results
+          name: e2e-test-results-${{ matrix.id }}
           path: frontend/test-results/e2e-junit.xml
           if-no-files-found: ignore
           retention-days: 30
@@ -292,19 +304,19 @@ jobs:
             fi
           done
 
-      - name: Upload Docker logs
+      - name: Upload Docker logs (${{ matrix.title }})
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: docker-logs
+          name: docker-logs-${{ matrix.id }}
           path: docker-logs/
           retention-days: 30
 
-      - name: Upload Docker resource metrics (E2E)
+      - name: Upload Docker resource metrics (E2E ${{ matrix.title }})
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: docker-resource-metrics-e2e
+          name: docker-resource-metrics-e2e-${{ matrix.id }}
           path: docker-metrics/
           if-no-files-found: ignore
           retention-days: 90
