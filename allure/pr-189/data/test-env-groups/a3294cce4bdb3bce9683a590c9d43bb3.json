@@ -1,1 +1,1 @@
-{"id":"a3294cce4bdb3bce9683a590c9d43bb3","fullName":"django-admin-entities.spec.ts:125:3","name":"Customer — delete via detail page delete button","status":"broken","testResultsByEnv":{"e2e":"089b1c56ee8a2856f377fccd8ab7f4a3"}}
+{"id":"a3294cce4bdb3bce9683a590c9d43bb3","fullName":"django-admin-entities.spec.ts:132:3","name":"Customer — delete via detail page delete button","status":"broken","testResultsByEnv":{"e2e":"403ad9a8502b84512b542ba52587a812"}}
