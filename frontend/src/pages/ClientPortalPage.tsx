@@ -19,7 +19,8 @@ function getMilestone(status: PortalRepair["status"]): { idx: number; waiting: b
   if (status === "new")           return { idx: 0, waiting: false, completed: false };
   if (status === "in_progress")   return { idx: 1, waiting: false, completed: false };
   if (status === "waiting_parts") return { idx: 1, waiting: true,  completed: false };
-  return                                 { idx: 2, waiting: false, completed: true };
+  if (status === "completed")     return { idx: 2, waiting: false, completed: false };
+  return                                 { idx: 3, waiting: false, completed: true };
 }
 
 function formatUpdated(updatedAt: string): string {
