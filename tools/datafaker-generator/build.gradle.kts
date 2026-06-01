@@ -1,5 +1,7 @@
 plugins {
     application
+    checkstyle
+    id("com.github.spotbugs") version "6.5.4"
 }
 
 group = "local.csp"
@@ -9,6 +11,26 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
+}
+
+checkstyle {
+    toolVersion = "10.12.4"
+    configDirectory.set(layout.projectDirectory.dir("config/checkstyle"))
+}
+
+tasks.withType<Checkstyle>().configureEach {
+    maxWarnings = 0
+    isShowViolations = true
+    reports {
+        xml.required.set(System.getenv("CI") != null)
+        html.required.set(System.getenv("CI") == null)
+    }
+}
+
+spotbugs {
+    effort.set(com.github.spotbugs.snom.Effort.MAX)
+    reportLevel.set(com.github.spotbugs.snom.Confidence.DEFAULT)
+    excludeFilter.set(layout.projectDirectory.file("config/spotbugs/excludeFilter.xml"))
 }
 
 application {
@@ -22,6 +44,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3")
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.test {

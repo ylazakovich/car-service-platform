@@ -19,6 +19,48 @@ permissions:
   actions: write # upload-artifact (Allure, JUnit, Playwright HTML)
 
 jobs:
+  datafaker-generator:
+    name: "Datafaker Generator: Build, Checkstyle, SpotBugs & Test"
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+    defaults:
+      run:
+        working-directory: tools/datafaker-generator
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: ./.github/actions/setup-java-gradle
+
+      - name: Compile, lint and test
+        run: ./gradlew check --no-daemon --console=plain --stacktrace
+
+      - name: Install distribution
+        run: ./gradlew installDist --no-daemon --console=plain --stacktrace
+
+      - name: Smoke run generator CLI
+        run: |
+          mkdir -p ../../tmp
+          build/install/csp-demo-data/bin/csp-demo-data generate datafaker-demo \
+            --seed 123 \
+            --locale en-US \
+            --count 5 \
+            --profile demo \
+            --output ../../tmp/datafaker-demo-ci.json
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: datafaker-generator-reports
+          retention-days: 14
+          path: |
+            tools/datafaker-generator/build/reports/checkstyle
+            tools/datafaker-generator/build/reports/spotbugs
+            tools/datafaker-generator/build/test-results
+            tools/datafaker-generator/build/reports/tests
+
   frontend:
     name: "Frontend: Build & Test"
     runs-on: ubuntu-latest

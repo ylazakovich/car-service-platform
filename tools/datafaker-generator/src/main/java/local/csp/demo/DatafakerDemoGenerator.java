@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 public final class DatafakerDemoGenerator {
@@ -165,8 +166,9 @@ public final class DatafakerDemoGenerator {
             System.out.print(json);
         } else {
             Path output = Path.of(config.output);
-            if (output.getParent() != null) {
-                Files.createDirectories(output.getParent());
+            Path parent = output.getParent();
+            if (Objects.nonNull(parent)) {
+                Files.createDirectories(parent);
             }
             Files.writeString(output, json);
         }
