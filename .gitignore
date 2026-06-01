@@ -9,6 +9,8 @@ backups/
 local-dumps/
 tmp/
 .claude/
+tools/datafaker-generator/.gradle/
+tools/datafaker-generator/build/
 
 # Local agent run artifacts
 .agents/runs/*
