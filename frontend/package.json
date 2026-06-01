@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:app": "PLAYWRIGHT_E2E_SUITE=app playwright test",
+    "test:e2e:django-admin": "PLAYWRIGHT_E2E_SUITE=django-admin playwright test"
   },
   "dependencies": {
     "@e965/xlsx": "^0.20.3",

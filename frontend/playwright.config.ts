@@ -6,6 +6,13 @@ import { applyRepoRootDotEnv } from "./e2e/load-repo-env";
 applyRepoRootDotEnv();
 
 const isCi = !!process.env.CI;
+const e2eSuite = process.env.PLAYWRIGHT_E2E_SUITE;
+const suiteFilter =
+  e2eSuite === "django-admin"
+    ? { testMatch: /django-admin-.*\.spec\.ts/ }
+    : e2eSuite === "app"
+      ? { testIgnore: /django-admin-.*\.spec\.ts/ }
+      : {};
 
 const allureReporter = [
   "allure-playwright",
@@ -56,6 +63,7 @@ const e2eWorkersCi = Math.max(
 export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   testDir: "./e2e",
+  ...suiteFilter,
   fullyParallel: !isCi,
   forbidOnly: isCi,
   /** Политика проекта: без ретраев — флаки чиним детерминизмом и готовностью стека (см. docs/testing/playwright-e2e-framework.md). */

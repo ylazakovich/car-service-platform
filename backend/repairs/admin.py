@@ -53,7 +53,7 @@ class RepairAdmin(ModelAdmin):
     list_display = ("tracking_code", "service_name", "vehicle", "status", "created_at")
     list_filter = ("status",)
     list_select_related = ("vehicle",)
-    search_fields = ("tracking_code", "vehicle__license_plate")
+    search_fields = ("tracking_code", "service_name", "vehicle__license_plate")
     readonly_fields = ("tracking_code", "portal_token", "created_at")
     ordering = ("-created_at",)
     inlines = (

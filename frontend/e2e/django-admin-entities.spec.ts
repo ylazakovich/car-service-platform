@@ -1,15 +1,49 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { AUTH_STATE_ADMIN } from "./fixtures/auth";
 import { cleanupE2eData, createE2eCustomer } from "./fixtures/e2eDataFactory";
 
 test.use({ storageState: AUTH_STATE_ADMIN });
 
-test.describe("Django admin — Customer CRUD @desktop", () => {
+async function adminRowForText(page: Page, text: string) {
+  const row = page.locator("#result_list tbody tr").filter({ hasText: text }).first();
+  await expect(row).toBeVisible({ timeout: 10_000 });
+  return row;
+}
+
+async function captureAdminIdFromUrlOrRow(page: Page, urlPattern: RegExp, rowText: string): Promise<number | null> {
+  const urlMatch = page.url().match(urlPattern);
+  if (urlMatch !== null) {
+    return parseInt(urlMatch[1], 10);
+  }
+
+  const row = await adminRowForText(page, rowText);
+  const href = await row.locator("a[href*='/change/']").first().getAttribute("href");
+  const idMatch = href?.match(/\/(\d+)\/change\//);
+  return idMatch ? parseInt(idMatch[1], 10) : null;
+}
+
+async function openCreatedRecordForEditing(page: Page, urlPattern: RegExp, rowText: string): Promise<number | null> {
+  const urlMatch = page.url().match(urlPattern);
+  if (urlMatch !== null) {
+    return parseInt(urlMatch[1], 10);
+  }
+
+  const row = await adminRowForText(page, rowText);
+  await row.locator("a[href*='/change/']").first().click();
+  await page.waitForLoadState("domcontentloaded");
+
+  const editMatch = page.url().match(urlPattern);
+  return editMatch !== null ? parseInt(editMatch[1], 10) : null;
+}
+
+test.describe("Django admin — Customer CRUD @desktop @django-admin", () => {
   let createdCustomerId: number | null = null;
 
   test.afterEach(async ({ page }) => {
     if (createdCustomerId !== null) {
+      await page.goto("/");
+      await page.waitForLoadState("domcontentloaded");
       await cleanupE2eData(page, { customerIds: [createdCustomerId] });
       createdCustomerId = null;
     }
@@ -26,17 +60,13 @@ test.describe("Django admin — Customer CRUD @desktop", () => {
 
     await page.locator("#id_full_name").fill(fullName);
     await page.locator("#id_phone").fill(phone);
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveURL(/\/admin\/customers\/customer\//);
 
-    const changeMatch = page.url().match(/\/admin\/customers\/customer\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdCustomerId = parseInt(changeMatch[1], 10);
-    } else {
-      await expect(page.locator("#result_list").getByText(fullName)).toBeVisible({ timeout: 10_000 });
-    }
+    createdCustomerId = await captureAdminIdFromUrlOrRow(page, /\/admin\/customers\/customer\/(\d+)\/change\//, fullName);
+    expect(createdCustomerId).not.toBeNull();
 
     await expect(page.locator("#content")).toBeVisible();
   });
@@ -52,16 +82,15 @@ test.describe("Django admin — Customer CRUD @desktop", () => {
 
     await page.locator("#id_full_name").fill(fullName);
     await page.locator("#id_phone").fill(phone);
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
-    const changeMatch = page.url().match(/\/admin\/customers\/customer\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdCustomerId = parseInt(changeMatch[1], 10);
-      await page.goto("/admin/customers/customer/");
-      await page.waitForLoadState("domcontentloaded");
-    }
+    createdCustomerId = await captureAdminIdFromUrlOrRow(page, /\/admin\/customers\/customer\/(\d+)\/change\//, fullName);
+    expect(createdCustomerId).not.toBeNull();
+
+    await page.goto("/admin/customers/customer/");
+    await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator("#result_list").getByText(fullName)).toBeVisible({ timeout: 10_000 });
   });
@@ -82,19 +111,11 @@ test.describe("Django admin — Customer CRUD @desktop", () => {
 
     await page.waitForLoadState("domcontentloaded");
 
-    const createMatch = page.url().match(/\/admin\/customers\/customer\/(\d+)\/change\//);
-    if (createMatch !== null) {
-      createdCustomerId = parseInt(createMatch[1], 10);
-    } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(originalName) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
-      await page.waitForLoadState("domcontentloaded");
-      const editMatch = page.url().match(/\/admin\/customers\/customer\/(\d+)\/change\//);
-      if (editMatch !== null) {
-        createdCustomerId = parseInt(editMatch[1], 10);
-      }
-    }
+    createdCustomerId = await openCreatedRecordForEditing(
+      page,
+      /\/admin\/customers\/customer\/(\d+)\/change\//,
+      originalName,
+    );
 
     await page.locator("#id_full_name").fill(updatedName);
     await page.locator("[name='_save']").click();
@@ -119,28 +140,23 @@ test.describe("Django admin — Customer CRUD @desktop", () => {
 
     await page.locator("#id_full_name").fill(fullName);
     await page.locator("#id_phone").fill(phone);
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
-    const createMatch = page.url().match(/\/admin\/customers\/customer\/(\d+)\/change\//);
-    if (createMatch !== null) {
-      createdCustomerId = parseInt(createMatch[1], 10);
-    } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(fullName) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
-      await page.waitForLoadState("domcontentloaded");
-      const editMatch = page.url().match(/\/admin\/customers\/customer\/(\d+)\/change\//);
-      if (editMatch !== null) {
-        createdCustomerId = parseInt(editMatch[1], 10);
-      }
+    createdCustomerId = await openCreatedRecordForEditing(
+      page,
+      /\/admin\/customers\/customer\/(\d+)\/change\//,
+      fullName,
+    );
+
+    if (createdCustomerId === null) {
+      throw new Error("Expected created customer id before deleting through Django admin");
     }
-
-    await page.locator("a.deletelink").click();
+    await page.goto(`/admin/customers/customer/${createdCustomerId}/delete/`);
     await page.waitForLoadState("domcontentloaded");
 
-    await page.locator("[type='submit']").click();
+    await page.getByRole("button", { name: "Yes, I’m sure" }).click();
     await page.waitForLoadState("domcontentloaded");
 
     await expect(page).toHaveURL(/\/admin\/customers\/customer\//);
@@ -150,16 +166,20 @@ test.describe("Django admin — Customer CRUD @desktop", () => {
   });
 });
 
-test.describe("Django admin — Vehicle CRUD @desktop", () => {
+test.describe("Django admin — Vehicle CRUD @desktop @django-admin", () => {
   let customerId: number;
   let createdVehicleId: number | null = null;
 
   test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
     const fixture = await createE2eCustomer(page, "admin-vehicle-crud");
     customerId = fixture.customerId;
   });
 
   test.afterEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
     if (createdVehicleId !== null) {
       await cleanupE2eData(page, { vehicleIds: [createdVehicleId] });
       createdVehicleId = null;
@@ -184,12 +204,8 @@ test.describe("Django admin — Vehicle CRUD @desktop", () => {
     await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveURL(/\/admin\/vehicles\/vehicle\//);
 
-    const changeMatch = page.url().match(/\/admin\/vehicles\/vehicle\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdVehicleId = parseInt(changeMatch[1], 10);
-    } else {
-      await expect(page.locator("#result_list").getByText(plate)).toBeVisible({ timeout: 10_000 });
-    }
+    createdVehicleId = await captureAdminIdFromUrlOrRow(page, /\/admin\/vehicles\/vehicle\/(\d+)\/change\//, plate);
+    expect(createdVehicleId).not.toBeNull();
 
     await expect(page.locator("#content")).toBeVisible();
   });
@@ -210,12 +226,11 @@ test.describe("Django admin — Vehicle CRUD @desktop", () => {
 
     await page.waitForLoadState("domcontentloaded");
 
-    const changeMatch = page.url().match(/\/admin\/vehicles\/vehicle\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdVehicleId = parseInt(changeMatch[1], 10);
-      await page.goto("/admin/vehicles/vehicle/");
-      await page.waitForLoadState("domcontentloaded");
-    }
+    createdVehicleId = await captureAdminIdFromUrlOrRow(page, /\/admin\/vehicles\/vehicle\/(\d+)\/change\//, plate);
+    expect(createdVehicleId).not.toBeNull();
+
+    await page.goto("/admin/vehicles/vehicle/");
+    await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator("#result_list").getByText(plate)).toBeVisible({ timeout: 10_000 });
   });
@@ -233,23 +248,15 @@ test.describe("Django admin — Vehicle CRUD @desktop", () => {
     await page.locator("#id_license_plate").fill(plate);
     await page.locator("#id_make").fill("E2E Make");
     await page.locator("#id_model").fill("E2E Model");
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
-    const createMatch = page.url().match(/\/admin\/vehicles\/vehicle\/(\d+)\/change\//);
-    if (createMatch !== null) {
-      createdVehicleId = parseInt(createMatch[1], 10);
-    } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(plate) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
-      await page.waitForLoadState("domcontentloaded");
-      const editMatch = page.url().match(/\/admin\/vehicles\/vehicle\/(\d+)\/change\//);
-      if (editMatch !== null) {
-        createdVehicleId = parseInt(editMatch[1], 10);
-      }
-    }
+    createdVehicleId = await openCreatedRecordForEditing(
+      page,
+      /\/admin\/vehicles\/vehicle\/(\d+)\/change\//,
+      plate,
+    );
 
     await page.locator("#id_make").fill(updatedMake);
     await page.locator("[name='_save']").click();
@@ -274,28 +281,23 @@ test.describe("Django admin — Vehicle CRUD @desktop", () => {
     await page.locator("#id_license_plate").fill(plate);
     await page.locator("#id_make").fill("E2E Make");
     await page.locator("#id_model").fill("E2E Model");
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
-    const createMatch = page.url().match(/\/admin\/vehicles\/vehicle\/(\d+)\/change\//);
-    if (createMatch !== null) {
-      createdVehicleId = parseInt(createMatch[1], 10);
-    } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(plate) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
-      await page.waitForLoadState("domcontentloaded");
-      const editMatch = page.url().match(/\/admin\/vehicles\/vehicle\/(\d+)\/change\//);
-      if (editMatch !== null) {
-        createdVehicleId = parseInt(editMatch[1], 10);
-      }
+    createdVehicleId = await openCreatedRecordForEditing(
+      page,
+      /\/admin\/vehicles\/vehicle\/(\d+)\/change\//,
+      plate,
+    );
+
+    if (createdVehicleId === null) {
+      throw new Error("Expected created vehicle id before deleting through Django admin");
     }
-
-    await page.locator("a.deletelink").click();
+    await page.goto(`/admin/vehicles/vehicle/${createdVehicleId}/delete/`);
     await page.waitForLoadState("domcontentloaded");
 
-    await page.locator("[type='submit']").click();
+    await page.getByRole("button", { name: "Yes, I’m sure" }).click();
     await page.waitForLoadState("domcontentloaded");
 
     await expect(page).toHaveURL(/\/admin\/vehicles\/vehicle\//);
@@ -305,11 +307,13 @@ test.describe("Django admin — Vehicle CRUD @desktop", () => {
   });
 });
 
-test.describe("Django admin — Service CRUD @desktop", () => {
+test.describe("Django admin — Service CRUD @desktop @django-admin", () => {
   let createdServiceId: number | null = null;
 
   test.afterEach(async ({ page }) => {
     if (createdServiceId !== null) {
+      await page.goto("/");
+      await page.waitForLoadState("domcontentloaded");
       await cleanupE2eData(page, { serviceIds: [createdServiceId] });
       createdServiceId = null;
     }
@@ -329,12 +333,8 @@ test.describe("Django admin — Service CRUD @desktop", () => {
     await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveURL(/\/admin\/services\/service\//);
 
-    const changeMatch = page.url().match(/\/admin\/services\/service\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdServiceId = parseInt(changeMatch[1], 10);
-    } else {
-      await expect(page.locator("#result_list").getByText(serviceName)).toBeVisible({ timeout: 10_000 });
-    }
+    createdServiceId = await captureAdminIdFromUrlOrRow(page, /\/admin\/services\/service\/(\d+)\/change\//, serviceName);
+    expect(createdServiceId).not.toBeNull();
 
     await expect(page.locator("#content")).toBeVisible();
   });
@@ -352,12 +352,11 @@ test.describe("Django admin — Service CRUD @desktop", () => {
 
     await page.waitForLoadState("domcontentloaded");
 
-    const changeMatch = page.url().match(/\/admin\/services\/service\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdServiceId = parseInt(changeMatch[1], 10);
-      await page.goto("/admin/services/service/");
-      await page.waitForLoadState("domcontentloaded");
-    }
+    createdServiceId = await captureAdminIdFromUrlOrRow(page, /\/admin\/services\/service\/(\d+)\/change\//, serviceName);
+    expect(createdServiceId).not.toBeNull();
+
+    await page.goto("/admin/services/service/");
+    await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator("#result_list").getByText(serviceName)).toBeVisible({ timeout: 10_000 });
   });
@@ -376,19 +375,11 @@ test.describe("Django admin — Service CRUD @desktop", () => {
 
     await page.waitForLoadState("domcontentloaded");
 
-    const createMatch = page.url().match(/\/admin\/services\/service\/(\d+)\/change\//);
-    if (createMatch !== null) {
-      createdServiceId = parseInt(createMatch[1], 10);
-    } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(originalName) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
-      await page.waitForLoadState("domcontentloaded");
-      const editMatch = page.url().match(/\/admin\/services\/service\/(\d+)\/change\//);
-      if (editMatch !== null) {
-        createdServiceId = parseInt(editMatch[1], 10);
-      }
-    }
+    createdServiceId = await openCreatedRecordForEditing(
+      page,
+      /\/admin\/services\/service\/(\d+)\/change\//,
+      originalName,
+    );
 
     await page.locator("#id_name").fill(updatedName);
     await page.locator("[name='_save']").click();
@@ -411,28 +402,23 @@ test.describe("Django admin — Service CRUD @desktop", () => {
     await page.waitForLoadState("domcontentloaded");
 
     await page.locator("#id_name").fill(serviceName);
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
-    const createMatch = page.url().match(/\/admin\/services\/service\/(\d+)\/change\//);
-    if (createMatch !== null) {
-      createdServiceId = parseInt(createMatch[1], 10);
-    } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(serviceName) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
-      await page.waitForLoadState("domcontentloaded");
-      const editMatch = page.url().match(/\/admin\/services\/service\/(\d+)\/change\//);
-      if (editMatch !== null) {
-        createdServiceId = parseInt(editMatch[1], 10);
-      }
+    createdServiceId = await openCreatedRecordForEditing(
+      page,
+      /\/admin\/services\/service\/(\d+)\/change\//,
+      serviceName,
+    );
+
+    if (createdServiceId === null) {
+      throw new Error("Expected created service id before deleting through Django admin");
     }
-
-    await page.locator("a.deletelink").click();
+    await page.goto(`/admin/services/service/${createdServiceId}/delete/`);
     await page.waitForLoadState("domcontentloaded");
 
-    await page.locator("[type='submit']").click();
+    await page.getByRole("button", { name: "Yes, I’m sure" }).click();
     await page.waitForLoadState("domcontentloaded");
 
     await expect(page).toHaveURL(/\/admin\/services\/service\//);

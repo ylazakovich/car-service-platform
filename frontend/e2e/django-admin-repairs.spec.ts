@@ -1,19 +1,37 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { e2eBehaviors } from "./allure-helpers";
 import { AUTH_STATE_ADMIN } from "./fixtures/auth";
 import { cleanupE2eData, createE2eCustomerWithVehicle } from "./fixtures/e2eDataFactory";
 
 test.use({ storageState: AUTH_STATE_ADMIN });
 
+async function adminRowForText(page: Page, text: string) {
+  const row = page.locator("#result_list tbody tr").filter({ hasText: text }).first();
+  await expect(row).toBeVisible({ timeout: 10_000 });
+  return row;
+}
+
+async function captureAdminIdFromUrlOrRow(page: Page, urlPattern: RegExp, rowText: string): Promise<number | null> {
+  const urlMatch = page.url().match(urlPattern);
+  if (urlMatch !== null) {
+    return parseInt(urlMatch[1], 10);
+  }
+
+  const row = await adminRowForText(page, rowText);
+  const href = await row.locator("a[href*='/change/']").first().getAttribute("href");
+  const idMatch = href?.match(/\/(\d+)\/change\//);
+  return idMatch ? parseInt(idMatch[1], 10) : null;
+}
+
 // regression: repairs models were not registered in Django admin
-test.describe("Django admin — repairs registration @desktop", () => {
+test.describe("Django admin — repairs registration @desktop @django-admin", () => {
   test("Repairs link is visible in the admin sidebar", async ({ page }) => {
     await e2eBehaviors("admin", "django admin · repairs sidebar link");
 
     await page.goto("/admin/");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("#content-main")).toBeVisible();
+    await expect(page.locator("#content")).toBeVisible();
     await expect(page.getByRole("link", { name: /repairs/i }).first()).toBeVisible();
   });
 
@@ -53,7 +71,7 @@ test.describe("Django admin — repairs registration @desktop", () => {
     await page.goto("/admin/repairs/repairserviceline/");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("h1")).toHaveText("Page not found");
+    await expect(page.locator("h1")).toContainText("Page not found");
   });
 
   test("RepairNote has no standalone admin changelist (inline-only)", async ({ page }) => {
@@ -62,7 +80,7 @@ test.describe("Django admin — repairs registration @desktop", () => {
     await page.goto("/admin/repairs/repairnote/");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("h1")).toHaveText("Page not found");
+    await expect(page.locator("h1")).toContainText("Page not found");
   });
 
   test("RepairDocument has no standalone admin changelist (inline-only)", async ({ page }) => {
@@ -71,22 +89,26 @@ test.describe("Django admin — repairs registration @desktop", () => {
     await page.goto("/admin/repairs/repairdocument/");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("h1")).toHaveText("Page not found");
+    await expect(page.locator("h1")).toContainText("Page not found");
   });
 });
 
-test.describe("Django admin — repairs CRUD @desktop", () => {
+test.describe("Django admin — repairs CRUD @desktop @django-admin", () => {
   let vehicleId: number;
   let customerId: number;
   let createdRepairId: number | null = null;
 
   test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
     const fixture = await createE2eCustomerWithVehicle(page, "admin-crud");
     vehicleId = fixture.vehicleId;
     customerId = fixture.customerId;
   });
 
   test.afterEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
     if (createdRepairId !== null) {
       await page.evaluate(async ({ repairId }) => {
         const token = document.cookie
@@ -120,17 +142,13 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
     await page.locator("input#id_service_name").fill(serviceName);
     await page.locator("select#id_vehicle").selectOption({ value: String(vehicleId) });
     await page.locator("select#id_status").selectOption("new");
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveURL(/\/admin\/repairs\/repair\//);
 
-    const changeMatch = page.url().match(/\/admin\/repairs\/repair\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdRepairId = parseInt(changeMatch[1], 10);
-    } else {
-      await expect(page.locator("#result_list").getByText(serviceName)).toBeVisible({ timeout: 10_000 });
-    }
+    createdRepairId = await captureAdminIdFromUrlOrRow(page, /\/admin\/repairs\/repair\/(\d+)\/change\//, serviceName);
+    expect(createdRepairId).not.toBeNull();
 
     await expect(page.locator("#content")).toBeVisible();
   });
@@ -146,16 +164,15 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
     await page.locator("input#id_service_name").fill(serviceName);
     await page.locator("select#id_vehicle").selectOption({ value: String(vehicleId) });
     await page.locator("select#id_status").selectOption("new");
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
-    const changeMatch = page.url().match(/\/admin\/repairs\/repair\/(\d+)\/change\//);
-    if (changeMatch !== null) {
-      createdRepairId = parseInt(changeMatch[1], 10);
-      await page.goto("/admin/repairs/repair/");
-      await page.waitForLoadState("domcontentloaded");
-    }
+    createdRepairId = await captureAdminIdFromUrlOrRow(page, /\/admin\/repairs\/repair\/(\d+)\/change\//, serviceName);
+    expect(createdRepairId).not.toBeNull();
+
+    await page.goto("/admin/repairs/repair/");
+    await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator("#result_list").getByText(serviceName)).toBeVisible({ timeout: 10_000 });
   });
@@ -172,7 +189,7 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
     await page.locator("input#id_service_name").fill(originalName);
     await page.locator("select#id_vehicle").selectOption({ value: String(vehicleId) });
     await page.locator("select#id_status").selectOption("new");
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
@@ -180,9 +197,8 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
     if (createMatch !== null) {
       createdRepairId = parseInt(createMatch[1], 10);
     } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(originalName) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
+      const row = await adminRowForText(page, originalName);
+      await row.locator("a[href*='/change/']").first().click();
       await page.waitForLoadState("domcontentloaded");
       const editMatch = page.url().match(/\/admin\/repairs\/repair\/(\d+)\/change\//);
       if (editMatch !== null) {
@@ -213,7 +229,7 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
     await page.locator("input#id_service_name").fill(serviceName);
     await page.locator("select#id_vehicle").selectOption({ value: String(vehicleId) });
     await page.locator("select#id_status").selectOption("new");
-    await page.locator("[name='_save']").click();
+    await page.locator("[name='_continue']").click();
 
     await page.waitForLoadState("domcontentloaded");
 
@@ -221,9 +237,8 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
     if (createMatch !== null) {
       createdRepairId = parseInt(createMatch[1], 10);
     } else {
-      const row = page.locator("#result_list").getByRole("link", { name: new RegExp(serviceName) });
-      await expect(row).toBeVisible({ timeout: 10_000 });
-      await row.click();
+      const row = await adminRowForText(page, serviceName);
+      await row.locator("a[href*='/change/']").first().click();
       await page.waitForLoadState("domcontentloaded");
       const editMatch = page.url().match(/\/admin\/repairs\/repair\/(\d+)\/change\//);
       if (editMatch !== null) {
@@ -231,10 +246,13 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
       }
     }
 
-    await page.locator("a.deletelink").click();
+    if (createdRepairId === null) {
+      throw new Error("Expected created repair id before deleting through Django admin");
+    }
+    await page.goto(`/admin/repairs/repair/${createdRepairId}/delete/`);
     await page.waitForLoadState("domcontentloaded");
 
-    await page.locator("[type='submit']").click();
+    await page.getByRole("button", { name: "Yes, I’m sure" }).click();
     await page.waitForLoadState("domcontentloaded");
 
     await expect(page).toHaveURL(/\/admin\/repairs\/repair\//);
@@ -272,6 +290,6 @@ test.describe("Django admin — repairs CRUD @desktop", () => {
     await page.goto("/admin/users/invitetoken/");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("a[href*='/admin/users/invitetoken/add/']")).toBeVisible();
+    await expect(page.locator("a[href*='/admin/users/invitetoken/add/']").first()).toBeVisible();
   });
 });

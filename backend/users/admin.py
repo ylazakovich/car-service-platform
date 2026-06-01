@@ -31,5 +31,7 @@ class UserAdmin(DjangoUserAdmin, ModelAdmin):
 @admin.register(InviteToken)
 class InviteTokenAdmin(ModelAdmin):
     list_display = ("user", "token", "expires_at", "created_at")
+    list_select_related = ("user",)
+    list_filter = ("expires_at", "created_at")
     search_fields = ("user__email",)
     readonly_fields = ("token", "created_at", "expires_at")
