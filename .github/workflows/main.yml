@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   datafaker-generator:
     name: "Datafaker Generator: Build"
@@ -25,14 +28,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-java-gradle
 
-      - name: Compile, lint and test
-        run: ./gradlew check --no-daemon --console=plain --stacktrace
-
-      - name: Install distribution
-        run: ./gradlew installDist --no-daemon --console=plain --stacktrace
+      - name: Compile, lint, test and install distribution
+        run: ./gradlew check installDist --no-daemon --console=plain --stacktrace
 
       - name: Smoke run generator CLI
         run: |
