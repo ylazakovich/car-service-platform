@@ -1,6 +1,6 @@
 name: Setup Java and Gradle
 
-description: Setup JDK 17 and Gradle cache for the Datafaker generator workflow.
+description: Setup JDK 17 for the Datafaker generator workflow; Gradle runs via the wrapper.
 
 author: car-service-platform
 
@@ -13,6 +13,3 @@ runs:
         distribution: temurin
         java-version: "17"
         cache: gradle
-
-    - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6
