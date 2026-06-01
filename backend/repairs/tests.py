@@ -9,6 +9,7 @@ from customers.models import Customer
 from purchases.models import Purchase, Supplier, UnitOfMeasure
 from services.models import Service
 from vehicles.models import Vehicle
+from workshop.models import WorkshopSettings
 
 from .models import Repair, RepairDocument, RepairFinancialSnapshot, RepairNote
 from .pdf_generator import _repair_info_rows
@@ -694,6 +695,72 @@ class RepairApiTests(TestCase):
 
         self.assertEqual(portal_response.status_code, 200)
         self.assertNotIn("started_at", portal_response.data)
+
+    def test_portal_includes_updated_at(self):
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Timing Belt",
+            status="in_progress",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("updated_at", response.data)
+        self.assertIsNotNone(response.data["updated_at"])
+
+    def test_portal_includes_workshop_when_exists(self):
+        WorkshopSettings.objects.create(
+            name="Test Shop",
+            phone="+48 123 456 789",
+            address="ul. Testowa 1",
+            maps_url="https://maps.google.com/?q=test",
+        )
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Gearbox Check",
+            status="new",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.data["workshop"])
+        self.assertEqual(response.data["workshop"]["name"], "Test Shop")
+        self.assertEqual(response.data["workshop"]["phone"], "+48 123 456 789")
+        self.assertEqual(response.data["workshop"]["address"], "ul. Testowa 1")
+        self.assertEqual(response.data["workshop"]["maps_url"], "https://maps.google.com/?q=test")
+
+    def test_portal_workshop_is_null_when_not_configured(self):
+        WorkshopSettings.objects.all().delete()
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Exhaust Check",
+            status="new",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data["workshop"])
+
+    def test_portal_does_not_expose_workshop_internal_id(self):
+        WorkshopSettings.objects.create(
+            name="Test Shop",
+            phone="+48 123 456 789",
+            address="ul. Testowa 1",
+            maps_url="https://maps.google.com/?q=test",
+        )
+        repair = Repair.objects.create(
+            vehicle=self.vehicle,
+            service_name="Coolant Check",
+            status="new",
+        )
+
+        response = self.client.get(f"/api/portal/{repair.portal_token}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("id", response.data["workshop"])
 
     def test_list_vehicle_fields_null_for_repair_with_vehicle_missing_year(self):
         vehicle_no_year = Vehicle.objects.create(

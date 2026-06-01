@@ -6,6 +6,8 @@ from services.models import Service
 from users.models import User
 from vehicles.models import Vehicle
 
+from workshop.models import WorkshopSettings
+
 from .models import Repair, RepairNote, RepairServiceLine
 from .service_lines_utils import sync_repair_service_name
 
@@ -299,6 +301,7 @@ class PortalRepairSerializer(serializers.ModelSerializer):
     vehicle_info = serializers.SerializerMethodField()
     status_display = serializers.SerializerMethodField()
     service_lines = serializers.SerializerMethodField()
+    workshop = serializers.SerializerMethodField()
 
     class Meta:
         model = Repair
@@ -313,6 +316,8 @@ class PortalRepairSerializer(serializers.ModelSerializer):
             "mileage_at_service",
             "completed_at",
             "created_at",
+            "updated_at",
+            "workshop",
         )
         read_only_fields = fields
 
@@ -337,6 +342,17 @@ class PortalRepairSerializer(serializers.ModelSerializer):
     def get_status_display(self, obj: Repair) -> str:
         """Return the human-readable status label."""
         return obj.get_status_display()
+
+    def get_workshop(self, obj: Repair) -> dict | None:
+        ws = WorkshopSettings.get()
+        if ws is None:
+            return None
+        return {
+            "name": ws.name,
+            "phone": ws.phone,
+            "address": ws.address,
+            "maps_url": ws.maps_url,
+        }
 
 
 class VehicleRepairHistorySerializer(serializers.ModelSerializer):

@@ -152,8 +152,28 @@
 
 /* ── Portal page ────────────────────────────── */
 
-.portal-header { display: grid; gap: var(--s1); margin-bottom: var(--s6); }
-.portal-plate  { font-weight: 700; color: var(--text); }
+.portal-header { display: grid; gap: var(--s1); margin: var(--s6) 0 var(--s6); }
+.portal-veh {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  color: var(--text-mid);
+  font-size: 0.9rem;
+}
+.portal-plate {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-mid);
+  border: 1px solid var(--border-strong, rgba(255,255,255,0.12));
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
 
 .portal-loading,
 .portal-state { margin-top: var(--s6); }
@@ -204,13 +224,13 @@
   flex: 1;
   min-height: 24px;
   background: var(--border);
-  margin: 4px 0;
 }
 
 .portal-step-text {
   display: grid;
   gap: var(--s1);
   padding: 4px 0 24px;
+  min-height: 54px;
 }
 
 .portal-step-label {
@@ -234,7 +254,7 @@
   color: var(--success);
 }
 .portal-step.done .portal-step-line { background: var(--success); opacity: 0.4; }
-.portal-step.done .portal-step-label { color: var(--text-mid); }
+.portal-step.done .portal-step-label { color: var(--text); }
 
 /* Active step */
 .portal-step.active { color: var(--text); }
@@ -270,9 +290,203 @@
 .portal-meta-row span:first-child { color: var(--text-soft); }
 .portal-meta-row span:last-child  { color: var(--text); font-weight: 600; text-align: right; }
 
-.portal-ref {
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-soft);
+
+/* Waiting-for-parts chip */
+.portal-wait-chip {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 9px;
+  max-width: 100%;
+  padding: 6px 11px;
+  border-radius: 12px;
+  background: rgba(240, 168, 74, 0.12);
+  border: 1px solid rgba(240, 168, 74, 0.4);
+  color: var(--warning, #f0a84a);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+.portal-wait-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+/* Services list */
+.portal-svc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.portal-svc-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+.portal-svc-list li::before {
+  content: "";
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* Meta block layout */
+.portal-meta-block {
+  display: grid;
+  gap: 6px;
+}
+.portal-meta-k {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+.portal-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s4);
+}
+.portal-meta-v {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.portal-meta-v.mono {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+}
+.portal-meta-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0;
+}
+
+/* SR-only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Shop identity */
+.portal-shop-id {
+  padding-bottom: var(--s5);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s5);
+}
+.portal-shop-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.1;
+}
+.portal-shop-sub {
+  font-size: 0.74rem;
+  color: var(--text-soft);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.portal-shop-badge {
+  color: var(--success);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* Footer CTA */
+.portal-foot {
+  margin-top: var(--s5);
+  display: grid;
+  gap: var(--s4);
+}
+.portal-contact {
+  display: flex;
+  gap: 10px;
+}
+.portal-call {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: 11px 14px;
+  border-radius: 11px;
+  background: var(--accent);
+  color: #0d0d11;
+  font-weight: 700;
+  font-size: 0.86rem;
+  border: 1px solid var(--accent);
+  transition: filter 0.15s;
+}
+.portal-call:hover { filter: brightness(1.06); }
+.portal-dir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: 11px 14px;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text-mid);
+  font-weight: 600;
+  font-size: 0.86rem;
+  border: 1px solid var(--border-strong, var(--border));
+  transition: background 0.15s, color 0.15s;
+}
+.portal-dir:hover {
+  background: var(--surface-mid);
+  color: var(--text);
+}
+.portal-footmeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  font-size: 0.74rem;
+  color: var(--text-soft);
+}
+.portal-ref {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--text-mid);
+  letter-spacing: 0.04em;
+}
+.portal-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.portal-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(78, 201, 148, 0.18);
+  display: inline-block;
 }
