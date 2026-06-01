@@ -1,1 +1,1 @@
-{"id":"28c8ea6fbfee321384cec52df2002f34","fullName":"django-admin-repairs.spec.ts:77:3","name":"RepairNote has no standalone admin changelist (inline-only)","status":"passed","testResultsByEnv":{"e2e":"d65b1ffb0742e2f2abf55c130f5d8ed3"}}
+{"id":"28c8ea6fbfee321384cec52df2002f34","fullName":"django-admin-repairs.spec.ts:77:3","name":"RepairNote has no standalone admin changelist (inline-only)","status":"passed","testResultsByEnv":{"e2e":"42dedd58775d4fa1d15dc4c18c981887"}}

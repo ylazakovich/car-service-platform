@@ -1,1 +1,1 @@
-{"id":"30adb219d6b8f0919167421747cf1239","fullName":"purchases.tests.InvoiceParseApiTests#test_extract_multipart_pdf_demo_contains_sprzedawca","name":"test_extract_multipart_pdf_demo_contains_sprzedawca","status":"passed","testResultsByEnv":{"backend":"204d9d5e1b54f1e56fc653e1b2637e94"}}
+{"id":"30adb219d6b8f0919167421747cf1239","fullName":"purchases.tests.InvoiceParseApiTests#test_extract_multipart_pdf_demo_contains_sprzedawca","name":"test_extract_multipart_pdf_demo_contains_sprzedawca","status":"passed","testResultsByEnv":{"backend":"3d1ead70ee4dd8530b8319a94d09fabe"}}

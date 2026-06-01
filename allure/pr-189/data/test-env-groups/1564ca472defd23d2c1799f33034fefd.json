@@ -1,1 +1,1 @@
-{"id":"1564ca472defd23d2c1799f33034fefd","fullName":"django-admin-entities.spec.ts:276:3","name":"Vehicle — delete via detail page delete button","status":"broken","testResultsByEnv":{"e2e":"8ff8190497e7305c04cbe7ac24dd5208"}}
+{"id":"1564ca472defd23d2c1799f33034fefd","fullName":"django-admin-entities.spec.ts:276:3","name":"Vehicle — delete via detail page delete button","status":"broken","testResultsByEnv":{"e2e":"90ecd25488c494f03650f6cf35061f0b"}}
