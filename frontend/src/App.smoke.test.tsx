@@ -1980,31 +1980,6 @@ describe("bootstrap application", () => {
     expect(await screen.findByText("Cleaner")).toBeInTheDocument();
   });
 
-  it("renders a public client portal route", async () => {
-    mockApi.get.mockImplementation((url: string) => {
-      if (url === "/portal/ABC-123/") {
-        return Promise.resolve({
-          data: {
-            tracking_code: "TOR-0001",
-            service_name: "Brake Inspection",
-            status: "in_progress",
-            status_display: "In Progress",
-            vehicle_info: { label: "Toyota Corolla", year: 2020, license_plate: "WA 12345" },
-            estimated_date: null,
-            mileage_at_service: null,
-            completed_at: null,
-            created_at: "2025-01-01T10:00:00Z",
-          },
-        });
-      }
-      return Promise.resolve({ data: [] });
-    });
-
-    renderApp("/portal/ABC-123");
-
-    expect(await screen.findByText("Repair Status")).toBeInTheDocument();
-    expect(screen.getByText("Brake Inspection")).toBeInTheDocument();
-  });
 
   it("allows staff login from the login page", async () => {
     mockApi.get.mockImplementation((url: string) => {
@@ -2314,31 +2289,6 @@ describe("bootstrap application", () => {
     expect(screen.getByText("manager@test.local")).toBeInTheDocument();
   });
 
-  it("client portal does not show tracking code", async () => {
-    mockApi.get.mockImplementation((url: string) => {
-      if (url === "/portal/ABC-123/") {
-        return Promise.resolve({
-          data: {
-            tracking_code: "TOR-0001",
-            service_name: "Brake Inspection",
-            status: "completed",
-            status_display: "Completed",
-            vehicle_info: { label: "Toyota Corolla", year: 2020, license_plate: "WA 12345" },
-            estimated_date: null,
-            mileage_at_service: null,
-            completed_at: "2025-01-15",
-            created_at: "2025-01-01T10:00:00Z",
-          },
-        });
-      }
-      return Promise.resolve({ data: [] });
-    });
-
-    renderApp("/portal/ABC-123");
-
-    expect(await screen.findByText("Repair Status")).toBeInTheDocument();
-    expect(screen.queryByText("Order TOR-0001")).not.toBeInTheDocument();
-  });
 
   it("kanban cards show tracking code chip", async () => {
     const user = userEvent.setup();

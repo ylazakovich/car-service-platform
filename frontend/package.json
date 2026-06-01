@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:portal-status": "vitest run src/pages/ClientPortalPage.status.test.tsx",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
