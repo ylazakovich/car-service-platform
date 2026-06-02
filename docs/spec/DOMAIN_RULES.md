@@ -2,8 +2,8 @@
 
 Этот файл является source of truth для критичной доменной логики `car-service-platform`.
 
-- Last updated: `2026-04-09`
-- Status: `repair operations + pdf-backed analytics baseline`
+- Last updated: `2026-06-02`
+- Status: `M3 closeout baseline: repair operations + PDF-backed analytics + staff/admin safety`
 
 ## 1) Core Entities
 Текущий baseline сущностей:
@@ -13,8 +13,6 @@
 - `RepairWork`
 - `RepairPart`
 - `Supplier`
-- `RepairPhoto`
-- `CompletionAct`
 - `RepairDocument`
 - `RepairFinancialSnapshot`
 
@@ -31,11 +29,10 @@
 - Удаление `Customer`, у которого уже есть `Vehicle`, должно блокироваться до явного удаления или переназначения автомобилей.
 - Один `RepairOrder` относится к одному `Vehicle` и одному `Customer`.
 - Создание `RepairOrder` через QuickFocus / VPR flow может инициировать inline-создание `Vehicle` и `Customer`, но итоговая связь все равно должна быть `RepairOrder -> Vehicle -> Customer` без обходных или временных сущностей.
-- Один `RepairOrder` может содержать несколько `RepairWork`, `RepairPart` и `RepairPhoto`.
+- Один `RepairOrder` может содержать несколько `RepairWork` и `RepairPart`. Repair/CMR photo upload/storage is cancelled by product decision.
 - Каждый `RepairOrder` должен иметь отдельный публичный `tracking code` формата `TOR-*` для клиента.
 - Каждый `RepairOrder` должен иметь назначенного `master`, отвечающего за текущую работу.
-- `CompletionAct` формируется на основании завершенного `RepairOrder`.
-- `RepairDocument` хранит выгруженный PDF и его метаданные.
+- `RepairDocument` хранит выгруженный completion PDF и его метаданные.
 - `RepairFinancialSnapshot` хранит versioned финансовое состояние ремонта на момент выгрузки документа.
 
 ## 2) Lifecycle Rules
@@ -51,7 +48,7 @@
 Дополнительно:
 - допустимые рабочие переходы baseline: `new -> in_progress`, `new -> waiting_parts`, `in_progress -> waiting_parts`, `waiting_parts -> in_progress`, `in_progress -> completed`
 - перевод из `completed` назад не должен происходить без явного административного override
-- `CompletionAct` может быть сформирован только для `completed`
+- completion PDF / act export may be formed only for `completed` repairs
 - `RepairDocument` и `RepairFinancialSnapshot` могут создаваться только для `completed`, если не включен явный административный override
 - каждая новая выгрузка PDF должна создавать новую snapshot-версию, а предыдущие версии должны оставаться неизменяемыми
 - TodaySummary / ServiceBoard должен визуализировать актуальное operational состояние ремонта и не должен вводить в заблуждение относительно статуса
@@ -94,19 +91,18 @@
 - **Справочник единиц измерения (`UnitOfMeasure`):** в API список для staff по умолчанию только с `is_active=true`; параметр `include_inactive=true` и операции **POST/PATCH/DELETE** на `/api/purchases/units/` — только у пользователя с `is_staff` (роль **admin** в продукте). В CRM на экране **Purchases** у админа есть кнопка **Units of measure**: добавление строк, правка названия/порядка/флага active, удаление (если на единицу есть закупки — ошибка; нужно снять **Active**).
 
 ## 4) Access Rules
-До появления полноценной auth-модели использовать минимальный baseline ролей:
-- `owner`: полный доступ и видимость по всей системе
-- `admin`: работа с клиентами, автомобилями, ремонтами, закупками и актами
-- `master`: обновление назначенных ремонтов, notes и связанных рабочих данных
+Текущий product baseline ролей:
+- `admin`: полный staff-app доступ, Django Admin доступ, управление пользователями, клиентами, автомобилями, ремонтами, закупками и актами.
+- `staff`: vehicle-centric work surface; автомобили и repair history доступны без customer identity/contact PII; customer workflows hidden.
 - `client`: доступ только к просмотру статуса ремонта и связанных материалов по `tracking code`, без отдельного кабинета
 
 Критичные ограничения:
-- закрытие ремонта и формирование акта должны быть ограничены ролями `owner` и `admin`
+- закрытие ремонта и формирование/экспорт completion PDF должны быть ограничены ролями, явно разрешёнными backend permissions; по умолчанию admin, staff только если продуктово разрешено
 - прямое изменение итоговых сумм вне source-of-truth логики запрещено
 - после статуса `completed` запись не должна возвращаться в активный поток без отдельного override-механизма
 - historical analytics не должна терять прошлые значения после повторной выгрузки или ручного изменения ремонта
 - клиент не должен попадать в staff surface и не должен иметь доступ к Django Admin
-- публичный клиентский доступ не должен использовать последовательный ID ремонта как единственный идентификатор
+- публичный клиентский доступ не должен использовать последовательный ID ремонта как единственный идентификатор; tracking-code portal is the MVP client surface
 - staff updates по ремонту должны фиксировать, кто именно добавил note или изменил статус
 - inline-создание `Customer` и `Vehicle` из QuickFocus flow должно уважать те же access checks и ownership rules, что и основные `/customers` и `/vehicles` сценарии
 - закрытие доступа `staff` должно выполняться только `admin`-пользователем и не должно разрушать исторические записи, где сотрудник участвовал как автор или исполнитель
@@ -128,7 +124,7 @@
 - карточка клиента должна показывать список автомобилей и историю обращений
 - flow создания нового VPR не должен требовать предварительного перехода в отдельный реестр для создания обязательных сущностей
 - repair/CMR photo upload and repair photo storage are out of scope by customer decision
-- внутри ремонта должны храниться работы, запчасти и поставщики
+- внутри ремонта должны храниться работы, запчасти и поставщики; shop consumables are purchase lines outside completion act totals
 - для заказанных запчастей должны храниться дата заказа, закупочная цена, количество, сумма закупки, цена продажи клиенту и привязка к ремонту / автомобилю
 - закупка запчастей может существовать без привязки к ремонту и автомобилю как складская / резервная закупка
 - месячная история должна поддерживать агрегаты по суммам и количеству объектов
@@ -143,19 +139,18 @@
 ## 7) Open Decisions
 - хранить ли `email` клиента в первой версии
 - может ли один `RepairOrder` содержать несколько отдельных проблем как структурированные элементы
-- нужен ли fallback в ручной ввод, если нужной машины нет в справочнике
-- нужен ли учет оплат клиента
+- учет оплат клиента — outside MVP/M3 unless explicitly pulled into roadmap
 - нужен ли учет сотрудников, выполняющих конкретные работы
-- нужен ли склад запчастей
+- полноценный склад/резервации запчастей — outside MVP/M3 unless explicitly pulled into roadmap
 - ~~можно ли иметь несколько PDF/snapshot-версий на один `RepairOrder` и как выбирать активную версию по умолчанию~~ **закрыто для dashboard:** допускается несколько версий; для итогов «по последнему акту» используется последняя версия по полю `version` (см. §3.1); ряд по дням экспорта учитывает все выгрузки
 - нужны ли ручные корректировки snapshot после выгрузки
 - как моделировать "прочие расходы" и дополнительные финансовые строки
 - увольнение staff: нужно ли хранить деактивированных пользователей в системе для истории или достаточно физического удаления
 - ~~service board calendar: какой период считать основным по умолчанию и какие даты использовать как source of truth для размещения ремонта на шкале~~ **закрыто:** отдельный calendar scope отменён; TodaySummary покрывает текущую operational visibility
-- разрешать ли пользователю менять moneyflow dates вручную после открытия, если начальное состояние всегда переинициализируется на последних 30 днях
+- ~~moneyflow date editing~~ **закрыто:** fresh dashboard entry initializes to `today - 30 days` -> `today`; the user may edit dates freely during the current visit; fresh entries reset instead of persisting old dates
 - нужен ли отдельный role-aware serializer/endpoint для staff vehicles, чтобы гарантированно не утекали customer identity fields
-- нужен ли VIN-enrichment после MVP и какой провайдер будет использоваться
-- нужны ли уведомления о ТО и запланированном ремонте
+- VIN-enrichment provider/UX — deferred from M3 closeout
+- уведомления о ТО и запланированном ремонте — outside MVP/M3 unless explicitly pulled into roadmap
 
 ## 8) Review Policy
 `domain-reviewer` обязателен, если меняются:

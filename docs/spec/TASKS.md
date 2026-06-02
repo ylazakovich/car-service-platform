@@ -1,12 +1,14 @@
 # Task backlog (spec) — stable IDs
 
+Current grouping: **NOW = M3 closeout only**. Deferred items keep their stable IDs and move to NEXT/LATER instead of being renumbered.
+
 Use **`T-<AREA>-<nnn>`** when asking for a batch.
 
 Update checkboxes in the **same change set** as the implementation unless the user directs otherwise.
 
 ---
 
-## NOW — E2E / Playwright / CI
+## NOW — M3 closeout: E2E / Playwright / CI
 
 - [x] `T-E2E-001` Target framework documented: `docs/testing/playwright-e2e-framework.md`
 - [x] `T-E2E-002` `retries: 0` in Playwright config
@@ -21,7 +23,7 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
-## NOW — PDF + financial snapshot
+## NOW — M3 closeout: PDF + financial snapshot
 
 - [x] `T-PDF-001` Completed repair: View PDF + Export new version + API GET/POST semantics
 - [x] `T-PDF-002` Models `RepairDocument` + `RepairFinancialSnapshot`; `financial_totals` single source
@@ -29,11 +31,11 @@ Update checkboxes in the **same change set** as the implementation unless the us
 - [ ] `T-PDF-004` Design UX for historical analytics: period vs active snapshot version; no silent back-calculation
 - [ ] `T-PDF-005` Align supplier/monthly analytics SOT with snapshot layer (no drift)
 - [ ] `T-PDF-006` End-to-end story: export → dashboard totals → historical lookup (close gaps vs partial today)
-- [ ] `T-PDF-007` Move `RepairDocument` binaries to S3-compatible storage; migration; `GET …/pdf/` + export upload; backup/lifecycle policy
+- [ ] `T-PDF-007` Move `RepairDocument` binaries to S3-compatible storage; migration; `GET …/pdf/` + export upload; backup/lifecycle policy — **M4 unless production risk pulls it forward**
 
 ---
 
-## NOW — QuickFocus / VPR
+## NEXT — QuickFocus / VPR (deferred from M3 closeout)
 
 - [ ] `T-QF-001` Inline create `Vehicle` when missing in QuickFocus / new VPR flow
 - [ ] `T-QF-002` Inline create `Customer` when missing for new `Vehicle` (same fields/rules as Vehicle page)
@@ -41,7 +43,7 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
-## NOW — Admin user management
+## NOW — M3 closeout: Admin user management
 
 - [ ] `T-USR-001` Admin Users UI: close access for `staff` (offboarding)
 - [ ] `T-USR-002` Decide and implement revocation model: delete vs deactivate vs both + related data rules
@@ -49,7 +51,7 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
-## NOW — Dashboard: MoneyFlow default range
+## NOW — M3 closeout: Dashboard MoneyFlow default range
 
 - [x] `T-MFD-001` On Dashboard entry: MoneyFlow range = last 30 days → today (local); reset on revisit
 - [ ] `T-MFD-002` Tests (e2e/unit): leave tab → return → rolling 30d again
@@ -57,23 +59,23 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
-## NOW — Dashboard: MoneyFlow purchase summary
+## NOW — M3 closeout: Dashboard purchase summary placement
 
-- [ ] `T-MFS-001` MoneyFlow panel: purchase metrics for same selected period (count, buy, sale, margin) — parity with removed Purchases summary
-- [ ] `T-MFS-002` Server-side aggregate (extend dashboard API or new endpoint); not tied to client purchase pagination
+- [ ] `T-MFS-001` Decide final placement for purchase metrics already partly exposed in Warehouse/Consumables: MoneyFlow panel vs Warehouse vs M4 follow-up
+- [ ] `T-MFS-002` If MoneyFlow remains target, add/confirm server-side aggregate; do not tie metrics to client purchase pagination
 - [ ] `T-MFS-003` Document in [`DOMAIN_RULES.md`](./DOMAIN_RULES.md) or API note: which fields/states count; `delivered` effect explicit yes/no
 
 ---
 
-## NOW — Dashboard: No invoice / No vehicles
+## NOW — M3 closeout: Dashboard No invoice / No vehicles decision
 
-- [ ] `T-NIV-001` New dashboard sub-tab (near MoneyFlow / Procurement / ServiceBoard) for purchases without invoice + without vehicle
+- [ ] `T-NIV-001` Decide whether dedicated tab is still needed now that Warehouse has invoice coverage split; remaining gap is no-vehicle operational triage
 - [ ] `T-NIV-002` API: filters or light endpoints; staff responses without customer PII
 - [ ] `T-NIV-003` UI: counts, table/cards, deep-link to purchase; E2E smoke with fixtures
 
 ---
 
-## NOW — Staff vehicle-only access
+## NOW — M3 closeout: Staff vehicle-only access
 
 - [ ] `T-STF-001` Staff sees full `Vehicle` registry + repair history (not only assigned customers’ vehicles)
 - [ ] `T-STF-002` Strip customer PII from API + UI on staff paths (name, phone, email, …)
@@ -81,22 +83,14 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
-## NOW — VIN lookup
-
-- [ ] `T-VIN-001` Choose VIN decode provider: VPIC API (US, free) or carVertical / Autorigin (EU); document choice in `DOMAIN_RULES.md`
-- [ ] `T-VIN-002` Vehicle create/edit form: "Decode VIN" button — auto-fill `make`, `model`, `year`, `color` from provider response
-- [ ] `T-VIN-003` Graceful degradation: provider timeout / unknown VIN → show warning, allow manual entry; no blocking of save
-
----
-
-## NOW — CMR / field app
+## NEXT — CMR / field app (deferred from M3 closeout)
 
 - [ ] `T-CMR-001` API contract: CMR service create/update always sends price; map to `Service.price` (or line-item model)
 - [ ] `T-CMR-002` Ensure CMR-created services appear in Django admin same registry as web `Service` (no shadow tables)
 
 ---
 
-## NOW — Registers UX polish (admin)
+## NEXT — Registers UX polish (admin, deferred from M3 closeout)
 
 - [ ] `T-REG-001` Empty states: no UoM / no services / no customers — copy + CTA
 - [ ] `T-REG-002` Inline Services + Customer modals: error handling, loading, retry/rollback UX
@@ -109,7 +103,7 @@ Update checkboxes in the **same change set** as the implementation unless the us
 
 ---
 
-## NOW — Design system & UI/UX consolidation
+## NEXT — Design system & UI/UX consolidation
 
 Sourced from a code-driven audit of `frontend/src/styles.css` (11 423 lines) +
 `frontend/src/App.tsx`. Each task is independent and can ship as a standalone PR.
@@ -135,14 +129,14 @@ design-system project).
 
 ---
 
-## NOW — Dashboard: masters + consumables
+## NEXT — Dashboard: masters + consumables polish
 
 - [ ] `T-DSH-001` Link MoneyFlow ↔ ServiceBoard for master filter / drill / shared query state (UX spec + data boundaries snapshot vs live)
 - [x] `T-DSH-002` Shop consumables baseline: `is_shop_consumable`, PDF/snapshot exclusion, API `shop_consumables`, Consumables tabs (polish follow-ups only if filed)
 
 ---
 
-## NOW — Purchases / invoices / suppliers
+## NEXT — Purchases / invoices / suppliers
 
 - [x] `T-PUR-001` `POST /api/purchases/bulk/` multi-line purchases
 - [ ] `T-PUR-002` Optional invoice header + lines entity if reporting needs it (migration plan)
@@ -151,7 +145,7 @@ design-system project).
 
 ---
 
-## NEXT (scheduled after NOW themes)
+## NEXT (scheduled after M3 closeout themes)
 
 - [ ] `T-NXT-001` Monthly history on snapshot-backed data (filters: customer, vehicle, period)
 - [ ] `T-NXT-002` Supplier reporting on same financial basis as PDF/dashboard
@@ -171,6 +165,9 @@ design-system project).
 
 ## LATER
 
+- [ ] `T-VIN-001` Choose VIN decode provider: VPIC API (US, free) or carVertical / Autorigin (EU); document choice in `DOMAIN_RULES.md`
+- [ ] `T-VIN-002` Vehicle create/edit form: "Decode VIN" button — auto-fill `make`, `model`, `year`, `color` from provider response
+- [ ] `T-VIN-003` Graceful degradation: provider timeout / unknown VIN → show warning, allow manual entry; no blocking of save
 - [ ] `T-LAT-002` Observability, auditing, runbooks for documents/analytics
 - [ ] `T-LAT-003` Payments, discounts, tax, inventory, notifications — if roadmap accepts
 - [ ] `T-LAT-004` Backfill PDF/snapshot for old completed repairs if product requires history
@@ -182,7 +179,7 @@ design-system project).
 - [ ] `T-ALL-001` Environment allowlist for Allure `environment.properties` (no secrets)
 - [ ] `T-ALL-002` Behaviors tree parity with `allure.config.mjs` groupBy + epic/feature/story table in plan
 - [ ] `T-ALL-003` Playwright trace attachments + CI `retain-on-failure` policy; optional HTML report in Actions
-- [ ] `T-ALL-004` Merge Playwright into unified Allure report with Vitest/pytest
+- [x] `T-ALL-004` Merge Playwright into unified Allure report with Vitest/pytest
 - [x] `T-ALL-005` Test pyramid policy + Allure-derived latest snapshot under `docs/testing/latest/` (`docs/testing/test-pyramid.md`, Test Report artifacts/comments, scheduled Test Pyramid Snapshot Refresh rolling PR)
 
 ---
@@ -195,7 +192,7 @@ design-system project).
 
 ## Cross-cutting: SDD hygiene
 
-- [ ] `T-SDD-001` Team convention: who marks `TASKS.md` done and when (PR vs release train) — document in `SDD_WORKFLOW.md` once decided
+- [x] `T-SDD-001` Team convention: update `TASKS.md` in the same change set as implementation unless the user directs otherwise; documented in `TASKS.md` and `SDD_WORKFLOW.md`
 
 ---
 
