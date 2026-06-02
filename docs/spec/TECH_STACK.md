@@ -1,193 +1,171 @@
 # TECH_STACK
 
-Технический baseline для `car-service-platform`.
+Technical baseline for `car-service-platform`.
 
-- Last updated: `2026-04-05`
-- Status: `approved baseline for project bootstrap`
+- Last updated: `2026-06-02`
+- Status: `current implemented stack + M3/M4 guardrails`
 
-## 1) Recommended Stack
+## 1) Current Stack
 
 ### Backend
-- `Python 3.12`
-- `Django 5.2 LTS`
-- `Django REST Framework`
-- `django-cors-headers`
-- `psycopg`
-- `Gunicorn`
+
+- `Python 3.12` target runtime for Django 6 compatibility.
+- `Django >=6,<6.1`.
+- `Django REST Framework >=3.17,<3.18`.
+- `django-cors-headers`.
+- `psycopg[binary]`.
+- `Gunicorn`.
+- `Whitenoise` for static assets.
+- `ReportLab` + `pypdf` for completion PDF generation/handling.
+- `pytesseract`, `pdf2image`, `Pillow` for invoice/OCR experiments and parsing helpers.
+- `sentry-sdk[django]` for monitoring hooks.
+- `django-unfold` for Django Admin styling/UX.
 
 ### Frontend
-- `React 18` bootstrap baseline with planned upgrade path to `React 19`
-- `TypeScript 5`
-- `Vite 6`
-- `React Router 7`
-- `Axios`
-- `Vitest` + `Testing Library`
+
+- `React 19`.
+- `TypeScript 6`.
+- `Vite 8`.
+- `React Router 7`.
+- `Axios`.
+- `@sentry/react` + Sentry Vite plugin.
+- `@e965/xlsx` for spreadsheet/XLSX handling.
+- `Vitest` + Testing Library + jsdom.
+- `Playwright 1.60` for App and Django Admin E2E.
+- `allure-vitest` + `allure-playwright` for report publishing.
 
 ### Database
-- `PostgreSQL 17`
+
+- `PostgreSQL 18` in current Docker Compose pin.
+- Railway PostgreSQL for hosted deployment.
+
+### Data/demo generator
+
+- `tools/datafaker-generator/` Gradle project.
+- Java 21 toolchain for current dependency/checkstyle compatibility.
+- Datafaker demo generation is part of PR/main CI checks.
 
 ### Infrastructure
-- `Docker Compose` для local/dev/prod bootstrap
-- `Nginx` перед frontend
-- S3-compatible object storage для completion documents / exports
 
-### Deferred Infrastructure
-Подключать только когда появится реальная потребность:
-- `Redis` для background jobs, rate limiting, notifications
-- `Celery` или `Django Q` для фоновых задач
+- Docker Compose for local/dev/prod-like bootstrap.
+- Nginx in the frontend container, proxying `/api/` and `/media/`.
+- Railway deployment documented in [`RAILWAY_DEPLOY.md`](./RAILWAY_DEPLOY.md).
+- Backend media volume currently persists generated documents; S3-compatible object storage remains M4 hardening unless production risk requires earlier migration.
+
+### CI / Quality
+
+- PR Pipeline: Datafaker checks, frontend build/Vitest, focused client portal status suite, backend migrations/pytest, Playwright App/Admin E2E, CodeQL.
+- Test Report workflow: collects artifacts, merges Allure/JUnit, publishes per-PR report, mirrors source pipeline conclusion.
+- Test Pyramid Snapshot workflow: scheduled/manual rolling PR for latest test-pyramid docs and advisory gates.
+- Release Please: tags/releases only; PR titles must be Conventional Commit compatible.
+- Renovate: npm, Python, Gradle, Docker, GitHub Actions and custom regex managers.
 
 ## 2) Architecture Shape
 
-Базовая схема:
-
 1. `backend/`
-- Django monolith
-- REST API для staff UI и публичного tracking flow
-- Django Admin только для служебного управления
+   - Django monolith.
+   - REST API for staff UI, admin helpers, analytics, portal tracking, documents, purchases.
+   - Django Admin for operational/admin maintenance, not the primary staff work surface.
 
 2. `frontend/`
-- Один React application
-- Внутри приложения отдельные маршруты и layouts для staff и публичного tracking flow
+   - One React application.
+   - Separate routes/surfaces for staff app, admin-ish in-app management, invite acceptance, and client tracking portal.
 
 3. `db/`
-- PostgreSQL как единственный source of truth
+   - PostgreSQL as the source of truth for mutable operational data and persisted financial snapshots.
 
 4. `media/documents`
-- object storage для актов и других generated documents
+   - Current baseline: backend media volume / Railway volume for generated documents.
+   - M4 hardening: S3-compatible storage with migration, lifecycle, backup, and rollback policy.
 
 ## 3) Access Model
 
-Не делать один универсальный UI для всех ролей.
-
-Использовать 3 отдельных surface:
+Do not build one universal UI for all roles. Use separate product surfaces.
 
 ### A. Django Admin (`/admin/`)
-Для:
-- суперпользователя
-- справочников
-- ручных правок
-- пользователей и ролей
-- технических сущностей
 
-Не использовать как основной рабочий интерфейс сотрудников.
+For:
+
+- superuser/admin maintenance;
+- technical model inspection;
+- records that need controlled manual correction;
+- operational debugging.
+
+Do not use it as the primary staff interface.
 
 ### B. Staff App (`/app/*`)
-Для сотрудников автосервиса:
-- dashboard
-- клиенты
-- автомобили
-- ремонты
-- работы
-- запчасти
-- поставщики
-- акты
 
-### C. Public Tracking View (`/track/*`)
-Для клиентов:
-- просмотр статуса ремонта по `tracking code`
-- просмотр ограниченного набора данных по конкретному ремонту
-- просмотр итоговых документов, если это разрешено продуктовым правилом
-- без отдельного клиентского аккаунта и без общего кабинета клиента
+For internal users:
+
+- dashboard;
+- vehicles;
+- repairs;
+- purchases;
+- registers;
+- documents/status operations.
+
+Staff product direction: vehicle-centric. Staff must not receive customer identity/contact fields in staff-safe vehicle/repair APIs.
+
+### C. Client Portal / Public Tracking (`/track/*`)
+
+For customers:
+
+- repair status by tracking code;
+- limited scoped repair data;
+- document/status visibility only when allowed by product rules;
+- no general client account/cabinet in MVP.
 
 ## 4) Authentication Strategy
 
-### Staff
-- login/password
-- session auth или JWT в HttpOnly cookies
-- staff и admin не должны логиниться через public tracking flow
+### Staff/Admin
+
+- Email/password login.
+- Session/cookie-based auth in current app shape.
+- Admin can invite/reset staff; staff offboarding model is still an active M3 blocker.
+- Staff/admin do not authenticate through public tracking flow.
 
 ### Clients
-- доступ по уникальному коду или signed token
-- код должен быть длинным и случайным, а не последовательным ID
-- доступ должен быть ограничен scope конкретного ремонта или акта
 
-### Test stack (staff UI + API)
+- Access by unique repair tracking code/token.
+- No sequential repair ID as the only public identifier.
+- Access is scoped to one repair/document context.
 
-- Frontend: `Vitest` + Testing Library.
-- Backend: `pytest` (+ Allure-результаты в CI).
-- E2E: `Playwright` против полного Docker Compose; политика детерминизма и слои framework — `docs/testing/playwright-e2e-framework.md`.
+## 5) Test Stack
 
-## 5) Why This Stack
+- Frontend unit/component: `Vitest` + Testing Library.
+- Focused portal status suite: `npm run test:portal-status`.
+- Backend: Django tests/pytest with JUnit + Allure results in CI.
+- E2E: Playwright against full Docker Compose; App/Admin suite split via `PLAYWRIGHT_E2E_SUITE`.
+- Reporting: Allure/JUnit artifacts and per-PR report comments.
+- Test pyramid policy: advisory only; meaningful behavior coverage beats percentage gaming.
 
-- `Django` закрывает admin, ORM, auth, permissions и быстрый старт команды.
-- `DRF` дает предсказуемый API для React UI.
-- `React + Vite` уже знакомы по `f-cmr-template`, значит ниже стартовая стоимость.
-- Для bootstrap-этапа используется совместимый с шаблоном `React 18` foundation; upgrade до `React 19` можно сделать отдельным безопасным шагом после стабилизации skeleton.
-- `PostgreSQL` достаточно надежен и прост для этой нагрузки.
-- Для команды около 10 внутренних пользователей не нужна микросервисная архитектура.
+## 6) Why This Stack
 
-## 6) What To Reuse From `f-cmr-template`
+- Django covers admin, ORM, auth, permissions and fast iteration for a small internal product.
+- DRF gives predictable APIs for the React UI and client portal.
+- React + Vite keeps staff UI iteration fast and compatible with existing project conventions.
+- PostgreSQL is sufficient and simple for the current operational/analytics workload.
+- Docker Compose and Railway keep deployment understandable without microservices.
+- Allure/JUnit/Playwright give enough observability for agent-driven and human-driven PR review.
 
-Можно переносить почти без изменений:
-- `.github/` workflows и reusable actions
-- базовый `Docker Compose` shape: `db + backend + frontend`
-- Django project bootstrap
-- health endpoint pattern
-- logging setup
-- env layout
-- frontend bootstrap на `React + Vite + TypeScript`
-- тестовый каркас `Vitest` и backend XML test reporting
-- scripts для запуска, остановки, backup/restore после адаптации имен и переменных
+## 7) Deferred Infrastructure
 
-Можно переносить частично:
-- auth foundation
-- CORS/cookie setup
-- users/roles structure
-- audit/logging conventions
-- Docker healthchecks
+Add only when a real requirement appears:
 
-Нельзя переносить как есть:
-- invoice domain model
-- invoice rules
-- PDF/invoice logic
-- Excel import flows
-- любые специфичные сущности и API из invoice-проекта
+- `Redis` for background jobs, rate limiting, notifications.
+- `Celery` / Django Q / another job runner for async OCR, notifications, or heavyweight document processing.
+- S3-compatible object storage migration for generated documents.
+- Dedicated warehouse/inventory system.
+- Payment/tax/discount engine.
+- GraphQL, event bus, Elasticsearch, microservices.
 
-## 7) Risks You Probably Did Not Plan Yet
-
-### Client Access Security
-- защита кодов доступа
-- срок жизни ссылки
-- логирование просмотра
-- запрет перебора кодов
-
-### Audit Trail
-- кто создал/изменил ремонт
-- кто изменил статус
-- кто сформировал акт
-
-### Mobile Usage
-- мастер, скорее всего, будет работать с телефона
-- это влияет на формы и layout staff app
-
-### Documents
-- нужно заранее решить, хранится ли акт как snapshot
-- нужно ли PDF в M1 или только HTML/print view
-
-## 8) Non-Goals For First Version
-
-Не добавлять на старте:
-- микросервисы
-- GraphQL
-- отдельный backend для client portal
-- Elasticsearch
-- event bus
-- складскую систему
-- сложный биллинг
-
-## 9) Initial Technical Decisions To Confirm
-
-- `session auth` vs `JWT in HttpOnly cookies` для staff
-- `track/<code>` vs `track/<signed-token>` для client access
-- `MinIO locally + S3 in prod` или сразу единый document storage strategy
-- нужен ли `Celery` уже в M1 для документов, или можно отложить
-
-## 10) Source Of Truth
+## 8) Source Of Truth
 
 - Product strategy: [`PRODUCT.md`](./PRODUCT.md)
 - Execution backlog: [`TASKS.md`](./TASKS.md)
 - Domain rules: [`DOMAIN_RULES.md`](./DOMAIN_RULES.md)
 - Technical baseline: this file ([`TECH_STACK.md`](./TECH_STACK.md))
 - Run / dev / prod / LAN: [`RUNBOOK.md`](./RUNBOOK.md)
-- E2E (Playwright, политика CI): `docs/testing/playwright-e2e-framework.md`
-- IDE / AI-агенты (вне продуктовой спеки): `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `scripts/mcp/README.md`
+- Deployment: [`RAILWAY_DEPLOY.md`](./RAILWAY_DEPLOY.md)
+- E2E: `docs/testing/playwright-e2e-framework.md`
+- IDE / AI agents (outside product spec): `AGENTS.md`, `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `docs/dev/mcp-deduplication.md`
