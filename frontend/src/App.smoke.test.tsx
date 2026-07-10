@@ -2363,8 +2363,9 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
-    expect(screen.getByText("AA 1234 BB")).toBeInTheDocument();
+    expect(await screen.findByText("AA 1234 BB")).toBeInTheDocument();
   });
 
   it("kanban card falls back to vehicle_label when vehicle_plate is null", async () => {
@@ -2428,8 +2429,9 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     const board = await screen.findByLabelText("Repairs kanban board");
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
-    expect(within(board).getAllByText("Toyota Corolla").length).toBeGreaterThan(0);
+    await within(board).findByText("Toyota Corolla");
   });
 
   it("kanban card shows model year mileage row when all fields present", async () => {
@@ -2493,11 +2495,16 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
     const board = await screen.findByLabelText("Repairs kanban board");
-    const card = Array.from(board.querySelectorAll("article.kanban-card")).find(
-      (el) => el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2003"),
-    ) as HTMLElement;
+    const card = await waitFor(() => {
+      const match = Array.from(board.querySelectorAll("article.kanban-card")).find((el) =>
+        el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2003"),
+      );
+      expect(match).toBeInstanceOf(HTMLElement);
+      return match as HTMLElement;
+    });
     const modelRow = card.querySelector(".kanban-card-model");
     expect(modelRow).not.toBeNull();
     expect(modelRow?.textContent).toContain("Corolla");
@@ -2566,11 +2573,16 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
     const board2 = await screen.findByLabelText("Repairs kanban board");
-    const card2 = Array.from(board2.querySelectorAll("article.kanban-card")).find(
-      (el) => el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2004"),
-    ) as HTMLElement;
+    const card2 = await waitFor(() => {
+      const match = Array.from(board2.querySelectorAll("article.kanban-card")).find((el) =>
+        el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2004"),
+      );
+      expect(match).toBeInstanceOf(HTMLElement);
+      return match as HTMLElement;
+    });
     expect(card2.querySelector(".kanban-card-time")).not.toBeNull();
   });
 
@@ -2635,11 +2647,16 @@ describe("bootstrap application", () => {
     await waitFor(() => expect(screen.getByText("Car Service")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Repairs" }));
     await screen.findByLabelText("Repairs kanban board");
+    await user.click(screen.getByRole("button", { name: "All time" }));
 
     const board3 = await screen.findByLabelText("Repairs kanban board");
-    const card3 = Array.from(board3.querySelectorAll("article.kanban-card")).find(
-      (el) => el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2005"),
-    ) as HTMLElement;
+    const card3 = await waitFor(() => {
+      const match = Array.from(board3.querySelectorAll("article.kanban-card")).find((el) =>
+        el.querySelector(".tracking-chip")?.textContent?.includes("TOR-2005"),
+      );
+      expect(match).toBeInstanceOf(HTMLElement);
+      return match as HTMLElement;
+    });
     expect(card3.querySelector(".kanban-card-time")).toBeNull();
   });
 
