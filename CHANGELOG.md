@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.2](https://github.com/ylazakovich/car-service-platform/compare/v1.4.1...v1.4.2) (2026-07-11)
+
+
+### Documentation
+
+* **architecture:** document tech quality roadmap ([#219](https://github.com/ylazakovich/car-service-platform/issues/219)) ([9e6ae27](https://github.com/ylazakovich/car-service-platform/commit/9e6ae2741a418845eb4d1cb5dba804811b869ada))
+* **release:** polish changelog notes ([#221](https://github.com/ylazakovich/car-service-platform/issues/221)) ([ed77199](https://github.com/ylazakovich/car-service-platform/commit/ed77199da3421ec3dbcb94ce048bcb9730a158cd))
+
+
+### Chores
+
+* **deps:** lock file maintenance ([#215](https://github.com/ylazakovich/car-service-platform/issues/215)) ([03898d2](https://github.com/ylazakovich/car-service-platform/commit/03898d2129c83918015481028f500852a67befc1))
+* **deps:** update allure-cli to v3.14.2 ([#220](https://github.com/ylazakovich/car-service-platform/issues/220)) ([3ba6270](https://github.com/ylazakovich/car-service-platform/commit/3ba62705f95a6c2e193b00288c522919e745d1d4))
+* **deps:** update typescript to v7 ([#214](https://github.com/ylazakovich/car-service-platform/issues/214)) ([7feeb77](https://github.com/ylazakovich/car-service-platform/commit/7feeb7768f0cb6eebc08351375b7050f66ff8350))
+* **deps:** update vite to v8.0.16 [security] ([#217](https://github.com/ylazakovich/car-service-platform/issues/217)) ([94efb04](https://github.com/ylazakovich/car-service-platform/commit/94efb0487669c4d6380f27ee1620be506b0f1e78))
+* **deps:** update vite to v8.1.3 ([#218](https://github.com/ylazakovich/car-service-platform/issues/218)) ([ceb77f7](https://github.com/ylazakovich/car-service-platform/commit/ceb77f70e533702d80f28cbd7cbf28edccec60e9))
+
 ## [1.4.1](https://github.com/ylazakovich/car-service-platform/compare/v1.4.0...v1.4.1) (2026-07-11)
 
 ### Bug Fixes
