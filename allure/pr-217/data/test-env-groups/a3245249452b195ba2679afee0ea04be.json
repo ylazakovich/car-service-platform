@@ -1,0 +1,1 @@
+{"id":"a3245249452b195ba2679afee0ea04be","fullName":"car-service-platform-frontend:src/features/staff/hooks/useRepairs.test.ts#sanitizeImageUrl rejects root-relative path with whitespace","name":"rejects root-relative path with whitespace","status":"passed","testResultsByEnv":{"frontend":"5e4d62ab99ec38ff6a572879f33b9bb9"}}
