@@ -1,1 +1,1 @@
-{"id":"050bb67e54a07c8005607336ab56f1d5","fullName":"django-admin-repairs.spec.ts:274:3","name":"InviteToken changelist renders table structure or empty state","status":"passed","testResultsByEnv":{"e2e":"c21e82ef97001d59f35a0c8889fd2e24"}}
+{"id":"050bb67e54a07c8005607336ab56f1d5","fullName":"django-admin-repairs.spec.ts:274:3","name":"InviteToken changelist renders table structure or empty state","status":"passed","testResultsByEnv":{"e2e":"c95189101ff8826e6fdb87374b26b23f"}}
