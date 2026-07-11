@@ -1,1 +1,1 @@
-{"id":"aa19bed02c1addb96055ee4e404dea41","fullName":"purchases.tests.PurchaseApiTests#test_update_consumable_can_clear_inventory_snapshot","name":"test_update_consumable_can_clear_inventory_snapshot","status":"passed","testResultsByEnv":{"backend":"44d310631fd858fccf93aca8ac38d755"}}
+{"id":"aa19bed02c1addb96055ee4e404dea41","fullName":"purchases.tests.PurchaseApiTests#test_update_consumable_can_clear_inventory_snapshot","name":"test_update_consumable_can_clear_inventory_snapshot","status":"passed","testResultsByEnv":{"backend":"be5e89db7dd7d8e45a1c7c1a08d57b83"}}
