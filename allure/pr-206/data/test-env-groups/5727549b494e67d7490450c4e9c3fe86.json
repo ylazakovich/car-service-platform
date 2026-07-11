@@ -1,1 +1,1 @@
-{"id":"5727549b494e67d7490450c4e9c3fe86","fullName":"purchases.tests.PurchaseApiTests#test_update_consumable_current_stock_quantity","name":"test_update_consumable_current_stock_quantity","status":"passed","testResultsByEnv":{"backend":"cd2620a4b29e55bd8488e5de1f8c466f"}}
+{"id":"5727549b494e67d7490450c4e9c3fe86","fullName":"purchases.tests.PurchaseApiTests#test_update_consumable_current_stock_quantity","name":"test_update_consumable_current_stock_quantity","status":"passed","testResultsByEnv":{"backend":"2ac5502179629e2914033b2b647b442c"}}

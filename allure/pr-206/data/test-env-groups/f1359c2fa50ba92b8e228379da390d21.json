@@ -1,1 +1,1 @@
-{"id":"f1359c2fa50ba92b8e228379da390d21","fullName":"django-admin-entities.spec.ts:98:3","name":"Customer — update: change full_name and verify in changelist","status":"passed","testResultsByEnv":{"e2e":"c56e3fda212928d900c14f83f956a5d0"}}
+{"id":"f1359c2fa50ba92b8e228379da390d21","fullName":"django-admin-entities.spec.ts:98:3","name":"Customer — update: change full_name and verify in changelist","status":"passed","testResultsByEnv":{"e2e":"bdcfcac2fea7ea76e0b4adae9a6c7ecc"}}
