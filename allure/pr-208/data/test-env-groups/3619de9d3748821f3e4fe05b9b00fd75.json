@@ -1,1 +1,1 @@
-{"id":"3619de9d3748821f3e4fe05b9b00fd75","fullName":"users.tests.InviteApiTests#test_invite_create_by_admin","name":"test_invite_create_by_admin","status":"passed","testResultsByEnv":{"backend":"bc31635f383ab810322420d7f0e5cd65"}}
+{"id":"3619de9d3748821f3e4fe05b9b00fd75","fullName":"users.tests.InviteApiTests#test_invite_create_by_admin","name":"test_invite_create_by_admin","status":"passed","testResultsByEnv":{"backend":"acfdf540b37cd9323686922e19af1f6c"}}
