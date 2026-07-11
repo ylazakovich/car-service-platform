@@ -1,0 +1,1 @@
+{"id":"db6e0f08368633c4fd5aed28a5c3fabb","fullName":"car-service-platform-frontend:src/features/staff/shared/repairs.test.ts#repair shared presentation helpers parseVehicleProfileMileageKm handles minus sign is rejected","name":"parseVehicleProfileMileageKm handles minus sign is rejected","status":"passed","testResultsByEnv":{"frontend":"bd521515bf716b3bd50535106dcd09c0"}}
