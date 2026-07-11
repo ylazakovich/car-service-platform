@@ -136,6 +136,21 @@ design-system project).
 
 ---
 
+## NEXT — Tech quality hardening
+
+Source: [`TECH_QUALITY_ROADMAP.md`](./TECH_QUALITY_ROADMAP.md). These tasks are not a mandate to add platform complexity immediately; pull them when they support M3 closeout safety or M4 feature work.
+
+- [ ] `T-QLT-001` API contract: add OpenAPI generation (`drf-spectacular` or equivalent), schema CI check, and generated/schema-derived frontend types for new or changed endpoints.
+- [ ] `T-QLT-002` Frontend server-state layer: introduce `@tanstack/react-query` and migrate high-traffic staff hooks incrementally (`useRepairs`, `usePurchases`, vehicles, dashboard) with intentional invalidation.
+- [ ] `T-QLT-003` Domain/audit event trail: record important actor-driven events such as repair status changes, PDF exports/snapshots, purchase edits, staff offboarding, and manual corrections.
+- [ ] `T-QLT-004` Background jobs: introduce `Redis` + a small job runner for a concrete async workflow such as OCR, retryable email, heavy PDF/batch export, or scheduled cleanup/reporting.
+- [ ] `T-QLT-005` S3-compatible document storage: align with `T-PDF-007` for private `RepairDocument` storage, migration, lifecycle, backup, and rollback policy.
+- [ ] `T-QLT-006` Realtime decision: start with React Query polling/refetch or SSE for one-way freshness/progress; use WebSockets only after a documented workflow proves polling/SSE insufficient.
+- [ ] `T-QLT-007` Backend API hardening: add explicit filter contracts (`django-filter` where useful), consistent pagination/ordering/search, staff-safe serializers/endpoints, and indexes for frequent filters.
+- [ ] `T-QLT-008` Frontend form validation consistency: use `react-hook-form` + schema validation for complex forms and standardize DRF validation-error rendering.
+
+---
+
 ## NEXT — Purchases / invoices / suppliers
 
 - [x] `T-PUR-001` `POST /api/purchases/bulk/` multi-line purchases
