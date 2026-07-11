@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21.0.11_10-jdk@sha256:1eeacc8c295ed4805f6ffead2417b1936aad296b02ea9e56b457230befc9e98d AS builder
+FROM eclipse-temurin:25.0.3_9-jdk@sha256:68868d04fa9cfd5f5c6abec0b5cef86d8de2bf9c62c37c7d3e4f0f80f5cfd7ff AS builder
 
 WORKDIR /src
 
@@ -9,7 +9,7 @@ RUN ./gradlew --no-daemon dependencies >/dev/null
 COPY src src
 RUN ./gradlew --no-daemon installDist
 
-FROM eclipse-temurin:21.0.11_10-jre@sha256:d2b9f8f12212cadcfdf889461531784e8fd097feade954d65b31ee7a71c473ec
+FROM eclipse-temurin:25.0.3_9-jre@sha256:d0eb1b9018b3044da1b7346f39e945f71095749853d69a3aa16b8c99dad9bb45
 
 RUN groupadd --system csp \
     && useradd --system --gid csp --home-dir /workspace --shell /usr/sbin/nologin csp \
