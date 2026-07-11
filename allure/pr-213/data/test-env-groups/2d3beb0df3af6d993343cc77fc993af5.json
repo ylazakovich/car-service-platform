@@ -1,1 +1,1 @@
-{"id":"2d3beb0df3af6d993343cc77fc993af5","fullName":"purchases.tests.PurchaseApiTests#test_detail_returns_nested_supplier_data","name":"test_detail_returns_nested_supplier_data","status":"passed","testResultsByEnv":{"backend":"876b2a844aba57e0ea68570611839f31"}}
+{"id":"2d3beb0df3af6d993343cc77fc993af5","fullName":"purchases.tests.PurchaseApiTests#test_detail_returns_nested_supplier_data","name":"test_detail_returns_nested_supplier_data","status":"passed","testResultsByEnv":{"backend":"69df4ef8cda393288bdc807777f4c7a5"}}
