@@ -77,14 +77,16 @@ jobs:
       - name: Debug — Allure artifact layout
         run: |
           echo "workflow_run conclusion=${{ github.event.workflow_run.conclusion }}"
-          for d in allure-results-frontend allure-results-backend allure-results-e2e; do
-            if [ -d "artifacts/$d" ]; then
-              n=$(find "artifacts/$d" -maxdepth 3 -name '*-result.json' 2>/dev/null | wc -l | tr -d ' ')
-              echo "$d: *-result.json count=$n"
-            else
-              echo "$d: (missing dir)"
-            fi
+          shopt -s nullglob
+          dirs=(artifacts/allure-results-*)
+          if ((${#dirs[@]} == 0)); then
+            echo "No allure-results-* artifact directories found"
+          fi
+          for d in "${dirs[@]}"; do
+            n=$(find "$d" -maxdepth 3 -name '*-result.json' 2>/dev/null | wc -l | tr -d ' ')
+            echo "$(basename "$d"): *-result.json count=$n"
           done
+          shopt -u nullglob
 
       # hashFiles() follows .gitignore; repo root ignores artifacts/ → conditions were always false on GitHub.
       - name: Probe downloaded JUnit paths
@@ -96,9 +98,10 @@ jobs:
           [ -f artifacts/frontend-test-results/junit.xml ] && fr="true"
           shopt -s nullglob
           be_xml=(artifacts/backend-test-results/*.xml)
+          e2e_xml=(artifacts/e2e-test-results-*/e2e-junit.xml artifacts/e2e-test-results/e2e-junit.xml)
           ((${#be_xml[@]})) && be="true"
+          ((${#e2e_xml[@]})) && e2e="true"
           shopt -u nullglob
-          [ -f artifacts/e2e-test-results/e2e-junit.xml ] && e2e="true"
           echo "frontend=$fr" >> "$GITHUB_OUTPUT"
           echo "backend=$be" >> "$GITHUB_OUTPUT"
           echo "e2e=$e2e" >> "$GITHUB_OUTPUT"
@@ -130,11 +133,13 @@ jobs:
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         with:
           name: E2E (Playwright)
-          path: artifacts/e2e-test-results/e2e-junit.xml
+          path: |
+            artifacts/e2e-test-results-*/e2e-junit.xml
+            artifacts/e2e-test-results/e2e-junit.xml
           reporter: java-junit
           fail-on-error: "false"
 
-      # PR Pipeline uploads allure-results-frontend, allure-results-backend, allure-results-e2e; merge without clobbering environment fragments.
+      # PR Pipeline uploads one Allure result artifact per CI job/matrix shard; merge without clobbering environment fragments.
       - name: Merge Allure results
         id: allure
         run: |
@@ -142,7 +147,10 @@ jobs:
             "${{ github.workspace }}/artifacts/allure-results" \
             "${{ github.workspace }}/artifacts/_merged_ci_env.properties" \
             "${{ github.workspace }}/artifacts/allure-results-frontend" \
+            "${{ github.workspace }}/artifacts/allure-results-frontend-portal-status" \
             "${{ github.workspace }}/artifacts/allure-results-backend" \
+            "${{ github.workspace }}/artifacts/allure-results-e2e-app" \
+            "${{ github.workspace }}/artifacts/allure-results-e2e-django-admin" \
             "${{ github.workspace }}/artifacts/allure-results-e2e"
           if compgen -G 'artifacts/allure-results/*-result.json' > /dev/null; then
             echo "present=true" >> "$GITHUB_OUTPUT"
