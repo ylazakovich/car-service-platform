@@ -1,7 +1,7 @@
 plugins {
     application
     checkstyle
-    id("com.github.spotbugs") version "6.5.5"
+    id("com.github.spotbugs") version "6.5.8"
 }
 
 group = "local.csp"
@@ -14,7 +14,7 @@ java {
 }
 
 checkstyle {
-    toolVersion = "13.5.0"
+    toolVersion = "13.7.0"
     configDirectory.set(layout.projectDirectory.dir("config/checkstyle"))
 }
 
@@ -39,11 +39,11 @@ application {
 }
 
 dependencies {
-    implementation("net.datafaker:datafaker:2.5.4")
+    implementation("net.datafaker:datafaker:2.7.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.21.3")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.1")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

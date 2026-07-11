@@ -1,5 +1,5 @@
 django>=6,<6.1
-django-unfold>=0.94,<0.95
+django-unfold>=0.100,<0.101
 djangorestframework>=3.17,<3.18
 django-cors-headers>=4.8,<5.0
 gunicorn>=26,<26.1
