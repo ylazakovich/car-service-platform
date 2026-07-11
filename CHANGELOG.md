@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.4.1](https://github.com/ylazakovich/car-service-platform/compare/v1.4.0...v1.4.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* **deps:** update minor and patch updates ([e6ab58b](https://github.com/ylazakovich/car-service-platform/commit/e6ab58ba34592019d87353b7d3d6f06626811e40))
+* **deps:** update minor and patch updates ([f7d44c7](https://github.com/ylazakovich/car-service-platform/commit/f7d44c751defda731459a347dd54688c3355bead))
+* **renovate:** remove wildcard from negated package rule ([5e6edab](https://github.com/ylazakovich/car-service-platform/commit/5e6edab2c4269721d0016c24b01977c09b8a4bc8))
+* **renovate:** remove wildcard from negated package rule ([0b30c59](https://github.com/ylazakovich/car-service-platform/commit/0b30c59494b7c9da5389521d93b806625d5b9df2))
+
 ## [1.4.0](https://github.com/ylazakovich/car-service-platform/compare/v1.3.0...v1.4.0) (2026-06-01)
 
 
