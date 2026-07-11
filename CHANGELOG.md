@@ -2,288 +2,93 @@
 
 ## [1.4.1](https://github.com/ylazakovich/car-service-platform/compare/v1.4.0...v1.4.1) (2026-07-11)
 
-
 ### Bug Fixes
 
-* **deps:** update minor and patch updates ([e6ab58b](https://github.com/ylazakovich/car-service-platform/commit/e6ab58ba34592019d87353b7d3d6f06626811e40))
-* **deps:** update minor and patch updates ([f7d44c7](https://github.com/ylazakovich/car-service-platform/commit/f7d44c751defda731459a347dd54688c3355bead))
-* **renovate:** remove wildcard from negated package rule ([5e6edab](https://github.com/ylazakovich/car-service-platform/commit/5e6edab2c4269721d0016c24b01977c09b8a4bc8))
-* **renovate:** remove wildcard from negated package rule ([0b30c59](https://github.com/ylazakovich/car-service-platform/commit/0b30c59494b7c9da5389521d93b806625d5b9df2))
+- Fixed Renovate package-rule matching so grouped dependency updates are detected correctly.
+- Updated the dependency baseline through the current minor and patch set.
 
 ## [1.4.0](https://github.com/ylazakovich/car-service-platform/compare/v1.3.0...v1.4.0) (2026-06-01)
 
-
 ### Features
 
-* **portal:** client portal redesign — Phase 1 + Phase 2 ([6e38af8](https://github.com/ylazakovich/car-service-platform/commit/6e38af8913faa1599a17286ab6e08de45557f415))
-* **portal:** Phase 1 + Phase 2 client portal redesign ([d1955bb](https://github.com/ylazakovich/car-service-platform/commit/d1955bbbcc8683cf6102a495a3f66ad7f861454c))
-
+- Shipped the redesigned client portal with the new visual shell, status stepper, and responsive polish.
 
 ### Bug Fixes
 
-* address CodeRabbit review feedback ([517a1ab](https://github.com/ylazakovich/car-service-platform/commit/517a1ab8bbe9174d1c0509d4ff97e92dc2f0912b))
-* **admin:** register repairs models and InviteToken in Django admin ([73ad5d2](https://github.com/ylazakovich/car-service-platform/commit/73ad5d2937cdd22d6628c08c4fa6ccdb737f7ee9))
-* **admin:** register repairs models and InviteToken in Django admin ([b625a11](https://github.com/ylazakovich/car-service-platform/commit/b625a11cb30829d1f879365d9122dac9f458786e))
-* **admin:** stabilize Django admin CI coverage ([8f71457](https://github.com/ylazakovich/car-service-platform/commit/8f714577fd1ed8f15641a4792065057bd4a53da8))
-* **deps:** run Checkstyle 13 with JDK 21 ([710d535](https://github.com/ylazakovich/car-service-platform/commit/710d53520c9b2bc8198adf3103215500424aa66a))
-* **deps:** update checkstyle to v13 ([759248d](https://github.com/ylazakovich/car-service-platform/commit/759248d80f3e8525eb157ccf2e053f7f48c5663d))
-* **deps:** update checkstyle to v13 ([3e0cc83](https://github.com/ylazakovich/car-service-platform/commit/3e0cc8372867e4550ac5d25e60be199c8ff85b46))
-* **deps:** update minor and patch updates ([#187](https://github.com/ylazakovich/car-service-platform/issues/187)) ([3f775e1](https://github.com/ylazakovich/car-service-platform/commit/3f775e1d5e7113e10ec4b0a914e3b16d0630098b))
-* **portal:** add dark center dot to active stepper node ([864ca3a](https://github.com/ylazakovich/car-service-platform/commit/864ca3ae39bcb5dcfdd9dbe2e1b021e2a79e31a5))
-* **portal:** align brandmark and shop name in one row ([810babf](https://github.com/ylazakovich/car-service-platform/commit/810babf288cdc2ccafcc4bae9de4bbf1f2e72f9b))
-* **portal:** handle picked_up status — all steps shown as done ([0e4cd56](https://github.com/ylazakovich/car-service-platform/commit/0e4cd56b958fa6cba02dc99f9d0f9c2168009754))
-* **portal:** remove margin-bottom from brandmark inside shop-id row ([f9613e3](https://github.com/ylazakovich/car-service-platform/commit/f9613e371450b860a7c5c8066966d0ae9c98fe3a))
-* **portal:** revert picked_up from status type — default case covers it ([5517a5f](https://github.com/ylazakovich/car-service-platform/commit/5517a5ff11ba6a1547ba6a71c58b37ba6f1ff2de))
-* **portal:** vertically center brandmark alongside shop name ([1bd517b](https://github.com/ylazakovich/car-service-platform/commit/1bd517b47e75802e460ad7c0d69acd1ded525113))
+- Registered repairs models and invite tokens in Django admin.
+- Stabilized Django admin coverage and portal display behavior around picked-up repairs.
+- Updated Checkstyle and dependency baselines used by the quality toolchain.
 
 ## [1.3.0](https://github.com/ylazakovich/car-service-platform/compare/v1.2.0...v1.3.0) (2026-05-31)
 
-
 ### Features
 
-* **demo:** add Datafaker demo generator ([bf09c44](https://github.com/ylazakovich/car-service-platform/commit/bf09c44f4eec6d8d11ef516a1d27885936479381))
-* **demo:** dockerize Datafaker generator ([80a31b2](https://github.com/ylazakovich/car-service-platform/commit/80a31b24f53765d518a5f3a0c0e2cd5dca97c36b))
-* **demo:** enrich Datafaker demo scenarios ([2a882e3](https://github.com/ylazakovich/car-service-platform/commit/2a882e373151f503639f27209df1f1774e28d2d7))
-* **demo:** prebuild acts for generated repairs ([ffb8d51](https://github.com/ylazakovich/car-service-platform/commit/ffb8d515af6a7b5b3cf452ea3fbb13ad2d675f4e))
-* **demo:** ship Datafaker CLI image ([8b6660b](https://github.com/ylazakovich/car-service-platform/commit/8b6660bf160a6f08f28c3f0d94f9c3b0b5e39e80))
-
+- Added the Datafaker demo-data generator with Docker support and richer demo repair scenarios.
+- Added prebuilt repair acts and a packaged Datafaker CLI image for repeatable demo workflows.
 
 ### Bug Fixes
 
-* address coderabbit demo data feedback ([cfac102](https://github.com/ylazakovich/car-service-platform/commit/cfac10298588df9cba3057b93f86b573d022aa48))
-* **deps:** update minor and patch updates ([bd4b1ab](https://github.com/ylazakovich/car-service-platform/commit/bd4b1abfd195b93a4d2781529fa4a7337cdb80f3))
-* **deps:** update minor and patch updates ([28d51cb](https://github.com/ylazakovich/car-service-platform/commit/28d51cb192a15062e69243bcacff75c2567065c7))
-* **deps:** update org.junit.jupiter:junit-jupiter to v6 ([#184](https://github.com/ylazakovich/car-service-platform/issues/184)) ([5d9eaf3](https://github.com/ylazakovich/car-service-platform/commit/5d9eaf37af00a00458143f001940f8b1eaec5197))
-* **renovate:** enable gradle wrapper updates ([8bfb974](https://github.com/ylazakovich/car-service-platform/commit/8bfb974bfd81628845face2b1c14bd4536f38f4b))
-* **tools:** support arm64 datafaker docker build ([4bef5cc](https://github.com/ylazakovich/car-service-platform/commit/4bef5cc1ad0ddf702e66b6afe63b351ec867979d))
+- Addressed demo-data review feedback and arm64 Docker build compatibility.
+- Enabled Gradle wrapper updates and refreshed dependency baselines.
 
 ## [1.2.0](https://github.com/ylazakovich/car-service-platform/compare/v1.1.0...v1.2.0) (2026-05-29)
 
-
 ### Features
 
-* add visual hint and tooltip to disabled create buttons ([fcd41cb](https://github.com/ylazakovich/car-service-platform/commit/fcd41cbbba6e48ccc4f16b351bf4a8cfc625c2e5))
-* disable create buttons on purchases and repairs until required fields are filled ([371a41a](https://github.com/ylazakovich/car-service-platform/commit/371a41a351a49cf0988af872e7b5115f44610c13))
-* disable vehicle create/update button until required fields are filled ([ca9149f](https://github.com/ylazakovich/car-service-platform/commit/ca9149ff2eaaf1e8b9633dd58d4344eb915bc934))
-* **repairs:** disable create buttons until required fields are filled ([4eebacf](https://github.com/ylazakovich/car-service-platform/commit/4eebacffcfec9318705e9c639ba6aa7e610bbbc0))
-* replace footer hint text with required-field chips ([04ddbcf](https://github.com/ylazakovich/car-service-platform/commit/04ddbcf412b2f0bcb8382045654046a3fa3fb839))
-
+- Added required-field gating for repair, purchase, and vehicle create/update flows.
+- Replaced footer helper text with compact required-field chips and disabled-button affordances.
 
 ### Bug Fixes
 
-* align vehicles mobile top-actions layout with purchases ([0ab72a6](https://github.com/ylazakovich/car-service-platform/commit/0ab72a670fb0f70efee1a9ff191a5c7b7c16efd9))
-* apply CodeRabbit suggestions — close submit bypass and purchase gate ([5da49f8](https://github.com/ylazakovich/car-service-platform/commit/5da49f86a41cc8a0eeb04d358074b064cfc92922))
-* apply modal--mobile to vehicles and purchases on narrow screens ([53736ac](https://github.com/ylazakovich/car-service-platform/commit/53736ac9c9f45817c4fb2d5733267e1a49f5f733))
-* chips above buttons on mobile for vehicles and purchases ([57c0b6e](https://github.com/ylazakovich/car-service-platform/commit/57c0b6e0eacd34cb25ef5f8653b06832f8919de6))
-* chips left, buttons right on desktop; chips above buttons on mobile ([c572727](https://github.com/ylazakovich/car-service-platform/commit/c5727271bd4590ffe815781b0e08ff9b997875b7))
-* compact Today Summary sidebar widget on 14-inch laptops ([730ea92](https://github.com/ylazakovich/car-service-platform/commit/730ea92e985816abfb5e1e7067f12cdafc26241d))
-* **e2e:** force-click Add Vehicle on mobile to bypass search overlay ([1b8a170](https://github.com/ylazakovich/car-service-platform/commit/1b8a170a855c03840fa513609f864935155181c3))
-* **e2e:** seed customer via API in vehicle disabled-state tests ([0f0754b](https://github.com/ylazakovich/car-service-platform/commit/0f0754bd758a46a4380890edadb2bee59dcdb7ba))
-* **e2e:** stabilize create-button-disabled-state tests ([0fdcbf1](https://github.com/ylazakovich/car-service-platform/commit/0fdcbf126e93921f3ad87da3c557fda280766240))
-* force column-reverse on stacked footer inside modal--mobile ([73e7aeb](https://github.com/ylazakovich/car-service-platform/commit/73e7aeb7de2b8e140e6677e41a5c255db0efc12d))
-* keep buttons right-aligned on desktop in stacked footer ([29dca98](https://github.com/ylazakovich/car-service-platform/commit/29dca98d0426f523dcf26cb6cc00afb398ca2427))
-* move required-field chips below buttons in modal footer ([4a6b422](https://github.com/ylazakovich/car-service-platform/commit/4a6b422f5ffb47211d60f628da1c06f843c5d586))
-* **repairs:** dim picked-up cards in completed view ([42fda66](https://github.com/ylazakovich/car-service-platform/commit/42fda66c0ce5f4af4ddba8a71f9089a314073685))
-* **repairs:** dim picked-up cards in completed view ([1703701](https://github.com/ylazakovich/car-service-platform/commit/1703701288bea6dd969982ec8aa0263700299a9a))
-* restore stretch alignment for stacked footer on mobile ([9a0e733](https://github.com/ylazakovich/car-service-platform/commit/9a0e7336fffca03beb9e76214904c85be2344796))
+- Aligned mobile modal/footer layouts across Vehicles, Purchases, and Repairs.
+- Stabilized disabled-state E2E coverage and mobile interaction handling.
+- Polished completed-repair card visibility and Today Summary density on smaller laptops.
 
 ## [1.1.0](https://github.com/ylazakovich/car-service-platform/compare/v1.0.2...v1.1.0) (2026-05-29)
 
-
 ### Features
 
-* integrate Sentry error monitoring for frontend and backend ([c619d2c](https://github.com/ylazakovich/car-service-platform/commit/c619d2c2e5a04a5d1b3a7bda553d4e05078230b8))
-* **monitoring:** integrate Sentry error monitoring ([bd7f2c1](https://github.com/ylazakovich/car-service-platform/commit/bd7f2c193126b64918b37da634f67936cbc5f1d8))
-
+- Integrated Sentry error monitoring across frontend and backend deployments.
 
 ### Bug Fixes
 
-* **deps:** update @sentry/react to v10 ([#169](https://github.com/ylazakovich/car-service-platform/issues/169)) ([fa2cf6b](https://github.com/ylazakovich/car-service-platform/commit/fa2cf6bcb5da1519154f4136f553ef7038da4c35))
-* **monitoring:** address CodeRabbit review suggestions ([3b22361](https://github.com/ylazakovich/car-service-platform/commit/3b22361bb5779ce2cf8c21e72e451b2c2cd21ca5))
-* **monitoring:** replace reactRouterV7BrowserTracingIntegration with browserTracingIntegration ([d3688b0](https://github.com/ylazakovich/car-service-platform/commit/d3688b099e6b05147e87f7f686c6b11468cc0643))
+- Updated the Sentry React dependency and adjusted browser tracing integration.
+- Addressed monitoring review feedback before release.
 
 ## [1.0.2](https://github.com/ylazakovich/car-service-platform/compare/v1.0.1...v1.0.2) (2026-05-28)
 
-
 ### Bug Fixes
 
-* **ci:** detect open snapshot PRs only ([3b49ae3](https://github.com/ylazakovich/car-service-platform/commit/3b49ae38f28bcc1bc01b3bed9ec7b46a349039a6))
-* **ci:** detect open snapshot PRs only ([67c520b](https://github.com/ylazakovich/car-service-platform/commit/67c520b0630bbbc191095e1f20cb29d7063cc685))
-* **ci:** remove demo data seeding from PR checks ([af43b6c](https://github.com/ylazakovich/car-service-platform/commit/af43b6cad40c7bdd04ada0195a16270693df6fcb))
-* **ci:** render test pyramid with scaled diagram ([1131567](https://github.com/ylazakovich/car-service-platform/commit/1131567c05a22d87dd953cbea4b19487b452d6fc))
-* **ci:** render test pyramid with scaled diagram ([6fc97fa](https://github.com/ylazakovich/car-service-platform/commit/6fc97fa4856d2e0900406a27ddaca6d891ac9a17))
-* **ci:** stop report workflow from updating README pyramid ([9f0b794](https://github.com/ylazakovich/car-service-platform/commit/9f0b79460306360784f76c985e5ee336710148df))
-* **ci:** stop report workflow from updating README pyramid ([728157c](https://github.com/ylazakovich/car-service-platform/commit/728157ce826cc0847c897d287b1a86cb8bcf1743))
-* **dashboard:** prevent initial loading flashes ([553424f](https://github.com/ylazakovich/car-service-platform/commit/553424fd17693820e631ea6d403fd863a3d7944c))
-* **dashboard:** prevent initial loading flashes ([a307676](https://github.com/ylazakovich/car-service-platform/commit/a307676b0b2e400f711f911d3b4227b3132db8d6))
-* **e2e:** restore repair helpers and avoid strict locator union ([a170524](https://github.com/ylazakovich/car-service-platform/commit/a17052496e5532d9fdc69b44e3d2c2ff11975466))
-* **frontend:** satisfy repair helper test types ([cb3edc1](https://github.com/ylazakovich/car-service-platform/commit/cb3edc1a4e49fe4a7c6b8a799ace5b89a37cf03e))
-* **ocr:** catch pypdf PdfStreamError as 400 instead of 500 ([596e601](https://github.com/ylazakovich/car-service-platform/commit/596e601ac1b25631e6e87581cb6e64e2f1057e76))
-* **purchases:** align purchase modals to design-system modal style ([ae8f359](https://github.com/ylazakovich/car-service-platform/commit/ae8f3590c72155d7de15055dfce864b4b8a2da60))
-* **purchases:** align purchase modals to design-system modal style ([f86ae92](https://github.com/ylazakovich/car-service-platform/commit/f86ae92671540a68d150d728596e3d1b7ec705ea))
-* **purchases:** fix modal footer button layout to match repairs pattern ([0fa4aab](https://github.com/ylazakovich/car-service-platform/commit/0fa4aab346913e7fcb781f6734a9e3943312c719))
-* **purchases:** move Order/Invoice tabs into modal-header__meta ([61c84bc](https://github.com/ylazakovich/car-service-platform/commit/61c84bc2ac063c6b78c05bd6644978133ba117bc))
-* **vehicles:** align vehicle form modal to design-system modal style ([c799a7a](https://github.com/ylazakovich/car-service-platform/commit/c799a7ad34a8d9261373592056d8e21a68011aef))
-* **vehicles:** fix input styles and inline customer button alignment in modal-form ([acaaef1](https://github.com/ylazakovich/car-service-platform/commit/acaaef1208be14937c1a588517f88ce231417224))
+- Improved CI report generation, Allure publishing, and test pyramid rendering.
+- Stabilized dashboard, repair, purchase, and vehicle UI behavior across desktop and mobile.
+- Hardened Railway deployment settings, Docker compatibility, and frontend nginx configuration.
+- Fixed repair PDF buffering, portal status edge cases, invoice parsing error handling, and image URL sanitization.
+- Stabilized Playwright smoke/E2E coverage for Registers, Repairs, consumables, mobile navigation, and service-line flows.
 
 ## [1.0.1](https://github.com/ylazakovich/car-service-platform/compare/v1.0.0...v1.0.1) (2026-05-28)
 
-
 ### Bug Fixes
 
-* **repairs:** close modals on Escape ([d448442](https://github.com/ylazakovich/car-service-platform/commit/d448442ef10c5a07ccf46959047d1e9e96c92b3e))
+- Closed repair modals on Escape.
 
 ## 1.0.0 (2026-05-27)
 
-
 ### Features
 
-* add client mode toggle with 3D card flip on login page ([1e05e8b](https://github.com/ylazakovich/car-service-platform/commit/1e05e8bdee579cc9456da92275969dfadf819734))
-* add demo staff seed script ([a255119](https://github.com/ylazakovich/car-service-platform/commit/a2551191c45fa981bac0c56ad1290727aa953fb4))
-* add picked_up status to close the repair lifecycle ([16bcbc9](https://github.com/ylazakovich/car-service-platform/commit/16bcbc97768422b6219318ab63378765b69c1e52))
-* add picked_up status to close the repair lifecycle ([0042261](https://github.com/ylazakovich/car-service-platform/commit/0042261bf293b67f47b8b2d274d77ee5e841967b))
-* **allure:** partition merged Variables by environment ([4508693](https://github.com/ylazakovich/car-service-platform/commit/4508693b94b7e65ca6cb37c89a3ceee1a7f1546e))
-* **allure:** set layer label for native Testing pyramid charts ([7d2e497](https://github.com/ylazakovich/car-service-platform/commit/7d2e49720f0acb23ef13c5962bdbda76f0016baf))
-* **analytics:** dashboard aggregates API and MoneyFlow/Procurement UI ([930356e](https://github.com/ylazakovich/car-service-platform/commit/930356e0d16ec72550a42c37ecc3c8c21ddcd810))
-* **analytics:** staff dashboard API, MoneyFlow/Procurement UI, demo data ([3cfa234](https://github.com/ylazakovich/car-service-platform/commit/3cfa2345e781b30f9aa26a1f335d3392f28d3e10))
-* **ci:** advisory test-pyramid quality gates (warnings only) ([379914f](https://github.com/ylazakovich/car-service-platform/commit/379914fa0789c2e95a30638b3bd1e55cc5007a8c))
-* **ci:** Allure E2E merge, Playwright report, env fragments ([2b7343c](https://github.com/ylazakovich/car-service-platform/commit/2b7343ca9bc394572b672be9ef3d5353097ac044))
-* **dashboard:** refine repair analytics and calendar ([cbafc6a](https://github.com/ylazakovich/car-service-platform/commit/cbafc6a780fd3c0714637583efe14e91f5abda48))
-* **deploy:** prepare production deployment for Railway ([513c2f6](https://github.com/ylazakovich/car-service-platform/commit/513c2f657ca95113ce13047f9651eedd27435440))
-* **deploy:** prepare production deployment for Railway ([99ef408](https://github.com/ylazakovich/car-service-platform/commit/99ef40847d3db6c79a8d291d47e13a337989d58e))
-* dev auto-login ([4e6b093](https://github.com/ylazakovich/car-service-platform/commit/4e6b0931200fb7d60d9ed7f1c758d26e5c01659b))
-* E2E на demo_data.sql в CI, без seed_e2e_data; dev auto-login admin ([286af1a](https://github.com/ylazakovich/car-service-platform/commit/286af1a4226361aecaaedc55c6fbe7c1e6f24dbe))
-* **e2e:** desktop and mobile Playwright projects with shared repair flows ([996ab30](https://github.com/ylazakovich/car-service-platform/commit/996ab30d93542f84bd7bd9e1c64a73a970584423))
-* estimated completion date, portal link copy button, portal UX cleanup ([5a0fc22](https://github.com/ylazakovich/car-service-platform/commit/5a0fc2244dcdcc7feebd02e7ed9cd0308b0ed1e3))
-* **frontend:** mobile Purchases viewport layout and registers updates ([15920b5](https://github.com/ylazakovich/car-service-platform/commit/15920b56d7b0bbf4e69814d953f6016e1f3093ee))
-* **frontend:** mobile shell, vehicles/purchases/users UX, dashboard tabs ([3992777](https://github.com/ylazakovich/car-service-platform/commit/3992777eb994023f405516ef57932c22f38ebac9))
-* **frontend:** slim mobile shell header, swipe section nav, menu hint ([e4fe257](https://github.com/ylazakovich/car-service-platform/commit/e4fe2574815792ab4a2a7ad603b0edb953adfaa8))
-* **kanban:** Fix [#03](https://github.com/ylazakovich/car-service-platform/issues/03) — wire vehicle data through to kanban card ([8462f1c](https://github.com/ylazakovich/car-service-platform/commit/8462f1c8b4cb3f7526a0baa8f1ef3c6fa7482441))
-* **mcp:** portable JSON profile and install-user.mjs for Cursor/Claude ([4ede030](https://github.com/ylazakovich/car-service-platform/commit/4ede03016fe600a8fb371cb40ae9112a7b93411a))
-* PDF certificate of completion export for completed repairs ([fe82fc3](https://github.com/ylazakovich/car-service-platform/commit/fe82fc3c844761b45475d6db82023c47f5c4170c))
-* PDF certificate of completion export for completed repairs ([0359fdb](https://github.com/ylazakovich/car-service-platform/commit/0359fdbb4871ecb3cd9ea9e23578c61442923a87))
-* purchases delivered flag, compact UX, demo SQL, Docker dev stack ([cf9c35e](https://github.com/ylazakovich/car-service-platform/commit/cf9c35ea1c144d4b8365a71d3871f1ee8794f0e0))
-* purchases delivered, compact UX, Docker dev stack ([2996fe9](https://github.com/ylazakovich/car-service-platform/commit/2996fe9a4ddb3d9795c444b39419804f734c8569))
-* **purchases:** invoice line parse templates, OCR, supplier in import ([bff5ea6](https://github.com/ylazakovich/car-service-platform/commit/bff5ea6aff28dcd0c79cbc9c5e95f0ed6815e89e))
-* **purchases:** invoice line templates, Tesseract OCR, supplier in preview ([909d3b6](https://github.com/ylazakovich/car-service-platform/commit/909d3b660cf2470d0d44bf6824de62012630a347))
-* **purchases:** invoice OCR stack, aliases, Registers invoice UX ([f8a4e9a](https://github.com/ylazakovich/car-service-platform/commit/f8a4e9a30d8ce491e70006ef16cc56196b025c1d))
-* regenerate portal link + unit tests for portal security ([a4da3e1](https://github.com/ylazakovich/car-service-platform/commit/a4da3e1db664a62c49bb2ba8ce35c2e1599d6e4e))
-* remove tracking code UI, restrict portal token regen to admin ([359de94](https://github.com/ylazakovich/car-service-platform/commit/359de94b98f14e2037cdfcc9099cdbce8611cbf9))
-* repair card UX improvements, i18n fixes, done-column management ([46423f7](https://github.com/ylazakovich/car-service-platform/commit/46423f7388f614b98eca895260855b6292226efa))
-* repair card UX improvements, i18n fixes, done-column management, unit tests ([25328aa](https://github.com/ylazakovich/car-service-platform/commit/25328aa99b574c3ebfd742ba1182ebd4882096e8))
-* **repairs:** GET latest PDF without new version; POST export for new version ([c73f25c](https://github.com/ylazakovich/car-service-platform/commit/c73f25c21c1db0d6e74d9fc7a4727162e85501db))
-* **repairs:** multi-service lines handoff and PDF totals ([8a53a75](https://github.com/ylazakovich/car-service-platform/commit/8a53a752b694041af7fc9137974b835879b0dae4))
-* **repairs:** multi-services for 1 vehicles, handoff to other master ([8bd2bd7](https://github.com/ylazakovich/car-service-platform/commit/8bd2bd7f43a641f435c5b9a05a6a3f8d5976abb8))
-* **repairs:** multiple service lines per repair, handoff card, demo SQL ([476a21e](https://github.com/ylazakovich/car-service-platform/commit/476a21e548314f76d3f280a8b34622a956fbc5f9))
-* **repairs:** persist PDF export and versioned financial snapshot ([4bc5725](https://github.com/ylazakovich/car-service-platform/commit/4bc57257f3cf995cb98c76ef5020ea4d550fe376))
-* secure client portal with 3D login flip, status tracker & link management ([da06e8e](https://github.com/ylazakovich/car-service-platform/commit/da06e8ee84eea9fcef24aec7ebd9780258a60061))
-* secure client portal with random token, API endpoint, and status stepper ([00e3a39](https://github.com/ylazakovich/car-service-platform/commit/00e3a3913d177b2c681bd066537d2a7020a84c41))
-* **staff:** redesign Vehicles tab to match Purchases workspace ([1e51070](https://github.com/ylazakovich/car-service-platform/commit/1e51070c40478f9a5f99ef5cba55ac90ea9f1213))
-* **staff:** redesign Vehicles tab to match Purchases workspace ([54186b8](https://github.com/ylazakovich/car-service-platform/commit/54186b8b3aa4c7110c743122b068d528e5293a41))
-* **staff:** registers, units of measure, services catalog, purchase bulk ([158a0e4](https://github.com/ylazakovich/car-service-platform/commit/158a0e4d33c6a97b3ee2130e3c43ae56cd55f195))
-* **staff:** repairs filter by assignee, smaller topbar buttons, favicon ([c6e1fe0](https://github.com/ylazakovich/car-service-platform/commit/c6e1fe05f93e78677afa733336390221ba8465ed))
-* **staff:** repairs filter, compact topbar buttons, favicon ([13d4ae8](https://github.com/ylazakovich/car-service-platform/commit/13d4ae8e9cd5a62e929ab538cc3c09dd306422e0))
-* **staff:** table-only purchases and vehicles lists ([d7b6004](https://github.com/ylazakovich/car-service-platform/commit/d7b60044dc7db808a928db4b17f3caf8a975f7ee))
-* **staff:** табличные списки закупок и ТС, индикатор акта без PDF ([cbc71ff](https://github.com/ylazakovich/car-service-platform/commit/cbc71ffe94b828fcb0ab9916b9db2383acff73eb))
-* **ui:** remove error-toast — validation logic unchanged, no visual notification ([caa19fe](https://github.com/ylazakovich/car-service-platform/commit/caa19fe73021ccdb930916d2876d18f6089db392))
-
+- Added the initial staff-facing car service workspace: repairs Kanban, vehicles, purchases, users, registers, dashboard analytics, and mobile-first staff shell.
+- Added secure client portal flows with tokenized access, 3D login flip, status tracker, portal link management, and copy/regeneration controls.
+- Added repair lifecycle support including picked-up completion, assignee filtering, service-line handoff, PDF certificates of completion, and versioned financial snapshots.
+- Added purchases and inventory foundations: delivered flags, bulk purchase flows, invoice OCR/templates, supplier previews, units of measure, and service catalog management.
+- Added demo and developer foundations including demo staff seed data, Docker dev stack, LAN/phone access helpers, and MCP profiles for agent workflows.
+- Added production deployment preparation for Railway and Sentry-ready monitoring hooks.
 
 ### Bug Fixes
 
-* add grid-template-rows:1fr to kanban board for proper column scroll ([744821e](https://github.com/ylazakovich/car-service-platform/commit/744821e852d6ded6b7b9603b82fc27818d9aab7c))
-* add lgtm suppression for CodeQL js/xss-through-dom false positives ([4d91cd1](https://github.com/ylazakovich/car-service-platform/commit/4d91cd10561ac766a0bb006642b6b26c244403b2))
-* **allure:** show CI environment in Report 3 via config variables ([77a98d9](https://github.com/ylazakovich/car-service-platform/commit/77a98d98ab6de87960904984ecd791050e9f7ea4))
-* **backend:** bind gunicorn on [::] only to avoid dual-stack conflict ([fbdd1d6](https://github.com/ylazakovich/car-service-platform/commit/fbdd1d6d79cf2e1956b69c87dfc9e857e6a91821))
-* **backend:** bind gunicorn on IPv6 for Railway private networking ([5d27fed](https://github.com/ylazakovich/car-service-platform/commit/5d27fed883b4a8e5a60d621b7d50e82ea31f95a6))
-* **backend:** buffer repair PDF GET to avoid unclosed file handles ([8d6dea6](https://github.com/ylazakovich/car-service-platform/commit/8d6dea6b5661a4c0c3c597679c624607f5780203))
-* **backend:** make gunicorn bind address configurable via GUNICORN_BIND env var ([6bdd260](https://github.com/ylazakovich/car-service-platform/commit/6bdd2609db024265988358630661a333fb767ed9))
-* **ci:** align smoke tests with purchases bulk API; stabilize Registers E2E ([e7331cd](https://github.com/ylazakovich/car-service-platform/commit/e7331cd8f712a63a55b2d23cb4107269f04558d0))
-* **ci:** Allure 3 allurerc, variables, and environments ([db94bbb](https://github.com/ylazakovich/car-service-platform/commit/db94bbbacd8360f4686f82694cd372ed4cd449a2))
-* **ci:** Allure 3 allurerc, variables, environments (frontend/backend) ([16117d2](https://github.com/ylazakovich/car-service-platform/commit/16117d252b70451966f6263e8575b1dbcd8701e0))
-* **ci:** pass STAFF_* to backend for E2E login; bust Allure Pages cache in PR link ([3c91a8d](https://github.com/ylazakovich/car-service-platform/commit/3c91a8d877d6ae431149404d5caa77c27bf71778))
-* **ci:** Playwright seeds and mobile shell; align E2E with UI ([0f1993e](https://github.com/ylazakovich/car-service-platform/commit/0f1993ebb720f1ea19446085097623a750b5f8d4))
-* **ci:** preserve failed PR pipeline status ([e52667e](https://github.com/ylazakovich/car-service-platform/commit/e52667ecba06110227ff965dc68ce4e874e8b87a))
-* **ci:** resolve migration graph and update smoke expectation ([e7f5e5e](https://github.com/ylazakovich/car-service-platform/commit/e7f5e5e2b5e293190f0aea25e866db289a4ffdab))
-* **ci:** revert Postgres digest to last known-good for GHA E2E ([9a9d13c](https://github.com/ylazakovich/car-service-platform/commit/9a9d13c55d2e863bea971938f225e4ed99a747c6))
-* **ci:** root allurerc shim for workflow_run default-branch YAML ([59158d2](https://github.com/ylazakovich/car-service-platform/commit/59158d2f1c2f6d8f53e8d8bb4e0975423c064cf4))
-* **ci:** smoke test duplicate vehicle meta; test(e2e): repair service lines ([36979f2](https://github.com/ylazakovich/car-service-platform/commit/36979f2e2f4f2a39903ea7ec5095c35cb0bc0036))
-* **compose:** explicitly set PORT=80 for frontend service ([3a99aa4](https://github.com/ylazakovich/car-service-platform/commit/3a99aa44c1418d51533999349f60383042ce5dad))
-* **compose:** widen db healthcheck window for CI cold start ([4614611](https://github.com/ylazakovich/car-service-platform/commit/4614611b5d87120c3ae0d4a5e8daa987363e02de))
-* **css:** fix mobile CSS cascade — move base display:none before media queries ([259d613](https://github.com/ylazakovich/car-service-platform/commit/259d61307f8733bff9581787df98f9d2636593cc))
-* **demo:** assign demo customers to seed staff for staff vehicle API scope ([babec76](https://github.com/ylazakovich/car-service-platform/commit/babec76e8e68ab972e6995db609f0929baff087d))
-* **deps:** update react major to v19 ([d72244f](https://github.com/ylazakovich/car-service-platform/commit/d72244ff2c66a8a53452e252e737a0b1339ae175))
-* **deps:** update react major to v19 (major) ([4000bb5](https://github.com/ylazakovich/car-service-platform/commit/4000bb5f903aa62f2f74140456875e9582cac4d0))
-* **dev:** LAN / phone dev stack, Vite on HTTP, UUID fallback ([3402415](https://github.com/ylazakovich/car-service-platform/commit/3402415853aaeb9badc95a61878dabc1de379c2f))
-* **dev:** LAN phone access, Vite host/origin, UUID on HTTP ([dbdbeb1](https://github.com/ylazakovich/car-service-platform/commit/dbdbeb1eac7e9810b6a417acb110ae7eef840b62))
-* **docker:** add id to pip cache mount for Railway BuildKit compatibility ([f9b3fc8](https://github.com/ylazakovich/car-service-platform/commit/f9b3fc8b9157334f3bdadddc299fb9ef63b7313a))
-* **docker:** remove BuildKit cache mount incompatible with Railway ([5b1f066](https://github.com/ylazakovich/car-service-platform/commit/5b1f0661093ec883cf56d8c5ea83a424231167db))
-* **docker:** remove npm cache mount incompatible with Railway ([c79cbdd](https://github.com/ylazakovich/car-service-platform/commit/c79cbddf18674a0af376b127acd5aafaa6030ae3))
-* **ds:** address CodeRabbit review suggestions ([7324559](https://github.com/ylazakovich/car-service-platform/commit/7324559028d49cf5f6e6b09edc354816970a805c))
-* **ds:** address CodeRabbit review suggestions ([c95de3e](https://github.com/ylazakovich/car-service-platform/commit/c95de3e876db5d7a5d5df0bf9c35b1e0b581877f))
-* **e2e:** admin repair modal — wait admin chrome, dialog by a11y name ([6638418](https://github.com/ylazakovich/car-service-platform/commit/663841813d6ce5d12765c6d0aa06a66cb381fff8))
-* **e2e:** align Registers tests with current tabs ([c8b9be8](https://github.com/ylazakovich/car-service-platform/commit/c8b9be8db7e54dd64713260eb8c18cdb6853f4a7))
-* **e2e:** avoid getByDisplayValue in StaffRegistersPage for CI Playwright ([b91dbf9](https://github.com/ylazakovich/car-service-platform/commit/b91dbf9ca0bf29e24173cbcea09fa615252d8b59))
-* **e2e:** avoid strict mode on mobile Repairs navigation ([95a76d8](https://github.com/ylazakovich/car-service-platform/commit/95a76d8ec97d8f9003c9b1a424e33b429d2d7849))
-* **e2e:** consumables OOS mobile — wait for Hide, accept desktop or mobile OOS surface ([8fc4558](https://github.com/ylazakovich/car-service-platform/commit/8fc45589690678267bd16d40bfbf301ed3b5c0c5))
-* **e2e:** force-click Completed Show more when FAB overlaps (mobile kanban) ([01a4b06](https://github.com/ylazakovich/car-service-platform/commit/01a4b066cff9f6d0b084eeeb51c950f8ddcd39d8))
-* **e2e:** force-click consumables OOS toggle when FAB overlaps (mobile) ([ac5b949](https://github.com/ylazakovich/car-service-platform/commit/ac5b949372a5bb3862470da6706e595ba178cd32))
-* **e2e:** locate repair modal by vehicle plate, not service name ([15f2f1b](https://github.com/ylazakovich/car-service-platform/commit/15f2f1b62206deaf2341c85ca731cef707b36141))
-* **e2e:** open consumables OOS via Enter — avoids FAB pointer interception on mobile ([d2135cf](https://github.com/ylazakovich/car-service-platform/commit/d2135cf64100c1d6d4efc578e51ed57673e4c2f7))
-* **e2e:** Registers mobile — assert shell title when page h2 hidden ([09bc80f](https://github.com/ylazakovich/car-service-platform/commit/09bc80f185d061bcf36d85f5b47fec78a9c5ea67))
-* **e2e:** Registers Services tab — mobile catalog list vs desktop table ([18ff5ca](https://github.com/ylazakovich/car-service-platform/commit/18ff5ca51930a0e66c36dbe0ac27e433abbc079d))
-* **e2e:** Registers title — branch on 820px media, avoid .or() strict dupes ([c8b9ad3](https://github.com/ylazakovich/car-service-platform/commit/c8b9ad3303e5a0c93c6ed061018138b4858fa87d))
-* **e2e:** repair service lines — Kanban cap, Line N a11y labels ([d1264ac](https://github.com/ylazakovich/car-service-platform/commit/d1264ac9122d0254210ed0552f96cd6b868c83b8))
-* **e2e:** restore vehicle_label as repair dialog title so E2E locators match ([ee88a55](https://github.com/ylazakovich/car-service-platform/commit/ee88a557b37f5f500af2540d0ceecab52112a46c))
-* **e2e:** restore warehouse section heading for Supplier portfolio ([1014378](https://github.com/ylazakovich/car-service-platform/commit/10143789ae97f2a56e42e8a836625fca3c2c7c73))
-* **e2e:** scope Registers mobile Units disclosure to .uom-admin-page ([012f293](https://github.com/ylazakovich/car-service-platform/commit/012f293f912cbf5178ed9074e1d20f979240494a))
-* **e2e:** service line inputs — getByLabel (datalist → combobox in Chromium) ([55a2e56](https://github.com/ylazakovich/car-service-platform/commit/55a2e5669c871d368ba23739d849063770b0491c))
-* **e2e:** stabilize mobile Jump-to-top FAB (scroll + wheel + longer wait) ([cc0d32e](https://github.com/ylazakovich/car-service-platform/commit/cc0d32e1f0f00bdc915d444514d204e6217407b6))
-* **frontend:** add moneyflow to default dashboard mock in smoke tests ([8d6dea6](https://github.com/ylazakovich/car-service-platform/commit/8d6dea6b5661a4c0c3c597679c624607f5780203))
-* **frontend:** add resolver and dynamic upstream to prevent stale DNS cache ([081bd84](https://github.com/ylazakovich/car-service-platform/commit/081bd84b98e79f6f6b6a6e5dd026483fe73cc9b6))
-* **frontend:** consumables purchases table — invoice column, column widths, headers, On hand input ([9ad76da](https://github.com/ylazakovich/car-service-platform/commit/9ad76da227d7808b03b067183302e9c889a6e2eb))
-* **frontend:** disable nginx aio to avoid io_setup syscall on Railway ([9e7b73e](https://github.com/ylazakovich/car-service-platform/commit/9e7b73efcab88d236f46587e20250acbcf208847))
-* **frontend:** enhance mobile header and layout for Repairs and Vehicles ([dc69b56](https://github.com/ylazakovich/car-service-platform/commit/dc69b56cd87a9e0c310baa566dfc5fa23f2673e3))
-* **frontend:** listen on Railway PORT env var instead of hardcoded 80 ([3577525](https://github.com/ylazakovich/car-service-platform/commit/3577525826ed0997cba643ec79b2513036489c71))
-* **frontend:** mobile staff modals — solid header/footer bars, flush sheet, no form overlap ([5952d7d](https://github.com/ylazakovich/car-service-platform/commit/5952d7daf05f3fb2fb0b63c06abb971dd5d00d53))
-* **frontend:** mobile staff shell header density and layout gaps ([482128b](https://github.com/ylazakovich/car-service-platform/commit/482128bf1f5570cafa6819ef214a1c89a85d4dd8))
-* **frontend:** Registers UX — desktop/mobile hints, table actions alignment ([98bb650](https://github.com/ylazakovich/car-service-platform/commit/98bb6500fcd7581ef9187bea545c93f899d20979))
-* **frontend:** replace main nginx.conf to explicitly disable aio and sendfile ([29020f0](https://github.com/ylazakovich/car-service-platform/commit/29020f098af76f57618823c4bbdeda8bf40fd60a))
-* **frontend:** restore repair card tracking code chip and copy on Repairs tab ([3b664b8](https://github.com/ylazakovich/car-service-platform/commit/3b664b8ba7975e98dbe1413ae17018e9dc07c7f6))
-* **frontend:** set aio off at http context level to fix Railway seccomp ([563b6eb](https://github.com/ylazakovich/car-service-platform/commit/563b6ebb5da73d6a0192e919ef4cb85145038858))
-* **frontend:** slim mobile modal headers for Repairs and Vehicles ([36ecdc0](https://github.com/ylazakovich/car-service-platform/commit/36ecdc0ee04de84afe5fbfe3db4614835c6eafe3))
-* **frontend:** type warehouse supplier rows with DashboardWarehouseSupplierRow ([fc748db](https://github.com/ylazakovich/car-service-platform/commit/fc748dba87a566f26ae6b72100a711911aff870b))
-* **frontend:** use explicit envsubst to protect nginx variables ([93ab3a2](https://github.com/ylazakovich/car-service-platform/commit/93ab3a20976e9e1e562332deea780e0f8c2308ca))
-* **frontend:** vehicle owner row layout, Repairs mobile kanban overlap ([52a8f13](https://github.com/ylazakovich/car-service-platform/commit/52a8f138b4ccfb031e9ede03bc8800453f0409a4))
-* **kanban:** restore tracking-chip to kanban card footer ([6ae64e8](https://github.com/ylazakovich/car-service-platform/commit/6ae64e8346867ee82f543c2f447650e9de186999))
-* make demo seed script idempotent with cleanup block ([d310741](https://github.com/ylazakovich/car-service-platform/commit/d310741341f4a3b0ffa64748e23d453850556d6c))
-* **mobile:** M01/M02/M05/M06/M07 — mobile layout fixes ([23ddb49](https://github.com/ylazakovich/car-service-platform/commit/23ddb49f669c855c3bc4f9e340e6c3fec15d0e44))
-* **mobile:** M04 — flatten folder-panel and uom-admin-page on mobile (Registers) ([b65df73](https://github.com/ylazakovich/car-service-platform/commit/b65df736c37a38c41e15401b6ef61b30ec010452))
-* **mobile:** M04 — remove folder-panel gradient/border on mobile (Registers) ([458f0e0](https://github.com/ylazakovich/car-service-platform/commit/458f0e0d4af4fb9eca0bbda1abacf4f547932879))
-* **mobile:** restore tab labels on mobile — reset min-width, use short labels ([4b9f916](https://github.com/ylazakovich/car-service-platform/commit/4b9f9168a643d84ca31acb8b6b7874edc2220ab6))
-* PDF GET buffering and valid dashboard mocks in smoke tests ([79f5e50](https://github.com/ylazakovich/car-service-platform/commit/79f5e50a0d15ccbce52218e635d766c4b8878535))
-* polish repair, purchase, and auth flows ([27af801](https://github.com/ylazakovich/car-service-platform/commit/27af8014d13cf32f53d4e8deaeb19895b16d3526))
-* polish repair, purchase, and auth flows ([f081af7](https://github.com/ylazakovich/car-service-platform/commit/f081af74bce304dd60399a9996526ab6551146f7))
-* **renovate:** allure-cli npm lookup + Allure group rule ([14fb4fd](https://github.com/ylazakovich/car-service-platform/commit/14fb4fdf47a9eae05f710d40b45a334a058e7431))
-* **renovate:** resolve allure-cli npm lookup + Allure group rule ([2f8d386](https://github.com/ylazakovich/car-service-platform/commit/2f8d38658d8412efd93aa60634eb055f2bc5f19e))
-* **repairs:** extend picked_up parity for mileage payload, act export, and repair notes visibility ([6416bc9](https://github.com/ylazakovich/car-service-platform/commit/6416bc990830b0a0f2d2c0f7673ddb7cbefa0fe1))
-* **repairs:** fetchRepair used trailing slash causing 404 — act total not updated without reload ([b192b3c](https://github.com/ylazakovich/car-service-platform/commit/b192b3c73d4079dc930dbc660a30c4036b6cbc47))
-* **repairs:** require master for in_progress/completed/picked_up status transitions ([f2d6e81](https://github.com/ylazakovich/car-service-platform/commit/f2d6e819680bf5c80af003147a00f8c8b51e79e1))
-* resolve merge with main, reuse setup-node composite for Allure ([27c8934](https://github.com/ylazakovich/car-service-platform/commit/27c8934bca7bfdde7813e15e795262232194a856))
-* sanitize image src URLs to prevent XSS (CodeQL High) ([6d47ca9](https://github.com/ylazakovich/car-service-platform/commit/6d47ca9ecf5e3fc1ca8342eaacfa60be5299b1ec))
-* sanitize image src URLs to prevent XSS (CodeQL High) ([1ca549f](https://github.com/ylazakovich/car-service-platform/commit/1ca549f687f6175d2d5b056e16610e551646e867))
-* scroll on repairs kanban + vehicle repair history tab ([f190235](https://github.com/ylazakovich/car-service-platform/commit/f1902356699478d502c5624ebba190fd497ab863))
-* scroll on repairs kanban + vehicle repair history tab ([06ad4f8](https://github.com/ylazakovich/car-service-platform/commit/06ad4f81833f8ffaa4458c5d56c45f52584edd5d))
-* **security:** hide internal invoice-parse exceptions from API clients ([2adf48b](https://github.com/ylazakovich/car-service-platform/commit/2adf48b315433ccf9b9c46e9b99d0399b7a24425))
-* **security:** prevent exception details from leaking into API responses ([0cc1b36](https://github.com/ylazakovich/car-service-platform/commit/0cc1b36c3943e25f9424895f56f069556826b6fa))
-* **staff:** repair modal UX — compact status strip, modal height, services editor revert ([46bc6c8](https://github.com/ylazakovich/car-service-platform/commit/46bc6c864fffb3a39585919833f2f9dbcc763c67))
-* strengthen sanitizeImageUrl with URL parsing and whitespace check (Copilot suggestion) ([e8254b7](https://github.com/ylazakovich/car-service-platform/commit/e8254b770244381495e59b9e073eb3905fbb4ed6))
-* **test:** correct button label in smoke tests — '+ Add new repair' not 'Add New Repair' ([7ee0225](https://github.com/ylazakovich/car-service-platform/commit/7ee0225a3a4d038abc922b10f9cf918be4555fed))
-* **tests:** assign master in smoke test fixtures so status transitions pass validation ([9b22ddd](https://github.com/ylazakovich/car-service-platform/commit/9b22ddd0927f76c4a26f30844ce0747cbf19750e))
-* **tests:** navigate to Repairs before asserting TodaySummary button ([9900ad2](https://github.com/ylazakovich/car-service-platform/commit/9900ad2c2f64804678a50944d8138f0818cf81c2))
-* **ui:** consumables desktop table layout (inventory columns) ([778e52b](https://github.com/ylazakovich/car-service-platform/commit/778e52b40db327e88b22c7ee9579aa5f4bf5cf1d))
-* **ui:** move compact purchases qty column before sale total ([7e13e09](https://github.com/ylazakovich/car-service-platform/commit/7e13e093ddfbd4acfee54416bfa39c9919a477ad))
+- Polished repair, purchase, auth, dashboard, and mobile layouts across the first release cycle.
+- Hardened CI, Allure reporting, Playwright E2E setup, test-pyramid snapshots, and workflow report publishing.
+- Fixed Railway networking/runtime issues, PDF export handling, migration graph stability, and frontend security hardening.
+- Stabilized mobile staff modals, kanban scrolling, vehicle repair history, Registers UX, and consumables table layouts.
 
+### CI
 
-### Reverts
-
-* **frontend:** remove resolver — 127.0.0.11 unavailable on Railway ([b9abcff](https://github.com/ylazakovich/car-service-platform/commit/b9abcffb7d4b85be34017362cd391a33f99809cb))
+- Added desktop and mobile Playwright projects, smoke tests, Allure report merging, GitHub Pages report deployment, and advisory test-pyramid quality gates.
