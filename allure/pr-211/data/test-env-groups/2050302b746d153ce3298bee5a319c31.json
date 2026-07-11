@@ -1,1 +1,1 @@
-{"id":"2050302b746d153ce3298bee5a319c31","fullName":"repairs.tests.RepairApiTests#test_create_repair_requires_price_for_new_service_line","name":"test_create_repair_requires_price_for_new_service_line","status":"passed","testResultsByEnv":{"backend":"2b21c797a67faf254bf4a2de61b400d2"}}
+{"id":"2050302b746d153ce3298bee5a319c31","fullName":"repairs.tests.RepairApiTests#test_create_repair_requires_price_for_new_service_line","name":"test_create_repair_requires_price_for_new_service_line","status":"passed","testResultsByEnv":{"backend":"2269a02f43dd8d10291ace96e825c1bc"}}
