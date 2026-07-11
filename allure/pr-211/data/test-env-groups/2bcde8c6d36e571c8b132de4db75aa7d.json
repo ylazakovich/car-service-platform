@@ -1,1 +1,1 @@
-{"id":"2bcde8c6d36e571c8b132de4db75aa7d","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_shop_consumables_rejects_vehicle","name":"test_bulk_create_shop_consumables_rejects_vehicle","status":"passed","testResultsByEnv":{"backend":"dca37df24d957e0a24062852f7e906f6"}}
+{"id":"2bcde8c6d36e571c8b132de4db75aa7d","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_shop_consumables_rejects_vehicle","name":"test_bulk_create_shop_consumables_rejects_vehicle","status":"passed","testResultsByEnv":{"backend":"4d2b8545b9095f2da9a1c9682f2b2e87"}}
