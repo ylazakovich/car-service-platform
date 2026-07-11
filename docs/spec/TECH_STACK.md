@@ -2,8 +2,8 @@
 
 Technical baseline for `car-service-platform`.
 
-- Last updated: `2026-06-02`
-- Status: `current implemented stack + M3/M4 guardrails`
+- Last updated: `2026-07-11`
+- Status: `current implemented stack + M3/M4 guardrails + quality roadmap link`
 
 ## 1) Current Stack
 
@@ -159,12 +159,25 @@ Add only when a real requirement appears:
 - Payment/tax/discount engine.
 - GraphQL, event bus, Elasticsearch, microservices.
 
-## 8) Source Of Truth
+## 8) Quality Hardening Roadmap
+
+See [`TECH_QUALITY_ROADMAP.md`](./TECH_QUALITY_ROADMAP.md) for technology choices that improve product quality without changing the baseline monolith shape.
+
+Near-term defaults:
+
+- Add API contracts and generated/frontend-derived types before large API expansion.
+- Use a React server-state layer before adding broad realtime behavior.
+- Add a durable audit/domain event trail before relying on ephemeral UI updates.
+- Introduce `Redis` + a job runner for a concrete async workflow such as OCR, retryable email, or heavy document generation.
+- Prefer polling or Server-Sent Events for one-way freshness/progress; use WebSockets only for documented multi-user collaboration or bidirectional workflows.
+
+## 9) Source Of Truth
 
 - Product strategy: [`PRODUCT.md`](./PRODUCT.md)
 - Execution backlog: [`TASKS.md`](./TASKS.md)
 - Domain rules: [`DOMAIN_RULES.md`](./DOMAIN_RULES.md)
 - Technical baseline: this file ([`TECH_STACK.md`](./TECH_STACK.md))
+- Quality hardening roadmap: [`TECH_QUALITY_ROADMAP.md`](./TECH_QUALITY_ROADMAP.md)
 - Run / dev / prod / LAN: [`RUNBOOK.md`](./RUNBOOK.md)
 - Deployment: [`RAILWAY_DEPLOY.md`](./RAILWAY_DEPLOY.md)
 - E2E: `docs/testing/playwright-e2e-framework.md`

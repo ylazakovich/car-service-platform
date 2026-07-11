@@ -11,6 +11,7 @@ Bootstrap for an autoservice operations platform: Django + DRF backend, React + 
 | **`scripts/`** index (compose, db, generated demo data, MCP, Allure, CI) | [`docs/spec/SCRIPTS.md`](docs/spec/SCRIPTS.md) |
 | Domain rules (statuses, money, PDF, dashboard) | [`docs/spec/DOMAIN_RULES.md`](docs/spec/DOMAIN_RULES.md) |
 | Technical stack & architecture | [`docs/spec/TECH_STACK.md`](docs/spec/TECH_STACK.md) |
+| Tech quality hardening roadmap | [`docs/spec/TECH_QUALITY_ROADMAP.md`](docs/spec/TECH_QUALITY_ROADMAP.md) |
 | Agent workflow (roles, scope, routing) | [`AGENTS.md`](AGENTS.md) |
 | Optional: IDE agents — MCP / verify / bootstrap | [`docs/dev/agent-session-bootstrap.md`](docs/dev/agent-session-bootstrap.md) |
 | **Test pyramid** (unit → API → UI/E2E) + latest main snapshot | [`docs/testing/test-pyramid.md`](docs/testing/test-pyramid.md) · [`docs/testing/latest/README.md`](docs/testing/latest/README.md) |
