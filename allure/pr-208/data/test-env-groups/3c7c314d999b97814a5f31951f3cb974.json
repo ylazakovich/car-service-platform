@@ -1,1 +1,1 @@
-{"id":"3c7c314d999b97814a5f31951f3cb974","fullName":"django-admin-repairs.spec.ts:180:3","name":"Repair — update: change service_name and verify in changelist","status":"passed","testResultsByEnv":{"e2e":"b6cb34b3866131554e18bc5a4aca1c08"}}
+{"id":"3c7c314d999b97814a5f31951f3cb974","fullName":"django-admin-repairs.spec.ts:180:3","name":"Repair — update: change service_name and verify in changelist","status":"passed","testResultsByEnv":{"e2e":"36275ddf4d94e874a70aa7884d51d3a6"}}
