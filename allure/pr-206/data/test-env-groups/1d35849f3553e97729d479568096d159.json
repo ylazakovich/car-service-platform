@@ -1,1 +1,1 @@
-{"id":"1d35849f3553e97729d479568096d159","fullName":"users.tests.AuthApiTests#test_login_sets_persistent_session_cookie","name":"test_login_sets_persistent_session_cookie","status":"passed","testResultsByEnv":{"backend":"a26c9745ab2ee169812caeae87e79465"}}
+{"id":"1d35849f3553e97729d479568096d159","fullName":"users.tests.AuthApiTests#test_login_sets_persistent_session_cookie","name":"test_login_sets_persistent_session_cookie","status":"passed","testResultsByEnv":{"backend":"868499df18979b4fd488f1ec32c51b87"}}
