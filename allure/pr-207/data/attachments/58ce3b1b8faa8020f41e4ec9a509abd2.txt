@@ -1,0 +1,1 @@
+{"timestamp": "2026-07-16 11:08:36,870", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Bad Request: /api/purchases/invoice-parse-templates/", "request": "<WSGIRequest: POST '/api/purchases/invoice-parse-templates/'>", "status_code": 400}
