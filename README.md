@@ -2,6 +2,12 @@
 
 Bootstrap for an autoservice operations platform: Django + DRF backend, React + Vite frontend, Docker Compose.
 
+## Product showcase
+
+Human-facing visual tour captured from the Docker dev stack with generated demo data: [`docs/showcase/README.md`](docs/showcase/README.md).
+
+![Car Service Platform dashboard](docs/showcase/screenshots/03-admin-dashboard-moneyflow.png)
+
 ## Documentation (canonical)
 
 | Topic | Location |

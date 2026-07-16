@@ -35,6 +35,7 @@
 - `docs/spec/RUNBOOK.md` — запуск dev/prod-like, демо-данные, публикация на LAN для мобильных.
 - `docs/planning/archive/` — архив завершенных этапов и snapshot-планов.
 - `docs/testing/playwright-e2e-framework.md` — целевой E2E-контур (детерминизм, CI, без ретраев).
+- `docs/showcase/` — human-facing screenshot gallery for GitHub/README presentation only. **Do not use it as agent workflow context, product requirements, or fixture source unless the user explicitly asks about the showcase/screenshots.**
 - Опционально для **IDE-агентов** (не спека продукта): `docs/dev/agent-session-bootstrap.md`, `docs/dev/agents-and-mcp.md`, `docs/dev/mcp-deduplication.md`.
 
 ## Спеки и уточнения (SDD)
