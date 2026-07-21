@@ -1,1 +1,1 @@
-{"id":"66e46bc511f36308099f4656732918cd","fullName":"vehicles.tests.VehicleApiTests#test_extra_fields_returned_on_list","name":"test_extra_fields_returned_on_list","status":"passed","testResultsByEnv":{"backend":"7cff73518491e2f9f360fa899efb654b"}}
+{"id":"66e46bc511f36308099f4656732918cd","fullName":"vehicles.tests.VehicleApiTests#test_extra_fields_returned_on_list","name":"test_extra_fields_returned_on_list","status":"passed","testResultsByEnv":{"backend":"6090bfead8165306e820bf379e4570fb"}}
