@@ -126,7 +126,7 @@ jobs:
           cp .env.example .env
           perl -0pi -e 's/^LOG_FORMAT=text$/LOG_FORMAT=json/m; s/^LOG_LEVEL=DEBUG$/LOG_LEVEL=INFO/m' .env
 
-      - uses: ylazakovich/project-toolkit/actions/compose-up@68f36f489e423e51ffbd9ad1d8ba42795c50aa5f # v1.1.1
+      - uses: ylazakovich/project-toolkit/actions/compose-up@cca33fbcc71864f2a08d7309cb17f93b1efd0c26 # v2.0.0
         env:
           DOCKER_BUILDKIT: "1"
           COMPOSE_DOCKER_CLI_BUILD: "1"
@@ -139,7 +139,6 @@ jobs:
           wait-for-health: "true"
           wait-urls: http://127.0.0.1:4173/
           timeout-seconds: "180"
-          down-on-timeout: "true"
 
       - name: Wait for API health body
         shell: bash
