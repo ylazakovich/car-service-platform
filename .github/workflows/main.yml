@@ -31,7 +31,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-java-gradle
+      - uses: ylazakovich/project-toolkit/actions/setup-java-gradle@68f36f489e423e51ffbd9ad1d8ba42795c50aa5f # v1.1.1
+        with:
+          java-version: "21"
+          distribution: temurin
+          working-directory: tools/datafaker-generator
+          cache-dependencies: "true"
+          validate-wrappers: "true"
 
       - name: Compile, lint, test and install distribution
         run: ./gradlew check installDist --no-daemon --console=plain --stacktrace
