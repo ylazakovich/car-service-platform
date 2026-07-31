@@ -117,13 +117,45 @@ jobs:
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
-      - uses: ./.github/actions/compose-up
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Prepare CSP Compose env
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          perl -0pi -e 's/^LOG_FORMAT=text$/LOG_FORMAT=json/m; s/^LOG_LEVEL=DEBUG$/LOG_LEVEL=INFO/m' .env
+
+      - uses: ylazakovich/project-toolkit/actions/compose-up@68f36f489e423e51ffbd9ad1d8ba42795c50aa5f # v1.1.1
+        env:
+          DOCKER_BUILDKIT: "1"
+          COMPOSE_DOCKER_CLI_BUILD: "1"
         with:
-          env-profile: json-info
-          wait-for-frontend: "true"
-          wait-for-api-health: "true"
-          api-health-url: "http://127.0.0.1:4173/api/health"
-          github-actions-cache: "true"
+          compose-files: |
+            docker-compose.yml
+            docker-compose.ci.cache.yml
+          services: db backend frontend
+          build: "true"
+          wait-for-health: "true"
+          wait-urls: http://127.0.0.1:4173/
+          timeout-seconds: "180"
+          down-on-timeout: "true"
+
+      - name: Wait for API health body
+        shell: bash
+        run: |
+          set -euo pipefail
+          API_HEALTH_URL=http://127.0.0.1:4173/api/health
+          for i in $(seq 1 90); do
+            if curl -sf -- "$API_HEALTH_URL" | grep -q '"status"'; then
+              echo "api health body ok"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API health body check failed: $API_HEALTH_URL"
+          docker compose logs --tail=120 || true
+          exit 1
 
       - name: Run Playwright
         env:
