@@ -1,1 +1,0 @@
-{"timestamp": "2026-07-31 14:25:02,468", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Bad Request: /api/purchases/po/pdf/", "request": "<WSGIRequest: POST '/api/purchases/po/pdf/'>", "status_code": 400}
