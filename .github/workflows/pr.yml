@@ -314,19 +314,7 @@ jobs:
 
       - name: Wait for API health body
         shell: bash
-        run: |
-          set -euo pipefail
-          API_HEALTH_URL=http://127.0.0.1:4173/api/health
-          for i in $(seq 1 90); do
-            if curl -sf -- "$API_HEALTH_URL" | grep -q '"status"'; then
-              echo "api health body ok"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "API health body check failed: $API_HEALTH_URL"
-          docker compose logs --tail=120 || true
-          exit 1
+        run: bash scripts/ci/wait-for-api-health-body.sh http://127.0.0.1:4173/api/health
 
       - name: Run Playwright (${{ matrix.title }})
         env:
