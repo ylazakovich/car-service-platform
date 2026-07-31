@@ -34,9 +34,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-node
+      - uses: ylazakovich/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
         with:
+          node-version: "24"
           install-dependencies: "false"
+          cache-dependencies: "false"
 
       # workflow_run.pull_requests is often empty (forks, timing). Fall back: commit → PR (gh api).
       - name: Resolve PR number (GitHub Pages path)

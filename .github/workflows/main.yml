@@ -58,7 +58,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-node
+      - uses: ylazakovich/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
+        with:
+          node-version: "24"
+          working-directory: frontend
 
       - name: Build
         run: npm run build
