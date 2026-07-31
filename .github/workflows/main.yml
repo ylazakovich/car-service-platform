@@ -78,7 +78,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-python
+      - uses: ylazakovich/project-toolkit/actions/setup-python@f988361ce9f0cb7c230d2f7d3276b3b6fe4b68d2 # v1.1.0
+        with:
+          python-version: "3.14"
+          working-directory: backend
+          package-manager: pip
+          requirements-file: requirements.txt
 
       - name: System check
         env:
