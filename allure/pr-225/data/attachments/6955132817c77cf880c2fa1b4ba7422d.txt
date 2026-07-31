@@ -1,6 +1,0 @@
-{"timestamp": "2026-07-30 16:54:37,695", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Unauthorized: /api/auth/login", "request": "<WSGIRequest: POST '/api/auth/login'>", "status_code": 401}
-{"timestamp": "2026-07-30 16:54:37,696", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Unauthorized: /api/auth/login", "request": "<WSGIRequest: POST '/api/auth/login'>", "status_code": 401}
-{"timestamp": "2026-07-30 16:54:37,698", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Unauthorized: /api/auth/login", "request": "<WSGIRequest: POST '/api/auth/login'>", "status_code": 401}
-{"timestamp": "2026-07-30 16:54:37,699", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Unauthorized: /api/auth/login", "request": "<WSGIRequest: POST '/api/auth/login'>", "status_code": 401}
-{"timestamp": "2026-07-30 16:54:37,700", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Unauthorized: /api/auth/login", "request": "<WSGIRequest: POST '/api/auth/login'>", "status_code": 401}
-{"timestamp": "2026-07-30 16:54:37,706", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Unauthorized: /api/auth/login", "request": "<WSGIRequest: POST '/api/auth/login'>", "status_code": 401}
