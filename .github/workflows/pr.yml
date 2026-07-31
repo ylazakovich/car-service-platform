@@ -287,14 +287,33 @@ jobs:
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
-      - uses: ./.github/actions/compose-up
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+
+      - name: Prepare CSP Compose env
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          perl -0pi -e 's/^LOG_FORMAT=text$/LOG_FORMAT=json/m; s/^LOG_LEVEL=DEBUG$/LOG_LEVEL=INFO/m' .env
+
+      - uses: ylazakovich/project-toolkit/actions/compose-up@cca33fbcc71864f2a08d7309cb17f93b1efd0c26 # v2.0.0
+        env:
+          DOCKER_BUILDKIT: "1"
+          COMPOSE_DOCKER_CLI_BUILD: "1"
         with:
-          env-profile: json-info
-          wait-for-frontend: "true"
-          wait-for-api-health: "true"
-          api-health-url: "http://127.0.0.1:4173/api/health"
-          # Fork PRs: token is read-only — GHA cache backend needs actions: write
-          github-actions-cache: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'true' || 'false' }}
+          compose-files: |
+            docker-compose.yml
+            ${{ github.event.pull_request.head.repo.full_name == github.repository && 'docker-compose.ci.cache.yml' || '' }}
+          services: db backend frontend
+          build: "true"
+          wait-for-health: "true"
+          wait-urls: http://127.0.0.1:4173/
+          timeout-seconds: "180"
+
+      - name: Wait for API health body
+        shell: bash
+        run: bash scripts/ci/wait-for-api-health-body.sh http://127.0.0.1:4173/api/health
 
       - name: Run Playwright (${{ matrix.title }})
         env:
