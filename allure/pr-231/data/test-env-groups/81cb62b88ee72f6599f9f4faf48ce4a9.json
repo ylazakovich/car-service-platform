@@ -1,0 +1,1 @@
+{"id":"81cb62b88ee72f6599f9f4faf48ce4a9","fullName":"car-service-platform-frontend:src/api/repairs.test.ts#repair PDF API fetchLatestRepairPdf returns null on 404","name":"fetchLatestRepairPdf returns null on 404","status":"passed","testResultsByEnv":{"frontend":"d69c27f23a32af28ef183de4732aa921"}}

@@ -1,0 +1,1 @@
+{"id":"cfdf5c964380765b9e6e833ca61b6771","fullName":"car-service-platform-frontend:src/features/staff/shared/repairs.test.ts#repair shared presentation helpers parseVehicleProfileMileageKm handles decimal point is rejected","name":"parseVehicleProfileMileageKm handles decimal point is rejected","status":"passed","testResultsByEnv":{"frontend":"20e02f9c21a0066be78483d8b0f5c183"}}
