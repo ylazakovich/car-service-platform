@@ -1,6 +1,0 @@
-WARNING  django.request:log.py:249 Unauthorized: /api/auth/login
-WARNING  django.request:log.py:249 Unauthorized: /api/auth/login
-WARNING  django.request:log.py:249 Unauthorized: /api/auth/login
-WARNING  django.request:log.py:249 Unauthorized: /api/auth/login
-WARNING  django.request:log.py:249 Unauthorized: /api/auth/login
-WARNING  django.request:log.py:249 Unauthorized: /api/auth/login

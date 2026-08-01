@@ -1,1 +1,0 @@
-{"id":"d4e3cd9a40253f41b03fbecb16cf5dfe","fullName":"purchases.tests.PurchaseApiTests#test_update_consumable_current_stock_quantity_rejects_value_above_quantity","name":"test_update_consumable_current_stock_quantity_rejects_value_above_quantity","status":"passed","testResultsByEnv":{"backend":"6d1e837b1af18593b5f610bbd7ce172b"}}

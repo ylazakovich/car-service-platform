@@ -1,1 +1,0 @@
-{"id":"9eacebb1b36b22947daffadf08891cd5","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_does_not_overwrite_existing_supplier_nip","name":"test_bulk_create_does_not_overwrite_existing_supplier_nip","status":"passed","testResultsByEnv":{"backend":"9171fc4a64c99854a4516dea398dd974"}}

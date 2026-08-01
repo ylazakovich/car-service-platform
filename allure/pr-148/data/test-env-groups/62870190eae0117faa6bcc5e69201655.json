@@ -1,1 +1,0 @@
-{"id":"62870190eae0117faa6bcc5e69201655","fullName":"car-service-platform-frontend:src/App.smoke.test.tsx#bootstrap application kanban card omits time element when started_at is null","name":"kanban card omits time element when started_at is null","status":"passed","testResultsByEnv":{"frontend":"6d22c5e33a9d8723d1f29ff66ddfce35"}}

@@ -1,1 +1,0 @@
-{"id":"bbd18223a4db193a4792ddc99a002066","fullName":"staff-repair-picked-up-status.spec.ts:85:3","name":"Mark as Picked Up removes repair from kanban and decreases Ready to pickup counter","status":"passed","testResultsByEnv":{"e2e":"8344af3d095dcddf77160f2270bab2f3"}}

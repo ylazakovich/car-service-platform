@@ -1,1 +1,0 @@
-{"id":"b7c49ab1454cd5d667077506835c133f","fullName":"purchase-invoice-ocr-failure.spec.ts:33:3","name":"shows error when PDF cannot be parsed (no matching pattern)","status":"passed","testResultsByEnv":{"e2e":"cb377b5472c70a701f8bf40a7f33a1f1"}}

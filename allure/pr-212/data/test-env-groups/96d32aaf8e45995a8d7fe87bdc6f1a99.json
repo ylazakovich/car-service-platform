@@ -1,1 +1,0 @@
-{"id":"96d32aaf8e45995a8d7fe87bdc6f1a99","fullName":"car-service-platform-frontend:src/components/repairs/RepairModal.test.tsx#Repair modal keyboard handling closes the repair shell on Escape regardless of focus","name":"closes the repair shell on Escape regardless of focus","status":"passed","testResultsByEnv":{"frontend":"19e2787854cdd921947a89d06e9c4ff6"}}

@@ -1,1 +1,0 @@
-{"id":"9eb814cd835a1a7150cce7df8bd7f897","fullName":"src/viewportLayoutSync.test.ts#installViewportLayoutSync clears the CSS variable when visualViewport is absent after resize","name":"clears the CSS variable when visualViewport is absent after resize","status":"passed","testResultsByEnv":{"frontend":"61f8aa38e019da7d8f36a6bda849f7fd"}}

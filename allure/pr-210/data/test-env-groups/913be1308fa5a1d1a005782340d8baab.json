@@ -1,1 +1,0 @@
-{"id":"913be1308fa5a1d1a005782340d8baab","fullName":"car-service-platform-frontend:src/App.smoke.test.tsx#bootstrap application blocks dragging a repair to Completed until odometer when returned is filled","name":"blocks dragging a repair to Completed until odometer when returned is filled","status":"passed","testResultsByEnv":{"frontend":"0a24fee5da3adfdea8e7a1c529890e23"}}

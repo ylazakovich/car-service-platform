@@ -1,1 +1,0 @@
-{"id":"1b1a8bc77c7e1c0dce89611112bbb3d0","fullName":"car-service-platform-frontend:src/api/portal.test.ts#fetchPortalRepair URL-encodes special characters in the access code","name":"URL-encodes special characters in the access code","status":"passed","testResultsByEnv":{"frontend":"7c5e8295f0fa823ef041144400bdc3cc"}}

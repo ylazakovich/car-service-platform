@@ -1,1 +1,0 @@
-{"timestamp": "2026-04-08 01:40:54,919", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/auth/users/3/", "request": "<WSGIRequest: PATCH '/api/auth/users/3/'>", "status_code": 403}
