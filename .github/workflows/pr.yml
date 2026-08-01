@@ -96,12 +96,13 @@ jobs:
         run: bash ../scripts/ci/write-allure-ci-env-fragment.sh Frontend allure-results
         working-directory: frontend
 
-      - uses: ./.github/actions/junit-step-summary
+      - uses: quokkify/project-toolkit/actions/junit-step-summary@1b27865ceadc184db557e9bddc34f3c176176795 # v2.1.0
         if: always()
         with:
-          cwd: frontend
-          variant: frontend-single
+          working-directory: frontend
+          junit-paths: test-results/junit.xml
           title: Frontend Tests
+          fail-on-missing: "true"
 
       - name: Upload test results
         if: always()
@@ -147,12 +148,13 @@ jobs:
         run: bash ../scripts/ci/write-allure-ci-env-fragment.sh "Client Portal Status" allure-results
         working-directory: frontend
 
-      - uses: ./.github/actions/junit-step-summary
+      - uses: quokkify/project-toolkit/actions/junit-step-summary@1b27865ceadc184db557e9bddc34f3c176176795 # v2.1.0
         if: always()
         with:
-          cwd: frontend
-          variant: frontend-single
+          working-directory: frontend
+          junit-paths: test-results/junit.xml
           title: Client Portal Status Tests
+          fail-on-missing: "true"
 
       - name: Upload test results
         if: always()
@@ -219,12 +221,13 @@ jobs:
         run: bash ../scripts/ci/write-allure-ci-env-fragment.sh Backend allure-results
         working-directory: backend
 
-      - uses: ./.github/actions/junit-step-summary
+      - uses: quokkify/project-toolkit/actions/junit-step-summary@1b27865ceadc184db557e9bddc34f3c176176795 # v2.1.0
         if: always()
         with:
-          cwd: backend
-          variant: backend-pytest
+          working-directory: backend
+          junit-paths: test-results/*.xml
           title: Backend Tests
+          fail-on-missing: "true"
 
       - name: Upload test results
         if: always()
@@ -346,12 +349,13 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
         run: bash scripts/ci/e2e-docker-stats-summarize.sh
 
-      - uses: ./.github/actions/junit-step-summary
+      - uses: quokkify/project-toolkit/actions/junit-step-summary@1b27865ceadc184db557e9bddc34f3c176176795 # v2.1.0
         if: always()
         with:
-          cwd: frontend
-          variant: e2e-playwright
+          working-directory: frontend
+          junit-paths: test-results/e2e-junit.xml
           title: "End-to-end: ${{ matrix.title }}"
+          fail-on-missing: "true"
 
       - name: Allure CI env fragment (E2E ${{ matrix.title }})
         if: always()
