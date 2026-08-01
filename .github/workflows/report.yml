@@ -238,11 +238,11 @@ jobs:
       # Per-PR folder on gh-pages: allure/pr-<N>/ — rsync --delete only that subdir; other PR folders stay intact.
       - name: Deploy Allure HTML to GitHub Pages
         if: ${{ steps.allure.outputs.present == 'true' && steps.pr_ctx.outputs.has_pr == 'true' && steps.fork.outputs.fork == 'false' }}
-        uses: ./.github/actions/deploy-gh-pages-subdir
+        uses: quokkify/project-toolkit/actions/deploy-gh-pages-subdir@01d68b8ee52d4a226910f54d91309f9bff489075 # v2.4.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: allure-report
-          destination_dir: allure/pr-${{ steps.pr_ctx.outputs.number }}
+          publish-dir: allure-report
+          destination-dir: allure/pr-${{ steps.pr_ctx.outputs.number }}
 
       - name: Post or update Allure comment on PR
         if: steps.allure.outputs.present == 'true'
