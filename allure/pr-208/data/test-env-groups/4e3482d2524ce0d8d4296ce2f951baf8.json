@@ -1,1 +1,1 @@
-{"id":"4e3482d2524ce0d8d4296ce2f951baf8","fullName":"car-service-platform-frontend:src/api/portal.test.ts#fetchPortalRepair calls the correct portal endpoint","name":"calls the correct portal endpoint","status":"passed","testResultsByEnv":{"frontend":"8bf092eec4e03c34f543a97f257dd710"}}
+{"id":"4e3482d2524ce0d8d4296ce2f951baf8","fullName":"car-service-platform-frontend:src/api/portal.test.ts#fetchPortalRepair calls the correct portal endpoint","name":"calls the correct portal endpoint","status":"passed","testResultsByEnv":{"frontend":"565f023e1a4ee03d3e87bfdeb3793949"}}
