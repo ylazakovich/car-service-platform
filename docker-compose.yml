@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-car_service_platform}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-car_service_platform}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     logging:
       driver: json-file
       options:
