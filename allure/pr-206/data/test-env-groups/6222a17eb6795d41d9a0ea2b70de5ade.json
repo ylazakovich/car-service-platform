@@ -1,1 +1,1 @@
-{"id":"6222a17eb6795d41d9a0ea2b70de5ade","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_purchases_shared_invoice","name":"test_bulk_create_purchases_shared_invoice","status":"passed","testResultsByEnv":{"backend":"7a0296bc8a5b792139b005b1f5200302"}}
+{"id":"6222a17eb6795d41d9a0ea2b70de5ade","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_purchases_shared_invoice","name":"test_bulk_create_purchases_shared_invoice","status":"passed","testResultsByEnv":{"backend":"ff8558193a24a161fbb1247335599269"}}

@@ -1,1 +1,1 @@
-{"id":"de2a501c3d2ba1503c5ca83fa4830458","fullName":"car-service-platform-frontend:src/features/staff/hooks/useRepairs.test.ts#sanitizeImageUrl rejects empty string","name":"rejects empty string","status":"passed","testResultsByEnv":{"frontend":"627eeb0be9a3f545454b044fc2be22ff"}}
+{"id":"de2a501c3d2ba1503c5ca83fa4830458","fullName":"car-service-platform-frontend:src/features/staff/hooks/useRepairs.test.ts#sanitizeImageUrl rejects empty string","name":"rejects empty string","status":"passed","testResultsByEnv":{"frontend":"e1550da5f58e7e5af2b43fe18f79dd9b"}}
