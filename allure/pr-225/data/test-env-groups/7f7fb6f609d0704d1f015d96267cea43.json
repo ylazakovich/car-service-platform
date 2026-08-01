@@ -1,1 +1,1 @@
-{"id":"7f7fb6f609d0704d1f015d96267cea43","fullName":"staff-mobile-navigation.spec.ts:33:3","name":"workspace menu lists only staff sections, then closes on backdrop","status":"skipped","testResultsByEnv":{"e2e":"d925ff352093fdf50346e410a6b898d9"}}
+{"id":"7f7fb6f609d0704d1f015d96267cea43","fullName":"staff-mobile-navigation.spec.ts:33:3","name":"workspace menu lists only staff sections, then closes on backdrop","status":"passed","testResultsByEnv":{"e2e":"91388f13dd781433243a66c2380ec45d"}}

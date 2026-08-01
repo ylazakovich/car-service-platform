@@ -1,1 +1,1 @@
-{"id":"f2da65230902512bd1d6f085559db6a2","fullName":"staff-repair-picked-up-status.spec.ts:249:3","name":"Mark as Picked Up keeps repair in Completed as a dimmed card","status":"skipped","testResultsByEnv":{"e2e":"ea5e2ac124ba6f3f487aaad8693ffb42"}}
+{"id":"f2da65230902512bd1d6f085559db6a2","fullName":"staff-repair-picked-up-status.spec.ts:249:3","name":"Mark as Picked Up keeps repair in Completed as a dimmed card","status":"passed","testResultsByEnv":{"e2e":"6df959d1fe166d182137adf7318d6aa1"}}
