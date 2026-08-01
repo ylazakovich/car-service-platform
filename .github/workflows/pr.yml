@@ -33,7 +33,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ylazakovich/project-toolkit/actions/setup-java-gradle@68f36f489e423e51ffbd9ad1d8ba42795c50aa5f # v1.1.1
+      - uses: quokkify/project-toolkit/actions/setup-java-gradle@68f36f489e423e51ffbd9ad1d8ba42795c50aa5f # v1.1.1
         with:
           java-version: "21"
           distribution: temurin
@@ -80,7 +80,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ylazakovich/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
+      - uses: quokkify/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
         with:
           node-version: "24"
           working-directory: frontend
@@ -134,7 +134,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ylazakovich/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
+      - uses: quokkify/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
         with:
           node-version: "24"
           working-directory: frontend
@@ -185,7 +185,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ylazakovich/project-toolkit/actions/setup-python@f988361ce9f0cb7c230d2f7d3276b3b6fe4b68d2 # v1.1.0
+      - uses: quokkify/project-toolkit/actions/setup-python@f988361ce9f0cb7c230d2f7d3276b3b6fe4b68d2 # v1.1.0
         with:
           python-version: "3.14"
           working-directory: backend
@@ -270,7 +270,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ylazakovich/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
+      - uses: quokkify/project-toolkit/actions/setup-node@9df6d8f96fc0f2f1ed4b48ba335e5ebe1167e9eb # v1.0.0
         with:
           node-version: "24"
           working-directory: frontend
@@ -297,7 +297,7 @@ jobs:
           cp .env.example .env
           perl -0pi -e 's/^LOG_FORMAT=text$/LOG_FORMAT=json/m; s/^LOG_LEVEL=DEBUG$/LOG_LEVEL=INFO/m' .env
 
-      - uses: ylazakovich/project-toolkit/actions/compose-up@cca33fbcc71864f2a08d7309cb17f93b1efd0c26 # v2.0.0
+      - uses: quokkify/project-toolkit/actions/compose-up@cca33fbcc71864f2a08d7309cb17f93b1efd0c26 # v2.0.0
         env:
           DOCKER_BUILDKIT: "1"
           COMPOSE_DOCKER_CLI_BUILD: "1"
