@@ -1,0 +1,1 @@
+{"id":"50b42a5f1c447d707fa96bbf17fa1aec","fullName":"car-service-platform-frontend:src/App.smoke.test.tsx#bootstrap application kanban card falls back to vehicle_label when vehicle_plate is null","name":"kanban card falls back to vehicle_label when vehicle_plate is null","status":"passed","testResultsByEnv":{"frontend":"b249ecf328136c3a05d4d5d0f47e6e82"}}
