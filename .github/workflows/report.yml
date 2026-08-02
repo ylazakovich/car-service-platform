@@ -180,9 +180,9 @@ jobs:
           ALLURE_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: bash scripts/ci/write-allure-environment.sh
 
-      - name: Build and comment Allure report
+      - name: Build and comment Allure report via toolkit
         if: steps.allure.outputs.present == 'true'
-        uses: quokkify/project-toolkit/actions/allure-report@0b266d47a87819d0f443a9a5040bb1f42c761c8e # v2.7.0
+        uses: quokkify/project-toolkit/actions/allure-report@8dcd01a4eeffcd4a2e4bdc10dfb7150ac7d2cc9e # v2.7.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-directory: artifacts/allure-results
