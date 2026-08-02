@@ -1,1 +1,1 @@
-{"id":"a40c0ba9bdeedadaa29c27498780d916","fullName":"staff-registers.spec.ts:84:3","name":"admin switches to Customers and sees test-owned customer with vehicles","status":"failed","testResultsByEnv":{"e2e":"b3caa2a044ce3009008be998cb222f18"}}
+{"id":"a40c0ba9bdeedadaa29c27498780d916","fullName":"staff-registers.spec.ts:84:3","name":"admin switches to Customers and sees test-owned customer with vehicles","status":"passed","testResultsByEnv":{"e2e":"30f97c10304ac19648611fd0a7bacf18"}}
