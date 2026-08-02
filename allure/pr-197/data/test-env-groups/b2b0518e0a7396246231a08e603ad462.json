@@ -1,1 +1,1 @@
-{"id":"b2b0518e0a7396246231a08e603ad462","fullName":"purchases.tests.SupplierApiTests#test_search_suppliers_by_name","name":"test_search_suppliers_by_name","status":"passed","testResultsByEnv":{"backend":"b45c0e1f970b32841529066aacf85136"}}
+{"id":"b2b0518e0a7396246231a08e603ad462","fullName":"purchases.tests.SupplierApiTests#test_search_suppliers_by_name","name":"test_search_suppliers_by_name","status":"passed","testResultsByEnv":{"backend":"db08260906faae0c6b6b63ff8a816c6c"}}
