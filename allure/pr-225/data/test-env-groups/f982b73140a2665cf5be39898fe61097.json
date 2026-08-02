@@ -1,1 +1,1 @@
-{"id":"f982b73140a2665cf5be39898fe61097","fullName":"staff-repair-master-validation.spec.ts:133:3","name":"Drag unassigned card to Completed column opens modal with master error highlighted","status":"failed","testResultsByEnv":{"e2e":"8e5f6b61ce503a663b4082e66f1b3326"}}
+{"id":"f982b73140a2665cf5be39898fe61097","fullName":"staff-repair-master-validation.spec.ts:133:3","name":"Drag unassigned card to Completed column opens modal with master error highlighted","status":"passed","testResultsByEnv":{"e2e":"d876071912e6968d11a46f01f96aa9e8"}}
