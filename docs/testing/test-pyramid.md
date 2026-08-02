@@ -73,7 +73,7 @@ These are **orientation** numbers (similar in spirit to Mike Cohn’s pyramid) a
 
 ## Quality gates (advisory, non-blocking)
 
-The **Test Report** workflow runs `allure-ci.mjs pyramid-check` on merged PR Allure results. The scheduled/manual **Test Pyramid Snapshot Refresh** workflow runs the same check before opening/updating the rolling snapshot PR. This is a **quality signal**, not a merge gate:
+The **Test Report** workflow calls [`project-toolkit/actions/allure-report@v2.7.0`](https://github.com/quokkify/project-toolkit/tree/v2.7.0/actions/allure-report), which delegates to the public [`allure-report-action@v0.1.0`](https://github.com/quokkify/allure-report-action/releases/tag/v0.1.0), on merged PR Allure results. The scheduled/manual **Test Pyramid Snapshot Refresh** workflow runs the same `pyramid-check` implementation before opening/updating the rolling snapshot PR. This is a **quality signal**, not a merge gate:
 
 - **Violations** surface as GitHub **Annotations** (`::warning::`) and in the **Job summary** for the Test Report job.
 - The workflow **always exits successfully** for this step (`exit 0`); it does **not** fail the run or block merge.
@@ -90,10 +90,19 @@ Checked rules today (aligned with soft targets above):
 
 ## How to refresh snapshots locally
 
-From the repo root, with a merged Allure results directory (e.g. after CI download or local runs copied into one folder):
+From the repo root, fetch the same immutable standalone implementation used by the toolkit wrapper:
 
 ```bash
-node .github/scripts/allure-ci.mjs pyramid \
+ALLURE_CI="$(mktemp)"
+curl -fsSL \
+  https://raw.githubusercontent.com/quokkify/allure-report-action/e97473b629e65ca3cf02ed55596821ec82486811/allure-ci.mjs \
+  -o "$ALLURE_CI"
+```
+
+Then, with a merged Allure results directory (e.g. after CI download or local runs copied into one folder):
+
+```bash
+node "$ALLURE_CI" pyramid \
   --results path/to/allure-results \
   --output docs/testing/latest/README.md \
   --json docs/testing/latest/pyramid-snapshot.json
@@ -104,9 +113,11 @@ Pass `--readme README.md` only for one-off local experiments; the scheduled/manu
 Quality gates only (warnings + JSON, optional CI-style annotations if `GITHUB_STEP_SUMMARY` is set):
 
 ```bash
-node .github/scripts/allure-ci.mjs pyramid-check \
+node "$ALLURE_CI" pyramid-check \
   --results path/to/allure-results \
   --json docs/testing/latest/pyramid-quality-gates.json
+
+rm -f "$ALLURE_CI"
 ```
 
 ## FAQ — generated snapshot on `main` looks stale
