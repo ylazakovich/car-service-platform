@@ -1,1 +1,0 @@
-{"timestamp": "2026-07-16 10:58:40,884", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/vehicles/", "request": "<WSGIRequest: POST '/api/vehicles/'>", "status_code": 403}
