@@ -1,1 +1,1 @@
-{"id":"f781b2b488bde27d17634984ef0d4dc1","fullName":"users.tests.InviteApiTests#test_invite_create_permission_denied_for_staff","name":"test_invite_create_permission_denied_for_staff","status":"passed","testResultsByEnv":{"backend":"7fb99df7d966de4b86fde5427a2d4a25"}}
+{"id":"f781b2b488bde27d17634984ef0d4dc1","fullName":"users.tests.InviteApiTests#test_invite_create_permission_denied_for_staff","name":"test_invite_create_permission_denied_for_staff","status":"passed","testResultsByEnv":{"backend":"7ded1b2e84391ce2be4ba10ec0804118"}}
