@@ -182,7 +182,7 @@ jobs:
 
       - name: Build and comment Allure report via toolkit
         if: steps.allure.outputs.present == 'true'
-        uses: quokkify/project-toolkit/actions/allure-report@8dcd01a4eeffcd4a2e4bdc10dfb7150ac7d2cc9e # v2.7.1
+        uses: quokkify/project-toolkit/actions/allure-report@a8217fa983347a3dd10133ec51117f873485b138 # v2.7.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-directory: artifacts/allure-results
