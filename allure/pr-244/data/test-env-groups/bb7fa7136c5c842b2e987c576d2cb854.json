@@ -1,1 +1,1 @@
-{"id":"bb7fa7136c5c842b2e987c576d2cb854","fullName":"repairs.tests.RepairApiTests#test_regenerate_portal_token_generates_new_token","name":"test_regenerate_portal_token_generates_new_token","status":"passed","testResultsByEnv":{"backend":"9b07e5dc55814e5ef5946a12b092cac9"}}
+{"id":"bb7fa7136c5c842b2e987c576d2cb854","fullName":"repairs.tests.RepairApiTests#test_regenerate_portal_token_generates_new_token","name":"test_regenerate_portal_token_generates_new_token","status":"passed","testResultsByEnv":{"backend":"608b44726b31a376532671a470495a64"}}
