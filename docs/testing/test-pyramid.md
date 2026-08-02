@@ -94,6 +94,7 @@ From the repo root, fetch the same immutable standalone implementation used by t
 
 ```bash
 ALLURE_CI="$(mktemp)"
+trap 'rm -f "$ALLURE_CI"' EXIT
 curl -fsSL \
   https://raw.githubusercontent.com/quokkify/allure-report-action/8c79c827179d2ea135b9a14dd50d5c17d908636b/allure-ci.mjs \
   -o "$ALLURE_CI"
@@ -116,8 +117,6 @@ Quality gates only (warnings + JSON, optional CI-style annotations if `GITHUB_ST
 node "$ALLURE_CI" pyramid-check \
   --results path/to/allure-results \
   --json docs/testing/latest/pyramid-quality-gates.json
-
-rm -f "$ALLURE_CI"
 ```
 
 ## FAQ — generated snapshot on `main` looks stale
