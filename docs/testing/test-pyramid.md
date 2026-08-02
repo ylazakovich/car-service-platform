@@ -73,7 +73,7 @@ These are **orientation** numbers (similar in spirit to Mike Cohn’s pyramid) a
 
 ## Quality gates (advisory, non-blocking)
 
-The **Test Report** workflow calls [`project-toolkit/actions/allure-report@v2.7.1`](https://github.com/quokkify/project-toolkit/tree/v2.7.1/actions/allure-report), which delegates to the public [`allure-report-action@v0.1.1`](https://github.com/quokkify/allure-report-action/releases/tag/v0.1.1), on merged PR Allure results. The scheduled/manual **Test Pyramid Snapshot Refresh** workflow runs the same `pyramid-check` implementation before opening/updating the rolling snapshot PR. This is a **quality signal**, not a merge gate:
+The **Test Report** workflow calls [`project-toolkit/actions/allure-report@v2.7.2`](https://github.com/quokkify/project-toolkit/tree/v2.7.2/actions/allure-report), which delegates to the public [`allure-report-action@v0.1.2`](https://github.com/quokkify/allure-report-action/releases/tag/v0.1.2), on merged PR Allure results. The scheduled/manual **Test Pyramid Snapshot Refresh** workflow runs the same `pyramid-check` implementation before opening/updating the rolling snapshot PR. This is a **quality signal**, not a merge gate:
 
 - **Violations** surface as GitHub **Annotations** (`::warning::`) and in the **Job summary** for the Test Report job.
 - The workflow **always exits successfully** for this step (`exit 0`); it does **not** fail the run or block merge.
@@ -96,7 +96,7 @@ From the repo root, fetch the same immutable standalone implementation used by t
 ALLURE_CI="$(mktemp)"
 trap 'rm -f "$ALLURE_CI"' EXIT
 curl -fsSL \
-  https://raw.githubusercontent.com/quokkify/allure-report-action/8c79c827179d2ea135b9a14dd50d5c17d908636b/allure-ci.mjs \
+  https://raw.githubusercontent.com/quokkify/allure-report-action/72fb74fff8b564040f12fd5d97b9867241e2c35d/allure-ci.mjs \
   -o "$ALLURE_CI"
 ```
 
