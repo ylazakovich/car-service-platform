@@ -1,0 +1,1 @@
+{"timestamp": "2026-08-02 15:05:49,623", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Bad Request: /api/purchases/1", "request": "<WSGIRequest: PATCH '/api/purchases/1'>", "status_code": 400}
