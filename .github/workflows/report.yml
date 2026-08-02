@@ -180,112 +180,28 @@ jobs:
           ALLURE_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: bash scripts/ci/write-allure-environment.sh
 
-      - name: Generate Allure HTML, badges, PR comment markdown
+      - name: Build and comment Allure report
         if: steps.allure.outputs.present == 'true'
-        env:
-          PR_NUMBER: ${{ steps.pr_ctx.outputs.number }}
-          FORK_PR: ${{ steps.fork.outputs.fork }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
-        run: |
-          cp -f .github/allure/categories.json artifacts/allure-results/categories.json
-          # Allure Report CLI: версия — renovate.json (alias allure-cli → npm:allure, customManagers regex).
-          npx --yes allure@3.14.2 generate artifacts/allure-results -o allure-report --config scripts/allure/allurerc.mjs
-          node .github/scripts/allure-ci.mjs badges --results artifacts/allure-results --out allure-report
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
-          PAGES_URL=""
-          if [ -n "$PR_NUMBER" ]; then
-            # Query string busts browser/CDN cache for GitHub Pages (same path per PR otherwise looks "stale").
-            PAGES_URL="https://${OWNER}.github.io/${REPO}/allure/pr-${PR_NUMBER}/?run=${SOURCE_RUN_ID}"
-          fi
-          node .github/scripts/allure-ci.mjs pr-body \
-            --results artifacts/allure-results \
-            --report allure-report \
-            --output allure-pr-comment.md \
-            --pages-url "$PAGES_URL" \
-            --fork-pr "$FORK_PR" \
-            --source-run-id "${SOURCE_RUN_ID}"
-
-      - name: Export test pyramid snapshot (Allure epics)
-        if: steps.allure.outputs.present == 'true'
-        env:
-          PYRAMID_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
-          PYRAMID_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          node .github/scripts/allure-ci.mjs pyramid \
-            --results artifacts/allure-results \
-            --output docs/testing/pyramid-snapshot.md \
-            --json docs/testing/pyramid-snapshot.json
-
-      - name: Quality gates — test pyramid (advisory warnings only)
-        if: steps.allure.outputs.present == 'true'
-        run: |
-          node .github/scripts/allure-ci.mjs pyramid-check \
-            --results artifacts/allure-results \
-            --json docs/testing/pyramid-quality-gates.json
-
-      - name: Upload pyramid snapshot artifact
-        if: steps.allure.outputs.present == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: quokkify/project-toolkit/actions/allure-report@0b266d47a87819d0f443a9a5040bb1f42c761c8e # v2.7.0
         with:
-          name: pyramid-snapshot
-          path: |
-            docs/testing/pyramid-snapshot.md
-            docs/testing/pyramid-snapshot.json
-            docs/testing/pyramid-quality-gates.json
-          retention-days: 30
-
-      # Per-PR folder on gh-pages: allure/pr-<N>/ — rsync --delete only that subdir; other PR folders stay intact.
-      - name: Deploy Allure HTML to GitHub Pages
-        if: ${{ steps.allure.outputs.present == 'true' && steps.pr_ctx.outputs.has_pr == 'true' && steps.fork.outputs.fork == 'false' }}
-        uses: quokkify/project-toolkit/actions/deploy-gh-pages-subdir@69bb70e5f203066673233fe03a71cf44644c9723 # v2.6.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          publish-dir: allure-report
-          destination-dir: allure/pr-${{ steps.pr_ctx.outputs.number }}
-          retention-count: "20"
-
-      - name: Post or update Allure comment on PR
-        if: steps.allure.outputs.present == 'true'
-        env:
-          PR_NUMBER_RESOLVED: ${{ steps.pr_ctx.outputs.number }}
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-        with:
-          script: |
-            const fs = require('fs');
-            const issue_number = parseInt(process.env.PR_NUMBER_RESOLVED || '', 10);
-            if (!issue_number) {
-              core.info('No PR number (workflow_run.pull_requests empty and no commit→PR match); skip Allure PR comment.');
-              return;
-            }
-            const marker = '<!-- csp-allure-ci -->';
-            const body = fs.readFileSync('allure-pr-comment.md', 'utf8');
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number,
-              per_page: 100
-            });
-            const existing = comments.find(
-              (c) =>
-                c.user?.login === 'github-actions[bot]' &&
-                (c.body || '').includes(marker)
-            );
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number,
-                body
-              });
-            }
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          results-directory: artifacts/allure-results
+          report-directory: allure-report
+          config-file: scripts/allure/allurerc.mjs
+          categories-file: .github/allure/categories.json
+          allure-version: "3.14.2"
+          pr-number: ${{ steps.pr_ctx.outputs.number }}
+          # Query string busts browser/CDN cache for GitHub Pages (same path per PR otherwise looks "stale").
+          pages-url: ${{ format('https://{0}.github.io/{1}/allure/pr-{2}/?run={3}', github.repository_owner, github.event.repository.name, steps.pr_ctx.outputs.number, github.event.workflow_run.id) }}
+          fork-pr: ${{ steps.fork.outputs.fork }}
+          source-run-id: ${{ github.event.workflow_run.id }}
+          comment-marker: "<!-- csp-allure-ci -->"
+          pyramid-enabled: "true"
+          pyramid-source-run-id: ${{ github.event.workflow_run.id }}
+          pyramid-head-sha: ${{ github.event.workflow_run.head_sha }}
+          publish-pages: ${{ steps.pr_ctx.outputs.has_pr == 'true' && steps.fork.outputs.fork == 'false' }}
+          pages-destination-directory: allure/pr-${{ steps.pr_ctx.outputs.number }}
+          pages-retention-count: "20"
 
       # После публикации отчётов: сохранить красный статус workflow, если PR Pipeline не success (отдельно от fail-on-error в test-reporter).
       - name: Mirror PR Pipeline conclusion
