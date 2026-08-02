@@ -1,1 +1,1 @@
-{"id":"7bcedea112c15f8d3960a4e02bd60a91","fullName":"car-service-platform-frontend:src/features/staff/hooks/useRepairs.test.ts#sanitizeImageUrl allows https URL","name":"allows https URL","status":"passed","testResultsByEnv":{"frontend":"259cfce82e79f7c29ac05c6ad4af8696"}}
+{"id":"7bcedea112c15f8d3960a4e02bd60a91","fullName":"car-service-platform-frontend:src/features/staff/hooks/useRepairs.test.ts#sanitizeImageUrl allows https URL","name":"allows https URL","status":"passed","testResultsByEnv":{"frontend":"22a654f1b00bd41598f0c74612b78e52"}}

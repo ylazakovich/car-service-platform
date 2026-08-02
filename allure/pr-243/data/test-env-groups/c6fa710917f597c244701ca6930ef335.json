@@ -1,1 +1,1 @@
-{"id":"c6fa710917f597c244701ca6930ef335","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_rejects_fractional_quantity_for_pcs","name":"test_bulk_create_rejects_fractional_quantity_for_pcs","status":"passed","testResultsByEnv":{"backend":"7dabcc254ab8b4e2da09cd968f8b8bc6"}}
+{"id":"c6fa710917f597c244701ca6930ef335","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_rejects_fractional_quantity_for_pcs","name":"test_bulk_create_rejects_fractional_quantity_for_pcs","status":"passed","testResultsByEnv":{"backend":"a68879f2424989021b5ed28232a3fed3"}}

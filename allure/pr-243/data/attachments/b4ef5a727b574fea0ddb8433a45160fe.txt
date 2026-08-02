@@ -1,1 +1,0 @@
-{"timestamp": "2026-08-02 18:40:18,754", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Not Found: /api/customers/2", "request": "<WSGIRequest: GET '/api/customers/2'>", "status_code": 404}
