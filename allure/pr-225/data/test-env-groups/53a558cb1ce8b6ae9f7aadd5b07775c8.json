@@ -1,1 +1,1 @@
-{"id":"53a558cb1ce8b6ae9f7aadd5b07775c8","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_sets_nip_on_new_supplier","name":"test_bulk_create_sets_nip_on_new_supplier","status":"passed","testResultsByEnv":{"backend":"7eca3a01e95ff43bfb9c6da6b83e9a14"}}
+{"id":"53a558cb1ce8b6ae9f7aadd5b07775c8","fullName":"purchases.tests.PurchaseApiTests#test_bulk_create_sets_nip_on_new_supplier","name":"test_bulk_create_sets_nip_on_new_supplier","status":"passed","testResultsByEnv":{"backend":"fb572781478d2619318b14862d0a03ee"}}
