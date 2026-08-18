@@ -1,0 +1,3 @@
+[32mSUBPASSED(field='license_plate')[0m[31m [ 94%][0m
+repairs/tests_datafaker_demo.py::DatafakerDemoPayloadTests::test_parse_payload_rejects_missing_vehicle_required_fields [32mSUBPASSED(field='make')[0m[31m [ 94%][0m
+repairs/tests_datafaker_demo.py::DatafakerDemoPayloadTests::test_parse_payload_rejects_missing_vehicle_required_fields [32mSUBPASSED(field='model')[0m[31m [ 94%][0m
