@@ -1,1 +1,1 @@
-{"id":"dfee234e3b1680236d572d50049229a3","fullName":"car-service-platform-frontend:src/features/staff/hooks/useRepairs.test.ts#sanitizeImageUrl rejects ftp URL","name":"rejects ftp URL","status":"passed","testResultsByEnv":{"frontend":"4aeee7bde70bee6390120d3a48443f5e"}}
+{"id":"dfee234e3b1680236d572d50049229a3","fullName":"car-service-platform-frontend:src/features/staff/hooks/useRepairs.test.ts#sanitizeImageUrl rejects ftp URL","name":"rejects ftp URL","status":"passed","testResultsByEnv":{"frontend":"3d15c8f532340b2742783fb2457e9362"}}

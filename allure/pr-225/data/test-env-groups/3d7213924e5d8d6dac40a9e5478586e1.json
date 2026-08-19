@@ -1,1 +1,1 @@
-{"id":"3d7213924e5d8d6dac40a9e5478586e1","fullName":"purchases.tests.PurchaseApiTests#test_create_purchase_without_repair_or_vehicle","name":"test_create_purchase_without_repair_or_vehicle","status":"passed","testResultsByEnv":{"backend":"309e2dc595a31b75a7073dd5811d3a16"}}
+{"id":"3d7213924e5d8d6dac40a9e5478586e1","fullName":"purchases.tests.PurchaseApiTests#test_create_purchase_without_repair_or_vehicle","name":"test_create_purchase_without_repair_or_vehicle","status":"passed","testResultsByEnv":{"backend":"d3769bbfbc085695372bd9cfcd1df04b"}}
