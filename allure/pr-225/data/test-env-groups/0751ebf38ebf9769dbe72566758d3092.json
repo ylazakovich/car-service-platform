@@ -1,1 +1,1 @@
-{"id":"0751ebf38ebf9769dbe72566758d3092","fullName":"django-admin-entities.spec.ts:213:3","name":"Vehicle — read: license_plate appears in changelist after creation","status":"passed","testResultsByEnv":{"e2e":"fc294abf625efa1001157d50a27b6bc8"}}
+{"id":"0751ebf38ebf9769dbe72566758d3092","fullName":"django-admin-entities.spec.ts:213:3","name":"Vehicle — read: license_plate appears in changelist after creation","status":"passed","testResultsByEnv":{"e2e":"cb85a9e20c62ea76edb32bed7a23412a"}}
