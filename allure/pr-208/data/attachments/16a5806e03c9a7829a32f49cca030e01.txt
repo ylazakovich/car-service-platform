@@ -1,1 +1,0 @@
-{"timestamp": "2026-08-09 01:44:28,920", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Bad Request: /api/uploads/invoice/", "request": "<WSGIRequest: POST '/api/uploads/invoice/'>", "status_code": 400}
