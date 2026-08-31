@@ -1,1 +1,0 @@
-{"timestamp": "2026-08-31 05:42:06,951", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Bad Request: /api/auth/users/invite/", "request": "<WSGIRequest: POST '/api/auth/users/invite/'>", "status_code": 400}
