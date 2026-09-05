@@ -1,1 +1,0 @@
-{"timestamp": "2026-08-30 18:17:56,746", "level": "WARNING", "logger": "django.request", "req_id": null, "message": "Forbidden: /api/purchases/invoice-parse-templates/", "request": "<WSGIRequest: POST '/api/purchases/invoice-parse-templates/'>", "status_code": 403}

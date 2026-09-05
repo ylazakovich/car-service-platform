@@ -1,1 +1,1 @@
-{"id":"d7ba091e5f3a153e0ab918f03118dbc8","fullName":"django-admin-entities.spec.ts:238:3","name":"Vehicle — update: change make and verify in changelist","status":"passed","testResultsByEnv":{"e2e":"344746c7d6344be76bb7bf263245bd55"}}
+{"id":"d7ba091e5f3a153e0ab918f03118dbc8","fullName":"django-admin-entities.spec.ts:238:3","name":"Vehicle — update: change make and verify in changelist","status":"passed","testResultsByEnv":{"e2e":"28f60b2b1e5f9ac86780c1cb19933b70"}}
