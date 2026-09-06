@@ -1,11 +1,11 @@
-django>=6,<6.1
-django-unfold>=0.100,<0.101
-djangorestframework>=3.17,<3.18
+django>=6,<6.2
+django-unfold>=0.104,<0.105
+djangorestframework>=3.18,<3.19
 django-cors-headers>=4.8,<5.0
-gunicorn>=26,<26.1
+gunicorn>=26,<26.3
 psycopg[binary]>=3.3,<3.4
 whitenoise>=6.9,<7.0
-python-json-logger>=4,<4.2
+python-json-logger>=4,<4.3
 reportlab>=5,<5.1
 pypdf>=6,<7
 pytesseract>=0.3.13,<0.4
