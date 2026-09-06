@@ -1,1 +1,1 @@
-{"id":"2a4bf12cc6d7f5eb69517e50476a539d","fullName":"create-button-disabled-state.spec.ts:237:3","name":"chips render above stretched buttons on mobile","status":"passed","testResultsByEnv":{"e2e":"621a393f797e5ec49fe97526f99b2a7e"}}
+{"id":"2a4bf12cc6d7f5eb69517e50476a539d","fullName":"create-button-disabled-state.spec.ts:237:3","name":"chips render above stretched buttons on mobile","status":"skipped","testResultsByEnv":{"e2e":"4d956412629f666dfec518fbd8c58e9f"}}

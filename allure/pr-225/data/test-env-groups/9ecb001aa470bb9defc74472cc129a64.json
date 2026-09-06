@@ -1,1 +1,1 @@
-{"id":"9ecb001aa470bb9defc74472cc129a64","fullName":"staff-consumables-out-of-stock.spec.ts:66:3","name":"admin expands Out of stock on narrow viewport","status":"passed","testResultsByEnv":{"e2e":"209463452b5d72d8818681e40b16318a"}}
+{"id":"9ecb001aa470bb9defc74472cc129a64","fullName":"staff-consumables-out-of-stock.spec.ts:66:3","name":"admin expands Out of stock on narrow viewport","status":"skipped","testResultsByEnv":{"e2e":"52dace3c439fe283199d0b820f8cf99d"}}

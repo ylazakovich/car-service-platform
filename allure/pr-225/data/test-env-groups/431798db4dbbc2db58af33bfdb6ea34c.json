@@ -1,1 +1,1 @@
-{"id":"431798db4dbbc2db58af33bfdb6ea34c","fullName":"purchases.tests.InvoiceParseApiTests#test_suggest_accepts_plain_text_file_multipart","name":"test_suggest_accepts_plain_text_file_multipart","status":"passed","testResultsByEnv":{"backend":"5e4474a07e7112a38cd7b3f471957004"}}
+{"id":"431798db4dbbc2db58af33bfdb6ea34c","fullName":"purchases.tests.InvoiceParseApiTests#test_suggest_accepts_plain_text_file_multipart","name":"test_suggest_accepts_plain_text_file_multipart","status":"passed","testResultsByEnv":{"backend":"2202ec32ca0605878547a2f94590c04a"}}

@@ -1,1 +1,1 @@
-{"id":"ee5830b3ff2270ce7c03a99e57dc5271","fullName":"django-admin-entities.spec.ts:74:3","name":"Customer — read: full_name appears in changelist after creation","status":"passed","testResultsByEnv":{"e2e":"7724eaf217659555db2670c2f8169c9c"}}
+{"id":"ee5830b3ff2270ce7c03a99e57dc5271","fullName":"django-admin-entities.spec.ts:74:3","name":"Customer — read: full_name appears in changelist after creation","status":"passed","testResultsByEnv":{"e2e":"dbd73bd2e11df1aafe8b04b9c5953b4c"}}
