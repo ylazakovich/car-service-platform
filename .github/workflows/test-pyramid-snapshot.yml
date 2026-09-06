@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: main
           persist-credentials: false
@@ -42,12 +42,12 @@ jobs:
         name: Capture checked-out SHA
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - uses: quokkify/project-toolkit/actions/setup-node@36fba694a00c42886ad3487c137b1c5172cac2f1 # v2.3.0
+      - uses: quokkify/project-toolkit/actions/setup-node@d2767aa3bed2abbce9b6d49d55ebc2c58d365239 # v2.20.1
         with:
           node-version: "24"
           working-directory: frontend
 
-      - uses: quokkify/project-toolkit/actions/setup-python@36fba694a00c42886ad3487c137b1c5172cac2f1 # v2.3.0
+      - uses: quokkify/project-toolkit/actions/setup-python@d2767aa3bed2abbce9b6d49d55ebc2c58d365239 # v2.20.1
         with:
           python-version: "3.14"
           working-directory: backend
@@ -117,7 +117,7 @@ jobs:
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Prepare CSP Compose env
         shell: bash
@@ -126,7 +126,7 @@ jobs:
           cp .env.example .env
           perl -0pi -e 's/^LOG_FORMAT=text$/LOG_FORMAT=json/m; s/^LOG_LEVEL=DEBUG$/LOG_LEVEL=INFO/m' .env
 
-      - uses: quokkify/project-toolkit/actions/compose-up@cca33fbcc71864f2a08d7309cb17f93b1efd0c26 # v2.0.0
+      - uses: quokkify/project-toolkit/actions/compose-up@d2767aa3bed2abbce9b6d49d55ebc2c58d365239 # v2.20.1
         env:
           DOCKER_BUILDKIT: "1"
           COMPOSE_DOCKER_CLI_BUILD: "1"

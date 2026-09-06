@@ -30,11 +30,11 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - uses: quokkify/project-toolkit/actions/setup-node@36fba694a00c42886ad3487c137b1c5172cac2f1 # v2.3.0
+      - uses: quokkify/project-toolkit/actions/setup-node@d2767aa3bed2abbce9b6d49d55ebc2c58d365239 # v2.20.1
         with:
           node-version: "24"
           install-dependencies: "false"
@@ -160,7 +160,7 @@ jobs:
 
       - name: Set up Python (Django version for Allure environment.properties)
         if: steps.allure.outputs.present == 'true'
-        uses: quokkify/project-toolkit/actions/setup-python@36fba694a00c42886ad3487c137b1c5172cac2f1 # v2.3.0
+        uses: quokkify/project-toolkit/actions/setup-python@d2767aa3bed2abbce9b6d49d55ebc2c58d365239 # v2.20.1
         with:
           python-version: "3.14"
           working-directory: backend
@@ -182,7 +182,7 @@ jobs:
 
       - name: Build and comment Allure report via toolkit
         if: steps.allure.outputs.present == 'true'
-        uses: quokkify/project-toolkit/actions/allure-report@a8217fa983347a3dd10133ec51117f873485b138 # v2.7.2
+        uses: quokkify/project-toolkit/actions/allure-report@d2767aa3bed2abbce9b6d49d55ebc2c58d365239 # v2.20.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-directory: artifacts/allure-results
