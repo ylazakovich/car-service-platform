@@ -14,7 +14,7 @@ ARG VITE_APP_VERSION
 ENV VITE_APP_VERSION=$VITE_APP_VERSION
 RUN npm run build
 
-FROM nginx:1.31-alpine@sha256:8b1e78743a03dbb2c95171cc58639fef29abc8816598e27fb910ed2e621e589a
+FROM nginx:1.31-alpine@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx-main.conf /etc/nginx/nginx.conf
